@@ -1,0 +1,7 @@
+/* Forcefully override global styles */
+:host ::ng-deep input.form-control {
+    border-radius: 15px !important;
+    padding: 12px 20px !important;
+    width: 200px !important;
+}
+

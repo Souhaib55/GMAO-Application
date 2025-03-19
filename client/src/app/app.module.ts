@@ -15,6 +15,7 @@ import { StockComponent } from './stock/stock.component';
 import { RessourcesComponent } from './ressources/ressources.component';
 import { ReportsComponent } from './reports/reports.component';
 import { HelpcomponentComponent } from './helpcomponent/helpcomponent.component';
+import { LoginComponent } from './account/login/login.component';
 
 @NgModule({
   imports: [
@@ -22,12 +23,11 @@ import { HelpcomponentComponent } from './helpcomponent/helpcomponent.component'
     RouterModule,                   // For navigation (navbar, sidebar)
     AppRoutingModule,               // Custom routing
     ComponentsModule,
-    
     MatIconModule               
   ],
   declarations: [
     AppComponent,                   // Main app component
-    AdminLayoutComponent, AnalyticsComponent, AskaidatabaseComponent, EquipmentComponent, InterventionComponent, PlanningComponent, StockComponent, RessourcesComponent, ReportsComponent, HelpcomponentComponent,           // Layout with navbar, sidebar, content
+    AdminLayoutComponent, AnalyticsComponent, AskaidatabaseComponent, EquipmentComponent, InterventionComponent, PlanningComponent, StockComponent, RessourcesComponent, ReportsComponent, HelpcomponentComponent, LoginComponent,           // Layout with navbar, sidebar, content
   ],
   providers: [],
   bootstrap: [AppComponent]

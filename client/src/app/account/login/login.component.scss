@@ -1,0 +1,81 @@
+.card {
+    max-width: 28rem;
+    margin: 8rem auto 0 auto;
+    padding: 2.5rem 2rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 1rem;
+    background-color: white;
+    height: auto;
+    min-height: 28rem;
+  }
+  
+  .text-center {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+  
+  .title {
+    font-size: 1.875rem;
+    font-weight: 600;
+    color: #ef5867;
+  }
+  
+  .form-field {
+    width: 100%;
+    margin-bottom: 1.5rem;
+    position: relative;
+    display: block;
+  }
+  
+  .form-field label {
+    display: block;
+    font-size: 0.875rem;
+    color: #666;
+    margin-bottom: 0.25rem;
+  }
+  
+  .form-field input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+  }
+  
+  .form-field input:focus {
+    border-color: #ef5867;
+    box-shadow: 0 0 0 1px #ef5867;
+  }
+  
+  .btn {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #ef5867;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    box-sizing: border-box;
+  }
+  
+  .btn:hover {
+    background-color: #e44454;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 640px) {
+    .card {
+      max-width: 90%;
+      margin: 4rem auto 0 auto;
+      padding: 1.5rem;
+    }
+    
+    .title {
+      font-size: 1.5rem;
+    }
+  }

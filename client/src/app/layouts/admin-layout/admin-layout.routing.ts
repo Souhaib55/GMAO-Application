@@ -14,6 +14,7 @@ import { HelpcomponentComponent } from 'app/helpcomponent/helpcomponent.componen
 
 
 
+
 export const AdminLayoutRoutes: Routes = [
     // {
     //   path: '',
@@ -57,6 +58,8 @@ export const AdminLayoutRoutes: Routes = [
     //         component: UpgradeComponent
     //     }]
     // }
+    { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+    
     { path: 'dashboard',      component: DashboardComponent },
     { path: 'analytics',      component: AnalyticsComponent },
     { path: 'askaidatabase',  component: AskaidatabaseComponent },
@@ -67,6 +70,7 @@ export const AdminLayoutRoutes: Routes = [
     { path: 'ressources',     component: RessourcesComponent },
     { path: 'reports',        component: ReportsComponent },
     { path: 'helpcomponent',  component: HelpcomponentComponent },
+
 
    
 
