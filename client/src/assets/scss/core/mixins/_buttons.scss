@@ -1,3 +1,11 @@
+
+// Define the hover mixin
+@mixin hover {
+  &:hover {
+    @content;
+  }
+}
+
 // from bs mixins/buttons button-variant
 @mixin bmd-button-variant($color, $background, $focus-background, $active-background, $border, $focus-border, $active-border) {
   color: $color;

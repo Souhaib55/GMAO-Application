@@ -17,9 +17,10 @@
 */
  @import "~@angular/material/prebuilt-themes/indigo-pink.css";
 
+ @import 'bootstrap/scss/bootstrap';
  @import "core/variables";
  @import "core/mixins";
- @import "bootstrap/scss/bootstrap";
+ 
 
 
  // Core Components

@@ -1,31 +1,18 @@
-<div class="card">
-  <form id="loginForm">
-      <div class="text-center">
-          <h1 class="title">Login</h1>
-      </div>
-      
-      <div class="form-field">
-          <label for="email">Email address</label>
-          <input 
-              id="email" 
-              name="email" 
-              type="email" 
-              placeholder="name@example.com"
-              required
-          >
-      </div>
+<mat-card class="login-card">
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <div class="login-header">
+            <h1>Login</h1>
+        </div>
+        <mat-form-field appearance="outline" class="login-input">
+            <mat-label>Email address</mat-label>
+            <input formControlName="email" type="email" placeholder="name@example.com" matInput />
+        </mat-form-field>
 
-      <div class="form-field">
-          <label for="password">Password</label>
-          <input 
-              id="password" 
-              name="password" 
-              type="password" 
-              placeholder="password"
-              required
-          >
-      </div>
+        <mat-form-field appearance="outline" class="login-input">
+            <mat-label>Password</mat-label>
+            <input formControlName="password" type="password" placeholder="password" matInput />
+        </mat-form-field>
 
-      <button class="btn" type="submit">Sign In</button>
-  </form>
-</div>
+        <button mat-flat-button type="submit" class="login-button">Sign In</button>
+    </form>
+</mat-card>

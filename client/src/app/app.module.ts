@@ -16,15 +16,53 @@ import { RessourcesComponent } from './ressources/ressources.component';
 import { ReportsComponent } from './reports/reports.component';
 import { HelpcomponentComponent } from './helpcomponent/helpcomponent.component';
 import { LoginComponent } from './account/login/login.component';
+import { ReactiveFormsModule } from '@angular/forms';
+
+
+import { MatButtonModule } from '@angular/material/button';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatListModule } from '@angular/material/list';
+import { MatCardModule } from '@angular/material/card';
+import { MatInputModule } from '@angular/material/input';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTableModule } from '@angular/material/table';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatGridListModule } from '@angular/material/grid-list';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+
+import { HttpClientModule } from '@angular/common/http';
 
 @NgModule({
   imports: [
-    BrowserAnimationsModule,         // For Material animations in design
+    BrowserAnimationsModule, 
     RouterModule,                   // For navigation (navbar, sidebar)
     AppRoutingModule,               // Custom routing
     ComponentsModule,
-    MatIconModule               
+    MatIconModule,  
+    ReactiveFormsModule,
+
+    HttpClientModule,
+
+     // Angular Material Components
+    MatButtonModule,
+     MatSidenavModule,
+     MatListModule,
+     MatCardModule,
+     MatInputModule,
+     MatDialogModule,
+     MatSnackBarModule,
+     MatTableModule,
+     MatFormFieldModule,
+     MatSelectModule,
+     MatCheckboxModule,
+     MatGridListModule,
+     MatProgressSpinnerModule
+                
   ],
+  
   declarations: [
     AppComponent,                   // Main app component
     AdminLayoutComponent, AnalyticsComponent, AskaidatabaseComponent, EquipmentComponent, InterventionComponent, PlanningComponent, StockComponent, RessourcesComponent, ReportsComponent, HelpcomponentComponent, LoginComponent,           // Layout with navbar, sidebar, content
