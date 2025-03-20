@@ -8,12 +8,8 @@ import { CommonModule } from '@angular/common';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
-  { 
-      path: 'admin', 
-      component: AdminLayoutComponent,
-      children: AdminLayoutRoutes  // Use the actual AdminLayoutRoutes array
-  },
-  { path: '', redirectTo: 'login', pathMatch: 'full' },  // Corrected redirect
+  { path: 'admin', component: AdminLayoutComponent,children: AdminLayoutRoutes},
+  { path: '', redirectTo: 'login', pathMatch: 'full' },  
   { path: '**', redirectTo: 'login' }  // Optional: catch-all route
 ];
 
