@@ -1,0 +1,5 @@
+/* More specific selector */
+.alcodex {
+    font-weight: 600 !important; /* Semi-bold font weight */
+    font-size: 1.2em; /* Increase font size by 20% */
+}
