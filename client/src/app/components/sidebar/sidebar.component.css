@@ -1,5 +1,25 @@
-/* More specific selector */
 .alcodex {
     font-weight: 600 !important; /* Semi-bold font weight */
     font-size: 1.2em; /* Increase font size by 20% */
 }
+
+#navigation .searchinput :focus {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+
+.navbar-form .input-group.no-border input.form-control:focus {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.logo-img img {
+    width: 50px !important; /* Set a specific width */
+    height: 40px !important; /* Maintain aspect ratio */
+    margin-right: 10px !important;
+}
+
+

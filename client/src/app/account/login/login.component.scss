@@ -14,7 +14,6 @@
 .login-header h1 {
   font-size: 1.875rem !important; /* Equivalent to text-3xl */
   font-weight: 600 !important; /* Equivalent to font-semibold */
-  color: #3b82f6 !important; /* Equivalent to text-primary (replace with your primary color) */
 }
 
 /* Input field styling */
@@ -28,10 +27,22 @@
   width: 100% !important; /* Equivalent to w-full */
   padding: 0.5rem 0 !important; /* Equivalent to py-2 */
   border : solid !important;
-  border-radius: 10px !important; /* Equivalent to rounded-lg */
-  background-color:#6b9ded !important ;
+  border-radius: 15px !important; /* Equivalent to rounded-lg */
+  background-color:#77a5ef !important ;
 }
 
+  // responsiveness
+  @media (max-width: 640px) {
+    .card {
+      max-width: 90%;
+      margin: 4rem auto 0 auto;
+      padding: 1.5rem;
+    }
+    
+    .title {
+      font-size: 1.5rem;
+    }
+  } 
 
 
 

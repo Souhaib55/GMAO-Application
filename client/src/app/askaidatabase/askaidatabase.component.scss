@@ -1,0 +1,112 @@
+/* Chatbot wrapper - Full-screen centering */
+.chatbot-wrapper {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    min-height: 100vh !important;
+    padding: 20px !important;
+    box-sizing: border-box !important;
+}
+
+/* Chatbot container - ChatGPT-like chat window */
+.chatbot-container {
+    width: 100% !important;
+    max-width: 800px !important;
+    margin-top: 70px !important;
+    height: calc(100vh - 70px - 40px) !important;
+    background-color: #ffffff !important;
+    padding: 20px !important;
+    border-radius: 10px !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05) !important;
+    font-family: 'Open Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    gap: 8px !important; /* Adjusted gap between messages */
+}
+
+/* Title styling - Centered header */
+.title {
+    font-size: 24px !important;
+    font-weight: 700 !important;
+    color: #202223 !important;
+    margin: 0 0 15px 0 !important;
+    padding: 0 !important;
+    line-height: 1.2 !important;
+    text-align: center !important; /* Added center alignment */
+    width: 100% !important;
+}
+
+/* Chatbot message styling - Tighter spacing */
+.chatbot-message {
+    margin: 4px 0 !important; /* Reduced vertical spacing */
+    text-align: left !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 8px 12px !important; /* Reduced padding */
+    background-color: #f7f7f8 !important;
+    border-radius: 10px !important;
+    max-width: 80% !important;
+}
+
+.chatbot-message p {
+    color: #333333 !important;
+    font-size: 16px !important;
+    font-weight: 400 !important;
+    margin: 0 !important;
+    margin-bottom: 5px !important; /* Reduced paragraph spacing */
+    line-height: 1.4 !important; /* Tighter line height */
+}
+
+.chatbot-message p:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* User message styling - Compact spacing */
+.user-message {
+    margin: 4px 0 !important; /* Reduced vertical spacing */
+    text-align: right !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    padding: 8px 12px !important; /* Reduced padding */
+    background-color: #1c76da !important;
+    border-radius: 10px !important;
+    max-width: 80% !important;
+    align-self: flex-end !important;
+}
+
+.user-message p {
+    color: #ffffff !important;
+    font-size: 16px !important;
+    font-weight: 400 !important;
+    margin: 0 !important;
+    line-height: 1.4 !important; /* Tighter line height */
+}
+
+/* Rest of the CSS remains the same */
+
+/* Chatbot input field styling - ChatGPT-like input area */
+.chatbot-input {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-top: 10px !important;
+    border-top: 1px solid #e0e0e0 !important;
+}
+
+.chatbot-input input {
+    width: 100% !important;
+    padding: 12px 20px !important;
+    background-color: #ffffff !important;
+    border: 1px solid #dcdcdc !important;
+    border-radius: 8px !important;
+    color: #333333 !important;
+    font-size: 16px !important;
+    outline: none !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    box-sizing: border-box !important;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+/* ... (rest of the media queries remain unchanged) */

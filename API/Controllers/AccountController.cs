@@ -44,7 +44,7 @@ public class AccountController(SignInManager<AppUser> signInManager) : Controlle
         return Ok();  
     }
 
-    [Authorize]
+  
     [HttpPost("logout")]
     public async Task<ActionResult> Logout()
     {
@@ -68,7 +68,7 @@ public class AccountController(SignInManager<AppUser> signInManager) : Controlle
         });
     }
 
-    [HttpGet]
+    [HttpGet("auth-status")]
     public ActionResult GetAuthState()
     {
         return Ok(new { isAuthenticated = User.Identity?.IsAuthenticated ?? false});

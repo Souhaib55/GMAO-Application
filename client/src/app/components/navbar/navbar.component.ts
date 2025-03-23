@@ -1,7 +1,8 @@
-import { Component, OnInit, ElementRef } from '@angular/core';
+import { Component, OnInit, ElementRef, inject } from '@angular/core';
 import { ROUTES } from '../sidebar/sidebar.component';
 import {Location, LocationStrategy, PathLocationStrategy} from '@angular/common';
 import { Router } from '@angular/router';
+import { AccountService } from 'app/core/services/account.service';
 
 
 @Component({
@@ -109,6 +110,21 @@ export class NavbarComponent implements OnInit {
 
         }
     };
+
+
+    // Logic of the component
+    accountService = inject(AccountService);
+    private routervar = inject(Router);
+
+    logout() {
+        this.accountService.logout().subscribe({
+            next: () =>  {
+                this.accountService.currentUser.set(null);
+                this.routervar.navigateByUrl('/login');
+            }
+        })
+    }
+
 
     
 }

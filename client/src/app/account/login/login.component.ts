@@ -1,7 +1,7 @@
 import { Component, inject, ViewEncapsulation } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { AccountService } from 'app/core/services/account.service';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-login',
@@ -10,13 +10,13 @@ import { Router } from '@angular/router';
   
 })
 export class LoginComponent  {
-  // Your login logic here (e.g., authentication)
-  // After successful login, navigate to the admin dashboard
-  //this.router.navigate(['/admin/dashboard']);
+  
+  // login logic here (e.g., authentication)
 
   private fb = inject(FormBuilder);
   private accountService = inject(AccountService);
   private router = inject(Router);
+
 
   loginForm = this.fb.group({
     email: [''],
@@ -26,11 +26,10 @@ export class LoginComponent  {
   onSubmit() {
     this.accountService.login(this.loginForm.value).subscribe({
       next: () => {
-        this.accountService.getUserInfo();
+        this.accountService.getUserInfo().subscribe();
         this.router.navigateByUrl('/admin/dashboard');
-      }
+      },
     })
   }
-
 
 }

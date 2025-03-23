@@ -1,18 +1,27 @@
 <mat-card class="login-card">
+    <!-- Top-left corner -->
+    <div class="corner top-left">
+        <div class="block dark-blue"></div>
+        <div class="block light-blue"></div>
+    </div>
+    <!-- Bottom-right corner -->
+    <div class="corner bottom-right">
+        <div class="block light-blue"></div>
+        <div class="block dark-blue"></div>
+    </div>
+    <!-- Existing form content -->
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
         <div class="login-header">
-            <h1>Login</h1>
+            <h1>Welcome </h1>
         </div>
         <mat-form-field appearance="outline" class="login-input">
             <mat-label>Email address</mat-label>
             <input formControlName="email" type="email" placeholder="name@example.com" matInput />
         </mat-form-field>
-
         <mat-form-field appearance="outline" class="login-input">
             <mat-label>Password</mat-label>
             <input formControlName="password" type="password" placeholder="password" matInput />
         </mat-form-field>
-
         <button mat-flat-button type="submit" class="login-button">Sign In</button>
     </form>
 </mat-card>

@@ -9,7 +9,7 @@ import { CommonModule } from '@angular/common';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
-  { path: 'admin', component: AdminLayoutComponent,children: AdminLayoutRoutes},
+  { path: 'admin', component: AdminLayoutComponent,children: AdminLayoutRoutes  },
   { path: '', redirectTo: 'login', pathMatch: 'full' },  
   { path: '**', redirectTo: 'login' }  // Optional: catch-all route
 ];
@@ -17,7 +17,7 @@ const routes: Routes = [
 @NgModule({
   imports: [
     CommonModule,
-    RouterModule.forRoot(routes, { useHash: true })
+    RouterModule.forRoot(routes, { useHash: true })   // URL Format	http://localhost:4200/#/about
   ],
   exports: [RouterModule] // Export RouterModule for use in AppModule
 })
