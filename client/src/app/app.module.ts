@@ -16,7 +16,7 @@ import { RessourcesComponent } from './ressources/ressources.component';
 import { ReportsComponent } from './reports/reports.component';
 import { HelpcomponentComponent } from './helpcomponent/helpcomponent.component';
 import { LoginComponent } from './account/login/login.component';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 
 import { MatButtonModule } from '@angular/material/button';
@@ -43,7 +43,7 @@ import { HttpClientModule } from '@angular/common/http';
     ComponentsModule,
     MatIconModule,  
     ReactiveFormsModule,
-
+    FormsModule,
     HttpClientModule,
 
      // Angular Material Components

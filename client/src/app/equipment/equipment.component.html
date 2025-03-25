@@ -1,1 +1,83 @@
-<p>equipment works!</p>
+<div class="crud-container equipment-wrapper">
+    <h1>Product Management</h1>
+
+    <div class="header-actions">
+        <button class="create-btn" (click)="openCreateModal()">Create New Equipment</button>
+    </div>
+
+    <div class="product-list">
+        <h2>Product List</h2>
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Code</th>
+                    <th>Designation</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let item of equipmentList; let i = index">
+                    <td>{{item.id}}</td>
+                    <td>{{item.code}}</td>
+                    <td>{{item.designation}}</td>
+                    <td class="actions">
+                        <button class="edit btn btn-primary btn-sm" (click)="editEquipment(item)">Edit</button>
+                        <button class="delete btn btn-danger btn-sm" (click)="deleteEquipment(item)">Delete</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="modal" [class.active]="showModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">{{ equipmentObj.id === 0 ? 'Create Product' : 'Edit Product' }}</h2>
+                <button type="button" class="btn-close" (click)="closeModal()" aria-label="Close"></button>
+            </div>
+            <form>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="code" class="form-label">Code</label>
+                                <input 
+                                    type="text" 
+                                    class="form-control" 
+                                    [(ngModel)]="equipmentObj.code" 
+                                    id="code" 
+                                    name="code" 
+                                    placeholder="Enter product code" 
+                                    required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="designation" class="form-label">Designation</label>
+                                <input 
+                                    type="text" 
+                                    class="form-control" 
+                                    [(ngModel)]="equipmentObj.designation" 
+                                    id="designation" 
+                                    name="designation" 
+                                    placeholder="Enter product designation" 
+                                    required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div *ngIf="equipmentObj.id === 0">
+                        <button type="button" class="btn btn-primary save-btn" (click)="onSave()">Create</button>
+                        <button type="button" class="btn btn-secondary cancel-btn" (click)="closeModal()">Cancel</button>
+                    </div>
+                    <div *ngIf="equipmentObj.id !== 0">
+                        <button type="button" class="btn btn-primary save-btn" (click)="onUpdate()">Update</button>
+                        <button type="button" class="btn btn-secondary cancel-btn" (click)="closeModal()">Cancel</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

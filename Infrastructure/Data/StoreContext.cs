@@ -1,23 +1,22 @@
-using System;
-using Core.Entities;    // get the Product class from Core.Entities
+using Core.Entities;
 using Infrastructure.Config;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore; // IdentityDbContext pre-installed from Microsoft.AspNetCore.Identity.EntityFrameworkCore from Nuget Package
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data;
 
-public class StoreContext(DbContextOptions options) : IdentityDbContext<AppUser>(options)
+public class StoreContext : IdentityDbContext<AppUser>
 {
-    // (DbContextOptions options) is a constructor in a new way
+    public StoreContext(DbContextOptions<StoreContext> options) : base(options)
+    {
+    }
 
     public DbSet<Product> Products { get; set; }
+    public DbSet<Equipment> Equipments { get; set; } // Add this
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProductConfiguration).Assembly); // aply any configuration to Product table in gmao database based on Product Configuration inside Infrastructure/Config/ProductConfiguration.cs
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProductConfiguration).Assembly);
     }
-
-
-
 }
