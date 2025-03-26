@@ -2,8 +2,8 @@ using Core.Entities;
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace API.Controllers
@@ -19,88 +19,129 @@ namespace API.Controllers
             _context = context;
         }
 
-        // GET: api/equipment
+        // GET: api/Equipment
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Equipment>>> GetEquipments()
         {
-            return await _context.Equipments.ToListAsync();
+            var equipments = await _context.Equipments
+                .Include(e => e.FamilleEquipment)
+                .ToListAsync();
+            return Ok(equipments);
         }
 
-        // GET: api/equipment/5
+        // GET: api/Equipment/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Equipment>> GetEquipment(int id)
         {
-            var equipment = await _context.Equipments.FindAsync(id);
+            var equipment = await _context.Equipments
+                .Include(e => e.FamilleEquipment)
+                .FirstOrDefaultAsync(e => e.Id == id);
 
             if (equipment == null)
-            {
                 return NotFound();
-            }
 
-            return equipment;
+            return Ok(equipment);
         }
 
-        // POST: api/equipment
+        // POST: api/Equipment
         [HttpPost]
-        public async Task<ActionResult<Equipment>> CreateEquipment(Equipment equipment)
+        public async Task<ActionResult<Equipment>> CreateEquipment([FromBody] Equipment equipment)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            if (equipment == null)
+                return BadRequest("Equipment cannot be null");
 
-            _context.Equipments.Add(equipment);
-            await _context.SaveChangesAsync();
+            if (string.IsNullOrWhiteSpace(equipment.Code))
+                return BadRequest("Code is required");
 
-            return CreatedAtAction(nameof(GetEquipment), new { id = equipment.Id }, equipment);
-        }
+            if (string.IsNullOrWhiteSpace(equipment.Designation))
+                return BadRequest("Designation is required");
 
-        // PUT: api/equipment/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateEquipment(int id, Equipment equipment)
-        {
-            if (id != equipment.Id)
-            {
-                return BadRequest("Equipment ID mismatch.");
-            }
+            var familleEquipment = await _context.FamilleEquipments
+                .FirstOrDefaultAsync(f => f.Id == equipment.FamilleEquipmentId);
 
-            _context.Entry(equipment).State = EntityState.Modified;
+            if (familleEquipment == null)
+                return BadRequest($"Invalid FamilleEquipmentId: {equipment.FamilleEquipmentId}");
 
             try
             {
+                _context.Equipments.Add(equipment);
                 await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!EquipmentExists(id))
-                {
-                    return NotFound();
-                }
-                throw;
-            }
 
-            return NoContent();
+                var savedEquipment = await _context.Equipments
+                    .Include(e => e.FamilleEquipment)
+                    .FirstOrDefaultAsync(e => e.Id == equipment.Id);
+
+                return CreatedAtAction(nameof(GetEquipment), new { id = equipment.Id }, savedEquipment);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
-        // DELETE: api/equipment/5
+        // PUT: api/Equipment/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateEquipment(int id, [FromBody] Equipment equipment)
+        {
+            if (equipment == null)
+                return BadRequest("Equipment cannot be null");
+
+            if (id != equipment.Id)
+                return BadRequest("Equipment ID mismatch");
+
+            if (string.IsNullOrWhiteSpace(equipment.Code))
+                return BadRequest("Code is required");
+
+            if (string.IsNullOrWhiteSpace(equipment.Designation))
+                return BadRequest("Designation is required");
+
+            var existingEquipment = await _context.Equipments
+                .FirstOrDefaultAsync(e => e.Id == id);
+
+            if (existingEquipment == null)
+                return NotFound($"Equipment with ID {id} not found");
+
+            var familleEquipment = await _context.FamilleEquipments
+                .FirstOrDefaultAsync(f => f.Id == equipment.FamilleEquipmentId);
+
+            if (familleEquipment == null)
+                return BadRequest($"Invalid FamilleEquipmentId: {equipment.FamilleEquipmentId}");
+
+            try
+            {
+                existingEquipment.Code = equipment.Code;
+                existingEquipment.Designation = equipment.Designation;
+                existingEquipment.FamilleEquipmentId = equipment.FamilleEquipmentId;
+
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        // DELETE: api/Equipment/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteEquipment(int id)
         {
-            var equipment = await _context.Equipments.FindAsync(id);
+            var equipment = await _context.Equipments
+                .FirstOrDefaultAsync(e => e.Id == id);
+
             if (equipment == null)
+                return NotFound($"Equipment with ID {id} not found");
+
+            try
             {
-                return NotFound();
+                _context.Equipments.Remove(equipment);
+                await _context.SaveChangesAsync();
+                return NoContent();
             }
-
-            _context.Equipments.Remove(equipment);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        private bool EquipmentExists(int id)
-        {
-            return _context.Equipments.Any(e => e.Id == id);
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
     }
 }
