@@ -1,19 +1,24 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, inject, OnInit } from '@angular/core';
 
-// Interface for Equipment
 interface Equipment {
     id: number;
     code: string;
     designation: string;
     familleEquipmentId: number;
     familleEquipment?: { id: number; libelleFamille: string };
+    equipmentCriticiteId: number;
+    equipmentCriticite?: { id: number; criticiteLevel: string };
 }
 
-// Interface for FamilleEquipment
 interface FamilleEquipment {
     id: number;
     libelleFamille: string;
+}
+
+interface EquipmentCriticite {
+    id: number;
+    criticiteLevel: string;
 }
 
 @Component({
@@ -26,20 +31,24 @@ export class EquipmentComponent implements OnInit {
 
     baseUrl = "https://localhost:5001/api/Equipment";
     familleBaseUrl = "https://localhost:5001/api/FamilleEquipment";
+    criticiteBaseUrl = "https://localhost:5001/api/EquipmentCriticite";
 
     equipmentList: Equipment[] = [];
     familleList: FamilleEquipment[] = [];
+    criticiteList: EquipmentCriticite[] = [];
     equipmentObj: Equipment = {
         id: 0,
         code: "",
         designation: "",
-        familleEquipmentId: 0
+        familleEquipmentId: 0,
+        equipmentCriticiteId: 0
     };
     showModal: boolean = false;
 
     ngOnInit(): void {
         this.getAllEquipment();
         this.getFamilleEquipments();
+        this.getEquipmentCriticites();
     }
 
     getAllEquipment() {
@@ -68,6 +77,19 @@ export class EquipmentComponent implements OnInit {
         });
     }
 
+    getEquipmentCriticites() {
+        this.http.get<EquipmentCriticite[]>(this.criticiteBaseUrl).subscribe({
+            next: (res: EquipmentCriticite[]) => {
+                this.criticiteList = res;
+                console.log('Fetched equipment criticites:', res);
+            },
+            error: (err) => {
+                console.error('Error fetching equipment criticites:', err.status, err.statusText, err.error);
+                alert(`Failed to fetch equipment criticites: ${err.status} - ${err.statusText || 'Server error'}`);
+            }
+        });
+    }
+
     openCreateModal() {
         this.resetForm();
         this.showModal = true;
@@ -79,14 +101,15 @@ export class EquipmentComponent implements OnInit {
 
     onSave() {
         if (!this.isValidEquipment()) {
-            alert('Please fill in all required fields: Code, Designation, and Family.');
+            alert('Please fill in all required fields: Code, Designation, Family, and Criticite.');
             return;
         }
 
         const newEquipment = {
             code: this.equipmentObj.code,
             designation: this.equipmentObj.designation,
-            familleEquipmentId: Number(this.equipmentObj.familleEquipmentId) // Convert to number
+            familleEquipmentId: Number(this.equipmentObj.familleEquipmentId),
+            equipmentCriticiteId: Number(this.equipmentObj.equipmentCriticiteId)
         };
 
         console.log('Sending new equipment:', newEquipment);
@@ -108,7 +131,7 @@ export class EquipmentComponent implements OnInit {
 
     onUpdate() {
         if (!this.isValidEquipment()) {
-            alert('Please fill in all required fields: Code, Designation, and Family.');
+            alert('Please fill in all required fields: Code, Designation, Family, and Criticite.');
             return;
         }
 
@@ -116,7 +139,8 @@ export class EquipmentComponent implements OnInit {
             id: this.equipmentObj.id,
             code: this.equipmentObj.code,
             designation: this.equipmentObj.designation,
-            familleEquipmentId: Number(this.equipmentObj.familleEquipmentId) // Convert to number
+            familleEquipmentId: Number(this.equipmentObj.familleEquipmentId),
+            equipmentCriticiteId: Number(this.equipmentObj.equipmentCriticiteId)
         };
 
         console.log('Sending updated equipment:', updateEquipment);
@@ -163,14 +187,16 @@ export class EquipmentComponent implements OnInit {
             id: 0,
             code: "",
             designation: "",
-            familleEquipmentId: 0
+            familleEquipmentId: 0,
+            equipmentCriticiteId: 0
         };
     }
 
-    private isValidEquipment(): boolean {
+    public isValidEquipment(): boolean {
         return !!this.equipmentObj.code &&
                !!this.equipmentObj.designation &&
-               this.equipmentObj.familleEquipmentId > 0;
+               this.equipmentObj.familleEquipmentId > 0 &&
+               this.equipmentObj.equipmentCriticiteId > 0;
     }
 
     private getErrorMessage(err: any): string {
@@ -178,6 +204,9 @@ export class EquipmentComponent implements OnInit {
             const errors = err.error.errors;
             if (errors.FamilleEquipment) {
                 return `Invalid Family ID: ${this.equipmentObj.familleEquipmentId}`;
+            }
+            if (errors.EquipmentCriticite) {
+                return `Invalid Criticite ID: ${this.equipmentObj.equipmentCriticiteId}`;
             }
             return Object.values(errors).join(', ');
         }

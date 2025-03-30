@@ -111,14 +111,39 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<int>("EquipmentCriticiteId")
+                        .HasColumnType("int")
+                        .HasColumnName("EquipmentCriticiteId");
+
                     b.Property<int>("FamilleEquipmentId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("FamilleEquipmentId");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("EquipmentCriticiteId");
 
                     b.HasIndex("FamilleEquipmentId");
 
                     b.ToTable("Equipments");
+                });
+
+            modelBuilder.Entity("Core.Entities.EquipmentCriticite", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CriticiteLevel")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EquipmentCriticites");
                 });
 
             modelBuilder.Entity("Core.Entities.FamilleEquipment", b =>
@@ -313,11 +338,19 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Core.Entities.Equipment", b =>
                 {
+                    b.HasOne("Core.Entities.EquipmentCriticite", "EquipmentCriticite")
+                        .WithMany("Equipments")
+                        .HasForeignKey("EquipmentCriticiteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Core.Entities.FamilleEquipment", "FamilleEquipment")
                         .WithMany("Equipments")
                         .HasForeignKey("FamilleEquipmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("EquipmentCriticite");
 
                     b.Navigation("FamilleEquipment");
                 });
@@ -371,6 +404,11 @@ namespace Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Core.Entities.EquipmentCriticite", b =>
+                {
+                    b.Navigation("Equipments");
                 });
 
             modelBuilder.Entity("Core.Entities.FamilleEquipment", b =>

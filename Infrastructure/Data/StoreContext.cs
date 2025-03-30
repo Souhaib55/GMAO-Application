@@ -12,8 +12,9 @@ public class StoreContext : IdentityDbContext<AppUser>
     }
 
     public DbSet<Product> Products { get; set; }
-    public DbSet<Equipment> Equipments { get; set; } // Add this
-    public DbSet<FamilleEquipment> FamilleEquipments { get; set; } // Add this
+    public DbSet<Equipment> Equipments { get; set; }
+    public DbSet<FamilleEquipment> FamilleEquipments { get; set; }
+    public DbSet<EquipmentCriticite> EquipmentCriticites { get; set; } // Add this
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

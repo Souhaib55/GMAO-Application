@@ -11,15 +11,21 @@ public class EquipmentConfiguration : IEntityTypeConfiguration<Equipment>
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Code)
                .IsRequired()
-               .HasMaxLength(50); // Example constraint
+               .HasMaxLength(50);
         builder.Property(e => e.Designation)
                .IsRequired()
-               .HasMaxLength(200); // Example constraint
+               .HasMaxLength(200);
 
-        // Define the relationship with FamilleEquipment
+        // Relationship with FamilleEquipment
         builder.HasOne(e => e.FamilleEquipment)
                .WithMany(fe => fe.Equipments)
                .HasForeignKey(e => e.FamilleEquipmentId)
-               .OnDelete(DeleteBehavior.Cascade); // Cascade delete: if a family is deleted, its equipments are too
+               .OnDelete(DeleteBehavior.Cascade);
+
+        // Relationship with EquipmentCriticite
+        builder.HasOne(e => e.EquipmentCriticite)
+               .WithMany(ec => ec.Equipments)
+               .HasForeignKey(e => e.EquipmentCriticiteId)
+               .OnDelete(DeleteBehavior.Cascade); // Cascade delete
     }
 }

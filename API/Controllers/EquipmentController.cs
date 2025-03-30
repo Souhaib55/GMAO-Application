@@ -19,22 +19,22 @@ namespace API.Controllers
             _context = context;
         }
 
-        // GET: api/Equipment
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Equipment>>> GetEquipments()
         {
             var equipments = await _context.Equipments
                 .Include(e => e.FamilleEquipment)
+                .Include(e => e.EquipmentCriticite) // Include criticite
                 .ToListAsync();
             return Ok(equipments);
         }
 
-        // GET: api/Equipment/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Equipment>> GetEquipment(int id)
         {
             var equipment = await _context.Equipments
                 .Include(e => e.FamilleEquipment)
+                .Include(e => e.EquipmentCriticite) // Include criticite
                 .FirstOrDefaultAsync(e => e.Id == id);
 
             if (equipment == null)
@@ -43,7 +43,6 @@ namespace API.Controllers
             return Ok(equipment);
         }
 
-        // POST: api/Equipment
         [HttpPost]
         public async Task<ActionResult<Equipment>> CreateEquipment([FromBody] Equipment equipment)
         {
@@ -58,9 +57,13 @@ namespace API.Controllers
 
             var familleEquipment = await _context.FamilleEquipments
                 .FirstOrDefaultAsync(f => f.Id == equipment.FamilleEquipmentId);
-
             if (familleEquipment == null)
                 return BadRequest($"Invalid FamilleEquipmentId: {equipment.FamilleEquipmentId}");
+
+            var equipmentCriticite = await _context.EquipmentCriticites
+                .FirstOrDefaultAsync(ec => ec.Id == equipment.EquipmentCriticiteId);
+            if (equipmentCriticite == null)
+                return BadRequest($"Invalid EquipmentCriticiteId: {equipment.EquipmentCriticiteId}");
 
             try
             {
@@ -69,6 +72,7 @@ namespace API.Controllers
 
                 var savedEquipment = await _context.Equipments
                     .Include(e => e.FamilleEquipment)
+                    .Include(e => e.EquipmentCriticite) // Include criticite
                     .FirstOrDefaultAsync(e => e.Id == equipment.Id);
 
                 return CreatedAtAction(nameof(GetEquipment), new { id = equipment.Id }, savedEquipment);
@@ -79,7 +83,6 @@ namespace API.Controllers
             }
         }
 
-        // PUT: api/Equipment/5
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateEquipment(int id, [FromBody] Equipment equipment)
         {
@@ -97,21 +100,25 @@ namespace API.Controllers
 
             var existingEquipment = await _context.Equipments
                 .FirstOrDefaultAsync(e => e.Id == id);
-
             if (existingEquipment == null)
                 return NotFound($"Equipment with ID {id} not found");
 
             var familleEquipment = await _context.FamilleEquipments
                 .FirstOrDefaultAsync(f => f.Id == equipment.FamilleEquipmentId);
-
             if (familleEquipment == null)
                 return BadRequest($"Invalid FamilleEquipmentId: {equipment.FamilleEquipmentId}");
+
+            var equipmentCriticite = await _context.EquipmentCriticites
+                .FirstOrDefaultAsync(ec => ec.Id == equipment.EquipmentCriticiteId);
+            if (equipmentCriticite == null)
+                return BadRequest($"Invalid EquipmentCriticiteId: {equipment.EquipmentCriticiteId}");
 
             try
             {
                 existingEquipment.Code = equipment.Code;
                 existingEquipment.Designation = equipment.Designation;
                 existingEquipment.FamilleEquipmentId = equipment.FamilleEquipmentId;
+                existingEquipment.EquipmentCriticiteId = equipment.EquipmentCriticiteId;
 
                 await _context.SaveChangesAsync();
                 return NoContent();
@@ -122,7 +129,6 @@ namespace API.Controllers
             }
         }
 
-        // DELETE: api/Equipment/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteEquipment(int id)
         {
