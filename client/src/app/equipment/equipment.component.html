@@ -1,3 +1,18 @@
+<!-- Add this at the top of your template -->
+<div class="popup-container">
+    <div *ngIf="showPopup" [class]="'popup popup-' + popupType" @slideInOut>
+        <mat-icon class="popup-icon">
+            {{ popupType === 'success' ? 'check_circle' : 'error' }}
+        </mat-icon>
+        <div>{{ popupMessage }}</div>
+        <mat-icon class="popup-close" (click)="hidePopup()">close</mat-icon>
+    </div>
+</div>
+
+<!-- Rest of your existing template remains the same -->
+
+
+
 <div class="row" style="margin-top: 100px;">
     <div class="col-lg-12 col-md-12">
         <div class="card">
@@ -5,7 +20,6 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h4 class="card-title">Equipment Management</h4>
-                        <p class="card-category">Manage your equipment inventory</p>
                     </div>
                     <button class="btn btn-primary create-btn" (click)="openCreateModal()">
                         <mat-icon class="me-2">add</mat-icon>Create New Equipment
@@ -13,10 +27,22 @@
                 </div>
             </div>
             <div class="card-body table-responsive">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <mat-form-field appearance="outline" class="narrow-select">
+                          <mat-select [(ngModel)]="pageSize" (selectionChange)="changePageSize()">
+                            <mat-option *ngFor="let size of pageSizeOptions" [value]="size">
+                              {{ size }}
+                            </mat-option>
+                          </mat-select>
+                        </mat-form-field>
+                        <span class="entries-text">entries</span>
+                      </div>
+                </div>
+
                 <table class="table table-hover">
                     <thead class="text-warning">
                         <tr>
-                            <th>ID</th>
                             <th>Code</th>
                             <th>Designation</th>
                             <th>Family</th>
@@ -25,14 +51,13 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr *ngFor="let item of equipmentList; let i = index">
-                            <td>{{ item.id }}</td>
+                        <tr *ngFor="let item of paginatedEquipmentList; let i = index">
                             <td>{{ item.code }}</td>
                             <td>{{ item.designation }}</td>
                             <td>{{ item.familleEquipment?.libelleFamille || 'N/A' }}</td>
                             <td>{{ item.equipmentCriticite?.criticiteLevel || 'N/A' }}</td>
                             <td>
-                                <button class="btn btn-primary btn-sm me-2" 
+                                <button class="btn btn-primary btn-sm me-2 edit-btn" 
                                         (click)="editEquipment(item)">
                                     <mat-icon class="me-1">edit</mat-icon>Edit
                                 </button>
@@ -42,17 +67,24 @@
                                 </button>
                             </td>
                         </tr>
-                        <tr *ngIf="equipmentList.length === 0">
+                        <tr *ngIf="paginatedEquipmentList.length === 0">
                             <td colspan="6" class="text-center">No equipment found.</td>
                         </tr>
                     </tbody>
                 </table>
+
+                <!-- Pagination Controls -->
+                <div class="pagination mt-3 d-flex justify-content-between align-items-center">
+                    <button class="btn btn-outline-primary" [disabled]="currentPage === 1" (click)="previousPage()">Previous</button>
+                    <span>Page {{ currentPage }} of {{ totalPages }}</span>
+                    <button class="btn btn-outline-primary" [disabled]="currentPage === totalPages" (click)="nextPage()">Next</button>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Enhanced CRUD Modal -->
+<!-- CRUD Modal -->
 <div class="modal fade" [class.show]="showModal" [style.display]="showModal ? 'block' : 'none'">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content custom-modal">
@@ -60,7 +92,7 @@
                 <h5 class="modal-title">
                     {{ equipmentObj.id === 0 ? 'Create New Equipment' : 'Edit Equipment' }}
                 </h5>
-                <button type="button" class="close-btn" (click)="closeModal()">&times;</button>
+                <button type="button" class="close-btn" (click)="closeModal()">×</button>
             </div>
             
             <form (ngSubmit)="equipmentObj.id === 0 ? onSave() : onUpdate()">
@@ -96,9 +128,8 @@
                                     name="familleEquipmentId" 
                                     id="familySelect"
                                     required>
-                                <option value="" disabled selected>Choose a family</option>
                                 <option *ngFor="let famille of familleList" 
-                                        [value]="famille.id">
+                                        [ngValue]="famille.id">
                                     {{ famille.libelleFamille }}
                                 </option>
                             </select>
@@ -112,9 +143,9 @@
                                     name="equipmentCriticiteId" 
                                     id="criticiteSelect"
                                     required>
-                                <option value="" disabled selected>Choose a criticite level</option>
+                                <option [ngValue]="null" disabled selected>Choose a criticite level</option>
                                 <option *ngFor="let criticite of criticiteList" 
-                                        [value]="criticite.id">
+                                        [ngValue]="criticite.id">
                                     {{ criticite.criticiteLevel }}
                                 </option>
                             </select>

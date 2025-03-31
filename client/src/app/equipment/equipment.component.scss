@@ -1,3 +1,81 @@
+.popup-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+  }
+  
+  .popup {
+    font-size: 1rem;
+    box-shadow: 0px 5px 25px 0px rgba(0, 0, 0, 0.2);
+    border: none;
+    line-height: 1.7;
+    max-width: 300px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    // Slowed down entrance animation (changed from 0.3s to 0.6s)
+    animation: slideInUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  
+    &.popup-success {
+      background-color: #28a745;
+    }
+  
+    &.popup-error {
+      background-color: #dc3545;
+    }
+  
+    .popup-icon {
+      margin-right: 10px;
+      font-size: 1.5rem;
+    }
+  
+    .popup-close {
+      margin-left: 10px;
+      cursor: pointer;
+      opacity: 0.8;
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+  
+  /* Slower slide up from bottom animation */
+  @keyframes slideInUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  /* Slower slide down exit animation */
+  .slideOutDown {
+    // Changed from 0.3s to 0.6s
+    animation: slideOutDown 0.6s ease-in forwards;
+  }
+  
+  @keyframes slideOutDown {
+    from {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+  }
+
+// Rest of your component styles...
+
+
+
 /* Modal Styling */
 .custom-modal {
     border-radius: 10px;
@@ -5,8 +83,15 @@
     overflow: hidden;
 }
 
+.create-btn {
+    background-color: #3f51b5 !important; /* Blue color for create button */
+}
+
+.edit-btn {
+    background-color: #3f51b5 !important; /* Blue color for edit button */
+}
 .custom-modal-header {
-    background-color: rgb(145, 14, 145); /* Gold color matching the table */
+    background-color: #3f51b5; /* Gold color matching the table */
     color: white;
     padding: 15px;
     display: flex;
@@ -42,12 +127,7 @@
     transition: border-color 0.3s ease-in-out;
 }
 
-.custom-modal-body .form-control:focus,
-.custom-modal-body .form-select:focus {
-    border-color: #6a1b9a; /* Purple focus color */
-    outline: none;
-    box-shadow: 0 0 5px rgba(106, 27, 154, 0.25);
-}
+
 
 .custom-modal-footer {
     background-color: #f1f1f1;
@@ -72,16 +152,58 @@
 }
 
 .custom-modal-footer .btn-primary {
-    background-color: #6a1b9a; /* Purple create/update button */
+    background-color: #3f51b5; /* Purple create/update button */
     color: white;
     border: none;
 }
 
 .custom-modal-footer .btn-primary:hover {
-    background-color: #4a148c;
+    background-color: #3f51b5;
 }
 
 /* Add spacing between form fields */
 .custom-modal-body .row .col-md-12 {
     margin-bottom: 15px;
+}
+
+
+.pagination {
+    .btn {
+        min-width: 40px;
+    }
+}
+
+
+
+.row {
+    max-width: 90%; /* Reduce the width of the row to take less browser width */
+    margin: 0 auto; /* Center the row */
+  }
+  
+/* Reduce mat-select width */
+.narrow-select {
+    width: 7em;  /* Adjust this value as needed */
+  }
+  
+  /* Target the select trigger to make it more compact */
+  .narrow-select .mat-select-trigger {
+    min-width: auto;
+  }
+  
+  /* Style for the entries text */
+  .entries-text {
+    font-size: 1.1rem;  /* Increase font size */
+    margin-left: 0.5rem;  /* Adjust spacing */
+    vertical-align: middle;  /* Align with select */
+  }
+
+
+.success-snackbar {
+    background-color: #4caf50;
+    color: white;
+}
+
+.error-snackbar {
+    background-color: #f44336;
+    color: white;
 }

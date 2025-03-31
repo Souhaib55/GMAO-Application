@@ -18,16 +18,28 @@ namespace API.Controllers
         {
             _context = context;
         }
+        
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Equipment>>> GetEquipments()
+        public async Task<ActionResult<IEnumerable<Equipment>>> GetEquipments(int page = 1, int pageSize = 5)
         {
+            var totalCount = await _context.Equipments.CountAsync();
             var equipments = await _context.Equipments
                 .Include(e => e.FamilleEquipment)
-                .Include(e => e.EquipmentCriticite) // Include criticite
+                .Include(e => e.EquipmentCriticite)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
-            return Ok(equipments);
+
+            return Ok(new
+            {
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+                Data = equipments
+            });
         }
+
 
         [HttpGet("{id}")]
         public async Task<ActionResult<Equipment>> GetEquipment(int id)
