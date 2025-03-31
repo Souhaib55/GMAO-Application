@@ -1,3 +1,4 @@
+// Core/Entities/Equipment.cs
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Core.Entities;
@@ -12,7 +13,9 @@ public class Equipment
     public int FamilleEquipmentId { get; set; }
     public FamilleEquipment? FamilleEquipment { get; set; }
 
-    [Column("EquipmentCriticiteId")] // Explicit column mapping
-    public int EquipmentCriticiteId { get; set; } // Foreign key to EquipmentCriticite
-    public EquipmentCriticite? EquipmentCriticite { get; set; } // Navigation property
+    [Column("EquipmentCriticiteId")]
+    public int EquipmentCriticiteId { get; set; }
+    public EquipmentCriticite? EquipmentCriticite { get; set; }
+
+    public bool IsDeleted { get; set; } = false; // New property for soft delete
 }

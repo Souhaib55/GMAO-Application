@@ -119,6 +119,9 @@ namespace Infrastructure.Migrations
                         .HasColumnType("int")
                         .HasColumnName("FamilleEquipmentId");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.HasKey("Id");
 
                     b.HasIndex("EquipmentCriticiteId");

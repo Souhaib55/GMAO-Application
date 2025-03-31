@@ -65,18 +65,18 @@ export class EquipmentComponent implements OnInit {
   getAllEquipment() {
     const url = `${this.baseUrl}?page=${this.currentPage}&pageSize=${this.pageSize}`;
     this.http.get<any>(url).subscribe({
-      next: (res: any) => {
-        this.paginatedEquipmentList = res.data;
-        this.totalCount = res.totalCount;
-        this.totalPages = Math.ceil(this.totalCount / this.pageSize);
-      },
-      error: (err) => {
-        this.showError('Failed to fetch equipment');
-        console.error('Error fetching equipment:', err);
-      }
+        next: (res: any) => {
+            this.paginatedEquipmentList = res.data; // Only active equipment is returned
+            this.totalCount = res.totalCount;
+            this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+        },
+        error: (err) => {
+            this.showError('Failed to fetch equipment');
+            console.error('Error fetching equipment:', err);
+        }
     });
   }
-
+  
   getFamilleEquipments() {
     this.http.get<FamilleEquipment[]>(this.familleBaseUrl).subscribe({
       next: (res: FamilleEquipment[]) => {
@@ -189,13 +189,13 @@ export class EquipmentComponent implements OnInit {
     if (!confirm(`Delete ${data.code} - ${data.designation}?`)) return;
 
     this.http.delete(`${this.baseUrl}/${data.id}`).subscribe({
-      next: () => {
-        this.getAllEquipment();
-        this.showSuccess('Equipment deleted successfully!');
-      },
-      error: (err) => {
-        this.handleError(err, 'delete equipment');
-      }
+        next: () => {
+            this.getAllEquipment(); // Refresh the list, which will exclude deleted equipment
+            this.showSuccess('Equipment deleted successfully!');
+        },
+        error: (err) => {
+            this.handleError(err, 'delete equipment');
+        }
     });
   }
 

@@ -23,8 +23,9 @@ namespace API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Equipment>>> GetEquipments(int page = 1, int pageSize = 5)
         {
-            var totalCount = await _context.Equipments.CountAsync();
+            var totalCount = await _context.Equipments.Where(e => !e.IsDeleted).CountAsync();
             var equipments = await _context.Equipments
+                .Where(e => !e.IsDeleted) // Filter out deleted equipment
                 .Include(e => e.FamilleEquipment)
                 .Include(e => e.EquipmentCriticite)
                 .Skip((page - 1) * pageSize)
@@ -45,8 +46,9 @@ namespace API.Controllers
         public async Task<ActionResult<Equipment>> GetEquipment(int id)
         {
             var equipment = await _context.Equipments
+                .Where(e => !e.IsDeleted) // Filter out deleted equipment
                 .Include(e => e.FamilleEquipment)
-                .Include(e => e.EquipmentCriticite) // Include criticite
+                .Include(e => e.EquipmentCriticite)
                 .FirstOrDefaultAsync(e => e.Id == id);
 
             if (equipment == null)
@@ -145,14 +147,14 @@ namespace API.Controllers
         public async Task<IActionResult> DeleteEquipment(int id)
         {
             var equipment = await _context.Equipments
-                .FirstOrDefaultAsync(e => e.Id == id);
+                .FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted); // Check if it exists and isn't already deleted
 
             if (equipment == null)
-                return NotFound($"Equipment with ID {id} not found");
+                return NotFound($"Equipment with ID {id} not found or already deleted");
 
             try
             {
-                _context.Equipments.Remove(equipment);
+                equipment.IsDeleted = true; // Mark as deleted
                 await _context.SaveChangesAsync();
                 return NoContent();
             }
@@ -161,5 +163,6 @@ namespace API.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+        
     }
 }
