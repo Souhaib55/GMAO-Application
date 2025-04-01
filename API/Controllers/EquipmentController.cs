@@ -60,24 +60,17 @@ namespace API.Controllers
         [HttpPost]
         public async Task<ActionResult<Equipment>> CreateEquipment([FromBody] Equipment equipment)
         {
-            if (equipment == null)
-                return BadRequest("Equipment cannot be null");
+            if (equipment == null) return BadRequest("Equipment cannot be null");
+            if (string.IsNullOrWhiteSpace(equipment.Code)) return BadRequest("Code is required");
+            if (string.IsNullOrWhiteSpace(equipment.Designation)) return BadRequest("Designation is required");
 
-            if (string.IsNullOrWhiteSpace(equipment.Code))
-                return BadRequest("Code is required");
+            var familleEquipment = await _context.FamilleEquipments.FirstOrDefaultAsync(f => f.Id == equipment.FamilleEquipmentId);
+            if (familleEquipment == null) return BadRequest($"Invalid FamilleEquipmentId: {equipment.FamilleEquipmentId}");
 
-            if (string.IsNullOrWhiteSpace(equipment.Designation))
-                return BadRequest("Designation is required");
+            var equipmentCriticite = await _context.EquipmentCriticites.FirstOrDefaultAsync(ec => ec.Id == equipment.EquipmentCriticiteId);
+            if (equipmentCriticite == null) return BadRequest($"Invalid EquipmentCriticiteId: {equipment.EquipmentCriticiteId}");
 
-            var familleEquipment = await _context.FamilleEquipments
-                .FirstOrDefaultAsync(f => f.Id == equipment.FamilleEquipmentId);
-            if (familleEquipment == null)
-                return BadRequest($"Invalid FamilleEquipmentId: {equipment.FamilleEquipmentId}");
-
-            var equipmentCriticite = await _context.EquipmentCriticites
-                .FirstOrDefaultAsync(ec => ec.Id == equipment.EquipmentCriticiteId);
-            if (equipmentCriticite == null)
-                return BadRequest($"Invalid EquipmentCriticiteId: {equipment.EquipmentCriticiteId}");
+            equipment.CreatedOn = DateTime.Now; // Set CreatedOn for new entries
 
             try
             {
@@ -86,7 +79,7 @@ namespace API.Controllers
 
                 var savedEquipment = await _context.Equipments
                     .Include(e => e.FamilleEquipment)
-                    .Include(e => e.EquipmentCriticite) // Include criticite
+                    .Include(e => e.EquipmentCriticite)
                     .FirstOrDefaultAsync(e => e.Id == equipment.Id);
 
                 return CreatedAtAction(nameof(GetEquipment), new { id = equipment.Id }, savedEquipment);
@@ -100,32 +93,19 @@ namespace API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateEquipment(int id, [FromBody] Equipment equipment)
         {
-            if (equipment == null)
-                return BadRequest("Equipment cannot be null");
+            if (equipment == null) return BadRequest("Equipment cannot be null");
+            if (id != equipment.Id) return BadRequest("Equipment ID mismatch");
+            if (string.IsNullOrWhiteSpace(equipment.Code)) return BadRequest("Code is required");
+            if (string.IsNullOrWhiteSpace(equipment.Designation)) return BadRequest("Designation is required");
 
-            if (id != equipment.Id)
-                return BadRequest("Equipment ID mismatch");
+            var existingEquipment = await _context.Equipments.FirstOrDefaultAsync(e => e.Id == id);
+            if (existingEquipment == null) return NotFound($"Equipment with ID {id} not found");
 
-            if (string.IsNullOrWhiteSpace(equipment.Code))
-                return BadRequest("Code is required");
+            var familleEquipment = await _context.FamilleEquipments.FirstOrDefaultAsync(f => f.Id == equipment.FamilleEquipmentId);
+            if (familleEquipment == null) return BadRequest($"Invalid FamilleEquipmentId: {equipment.FamilleEquipmentId}");
 
-            if (string.IsNullOrWhiteSpace(equipment.Designation))
-                return BadRequest("Designation is required");
-
-            var existingEquipment = await _context.Equipments
-                .FirstOrDefaultAsync(e => e.Id == id);
-            if (existingEquipment == null)
-                return NotFound($"Equipment with ID {id} not found");
-
-            var familleEquipment = await _context.FamilleEquipments
-                .FirstOrDefaultAsync(f => f.Id == equipment.FamilleEquipmentId);
-            if (familleEquipment == null)
-                return BadRequest($"Invalid FamilleEquipmentId: {equipment.FamilleEquipmentId}");
-
-            var equipmentCriticite = await _context.EquipmentCriticites
-                .FirstOrDefaultAsync(ec => ec.Id == equipment.EquipmentCriticiteId);
-            if (equipmentCriticite == null)
-                return BadRequest($"Invalid EquipmentCriticiteId: {equipment.EquipmentCriticiteId}");
+            var equipmentCriticite = await _context.EquipmentCriticites.FirstOrDefaultAsync(ec => ec.Id == equipment.EquipmentCriticiteId);
+            if (equipmentCriticite == null) return BadRequest($"Invalid EquipmentCriticiteId: {equipment.EquipmentCriticiteId}");
 
             try
             {
@@ -133,6 +113,7 @@ namespace API.Controllers
                 existingEquipment.Designation = equipment.Designation;
                 existingEquipment.FamilleEquipmentId = equipment.FamilleEquipmentId;
                 existingEquipment.EquipmentCriticiteId = equipment.EquipmentCriticiteId;
+                existingEquipment.CreatedOn = equipment.CreatedOn != default ? equipment.CreatedOn : existingEquipment.CreatedOn; // Preserve or update
 
                 await _context.SaveChangesAsync();
                 return NoContent();
@@ -163,6 +144,6 @@ namespace API.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-        
+
     }
 }

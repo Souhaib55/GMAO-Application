@@ -26,6 +26,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatInputModule } from '@angular/material/input';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatTableModule } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
@@ -34,6 +35,8 @@ import { MatGridListModule } from '@angular/material/grid-list';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { HttpClientModule } from '@angular/common/http';
+import { MatNativeDateModule } from '@angular/material/core';
+import { EquipmentButtonComponent } from './equipment-button/equipment-button.component';
 
 @NgModule({
   imports: [
@@ -47,6 +50,8 @@ import { HttpClientModule } from '@angular/common/http';
     HttpClientModule,
 
      // Angular Material Components
+     MatDatepickerModule,
+     MatNativeDateModule,
     MatButtonModule,
      MatSidenavModule,
      MatListModule,
@@ -65,7 +70,7 @@ import { HttpClientModule } from '@angular/common/http';
   
   declarations: [
     AppComponent,                   // Main app component
-    AdminLayoutComponent, AnalyticsComponent, AskaidatabaseComponent, EquipmentComponent, InterventionComponent, PlanningComponent, StockComponent, RessourcesComponent, ReportsComponent, HelpcomponentComponent, LoginComponent,           // Layout with navbar, sidebar, content
+    AdminLayoutComponent, AnalyticsComponent, AskaidatabaseComponent, EquipmentComponent, InterventionComponent, PlanningComponent, StockComponent, RessourcesComponent, ReportsComponent, HelpcomponentComponent, LoginComponent, EquipmentButtonComponent,           // Layout with navbar, sidebar, content
   ],
   providers: [],
   bootstrap: [AppComponent]

@@ -106,18 +106,21 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<DateTime>("CreatedOn")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("GETDATE()");
+
                     b.Property<string>("Designation")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<int>("EquipmentCriticiteId")
-                        .HasColumnType("int")
-                        .HasColumnName("EquipmentCriticiteId");
+                        .HasColumnType("int");
 
                     b.Property<int>("FamilleEquipmentId")
-                        .HasColumnType("int")
-                        .HasColumnName("FamilleEquipmentId");
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");

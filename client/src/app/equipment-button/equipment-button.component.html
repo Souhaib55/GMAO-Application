@@ -1,0 +1,103 @@
+<div class="form-container">
+    <div class="form-box">
+      <h2 class="form-title">{{ isEditMode ? 'Edit Equipment' : 'Create New Equipment' }}</h2>
+      <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+      <form (ngSubmit)="onSubmit()" class="form-content">
+        <!-- Equipment Code -->
+        <div class="input-group">
+          <label for="codeInput" class="form-label">Equipment Code <span class="required-asterisk">*</span></label>
+          <input
+            type="text"
+            class="form-control custom-input"
+            [(ngModel)]="equipmentObj.code"
+            name="code"
+            id="codeInput"
+            placeholder="Enter equipment code"
+            required
+            #codeInput="ngModel"
+          />
+        </div>
+  
+        <!-- Designation -->
+        <div class="input-group">
+          <label for="designationInput" class="form-label">Designation <span class="required-asterisk">*</span></label>
+          <input
+            type="text"
+            class="form-control custom-input"
+            [(ngModel)]="equipmentObj.designation"
+            name="designation"
+            id="designationInput"
+            placeholder="Enter designation"
+            required
+          />
+        </div>
+  
+        <!-- Family -->
+        <div class="input-group">
+          <label for="familySelect" class="form-label">Family</label>
+          <mat-form-field class="custom-mat-form-field" appearance="outline">
+            <mat-select
+              [(ngModel)]="equipmentObj.familleEquipmentId"
+              name="familleEquipmentId"
+              id="familySelect"
+              placeholder="Select family"
+              required
+            >
+              <mat-option *ngFor="let famille of familleList" [value]="famille.id">
+                {{ famille.libelleFamille }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+  
+        <!-- Criticality Level -->
+        <div class="input-group">
+          <label for="criticiteSelect" class="form-label">Criticality Level</label>
+          <mat-form-field class="custom-mat-form-field" appearance="outline">
+            <mat-select
+              [(ngModel)]="equipmentObj.equipmentCriticiteId"
+              name="equipmentCriticiteId"
+              id="criticiteSelect"
+              placeholder="Choose a criticality level"
+              required
+            >
+              <mat-option *ngFor="let criticite of criticiteList" [value]="criticite.id">
+                {{ criticite.criticiteLevel }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+  
+        <!-- Created On -->
+        <div class="input-group">
+            <label for="createdOnInput" class="form-label">Created On</label>
+            <mat-form-field class="custom-mat-form-field" appearance="outline">
+              <input
+                matInput
+                [matDatepicker]="picker"
+                [(ngModel)]="equipmentObj.createdOn"
+                name="createdOn"
+                id="createdOnInput"
+                placeholder="Select date"
+                required
+                class="custom-input"
+              />
+              <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+              <mat-datepicker #picker></mat-datepicker>
+            </mat-form-field>
+          </div>
+          
+        <!-- Buttons -->
+        <div class="button-group">
+          <button
+            type="submit"
+            class="btn custom-btn primary-btn"
+            [disabled]="!isValidEquipment()"
+          >
+            {{ isEditMode ? 'Update' : 'Create' }}
+          </button>
+          <button type="button" class="btn custom-btn secondary-btn" (click)="goBack()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>

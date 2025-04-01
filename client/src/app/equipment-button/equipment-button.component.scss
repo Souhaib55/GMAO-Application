@@ -1,0 +1,154 @@
+/* Container for the entire form */
+.form-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f9f9f9;
+    padding: 20px;
+  }
+  
+  /* Box containing the form */
+  .form-box {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    max-width: 500px;
+    width: 100%;
+  }
+  
+  /* Form title */
+  .form-title {
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 20px;
+  }
+  
+  /* Input group spacing */
+  .input-group {
+    margin-bottom: 20px;
+  }
+  
+  /* Labels */
+  .form-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 5px;
+  }
+  
+  /* Custom input fields (for text and date inputs) */
+  .custom-input {
+    height: 45px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 0 15px;
+    background-color: #f9f9f9;
+    font-size: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .custom-input:focus {
+    border-color: #6c63ff;
+    box-shadow: 0 0 5px rgba(108, 99, 255, 0.5);
+    outline: none;
+  }
+  
+  /* Custom mat-form-field (for selects and datepicker) */
+  .custom-mat-form-field {
+    width: 100%;
+  }
+  
+  .custom-mat-form-field .mat-form-field-infix {
+    background-color: #f9f9f9;
+    height: 45px;
+    padding: 0 15px;
+    box-sizing: border-box;
+  }
+  
+  .custom-mat-form-field .mat-form-field-outline {
+    border-radius: 8px;
+    border-color: #ddd;
+  }
+  
+  .custom-mat-form-field .mat-form-field-outline-thick {
+    border-color: #6c63ff; /* When focused */
+  }
+  
+  .custom-mat-form-field .mat-form-field-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+  }
+  
+  /* Adjust datepicker toggle icon */
+  .custom-mat-form-field .mat-datepicker-toggle {
+    color: #6c757d;
+  }
+  
+  /* Required asterisk */
+  .required-asterisk {
+    color: #dc3545; /* Red color */
+  }
+  
+  /* Button group */
+  .button-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+  }
+  
+  /* Buttons */
+  .custom-btn {
+    font-size: 1rem;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    text-transform: uppercase;
+  }
+  
+  .primary-btn {
+    background-color: #6c63ff;
+    color: #ffffff;
+    border: none;
+  }
+  
+  .primary-btn:hover {
+    background-color: #5a55d6;
+    transform: translateY(-2px);
+  }
+  
+  .secondary-btn {
+    background-color: #f1f1f1;
+    color: #333;
+    border: none;
+  }
+  
+  .secondary-btn:hover {
+    background-color: #e2e2e2;
+    transform: translateY(-2px);
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .form-box {
+      padding: 20px;
+    }
+  
+    .custom-btn {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+  
+    .button-group {
+      flex-direction: column;
+    }
+  }
+
