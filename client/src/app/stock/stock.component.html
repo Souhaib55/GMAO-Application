@@ -1,1 +1,83 @@
-<p>stock works!</p>
+<!-- Popup for success/error messages -->
+<div class="popup-container">
+    <div *ngIf="showPopup" [class]="'popup popup-' + popupType" @slideInOut>
+        <mat-icon class="popup-icon">
+            {{ popupType === 'success' ? 'check_circle' : 'error' }}
+        </mat-icon>
+        <div>{{ popupMessage }}</div>
+        <mat-icon class="popup-close" (click)="hidePopup()">close</mat-icon>
+    </div>
+</div>
+
+<!-- Main content -->
+<div class="row" style="margin-top: 100px;">
+    <div class="col-lg-12 col-md-12">
+        <div class="card">
+            <div class="card-header card-header-warning">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="card-title">Stock Management</h4>
+                    </div>
+                    <button class="btn btn-primary create-btn" (click)="navigateToCreate()">
+                        <mat-icon class="me-2">add</mat-icon>Create New Stock
+                    </button>
+                </div>
+            </div>
+            <div class="card-body table-responsive">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <mat-form-field appearance="outline" class="narrow-select">
+                            <mat-select [(ngModel)]="pageSize" (selectionChange)="changePageSize()">
+                                <mat-option *ngFor="let size of pageSizeOptions" [value]="size">
+                                    {{ size }}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                        <span class="entries-text">entries</span>
+                    </div>
+                </div>
+
+                <table class="table table-hover">
+                    <thead class="text-warning">
+                        <tr>
+                            <th>Code</th>
+                            <th>Description</th>
+                            <th>Entities</th>
+                            <th>Status</th>
+                            <th>Supplier</th>
+                            <th>Created On</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let item of paginatedStockList; let i = index">
+                            <td>{{ item.code }}</td>
+                            <td>{{ item.description }}</td>
+                            <td>{{ item.stockEntities?.name || 'N/A' }}</td>
+                            <td>{{ item.stockStatus?.status || 'N/A' }}</td>
+                            <td>{{ item.stockSupplier?.supplierName || 'N/A' }}</td>
+                            <td>{{ item.createdOn | date:'MM/dd/yyyy HH:mm' }}</td>
+                            <td>
+                                <button class="btn btn-primary btn-sm me-2 edit-btn" (click)="navigateToEdit(item.id)">
+                                    <mat-icon class="me-1">edit</mat-icon>Edit
+                                </button>
+                                <button class="btn btn-danger btn-sm" (click)="deleteStock(item)">
+                                    <mat-icon class="me-1">delete</mat-icon>Delete
+                                </button>
+                            </td>
+                        </tr>
+                        <tr *ngIf="paginatedStockList.length === 0">
+                            <td colspan="7" class="text-center">No stock found.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="pagination mt-3 d-flex justify-content-between align-items-center">
+                    <button class="btn btn-outline-primary" [disabled]="currentPage === 1" (click)="previousPage()">Previous</button>
+                    <span>Page {{ currentPage }} of {{ totalPages }}</span>
+                    <button class="btn btn-outline-primary" [disabled]="currentPage === totalPages" (click)="nextPage()">Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

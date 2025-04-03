@@ -37,6 +37,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { HttpClientModule } from '@angular/common/http';
 import { MatNativeDateModule } from '@angular/material/core';
 import { EquipmentButtonComponent } from './equipment-button/equipment-button.component';
+import { StockButtonComponent } from './stock-button/stock-button.component';
 
 @NgModule({
   imports: [
@@ -70,7 +71,7 @@ import { EquipmentButtonComponent } from './equipment-button/equipment-button.co
   
   declarations: [
     AppComponent,                   // Main app component
-    AdminLayoutComponent, AnalyticsComponent, AskaidatabaseComponent, EquipmentComponent, InterventionComponent, PlanningComponent, StockComponent, RessourcesComponent, ReportsComponent, HelpcomponentComponent, LoginComponent, EquipmentButtonComponent,           // Layout with navbar, sidebar, content
+    AdminLayoutComponent, AnalyticsComponent, AskaidatabaseComponent, EquipmentComponent, InterventionComponent, PlanningComponent, StockComponent, RessourcesComponent, ReportsComponent, HelpcomponentComponent, LoginComponent, EquipmentButtonComponent, StockButtonComponent,           // Layout with navbar, sidebar, content
   ],
   providers: [],
   bootstrap: [AppComponent]

@@ -11,6 +11,7 @@ import { StockComponent } from 'app/stock/stock.component';
 import { RessourcesComponent } from 'app/ressources/ressources.component';
 import { ReportsComponent } from 'app/reports/reports.component';
 import { HelpcomponentComponent } from 'app/helpcomponent/helpcomponent.component';
+import { StockButtonComponent } from 'app/stock-button/stock-button.component';
 
 export const AdminLayoutRoutes: Routes = [
     { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -18,12 +19,19 @@ export const AdminLayoutRoutes: Routes = [
     { path: 'dashboard',      component: DashboardComponent },
     { path: 'analytics',      component: AnalyticsComponent },
     { path: 'askaidatabase',  component: AskaidatabaseComponent },
+
     { path: 'equipment',      component: EquipmentComponent },
     { path: 'equipment/create', component: EquipmentButtonComponent },
     { path: 'equipment/edit/:id', component: EquipmentButtonComponent },
+
     { path: 'intervention',   component: InterventionComponent },
     { path: 'planning',       component: PlanningComponent },
+
     { path: 'stock',          component: StockComponent },
+    { path: 'stock/create', component: StockButtonComponent },
+    { path: 'stock/edit/:id', component: StockButtonComponent },
+
+
     { path: 'ressources',     component: RessourcesComponent },
     { path: 'reports',        component: ReportsComponent },
     { path: 'helpcomponent',  component: HelpcomponentComponent },
