@@ -95,118 +95,317 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Core.Entities.Equipment", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("IdEquipement")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdEquipement"));
 
-                    b.Property<string>("Code")
+                    b.Property<string>("CodeEquipement")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<DateTime>("CreatedOn")
+                    b.Property<decimal?>("CoutAchat")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("DateAchat")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateConstruction")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DateCreation")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime")
+                        .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime?>("DateFinGarantie")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateInstallation")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateMiseEnService")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateModification")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("Designation")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<int>("EquipmentCriticiteId")
+                    b.Property<int>("IdCriticite")
                         .HasColumnType("int");
 
-                    b.Property<int>("FamilleEquipmentId")
+                    b.Property<int>("IdEtat")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdFamille")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdGroupe")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdModele")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("NumeroSerie")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("SousGarantie")
                         .HasColumnType("bit");
 
-                    b.HasKey("Id");
+                    b.HasKey("IdEquipement");
 
-                    b.HasIndex("EquipmentCriticiteId");
+                    b.HasIndex("CodeEquipement")
+                        .IsUnique();
 
-                    b.HasIndex("FamilleEquipmentId");
+                    b.HasIndex("IdCriticite");
+
+                    b.HasIndex("IdEtat");
+
+                    b.HasIndex("IdFamille");
+
+                    b.HasIndex("IdGroupe");
+
+                    b.HasIndex("IdModele");
 
                     b.ToTable("Equipments");
                 });
 
             modelBuilder.Entity("Core.Entities.EquipmentCriticite", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("IdCriticite")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdCriticite"));
 
-                    b.Property<string>("CriticiteLevel")
+                    b.Property<DateTime>("DateCreation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime?>("DateModification")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<bool>("IsActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("NomCriticite")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.HasKey("Id");
+                    b.HasKey("IdCriticite");
 
                     b.ToTable("EquipmentCriticites");
                 });
 
-            modelBuilder.Entity("Core.Entities.FamilleEquipment", b =>
+            modelBuilder.Entity("Core.Entities.EtatEquipement", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("IdEtat")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdEtat"));
 
-                    b.Property<string>("LibelleFamille")
+                    b.Property<DateTime>("DateCreation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime?>("DateModification")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<bool>("IsActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("NomEtat")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("IdEtat");
+
+                    b.ToTable("EtatEquipements");
+                });
+
+            modelBuilder.Entity("Core.Entities.FamilleEquipment", b =>
+                {
+                    b.Property<int>("IdFamille")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdFamille"));
+
+                    b.Property<DateTime>("DateCreation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime?>("DateModification")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<bool>("IsActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("NomFamille")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.HasKey("Id");
+                    b.HasKey("IdFamille");
 
-                    b.ToTable("FamilleEquipments");
+                    b.ToTable("FamilleEquipements");
                 });
 
-            modelBuilder.Entity("Core.Entities.Product", b =>
+            modelBuilder.Entity("Core.Entities.GroupeEquipement", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("IdGroupe")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdGroupe"));
 
-                    b.Property<string>("Brand")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<DateTime>("DateCreation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime?>("DateModification")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<bool>("IsActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("NomGroupe")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.HasKey("IdGroupe");
 
-                    b.Property<string>("PictureUrl")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.ToTable("GroupeEquipements");
+                });
 
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("QuantityInStock")
+            modelBuilder.Entity("Core.Entities.Marque", b =>
+                {
+                    b.Property<int>("IdMarque")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    b.Property<string>("Type")
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdMarque"));
+
+                    b.Property<DateTime>("DateCreation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime?>("DateModification")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("NomMarque")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.HasKey("Id");
+                    b.HasKey("IdMarque");
 
-                    b.ToTable("Products");
+                    b.ToTable("Marques");
+                });
+
+            modelBuilder.Entity("Core.Entities.ModeleEquipement", b =>
+                {
+                    b.Property<int>("IdModele")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdModele"));
+
+                    b.Property<string>("Commentaire")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<DateTime>("DateCreation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime?>("DateModification")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("IdCriticite")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdFamille")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdMarque")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("NomModele")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("IdModele");
+
+                    b.HasIndex("IdCriticite");
+
+                    b.HasIndex("IdFamille");
+
+                    b.HasIndex("IdMarque");
+
+                    b.ToTable("ModeleEquipements");
                 });
 
             modelBuilder.Entity("Core.Entities.Stock", b =>
@@ -219,18 +418,14 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("Code")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedOn")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime")
-                        .HasDefaultValueSql("GETDATE()");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -265,8 +460,7 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -283,8 +477,7 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -301,8 +494,7 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("SupplierName")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -444,21 +636,72 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Core.Entities.Equipment", b =>
                 {
-                    b.HasOne("Core.Entities.EquipmentCriticite", "EquipmentCriticite")
+                    b.HasOne("Core.Entities.EquipmentCriticite", "Criticite")
                         .WithMany("Equipments")
-                        .HasForeignKey("EquipmentCriticiteId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("IdCriticite")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Core.Entities.FamilleEquipment", "FamilleEquipment")
+                    b.HasOne("Core.Entities.EtatEquipement", "Etat")
                         .WithMany("Equipments")
-                        .HasForeignKey("FamilleEquipmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("IdEtat")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("EquipmentCriticite");
+                    b.HasOne("Core.Entities.FamilleEquipment", "Famille")
+                        .WithMany("Equipments")
+                        .HasForeignKey("IdFamille")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
-                    b.Navigation("FamilleEquipment");
+                    b.HasOne("Core.Entities.GroupeEquipement", "Groupe")
+                        .WithMany("Equipments")
+                        .HasForeignKey("IdGroupe")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Core.Entities.ModeleEquipement", "Modele")
+                        .WithMany("Equipments")
+                        .HasForeignKey("IdModele")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Criticite");
+
+                    b.Navigation("Etat");
+
+                    b.Navigation("Famille");
+
+                    b.Navigation("Groupe");
+
+                    b.Navigation("Modele");
+                });
+
+            modelBuilder.Entity("Core.Entities.ModeleEquipement", b =>
+                {
+                    b.HasOne("Core.Entities.EquipmentCriticite", "Criticite")
+                        .WithMany("Modeles")
+                        .HasForeignKey("IdCriticite")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Core.Entities.FamilleEquipment", "Famille")
+                        .WithMany("Modeles")
+                        .HasForeignKey("IdFamille")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Core.Entities.Marque", "Marque")
+                        .WithMany("Modeles")
+                        .HasForeignKey("IdMarque")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Criticite");
+
+                    b.Navigation("Famille");
+
+                    b.Navigation("Marque");
                 });
 
             modelBuilder.Entity("Core.Entities.Stock", b =>
@@ -542,9 +785,33 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Core.Entities.EquipmentCriticite", b =>
                 {
                     b.Navigation("Equipments");
+
+                    b.Navigation("Modeles");
+                });
+
+            modelBuilder.Entity("Core.Entities.EtatEquipement", b =>
+                {
+                    b.Navigation("Equipments");
                 });
 
             modelBuilder.Entity("Core.Entities.FamilleEquipment", b =>
+                {
+                    b.Navigation("Equipments");
+
+                    b.Navigation("Modeles");
+                });
+
+            modelBuilder.Entity("Core.Entities.GroupeEquipement", b =>
+                {
+                    b.Navigation("Equipments");
+                });
+
+            modelBuilder.Entity("Core.Entities.Marque", b =>
+                {
+                    b.Navigation("Modeles");
+                });
+
+            modelBuilder.Entity("Core.Entities.ModeleEquipement", b =>
                 {
                     b.Navigation("Equipments");
                 });

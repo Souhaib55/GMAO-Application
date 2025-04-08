@@ -18,25 +18,20 @@ namespace API.Controllers
             _context = context;
         }
 
-        // GET: api/familleequipment
         [HttpGet]
         public async Task<ActionResult<IEnumerable<FamilleEquipment>>> GetFamilleEquipments()
         {
-            return await _context.FamilleEquipments.ToListAsync();
+            return Ok(await _context.FamilleEquipements.Where(f => f.IsActif).ToListAsync());
         }
 
-        // GET: api/familleequipment/5
         [HttpGet("{id}")]
         public async Task<ActionResult<FamilleEquipment>> GetFamilleEquipment(int id)
         {
-            var familleEquipment = await _context.FamilleEquipments.FindAsync(id);
-
-            if (familleEquipment == null)
-            {
-                return NotFound();
-            }
-
-            return familleEquipment;
+            var famille = await _context.FamilleEquipements
+                .Where(f => f.IdFamille == id && f.IsActif)
+                .FirstOrDefaultAsync();
+            if (famille == null) return NotFound("Famille not found or inactive.");
+            return Ok(famille);
         }
     }
 }

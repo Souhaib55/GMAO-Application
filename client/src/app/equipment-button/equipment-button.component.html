@@ -1,103 +1,207 @@
 <div class="form-container">
-    <div class="form-box">
-      <h2 class="form-title">{{ isEditMode ? 'Edit Equipment' : 'Create New Equipment' }}</h2>
-      <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
-      <form (ngSubmit)="onSubmit()" class="form-content">
-        <!-- Equipment Code -->
-        <div class="input-group">
-          <label for="codeInput" class="form-label">Equipment Code <span class="required-asterisk">*</span></label>
-          <input
-            type="text"
-            class="form-control custom-input"
-            [(ngModel)]="equipmentObj.code"
-            name="code"
-            id="codeInput"
-            placeholder="Enter equipment code"
-            required
-            #codeInput="ngModel"
-          />
+  <div class="form-box">
+    <h2 class="form-title">{{ isEditMode ? 'Edit Equipment' : 'Create New Equipment' }}</h2>
+    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+    <form [formGroup]="equipmentForm" (ngSubmit)="onSubmit()">
+      <div class="row">
+        <!-- Code Equipement -->
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Equipment Code</mat-label>
+            <input matInput formControlName="codeEquipement" required placeholder="Enter equipment code">
+            <mat-error *ngIf="equipmentForm.get('codeEquipement')?.touched && equipmentForm.get('codeEquipement')?.hasError('required')">
+              Equipment Code is required
+            </mat-error>
+          </mat-form-field>
         </div>
-  
+
         <!-- Designation -->
-        <div class="input-group">
-          <label for="designationInput" class="form-label">Designation <span class="required-asterisk">*</span></label>
-          <input
-            type="text"
-            class="form-control custom-input"
-            [(ngModel)]="equipmentObj.designation"
-            name="designation"
-            id="designationInput"
-            placeholder="Enter designation"
-            required
-          />
-        </div>
-  
-        <!-- Family -->
-        <div class="input-group">
-          <label for="familySelect" class="form-label">Family</label>
-          <mat-form-field class="custom-mat-form-field" appearance="outline">
-            <mat-select
-              [(ngModel)]="equipmentObj.familleEquipmentId"
-              name="familleEquipmentId"
-              id="familySelect"
-              placeholder="Select family"
-              required
-            >
-              <mat-option *ngFor="let famille of familleList" [value]="famille.id">
-                {{ famille.libelleFamille }}
-              </mat-option>
-            </mat-select>
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Designation</mat-label>
+            <input matInput formControlName="designation" required placeholder="Enter designation">
+            <mat-error *ngIf="equipmentForm.get('designation')?.touched && equipmentForm.get('designation')?.hasError('required')">
+              Designation is required
+            </mat-error>
           </mat-form-field>
         </div>
-  
-        <!-- Criticality Level -->
-        <div class="input-group">
-          <label for="criticiteSelect" class="form-label">Criticality Level</label>
-          <mat-form-field class="custom-mat-form-field" appearance="outline">
-            <mat-select
-              [(ngModel)]="equipmentObj.equipmentCriticiteId"
-              name="equipmentCriticiteId"
-              id="criticiteSelect"
-              placeholder="Choose a criticality level"
-              required
-            >
-              <mat-option *ngFor="let criticite of criticiteList" [value]="criticite.id">
-                {{ criticite.criticiteLevel }}
-              </mat-option>
-            </mat-select>
+
+        <!-- Description -->
+        <div class="col-md-12 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Description</mat-label>
+            <textarea matInput formControlName="description" placeholder="Enter description"></textarea>
           </mat-form-field>
         </div>
-  
-        <!-- Created On -->
-        <div class="input-group">
-            <label for="createdOnInput" class="form-label">Created On</label>
-            <mat-form-field class="custom-mat-form-field" appearance="outline">
-              <input
-                matInput
-                [matDatepicker]="picker"
-                [(ngModel)]="equipmentObj.createdOn"
-                name="createdOn"
-                id="createdOnInput"
-                placeholder="Select date"
-                required
-                class="custom-input"
-              />
-              <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-              <mat-datepicker #picker></mat-datepicker>
-            </mat-form-field>
-          </div>
-          
-        <!-- Buttons -->
-        <div class="button-group">
-          <button
-            type="submit"
-            class="btn custom-btn primary-btn"
-            [disabled]="!isValidEquipment()"
-          >
-            {{ isEditMode ? 'Update' : 'Create' }}
-          </button>
-          <button type="button" class="btn custom-btn secondary-btn" (click)="goBack()">Cancel</button>
+
+        <!-- Famille (Dropdown) -->
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Family</mat-label>
+            <mat-select formControlName="idFamille" required placeholder="Select family">
+              <mat-option *ngFor="let famille of familleList" [value]="famille.idFamille">
+                {{ famille.nomFamille }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="equipmentForm.get('idFamille')?.touched && equipmentForm.get('idFamille')?.hasError('required')">
+              Family is required
+            </mat-error>
+          </mat-form-field>
         </div>
-      </form>
-    </div>
+
+        <!-- Criticite (Dropdown) -->
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Criticite</mat-label>
+            <mat-select formControlName="idCriticite" required placeholder="Select criticite">
+              <mat-option *ngFor="let criticite of criticiteList" [value]="criticite.idCriticite">
+                {{ criticite.nomCriticite }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="equipmentForm.get('idCriticite')?.touched && equipmentForm.get('idCriticite')?.hasError('required')">
+              Criticite is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Etat (Dropdown) -->
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Etat</mat-label>
+            <mat-select formControlName="idEtat" required placeholder="Select etat">
+              <mat-option *ngFor="let etat of etatList" [value]="etat.idEtat">
+                {{ etat.nomEtat }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="equipmentForm.get('idEtat')?.touched && equipmentForm.get('idEtat')?.hasError('required')">
+              Etat is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Modele (Dropdown) -->
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Modele</mat-label>
+            <mat-select formControlName="idModele" required placeholder="Select modele">
+              <mat-option *ngFor="let modele of modeleList" [value]="modele.idModele">
+                {{ modele.nomModele }} ({{ modele.marque?.nomMarque || 'N/A' }})
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="equipmentForm.get('idModele')?.touched && equipmentForm.get('idModele')?.hasError('required')">
+              Modele is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Groupe (Dropdown) -->
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Groupe</mat-label>
+            <mat-select formControlName="idGroupe" required placeholder="Select groupe">
+              <mat-option *ngFor="let groupe of groupeList" [value]="groupe.idGroupe">
+                {{ groupe.nomGroupe }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="equipmentForm.get('idGroupe')?.touched && equipmentForm.get('idGroupe')?.hasError('required')">
+              Groupe is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Date Installation -->
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Date Installation</mat-label>
+            <input matInput [matDatepicker]="pickerInstallation" formControlName="dateInstallation">
+            <mat-datepicker-toggle matSuffix [for]="pickerInstallation"></mat-datepicker-toggle>
+            <mat-datepicker #pickerInstallation></mat-datepicker>
+          </mat-form-field>
+        </div>
+
+        <!-- Date Mise En Service -->
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Date Mise En Service</mat-label>
+            <input matInput [matDatepicker]="pickerMiseEnService" formControlName="dateMiseEnService">
+            <mat-datepicker-toggle matSuffix [for]="pickerMiseEnService"></mat-datepicker-toggle>
+            <mat-datepicker #pickerMiseEnService></mat-datepicker>
+          </mat-form-field>
+        </div>
+
+        <!-- Numero Serie -->
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Numero Serie</mat-label>
+            <input matInput formControlName="numeroSerie" placeholder="Enter numero serie">
+          </mat-form-field>
+        </div>
+
+        <!-- Sous Garantie -->
+        <div class="col-md-6 input-group">
+          <mat-checkbox formControlName="sousGarantie">Sous Garantie</mat-checkbox>
+        </div>
+
+        <!-- Date Achat -->
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Date Achat</mat-label>
+            <input matInput [matDatepicker]="pickerAchat" formControlName="dateAchat">
+            <mat-datepicker-toggle matSuffix [for]="pickerAchat"></mat-datepicker-toggle>
+            <mat-datepicker #pickerAchat></mat-datepicker>
+          </mat-form-field>
+        </div>
+
+        <!-- Date Fin Garantie -->
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Date Fin Garantie</mat-label>
+            <input matInput [matDatepicker]="pickerFinGarantie" formControlName="dateFinGarantie">
+            <mat-datepicker-toggle matSuffix [for]="pickerFinGarantie"></mat-datepicker-toggle>
+            <mat-datepicker #pickerFinGarantie></mat-datepicker>
+          </mat-form-field>
+        </div>
+
+        <!-- Date Construction -->
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Date Construction</mat-label>
+            <input matInput [matDatepicker]="pickerConstruction" formControlName="dateConstruction">
+            <mat-datepicker-toggle matSuffix [for]="pickerConstruction"></mat-datepicker-toggle>
+            <mat-datepicker #pickerConstruction></mat-datepicker>
+          </mat-form-field>
+        </div>
+
+        <!-- Cout Achat -->
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Cout Achat</mat-label>
+            <input matInput type="number" formControlName="coutAchat" placeholder="Enter cout achat">
+          </mat-form-field>
+        </div>
+
+        <!-- Date Creation (Read-only in edit mode) -->
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Created On</mat-label>
+            <input matInput [matDatepicker]="pickerCreation" formControlName="dateCreation" [disabled]="isEditMode">
+            <mat-datepicker-toggle matSuffix [for]="pickerCreation" *ngIf="!isEditMode"></mat-datepicker-toggle>
+            <mat-datepicker #pickerCreation></mat-datepicker>
+            <mat-error *ngIf="equipmentForm.get('dateCreation')?.touched && equipmentForm.get('dateCreation')?.hasError('required')">
+              Creation date is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="button-group mt-3">
+        <button type="submit" class="btn custom-btn primary-btn" [disabled]="equipmentForm.invalid || isSubmitting">
+          <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          {{ isEditMode ? 'Update' : 'Create' }}
+        </button>
+        <button type="button" class="btn custom-btn secondary-btn" (click)="goBack()" [disabled]="isSubmitting">Cancel</button>
+      </div>
+    </form>
   </div>
+</div>

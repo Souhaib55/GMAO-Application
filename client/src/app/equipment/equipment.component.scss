@@ -207,3 +207,30 @@
     background-color: #f44336;
     color: white;
 }
+
+
+
+
+/* Increase spacing between columns by adding horizontal padding */
+table.table td,
+table.table th {
+  padding: 8px 40px; /* Vertical padding: 8px, Horizontal padding: 15px */
+}
+
+
+/* Ensure the Actions column has enough width */
+table.table td:last-child {
+  min-width: 180px; /* Adjust this value if needed */
+  white-space: nowrap; /* Prevents buttons from wrapping to the next line */
+}
+
+/* Style the buttons to sit side by side */
+table.table td .btn {
+  display: inline-block;
+  margin-right: 10px; /* Space between buttons */
+}
+
+/* Optional: Remove margin from the last button */
+table.table td .btn:last-child {
+  margin-right: 0;
+}

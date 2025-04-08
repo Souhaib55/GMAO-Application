@@ -1,62 +1,93 @@
 <!-- Popup for success/error messages -->
 <div class="popup-container">
-    <div *ngIf="showPopup" [class]="'popup popup-' + popupType" @slideInOut>
-      <mat-icon class="popup-icon">
-        {{ popupType === 'success' ? 'check_circle' : 'error' }}
-      </mat-icon>
-      <div>{{ popupMessage }}</div>
-      <mat-icon class="popup-close" (click)="hidePopup()">close</mat-icon>
-    </div>
+  <div *ngIf="showPopup" [class]="'popup popup-' + popupType" @slideInOut>
+    <mat-icon class="popup-icon">
+      {{ popupType === 'success' ? 'check_circle' : 'error' }}
+    </mat-icon>
+    <div>{{ popupMessage }}</div>
+    <mat-icon class="popup-close" (click)="hidePopup()">close</mat-icon>
   </div>
-  
-  <!-- Main content -->
-  <div class="row" style="margin-top: 100px;">
-    <div class="col-lg-12 col-md-12">
-      <div class="card">
-        <div class="card-header card-header-warning">
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <h4 class="card-title">Equipment Management</h4>
-            </div>
-            <button class="btn btn-primary create-btn" (click)="navigateToCreate()">
-              <mat-icon class="me-2">add</mat-icon>Create New Equipment
-            </button>
+</div>
+
+<!-- Main content -->
+<div class="row" style="margin-top: 100px;">
+  <div class="col-lg-12 col-md-12">
+    <div class="card">
+      <div class="card-header card-header-warning">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h4 class="card-title">Equipment Management</h4>
+          </div>
+          <button class="btn btn-primary create-btn" (click)="navigateToCreate()">
+            <mat-icon class="me-2">add</mat-icon>Create New Equipment
+          </button>
+        </div>
+      </div>
+      <div class="card-body table-responsive">
+        <div *ngIf="isLoading" class="text-center">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-3" *ngIf="!isLoading">
+          <div>
+            <mat-form-field appearance="outline" class="narrow-select">
+              <mat-label>Entries per page</mat-label>
+              <mat-select [(ngModel)]="pageSize" (selectionChange)="changePageSize()">
+                <mat-option *ngFor="let size of pageSizeOptions" [value]="size">
+                  {{ size }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
           </div>
         </div>
-        <div class="card-body table-responsive">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <div>
-              <mat-form-field appearance="outline" class="narrow-select">
-                <mat-select [(ngModel)]="pageSize" (selectionChange)="changePageSize()">
-                  <mat-option *ngFor="let size of pageSizeOptions" [value]="size">
-                    {{ size }}
-                  </mat-option>
-                </mat-select>
-              </mat-form-field>
-              <span class="entries-text">entries</span>
-            </div>
-          </div>
-  
-          <table class="table table-hover">
+
+        <!-- Scrollable table -->
+        <div style="overflow-x: auto;">
+          <table class="table table-hover" *ngIf="!isLoading">
             <thead class="text-warning">
               <tr>
                 <th>Code</th>
                 <th>Designation</th>
-                <th>Family</th>
+                <th>Description</th>
                 <th>Criticite</th>
+                <th>Etat</th>
+                <th>Famille</th>
+                <th>Modele</th>
+                <th>Groupe</th>
+                <th>Date Installation</th>
+                <th>Date Mise En Service</th>
+                <th>Numero Serie</th>
+                <th>Sous Garantie</th>
+                <th>Date Achat</th>
+                <th>Date Fin Garantie</th>
+                <th>Date Construction</th>
+                <th>Cout Achat</th>
                 <th>Created On</th>
+                <th>Modified On</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of paginatedEquipmentList; let i = index">
-                <td>{{ item.code }}</td>
+              <tr *ngFor="let item of paginatedEquipmentList">
+                <td>{{ item.codeEquipement }}</td>
                 <td>{{ item.designation }}</td>
-                <td>{{ item.familleEquipment?.libelleFamille || 'N/A' }}</td>
-                <td>{{ item.equipmentCriticite?.criticiteLevel || 'N/A' }}</td>
-                <td>{{ item.createdOn | date:'MM/dd/yyyy HH:mm' }}</td>
+                <td>{{ item.description }}</td>
+                <td>{{ item.criticite }}</td>
+                <td>{{ item.etat }}</td>
+                <td>{{ item.famille }}</td>
+                <td>{{ item.modele }}</td>
+                <td>{{ item.groupe }}</td>
+                <td>{{ item.dateInstallation | date:'MM/dd/yyyy' }}</td>
+                <td>{{ item.dateMiseEnService | date:'MM/dd/yyyy' }}</td>
+                <td>{{ item.numeroSerie }}</td>
+                <td>{{ item.sousGarantie ? 'Yes' : 'No' }}</td>
+                <td>{{ item.dateAchat | date:'MM/dd/yyyy' }}</td>
+                <td>{{ item.dateFinGarantie | date:'MM/dd/yyyy' }}</td>
+                <td>{{ item.dateConstruction | date:'MM/dd/yyyy' }}</td>
+                <td>{{ item.coutAchat | number:'1.2-2' }}</td>
+                <td>{{ item.dateCreation | date:'MM/dd/yyyy HH:mm' }}</td>
+                <td>{{ item.dateModification | date:'MM/dd/yyyy HH:mm' }}</td>
                 <td>
-                  <button class="btn btn-primary btn-sm me-2 edit-btn" (click)="navigateToEdit(item.id)">
+                  <button class="btn btn-primary btn-sm me-2 edit-btn" (click)="navigateToEdit(item.idEquipement)">
                     <mat-icon class="me-1">edit</mat-icon>Edit
                   </button>
                   <button class="btn btn-danger btn-sm" (click)="deleteEquipment(item)">
@@ -65,17 +96,18 @@
                 </td>
               </tr>
               <tr *ngIf="paginatedEquipmentList.length === 0">
-                <td colspan="6" class="text-center">No equipment found.</td>
+                <td colspan="21" class="text-center">No equipment found.</td>
               </tr>
             </tbody>
           </table>
-  
-          <div class="pagination mt-3 d-flex justify-content-between align-items-center">
-            <button class="btn btn-outline-primary" [disabled]="currentPage === 1" (click)="previousPage()">Previous</button>
-            <span>Page {{ currentPage }} of {{ totalPages }}</span>
-            <button class="btn btn-outline-primary" [disabled]="currentPage === totalPages" (click)="nextPage()">Next</button>
-          </div>
+        </div>
+
+        <div class="pagination mt-3 d-flex justify-content-between align-items-center" *ngIf="!isLoading">
+          <button class="btn btn-outline-primary" [disabled]="currentPage === 1 || isLoading" (click)="previousPage()">Previous</button>
+          <span>Page {{ currentPage }} of {{ totalPages }}</span>
+          <button class="btn btn-outline-primary" [disabled]="currentPage === totalPages || isLoading" (click)="nextPage()">Next</button>
         </div>
       </div>
-    </div>
+    </div>  
   </div>
+</div>

@@ -18,25 +18,20 @@ namespace API.Controllers
             _context = context;
         }
 
-        // GET: api/EquipmentCriticite
         [HttpGet]
         public async Task<ActionResult<IEnumerable<EquipmentCriticite>>> GetEquipmentCriticites()
         {
-            return await _context.EquipmentCriticites.ToListAsync();
+            return Ok(await _context.EquipmentCriticites.Where(c => c.IsActif).ToListAsync());
         }
 
-        // GET: api/EquipmentCriticite/5
         [HttpGet("{id}")]
         public async Task<ActionResult<EquipmentCriticite>> GetEquipmentCriticite(int id)
         {
-            var equipmentCriticite = await _context.EquipmentCriticites.FindAsync(id);
-
-            if (equipmentCriticite == null)
-            {
-                return NotFound();
-            }
-
-            return equipmentCriticite;
+            var criticite = await _context.EquipmentCriticites
+                .Where(c => c.IdCriticite == id && c.IsActif)
+                .FirstOrDefaultAsync();
+            if (criticite == null) return NotFound("Criticite not found or inactive.");
+            return Ok(criticite);
         }
     }
 }
