@@ -17,24 +17,34 @@ export class NavbarComponent implements OnInit {
     private toggleButton: any;
     private sidebarVisible: boolean;
 
-    constructor(location: Location,  private element: ElementRef, private router: Router) {
+    constructor(location: Location,  private element: ElementRef, private router: Router , public accountService: AccountService ) {
       this.location = location;
           this.sidebarVisible = false;
     }
 
-    ngOnInit(){
-      this.listTitles = ROUTES.filter(listTitle => listTitle);
-      const navbar: HTMLElement = this.element.nativeElement;
-      this.toggleButton = navbar.getElementsByClassName('navbar-toggler')[0];
-      this.router.events.subscribe((event) => {
-        this.sidebarClose();
-         var $layer: any = document.getElementsByClassName('close-layer')[0];
-         if ($layer) {
-           $layer.remove();
-           this.mobile_menu_visible = 0;
-         }
-     });
-    }
+    ngOnInit() {
+        this.listTitles = ROUTES.filter(listTitle => listTitle);
+        const navbar: HTMLElement = this.element.nativeElement;
+        this.toggleButton = navbar.getElementsByClassName('navbar-toggler')[0];
+        this.router.events.subscribe((event) => {
+          this.sidebarClose();
+          var $layer: any = document.getElementsByClassName('close-layer')[0];
+          if ($layer) {
+            $layer.remove();
+            this.mobile_menu_visible = 0;
+          }
+        });
+      
+        // Add this to fetch user info
+        this.accountService.getUserInfo().subscribe({
+          next: (user) => {
+            console.log('User info loaded:', user); // Optional: for debugging
+          },
+          error: (err) => {
+            console.error('Failed to load user info:', err); // Handle errors (e.g., not logged in)
+          }
+        });
+      }
 
     sidebarOpen() {
         const toggleButton = this.toggleButton;
@@ -113,7 +123,7 @@ export class NavbarComponent implements OnInit {
 
 
     // Logic of the component
-    accountService = inject(AccountService);
+    //accountService = inject(AccountService);
     private routervar = inject(Router);
 
     logout() {

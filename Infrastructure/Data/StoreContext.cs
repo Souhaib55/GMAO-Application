@@ -21,6 +21,15 @@ public class StoreContext : IdentityDbContext<AppUser>
         public DbSet<ModeleEquipement> ModeleEquipements { get; set; }
         public DbSet<GroupeEquipement> GroupeEquipements { get; set; }
 
+
+    // Ressources Module
+
+    public DbSet<Piece> Pieces { get; set; }
+    public DbSet<FamillePiece> FamillePieces { get; set; }
+    public DbSet<Constructeur> Constructeurs { get; set; }
+    public DbSet<CriticitePiece> CriticitePieces { get; set; }
+
+
     // Stock Module
    public DbSet<Stock> Stocks { get; set; }
     public DbSet<StockEntities> StockEntities { get; set; }
@@ -32,6 +41,8 @@ public class StoreContext : IdentityDbContext<AppUser>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Equipments Module
             modelBuilder.ApplyConfiguration(new EquipmentConfiguration());
             modelBuilder.ApplyConfiguration(new EquipmentCriticiteConfiguration());
             modelBuilder.ApplyConfiguration(new EtatEquipementConfiguration());
@@ -39,6 +50,13 @@ public class StoreContext : IdentityDbContext<AppUser>
             modelBuilder.ApplyConfiguration(new GroupeEquipementConfiguration());
             modelBuilder.ApplyConfiguration(new MarqueConfiguration());
             modelBuilder.ApplyConfiguration(new ModeleEquipementConfiguration());
+
+
+            // Ressources Module
+            modelBuilder.ApplyConfiguration(new PieceConfiguration());
+            modelBuilder.ApplyConfiguration(new FamillePieceConfiguration());
+            modelBuilder.ApplyConfiguration(new ConstructeurConfiguration());
+            modelBuilder.ApplyConfiguration(new CriticitePieceConfiguration());
         }
     
 }

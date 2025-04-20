@@ -1,0 +1,263 @@
+.navbar {
+  background-color: white !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  padding: 8px 15px;
+  height: 70px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.container-fluid {
+  display: flex;
+  width: 100%;
+  align-items: center;
+}
+
+/* Search styling to match image */
+.search-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 450px;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+  padding: 0 10px;
+  border: 1px solid #f0f0f0;
+  transition: border-color 0.3s ease;
+}
+
+/* New style for focused search input */
+.search-focused {
+  border: 1px solid #2a56c6 !important; /* Darker blue border */
+  box-shadow: 0 0 4px rgba(42, 86, 198, 0.2); /* Subtle shadow for emphasis */
+}
+
+.search-input {
+  border: none;
+  background-color: transparent;
+  padding: 8px 15px;
+  width: 100%;
+  font-size: 14px;
+  color: #555;
+}
+
+.search-input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.search-icon {
+  display: flex;
+  align-items: center;
+  color: #999;
+  cursor: pointer; /* Add pointer cursor to indicate it's clickable */
+}
+
+.search-icon i {
+  font-size: 20px;
+}
+
+/* Navbar icons styling */
+.navbar-nav {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.nav-item {
+  margin-left: 15px;
+  position: relative;
+}
+
+.nav-link {
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* User avatar styling */
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #7e3ff2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+}
+
+.user-avatar i {
+  font-size: 20px;
+}
+
+/* Dropdown styling */
+.dropdown-menu {
+  position: absolute;
+  top: 45px;
+  right: 0;
+  z-index: 1000;
+  min-width: 160px;
+  padding: 8px 0;
+  margin: 0;
+  font-size: 14px;
+  text-align: left;
+  list-style: none;
+  background-color: #fff;
+  background-clip: padding-box;
+  border: 1px solid rgba(0,0,0,.15);
+  border-radius: 4px;
+  box-shadow: 0 6px 12px rgba(0,0,0,.175);
+}
+
+.dropdown-item {
+  display: block;
+  padding: 8px 20px;
+  clear: both;
+  font-weight: 400;
+  color: #333;
+  text-align: inherit;
+  white-space: nowrap;
+  background-color: transparent;
+  border: 0;
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+}
+
+.dropdown-item:hover {
+  background-color: #f8f4ff;
+  color: #7e3ff2;
+  cursor: pointer;
+}
+
+/* Mobile styles */
+.navbar-toggler {
+  display: none;
+}
+
+@media (max-width: 991px) {
+  .navbar-toggler {
+    display: block;
+  }
+  
+  .search-input-wrapper {
+    width: 100%;
+  }
+  
+  .navbar-collapse:not(.show) {
+    display: none;
+  }
+}
+
+.search-input-wrapper:focus-within {
+  border: 1px solid #2a56c6 !important;
+  box-shadow: 0 0 4px rgba(42, 86, 198, 0.2);
+}
+
+/* Enhanced User Dropdown Styling */
+.user-dropdown-wrapper {
+  margin-left: auto;
+  position: relative;
+}
+
+.user-dropdown-button {
+  background-color: #f0e6ff !important;
+  border-radius: 6px !important;
+  border: none !important;
+  padding: 4px 8px !important;
+  min-width: auto !important;
+  box-shadow: none !important;
+  height: 40px;
+}
+
+.dropdown-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.user-email {
+  color: #7e3ff2;
+  font-weight: 500;
+  font-size: 15px;
+  margin-right: 4px;
+}
+
+.dropdown-icon {
+  color: #7e3ff2;
+  transform: scale(1.2);
+  margin-right: 4px;
+}
+
+/* Override Material Menu Styles */
+::ng-deep .mat-menu-panel.custom-menu {
+  min-width: 180px !important;
+  border-radius: 8px !important;
+  margin-top: 10px;
+}
+
+::ng-deep .mat-menu-item:hover {
+  background-color: #f8f4ff !important;
+  color: #7e3ff2 !important;
+}
+
+::ng-deep .mat-menu-item .mat-icon {
+  color: #7e3ff2;
+  margin-right: 12px;
+}
+
+
+
+
+::ng-deep .mat-menu-panel {
+  z-index: 1060 !important; /* Highest z-index to ensure visibility */
+}
+
+::ng-deep .mat-menu-panel.custom-menu {
+  min-width: 180px !important;
+  border-radius: 8px !important; 
+  margin-top: 10px;
+  transform: translateY(0) !important; /* Prevent any transform that might hide it */
+}
+
+::ng-deep .mat-menu-content {
+  padding: 8px 0 !important;
+  background-color: white !important;
+  border-radius: 8px !important;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important;
+}
+
+::ng-deep .mat-menu-item {
+  line-height: 36px !important;
+  height: 36px !important;
+}
+
+::ng-deep .mat-menu-item:hover {
+  background-color: #f8f4ff !important;
+  color: #7e3ff2 !important;
+}
+
+::ng-deep .mat-menu-item .mat-icon {
+  color: #7e3ff2;
+  margin-right: 12px;
+}
+
+/* Fix positioning issues with mat-menu */
+::ng-deep .cdk-overlay-container {
+  z-index: 1060 !important; /* Ensure overlay is at highest level */
+}
+
+::ng-deep .cdk-overlay-pane {
+  position: absolute !important;
+  pointer-events: auto !important;
+  z-index: 1060 !important;
+}

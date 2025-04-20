@@ -1,0 +1,131 @@
+/* Popup Styles */
+.popup-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.popup {
+    font-size: 1rem;
+    box-shadow: 0px 5px 25px 0px rgba(0, 0, 0, 0.2);
+    border: none;
+    line-height: 1.7;
+    max-width: 300px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    animation: slideInUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.popup.popup-success {
+    background-color: #28a745;
+}
+
+.popup.popup-error {
+    background-color: #dc3545;
+}
+
+.popup .popup-icon {
+    margin-right: 10px;
+    font-size: 1.5rem;
+}
+
+.popup .popup-close {
+    margin-left: 10px;
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+.popup .popup-close:hover {
+    opacity: 1;
+}
+
+@keyframes slideInUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.slideOutDown {
+    animation: slideOutDown 0.6s ease-in forwards;
+}
+
+@keyframes slideOutDown {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+}
+
+/* Button Styles */
+.create-btn {
+    background-color: #3f51b5 !important; /* Blue color for create button */
+}
+
+.edit-btn {
+    background-color: #3f51b5 !important; /* Blue color for edit button */
+}
+
+/* Layout Adjustments */
+.row {
+    max-width: 90%;
+    margin: 0 auto;
+}
+
+/* Narrow Select */
+.narrow-select {
+    width: 7em;
+}
+
+.narrow-select .mat-select-trigger {
+    min-width: auto;
+}
+
+/* Table Styles */
+table.table td,
+table.table th {
+    padding: 8px 40px;
+}
+
+table.table td:last-child {
+    min-width: 180px;
+    white-space: nowrap;
+}
+
+table.table td .btn {
+    display: inline-block;
+    margin-right: 10px;
+}
+
+table.table td .btn:last-child {
+    margin-right: 0;
+}
+
+/* Pagination Styles */
+.pagination .btn {
+    min-width: 40px;
+}
+
+/* Snackbar Styles (optional, included for completeness) */
+.success-snackbar {
+    background-color: #4caf50;
+    color: white;
+}
+
+.error-snackbar {
+    background-color: #f44336;
+    color: white;
+}

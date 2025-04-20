@@ -6,7 +6,6 @@ import { ComponentsModule } from './components/components.module';
 import { AppComponent } from './app.component';
 import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.component';
 import { MatIconModule } from '@angular/material/icon';
-import { AnalyticsComponent } from './analytics/analytics.component';
 import { AskaidatabaseComponent } from './askaidatabase/askaidatabase.component';
 import { EquipmentComponent } from './equipment/equipment.component';
 import { InterventionComponent } from './intervention/intervention.component';
@@ -17,8 +16,6 @@ import { ReportsComponent } from './reports/reports.component';
 import { HelpcomponentComponent } from './helpcomponent/helpcomponent.component';
 import { LoginComponent } from './account/login/login.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-
-
 import { MatButtonModule } from '@angular/material/button';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
@@ -33,45 +30,58 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-
+import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu'; // Added for MatMenu, MatMenuItem, MatMenuTrigger
+import { MatDividerModule } from '@angular/material/divider'; // Added for MatDivider
 import { HttpClientModule } from '@angular/common/http';
 import { MatNativeDateModule } from '@angular/material/core';
 import { EquipmentButtonComponent } from './equipment-button/equipment-button.component';
 import { StockButtonComponent } from './stock-button/stock-button.component';
+import { RessourcesButtonComponent } from './ressources-button/ressources-button.component';
 
 @NgModule({
   imports: [
-    BrowserAnimationsModule, 
-    RouterModule,                   // For navigation (navbar, sidebar)
-    AppRoutingModule,               // Custom routing
+    BrowserAnimationsModule,
+    RouterModule,
+    AppRoutingModule,
     ComponentsModule,
-    MatIconModule,  
+    MatIconModule,
     ReactiveFormsModule,
     FormsModule,
     HttpClientModule,
-
-     // Angular Material Components
-     MatDatepickerModule,
-     MatNativeDateModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
     MatButtonModule,
-     MatSidenavModule,
-     MatListModule,
-     MatCardModule,
-     MatInputModule,
-     MatDialogModule,
-     MatSnackBarModule,
-     MatTableModule,
-     MatFormFieldModule,
-     MatSelectModule,
-     MatCheckboxModule,
-     MatGridListModule,
-     MatProgressSpinnerModule
-                
+    MatSidenavModule,
+    MatListModule,
+    MatCardModule,
+    MatInputModule,
+    MatDialogModule,
+    MatSnackBarModule,
+    MatTableModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatCheckboxModule,
+    MatGridListModule,
+    MatProgressSpinnerModule,
+    MatMenuModule, // Added for MatMenu, MatMenuItem, MatMenuTrigger
+    MatDividerModule, // Added for MatDivider
+    
   ],
-  
   declarations: [
-    AppComponent,                   // Main app component
-    AdminLayoutComponent, AnalyticsComponent, AskaidatabaseComponent, EquipmentComponent, InterventionComponent, PlanningComponent, StockComponent, RessourcesComponent, ReportsComponent, HelpcomponentComponent, LoginComponent, EquipmentButtonComponent, StockButtonComponent,           // Layout with navbar, sidebar, content
+    AppComponent,
+    AdminLayoutComponent,
+    AskaidatabaseComponent,
+    EquipmentComponent,
+    InterventionComponent,
+    PlanningComponent,
+    StockComponent,
+    RessourcesComponent,
+    ReportsComponent,
+    HelpcomponentComponent,
+    LoginComponent,
+    EquipmentButtonComponent,
+    StockButtonComponent,
+    RessourcesButtonComponent
   ],
   providers: [],
   bootstrap: [AppComponent]

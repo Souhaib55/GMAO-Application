@@ -13,7 +13,5 @@ export class InitService {
             user: this.accountService.getUserInfo()
         })
     }          // Purpose of this code: To fetch user information asynchronously and return it as a labeled object ({ user: <data> }) once the operation completes, using forkJoin to manage the Observable.
-
-
   
 }

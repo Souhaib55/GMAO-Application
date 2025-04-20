@@ -5,6 +5,7 @@ import { LoginComponent } from './account/login/login.component';
 import { AdminLayoutRoutes } from './layouts/admin-layout/admin-layout.routing';
 import { EquipmentButtonComponent } from './equipment-button/equipment-button.component';
 import { StockButtonComponent } from './stock-button/stock-button.component';
+import { RessourcesButtonComponent } from './ressources-button/ressources-button.component';
 
 const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -12,6 +13,8 @@ const routes: Routes = [
     { path: 'equipment/edit/:id', component: EquipmentButtonComponent },
     { path: 'stock/create', component: StockButtonComponent },
     { path: 'stock/edit/:id', component: StockButtonComponent },
+    { path: 'ressources/create', component: RessourcesButtonComponent },
+    { path: 'ressources/edit/:id', component: RessourcesButtonComponent },
     { path: 'admin', component: AdminLayoutComponent, children: AdminLayoutRoutes },
     { path: '', redirectTo: 'login', pathMatch: 'full' },
     { path: '**', redirectTo: 'login' }

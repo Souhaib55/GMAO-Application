@@ -2,7 +2,6 @@ import { Routes } from '@angular/router';
 
 import { DashboardComponent } from '../../dashboard/dashboard.component';
 import { AskaidatabaseComponent } from 'app/askaidatabase/askaidatabase.component';
-import { AnalyticsComponent } from 'app/analytics/analytics.component';
 import { EquipmentComponent } from 'app/equipment/equipment.component';
 import { EquipmentButtonComponent } from 'app/equipment-button/equipment-button.component';
 import { InterventionComponent } from 'app/intervention/intervention.component';
@@ -17,7 +16,6 @@ export const AdminLayoutRoutes: Routes = [
     { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     
     { path: 'dashboard',      component: DashboardComponent },
-    { path: 'analytics',      component: AnalyticsComponent },
     { path: 'askaidatabase',  component: AskaidatabaseComponent },
 
     { path: 'equipment',      component: EquipmentComponent },
@@ -33,6 +31,10 @@ export const AdminLayoutRoutes: Routes = [
 
 
     { path: 'ressources',     component: RessourcesComponent },
+    { path: 'ressources/create', component: EquipmentButtonComponent },
+    { path: 'ressources/edit/:id', component: EquipmentButtonComponent  },
+
+
     { path: 'reports',        component: ReportsComponent },
     { path: 'helpcomponent',  component: HelpcomponentComponent },
 ];

@@ -1,0 +1,124 @@
+
+  
+  <!-- ressources-button.component.html -->
+  <div class="form-container">
+    <div class="form-box">
+      <h2 class="form-title">{{ isEditMode ? 'Edit Piece' : 'Create New Piece' }}</h2>
+      <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+      <form [formGroup]="pieceForm" (ngSubmit)="onSubmit()">
+        <div class="row">
+          <div class="col-md-6 input-group">
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>Piece Code</mat-label>
+              <input matInput formControlName="codePiece" required placeholder="Enter piece code">
+              <mat-error *ngIf="pieceForm.get('codePiece')?.touched && pieceForm.get('codePiece')?.hasError('required')">
+                Piece Code is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+  
+          <div class="col-md-6 input-group">
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>Designation</mat-label>
+              <input matInput formControlName="designation" required placeholder="Enter designation">
+              <mat-error *ngIf="pieceForm.get('designation')?.touched && pieceForm.get('designation')?.hasError('required')">
+                Designation is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+  
+          <div class="col-md-12 input-group">
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>Description</mat-label>
+              <textarea matInput formControlName="description" placeholder="Enter description"></textarea>
+            </mat-form-field>
+          </div>
+  
+          <div class="col-md-6 input-group">
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>Famille</mat-label>
+              <mat-select formControlName="idFamillePiece" required placeholder="Select famille">
+                <mat-option *ngFor="let famille of familleList" [value]="famille.idFamillePiece">
+                  {{ famille.nomFamille }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="pieceForm.get('idFamillePiece')?.touched && pieceForm.get('idFamillePiece')?.hasError('required')">
+                Famille is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+  
+          <div class="col-md-6 input-group">
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>Constructeur</mat-label>
+              <mat-select formControlName="idConstructeur" required placeholder="Select constructeur">
+                <mat-option *ngFor="let constructeur of constructeurList" [value]="constructeur.idConstructeur">
+                  {{ constructeur.nomConstructeur }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="pieceForm.get('idConstructeur')?.touched && pieceForm.get('idConstructeur')?.hasError('required')">
+                Constructeur is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+  
+          <div class="col-md-6 input-group">
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>Criticite</mat-label>
+              <mat-select formControlName="idCriticitePiece" required placeholder="Select criticite">
+                <mat-option *ngFor="let criticite of criticiteList" [value]="criticite.idCriticitePiece">
+                  {{ criticite.niveauCriticitePiece }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="pieceForm.get('idCriticitePiece')?.touched && pieceForm.get('idCriticitePiece')?.hasError('required')">
+                Criticite is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+  
+          <div class="col-md-6 input-group">
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>Quantite Stock</mat-label>
+              <input matInput type="number" formControlName="quantite_Stock" required placeholder="Enter stock quantity">
+              <mat-error *ngIf="pieceForm.get('quantite_Stock')?.touched && pieceForm.get('quantite_Stock')?.hasError('required')">
+                Stock quantity is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+  
+          <div class="col-md-6 input-group">
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>Prix Unitaire</mat-label>
+              <input matInput type="number" step="0.01" formControlName="prixUnitaire" required placeholder="Enter unit price">
+              <mat-error *ngIf="pieceForm.get('prixUnitaire')?.touched && pieceForm.get('prixUnitaire')?.hasError('required')">
+                Unit price is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+  
+          <div class="col-md-6 input-group">
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>Created On</mat-label>
+              <input matInput [matDatepicker]="pickerCreation" formControlName="dateCreation" [disabled]="isEditMode">
+              <mat-datepicker-toggle matSuffix [for]="pickerCreation" *ngIf="!isEditMode"></mat-datepicker-toggle>
+              <mat-datepicker #pickerCreation></mat-datepicker>
+              <mat-error *ngIf="pieceForm.get('dateCreation')?.touched && pieceForm.get('dateCreation')?.hasError('required')">
+                Creation date is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+  
+        <div class="button-group mt-3">
+          <button type="submit" class="btn custom-btn primary-btn" [disabled]="pieceForm.invalid || isSubmitting">
+            <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            {{ isEditMode ? 'Update' : 'Create' }}
+          </button>
+          <button type="button" class="btn custom-btn secondary-btn" (click)="goBack()" [disabled]="isSubmitting">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+
+  

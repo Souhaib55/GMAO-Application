@@ -93,6 +93,76 @@ namespace Infrastructure.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("Core.Entities.Constructeur", b =>
+                {
+                    b.Property<int>("IDConstructeur")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IDConstructeur"));
+
+                    b.Property<string>("Contact")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("DateCreation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime?>("DateModification")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("NomConstructeur")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("IDConstructeur");
+
+                    b.ToTable("Constructeurs");
+                });
+
+            modelBuilder.Entity("Core.Entities.CriticitePiece", b =>
+                {
+                    b.Property<int>("IDCriticitePiece")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IDCriticitePiece"));
+
+                    b.Property<DateTime>("DateCreation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime?>("DateModification")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<bool>("IsActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("NiveauCriticitePiece")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("IDCriticitePiece");
+
+                    b.ToTable("CriticitePieces");
+                });
+
             modelBuilder.Entity("Core.Entities.Equipment", b =>
                 {
                     b.Property<int>("IdEquipement")
@@ -142,19 +212,19 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int>("IdCriticite")
+                    b.Property<int?>("IdCriticite")
                         .HasColumnType("int");
 
-                    b.Property<int>("IdEtat")
+                    b.Property<int?>("IdEtat")
                         .HasColumnType("int");
 
-                    b.Property<int>("IdFamille")
+                    b.Property<int?>("IdFamille")
                         .HasColumnType("int");
 
-                    b.Property<int>("IdGroupe")
+                    b.Property<int?>("IdGroupe")
                         .HasColumnType("int");
 
-                    b.Property<int>("IdModele")
+                    b.Property<int?>("IdModele")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsDeleted")
@@ -292,6 +362,41 @@ namespace Infrastructure.Migrations
                     b.ToTable("FamilleEquipements");
                 });
 
+            modelBuilder.Entity("Core.Entities.FamillePiece", b =>
+                {
+                    b.Property<int>("IDFamillePiece")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IDFamillePiece"));
+
+                    b.Property<DateTime>("DateCreation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime?>("DateModification")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<bool>("IsActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("NomFamille")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("IDFamillePiece");
+
+                    b.ToTable("FamillePieces");
+                });
+
             modelBuilder.Entity("Core.Entities.GroupeEquipement", b =>
                 {
                     b.Property<int>("IdGroupe")
@@ -406,6 +511,71 @@ namespace Infrastructure.Migrations
                     b.HasIndex("IdMarque");
 
                     b.ToTable("ModeleEquipements");
+                });
+
+            modelBuilder.Entity("Core.Entities.Piece", b =>
+                {
+                    b.Property<int>("IDPiece")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IDPiece"));
+
+                    b.Property<string>("CodePiece")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("DateCreation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime?>("DateModification")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Designation")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("IDConstructeur")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IDCriticitePiece")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IDFamillePiece")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<decimal>("PrixUnitaire")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int>("Quantite_Stock")
+                        .HasColumnType("int");
+
+                    b.HasKey("IDPiece");
+
+                    b.HasIndex("CodePiece")
+                        .IsUnique();
+
+                    b.HasIndex("IDConstructeur");
+
+                    b.HasIndex("IDCriticitePiece");
+
+                    b.HasIndex("IDFamillePiece");
+
+                    b.ToTable("Pieces");
                 });
 
             modelBuilder.Entity("Core.Entities.Stock", b =>
@@ -639,32 +809,27 @@ namespace Infrastructure.Migrations
                     b.HasOne("Core.Entities.EquipmentCriticite", "Criticite")
                         .WithMany("Equipments")
                         .HasForeignKey("IdCriticite")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Core.Entities.EtatEquipement", "Etat")
                         .WithMany("Equipments")
                         .HasForeignKey("IdEtat")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Core.Entities.FamilleEquipment", "Famille")
                         .WithMany("Equipments")
                         .HasForeignKey("IdFamille")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Core.Entities.GroupeEquipement", "Groupe")
                         .WithMany("Equipments")
                         .HasForeignKey("IdGroupe")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Core.Entities.ModeleEquipement", "Modele")
                         .WithMany("Equipments")
                         .HasForeignKey("IdModele")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Criticite");
 
@@ -702,6 +867,33 @@ namespace Infrastructure.Migrations
                     b.Navigation("Famille");
 
                     b.Navigation("Marque");
+                });
+
+            modelBuilder.Entity("Core.Entities.Piece", b =>
+                {
+                    b.HasOne("Core.Entities.Constructeur", "Constructeur")
+                        .WithMany("Pieces")
+                        .HasForeignKey("IDConstructeur")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Core.Entities.CriticitePiece", "CriticitePiece")
+                        .WithMany("Pieces")
+                        .HasForeignKey("IDCriticitePiece")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Core.Entities.FamillePiece", "FamillePiece")
+                        .WithMany("Pieces")
+                        .HasForeignKey("IDFamillePiece")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Constructeur");
+
+                    b.Navigation("CriticitePiece");
+
+                    b.Navigation("FamillePiece");
                 });
 
             modelBuilder.Entity("Core.Entities.Stock", b =>
@@ -782,6 +974,16 @@ namespace Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Core.Entities.Constructeur", b =>
+                {
+                    b.Navigation("Pieces");
+                });
+
+            modelBuilder.Entity("Core.Entities.CriticitePiece", b =>
+                {
+                    b.Navigation("Pieces");
+                });
+
             modelBuilder.Entity("Core.Entities.EquipmentCriticite", b =>
                 {
                     b.Navigation("Equipments");
@@ -799,6 +1001,11 @@ namespace Infrastructure.Migrations
                     b.Navigation("Equipments");
 
                     b.Navigation("Modeles");
+                });
+
+            modelBuilder.Entity("Core.Entities.FamillePiece", b =>
+                {
+                    b.Navigation("Pieces");
                 });
 
             modelBuilder.Entity("Core.Entities.GroupeEquipement", b =>

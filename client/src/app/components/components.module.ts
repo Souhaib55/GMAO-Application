@@ -6,12 +6,20 @@ import { MatIconModule } from '@angular/material/icon'; // Add this
 
 import { NavbarComponent } from './navbar/navbar.component';
 import { SidebarComponent } from './sidebar/sidebar.component';
+import { MatMenuItem, MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
+import { MatDivider } from '@angular/material/divider';
+import { MatSelect, MatSelectModule } from '@angular/material/select';
+import { MatOptionModule } from '@angular/material/core';
 
 @NgModule({
   imports: [
     CommonModule,
     RouterModule,
-    MatIconModule
+    MatIconModule,
+    MatMenuModule,
+    MatSelectModule,
+    MatOptionModule
+  
   ],
   declarations: [
     NavbarComponent,

@@ -12,6 +12,8 @@ import {MatFormField, MatFormFieldModule} from '@angular/material/form-field';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {MatSelectModule} from '@angular/material/select';
 import { StockComponent } from 'app/stock/stock.component';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatDividerModule } from '@angular/material/divider';
 
 
 @NgModule({
@@ -29,6 +31,8 @@ import { StockComponent } from 'app/stock/stock.component';
 
     MatButtonModule,
     MatInputModule,
+    MatMenuModule,
+    MatDividerModule
 
     
   ],
