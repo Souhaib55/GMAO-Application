@@ -1,15 +1,197 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { trigger, transition, style, animate } from '@angular/animations';
+import { forkJoin } from 'rxjs';
 
 @Component({
-  selector: 'app-intervention',
+  selector: 'app-interventions',
   templateUrl: './intervention.component.html',
-  styleUrls: ['./intervention.component.scss']
+  styleUrls: ['./intervention.component.scss'],
+  animations: [
+    trigger('slideInOut', [
+      transition(':enter', [
+        style({ transform: 'translateX(100%)', opacity: 0 }),
+        animate('300ms ease-out', style({ transform: 'translateX(0)', opacity: 1 }))
+      ]),
+      transition(':leave', [
+        animate('300ms ease-in', style({ transform: 'translateX(100%)', opacity: 0 }))
+      ])
+    ])
+  ]
 })
 export class InterventionComponent implements OnInit {
+  private http = inject(HttpClient);
+  private router = inject(Router);
 
-  constructor() { }
+  private baseUrl = 'https://localhost:5001/api/DemandeIntervention';
+  private etatBaseUrl = 'https://localhost:5001/api/Etat';
+  private typeInterventionBaseUrl = 'https://localhost:5001/api/TypeIntervention';
+  private urgenceBaseUrl = 'https://localhost:5001/api/Urgence';
+  private chaineProductionBaseUrl = 'https://localhost:5001/api/ChaineProduction';
+  private usersBaseUrl = 'https://localhost:5001/api/Users';
+
+  paginatedInterventionList: InterventionListItem[] = [];
+  showPopup = false;
+  popupMessage = '';
+  popupType: 'success' | 'error' = 'success';
+  isLoading = false;
+
+  etatMap: Map<number, string> = new Map();
+  typeInterventionMap: Map<number, string> = new Map();
+  urgenceMap: Map<number, string> = new Map();
+  chaineProductionMap: Map<number, string> = new Map();
+  usersMap: Map<number, string> = new Map();
+
+  currentPage = 1;
+  pageSize = 5;
+  totalCount = 0;
+  totalPages = 1;
+  pageSizeOptions = [5, 10, 15];
 
   ngOnInit(): void {
+    const state = history.state;
+    if (state?.message) {
+      this.showPopupMessage(state.message, state.type || 'success');
+    }
+    this.loadReferenceData();
   }
 
+  loadReferenceData(): void {
+    this.isLoading = true;
+    forkJoin({
+      etats: this.http.get<any[]>(this.etatBaseUrl),
+      types: this.http.get<any[]>(this.typeInterventionBaseUrl),
+      urgences: this.http.get<any[]>(this.urgenceBaseUrl),
+      chaines: this.http.get<any[]>(this.chaineProductionBaseUrl),
+      users: this.http.get<any[]>(this.usersBaseUrl)
+    }).subscribe({
+      next: (res) => {
+        res.etats.forEach(item => this.etatMap.set(item.idEtat, item.libelle));
+        res.types.forEach(item => this.typeInterventionMap.set(item.idTypeIntervention, item.libelle));
+        res.urgences.forEach(item => this.urgenceMap.set(item.idUrgence, item.libelle));
+        res.chaines.forEach(item => this.chaineProductionMap.set(item.idChaineProduction, item.libelle));
+        res.users.forEach(item => this.usersMap.set(item.id, `${item.nom} ${item.prenom}`));
+        this.getAllInterventions();
+      },
+      error: (err) => {
+        this.showPopupMessage('Failed to load reference data', 'error');
+        this.isLoading = false;
+      }
+    });
+  }
+
+  getAllInterventions(): void {
+    this.isLoading = true;
+    const url = `${this.baseUrl}?page=${this.currentPage}&pageSize=${this.pageSize}`;
+    this.http.get<any>(url).subscribe({
+      next: (res) => {
+        this.paginatedInterventionList = res.data.map((item: any) => ({
+          idDemandeIntervention: item.idDemandeIntervention || 0,
+          titre: item.titre || '',
+          dateCreation: item.dateCreation ? new Date(item.dateCreation) : new Date(),
+          machineArretee: item.machineArretee || false,
+          etat: item.etat?.libelle || this.etatMap.get(item.idEtat) || 'Unknown',
+          typeIntervention: item.typeIntervention?.libelle || this.typeInterventionMap.get(item.idTypeIntervention) || 'Unknown',
+          urgence: item.urgence?.libelle || this.urgenceMap.get(item.idUrgence) || 'Unknown',
+          chaineProduction: item.chaineProduction?.libelle || this.chaineProductionMap.get(item.idChaineProduction) || 'Unknown',
+          demandeur: item.demandeur ? `${item.demandeur.nom} ${item.demandeur.prenom}` : this.usersMap.get(item.demandeursID) || 'Unknown',
+          destinataire: item.destinataire ? `${item.destinataire.nom} ${item.destinataire.prenom}` : this.usersMap.get(item.destinatairesID) || 'Unknown',
+          fileName: item.fileName || '' // Added fileName mapping
+        }));
+        this.totalCount = res.totalCount || 0;
+        this.totalPages = Math.ceil(this.totalCount / this.pageSize) || 1;
+        this.isLoading = false;
+      },
+      error: (err) => {
+        this.showPopupMessage('Failed to fetch interventions', 'error');
+        this.isLoading = false;
+      }
+    });
+  }
+
+  downloadFile(id: number, fileName: string): void {
+    const url = `${this.baseUrl}/${id}/file`; // Assumes backend provides this endpoint
+    this.http.get(url, { responseType: 'blob' }).subscribe({
+      next: (blob) => {
+        const a = document.createElement('a');
+        const objectUrl = URL.createObjectURL(blob);
+        a.href = objectUrl;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(objectUrl);
+      },
+      error: (err) => {
+        this.showPopupMessage('Failed to download file', 'error');
+        console.error('Download failed', err);
+      }
+    });
+  }
+
+  changePageSize(): void {
+    this.currentPage = 1;
+    this.getAllInterventions();
+  }
+
+  previousPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.getAllInterventions();
+    }
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.getAllInterventions();
+    }
+  }
+
+  navigateToCreate(): void {
+    this.router.navigate(['/intervention/create']);
+  }
+
+  navigateToEdit(id: number): void {
+    this.router.navigate(['/intervention/edit', id]);
+  }
+
+  deleteIntervention(item: InterventionListItem): void {
+    if (!confirm(`Delete intervention: ${item.titre}?`)) return;
+    this.isLoading = true;
+    this.http.delete(`${this.baseUrl}/${item.idDemandeIntervention}`).subscribe({
+      next: () => {
+        this.showPopupMessage('Intervention deleted successfully!', 'success');
+        this.getAllInterventions();
+      },
+      error: (err) => {
+        this.showPopupMessage(err.error?.message || 'Failed to delete intervention', 'error');
+        this.isLoading = false;
+      }
+    });
+  }
+
+  private showPopupMessage(message: string, type: 'success' | 'error'): void {
+    this.popupMessage = message;
+    this.popupType = type;
+    this.showPopup = true;
+    setTimeout(() => this.hidePopup(), 3000);
+  }
+
+  hidePopup(): void {
+    this.showPopup = false;
+  }
+}
+
+interface InterventionListItem {
+  idDemandeIntervention: number;
+  titre: string;
+  dateCreation: Date;
+  machineArretee: boolean;
+  etat: string;
+  typeIntervention: string;
+  urgence: string;
+  chaineProduction: string;
+  demandeur: string;
+  destinataire: string;
+  fileName?: string; // Added optional fileName property
 }

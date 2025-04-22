@@ -12,40 +12,44 @@
   align-items: center;
 }
 
-/* Search styling to match image */
-.search-container {
-  flex: 1;
+/* Navbar right section with search and user */
+.navbar-right-section {
   display: flex;
-  justify-content: center;
   align-items: center;
-  padding: 0 20px;
+  margin-left: auto;
+  gap: 15px;
+}
+
+/* Search styling updated to match sidebar */
+.search-container {
+  display: flex;
+  align-items: center;
 }
 
 .search-input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
-  width: 450px;
+  width: 280px;
   background-color: #f5f5f5;
-  border-radius: 5px;
+  border-radius: 8px;
   padding: 0 10px;
   border: 1px solid #f0f0f0;
-  transition: border-color 0.3s ease;
+  transition: all 0.2s ease;
 }
 
-/* New style for focused search input */
-.search-focused {
-  border: 1px solid #2a56c6 !important; /* Darker blue border */
-  box-shadow: 0 0 4px rgba(42, 86, 198, 0.2); /* Subtle shadow for emphasis */
+.search-input-wrapper:focus-within {
+  border: 1px solid #5e72e4 !important; /* Match sidebar active color */
+  box-shadow: 0 0 4px rgba(94, 114, 228, 0.2); /* Subtle shadow matching sidebar */
 }
 
 .search-input {
   border: none;
   background-color: transparent;
-  padding: 8px 15px;
+  padding: 8px 10px;
   width: 100%;
   font-size: 14px;
-  color: #555;
+  color: #495057; /* Match sidebar text color */
 }
 
 .search-input:focus {
@@ -56,8 +60,8 @@
 .search-icon {
   display: flex;
   align-items: center;
-  color: #999;
-  cursor: pointer; /* Add pointer cursor to indicate it's clickable */
+  color: #6c757d; /* Match sidebar icon color */
+  cursor: pointer;
 }
 
 .search-icon i {
@@ -68,7 +72,6 @@
 .navbar-nav {
   display: flex;
   align-items: center;
-  margin-left: auto;
 }
 
 .nav-item {
@@ -88,7 +91,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background-color: #7e3ff2;
+  background-color: #5e72e4; /* Match sidebar active color */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -115,7 +118,7 @@
   background-color: #fff;
   background-clip: padding-box;
   border: 1px solid rgba(0,0,0,.15);
-  border-radius: 4px;
+  border-radius: 8px; /* Match sidebar border-radius */
   box-shadow: 0 6px 12px rgba(0,0,0,.175);
 }
 
@@ -124,7 +127,7 @@
   padding: 8px 20px;
   clear: both;
   font-weight: 400;
-  color: #333;
+  color: #495057; /* Match sidebar text color */
   text-align: inherit;
   white-space: nowrap;
   background-color: transparent;
@@ -134,8 +137,8 @@
 }
 
 .dropdown-item:hover {
-  background-color: #f8f4ff;
-  color: #7e3ff2;
+  background-color: #f8f9fa; /* Match sidebar hover */
+  color: #5e72e4; /* Match sidebar active color */
   cursor: pointer;
 }
 
@@ -156,22 +159,23 @@
   .navbar-collapse:not(.show) {
     display: none;
   }
-}
-
-.search-input-wrapper:focus-within {
-  border: 1px solid #2a56c6 !important;
-  box-shadow: 0 0 4px rgba(42, 86, 198, 0.2);
+  
+  .navbar-right-section {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    width: 100%;
+  }
 }
 
 /* Enhanced User Dropdown Styling */
 .user-dropdown-wrapper {
-  margin-left: auto;
   position: relative;
 }
 
 .user-dropdown-button {
-  background-color: #f0e6ff !important;
-  border-radius: 6px !important;
+  background-color: #f0f2ff !important; /* Lighter shade of sidebar active color */
+  border-radius: 8px !important; /* Match sidebar border-radius */
   border: none !important;
   padding: 4px 8px !important;
   min-width: auto !important;
@@ -186,14 +190,14 @@
 }
 
 .user-email {
-  color: #7e3ff2;
+  color: #5e72e4; /* Match sidebar active color */
   font-weight: 500;
   font-size: 15px;
   margin-right: 4px;
 }
 
 .dropdown-icon {
-  color: #7e3ff2;
+  color: #5e72e4; /* Match sidebar active color */
   transform: scale(1.2);
   margin-right: 4px;
 }
@@ -201,22 +205,19 @@
 /* Override Material Menu Styles */
 ::ng-deep .mat-menu-panel.custom-menu {
   min-width: 180px !important;
-  border-radius: 8px !important;
+  border-radius: 8px !important; /* Match sidebar border-radius */
   margin-top: 10px;
 }
 
 ::ng-deep .mat-menu-item:hover {
-  background-color: #f8f4ff !important;
-  color: #7e3ff2 !important;
+  background-color: #f8f9fa !important; /* Match sidebar hover */
+  color: #5e72e4 !important; /* Match sidebar active color */
 }
 
 ::ng-deep .mat-menu-item .mat-icon {
-  color: #7e3ff2;
+  color: #5e72e4; /* Match sidebar active color */
   margin-right: 12px;
 }
-
-
-
 
 ::ng-deep .mat-menu-panel {
   z-index: 1060 !important; /* Highest z-index to ensure visibility */
@@ -242,12 +243,12 @@
 }
 
 ::ng-deep .mat-menu-item:hover {
-  background-color: #f8f4ff !important;
-  color: #7e3ff2 !important;
+  background-color: #f8f9fa !important; /* Match sidebar hover */
+  color: #5e72e4 !important; /* Match sidebar active color */
 }
 
 ::ng-deep .mat-menu-item .mat-icon {
-  color: #7e3ff2;
+  color: #5e72e4; /* Match sidebar active color */
   margin-right: 12px;
 }
 

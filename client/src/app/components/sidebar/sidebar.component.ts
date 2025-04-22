@@ -11,7 +11,7 @@ declare interface RouteInfo {
 export const ROUTES: RouteInfo[] = [
     { path: 'dashboard', title: 'Dashboard',  icon: 'dashboard', class: '' },
     { path: 'askaidatabase', title: 'GMAO Chat',  icon:'chat_bubble_rounded', class: '' },
-    { path: 'equipment', title: 'Equipment',  icon:'home_repair_service_rounded', class: '' },
+    { path: 'equipment', title: 'Equipements',  icon:'home_repair_service_rounded', class: '' },
     { path: 'intervention', title: 'Interventions',  icon:'construction_rounded', class: '' },
     { path: 'planning', title: 'Planning',  icon:'content_paste', class: '' },
     { path: 'stock', title: 'Stock/Achat',  icon:'inventory_2_rounded', class: '' },
@@ -26,13 +26,14 @@ export const ROUTES: RouteInfo[] = [
   styleUrls: ['./sidebar.component.css']
 })
 export class SidebarComponent implements OnInit {
-  menuItems: any[];
+  menuItems: RouteInfo[];
 
   constructor() { }
 
   ngOnInit() {
     this.menuItems = ROUTES.filter(menuItem => menuItem);
   }
+
   isMobileMenu() {
       if ($(window).width() > 991) {
           return false;

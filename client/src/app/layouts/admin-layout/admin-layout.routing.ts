@@ -23,6 +23,10 @@ export const AdminLayoutRoutes: Routes = [
     { path: 'equipment/edit/:id', component: EquipmentButtonComponent },
 
     { path: 'intervention',   component: InterventionComponent },
+    { path: 'intervention/create', component: EquipmentButtonComponent },
+    { path: 'intervention/edit/:id', component: EquipmentButtonComponent },
+
+
     { path: 'planning',       component: PlanningComponent },
 
     { path: 'stock',          component: StockComponent },

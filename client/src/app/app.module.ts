@@ -37,6 +37,8 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { EquipmentButtonComponent } from './equipment-button/equipment-button.component';
 import { StockButtonComponent } from './stock-button/stock-button.component';
 import { RessourcesButtonComponent } from './ressources-button/ressources-button.component';
+import { InterventionButtonComponent } from './intervention-button/intervention-button.component';
+import { HomepageComponent } from './homepage/homepage.component';
 
 @NgModule({
   imports: [
@@ -81,7 +83,9 @@ import { RessourcesButtonComponent } from './ressources-button/ressources-button
     LoginComponent,
     EquipmentButtonComponent,
     StockButtonComponent,
-    RessourcesButtonComponent
+    RessourcesButtonComponent,
+    InterventionButtonComponent,
+    HomepageComponent
   ],
   providers: [],
   bootstrap: [AppComponent]

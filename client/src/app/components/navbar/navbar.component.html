@@ -11,25 +11,28 @@
             <span class="navbar-toggler-icon icon-bar"></span>
         </button>
         
-        <div class="collapse navbar-collapse" id="navigation">
-            <div class="search-container">
-                <div class="search-input-wrapper">
-                    <input type="text" class="search-input" placeholder="Search here...">
-                    <div class="search-icon">
-                        <i class="material-icons">search</i>
-                    </div>
+        <!-- Search moved to left side -->
+        <div class="search-container">
+            <div class="search-input-wrapper">
+                <div class="search-icon">
+                    <i class="material-icons">search</i>
                 </div>
+                <input type="text" class="search-input" placeholder="Search here...">
             </div>
-
-            <!-- Fixed conditional syntax -->
-            <ng-container *ngIf="accountService.currentUser()">
-                <button mat-button class="user-dropdown-button" [matMenuTriggerFor]="menu">
-                    <div class="dropdown-content">
-                        <span class="user-email">{{accountService.currentUser()?.email}}</span>
-                        <mat-icon class="dropdown-icon">arrow_drop_down</mat-icon>
-                    </div>
-                </button>
-            </ng-container>
+        </div>
+        
+        <div class="collapse navbar-collapse" id="navigation">
+            <div class="navbar-right-section">
+                <!-- User dropdown moved to the far right -->
+                <ng-container *ngIf="accountService.currentUser()">
+                    <button mat-button class="user-dropdown-button" [matMenuTriggerFor]="menu">
+                        <div class="dropdown-content">
+                            <span class="user-email">{{accountService.currentUser()?.email}}</span>
+                            <mat-icon class="dropdown-icon">arrow_drop_down</mat-icon>
+                        </div>
+                    </button>
+                </ng-container>
+            </div>
         </div>
     </div>
 </nav>

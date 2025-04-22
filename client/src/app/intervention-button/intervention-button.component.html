@@ -1,0 +1,137 @@
+<div class="form-container">
+  <div class="form-box">
+    <h2 class="form-title">{{ isEditMode ? 'Edit Intervention' : 'Create New Intervention' }}</h2>
+    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+    <form [formGroup]="interventionForm" (ngSubmit)="onSubmit()">
+      <div class="row">
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Titre</mat-label>
+            <input matInput formControlName="titre" required placeholder="Enter titre">
+            <mat-error *ngIf="interventionForm.get('titre')?.touched && interventionForm.get('titre')?.hasError('required')">
+              Titre is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-6 input-group">
+          <div *ngIf="isEditMode && existingFileName">
+            Existing file: {{ existingFileName }}
+          </div>
+          <input type="file" (change)="onFileSelected($event)" accept="application/pdf,text/plain">
+          <div *ngIf="selectedFile">
+            Selected file: {{ selectedFile.name }}
+          </div>
+        </div>
+
+        <div class="col-md-6 input-group">
+          <mat-checkbox formControlName="machineArretee">Machine Arretee</mat-checkbox>
+        </div>
+
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Etat</mat-label>
+            <mat-select formControlName="idEtat" required placeholder="Select etat">
+              <mat-option *ngFor="let etat of etatList" [value]="etat.idEtat">
+                {{ etat.libelle }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="interventionForm.get('idEtat')?.touched && interventionForm.get('idEtat')?.hasError('required')">
+              Etat is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Type Intervention</mat-label>
+            <mat-select formControlName="idTypeIntervention" required placeholder="Select type intervention">
+              <mat-option *ngFor="let type of typeInterventionList" [value]="type.idTypeIntervention">
+                {{ type.libelle }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="interventionForm.get('idTypeIntervention')?.touched && interventionForm.get('idTypeIntervention')?.hasError('required')">
+              Type Intervention is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Urgence</mat-label>
+            <mat-select formControlName="idUrgence" required placeholder="Select urgence">
+              <mat-option *ngFor="let urgence of urgenceList" [value]="urgence.idUrgence">
+                {{ urgence.libelle }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="interventionForm.get('idUrgence')?.touched && interventionForm.get('idUrgence')?.hasError('required')">
+              Urgence is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Chaine Production</mat-label>
+            <mat-select formControlName="idChaineProduction" required placeholder="Select chaine production">
+              <mat-option *ngFor="let chaine of chaineProductionList" [value]="chaine.idChaineProduction">
+                {{ chaine.libelle }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="interventionForm.get('idChaineProduction')?.touched && interventionForm.get('idChaineProduction')?.hasError('required')">
+              Chaine Production is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Demandeur</mat-label>
+            <mat-select formControlName="demandeursID" required placeholder="Select demandeur">
+              <mat-option *ngFor="let user of usersList" [value]="user.id">
+                {{ user.nom }} {{ user.prenom }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="interventionForm.get('demandeursID')?.touched && interventionForm.get('demandeursID')?.hasError('required')">
+              Demandeur is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Destinataire</mat-label>
+            <mat-select formControlName="destinatairesID" required placeholder="Select destinataire">
+              <mat-option *ngFor="let user of usersList" [value]="user.id">
+                {{ user.nom }} {{ user.prenom }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="interventionForm.get('destinatairesID')?.touched && interventionForm.get('destinatairesID')?.hasError('required')">
+              Destinataire is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Date Creation</mat-label>
+            <input matInput [matDatepicker]="pickerCreation" formControlName="dateCreation" [disabled]="isEditMode">
+            <mat-datepicker-toggle matSuffix [for]="pickerCreation" *ngIf="!isEditMode"></mat-datepicker-toggle>
+            <mat-datepicker #pickerCreation></mat-datepicker>
+            <mat-error *ngIf="interventionForm.get('dateCreation')?.touched && interventionForm.get('dateCreation')?.hasError('required')">
+              Date Creation is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="button-group mt-3">
+        <button type="submit" class="btn custom-btn primary-btn" [disabled]="interventionForm.invalid || isSubmitting">
+          <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          {{ isEditMode ? 'Update' : 'Create' }}
+        </button>
+        <button type="button" class="btn custom-btn secondary-btn" (click)="goBack()" [disabled]="isSubmitting">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>

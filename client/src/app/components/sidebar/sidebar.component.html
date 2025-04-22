@@ -1,35 +1,24 @@
-<div class="logo bg-white">
-  <div class="simple-text">
-
-      <div class="alcodex">Alcodex</div>
-
-  </div>
-  
-</div>
-
-<div class="sidebar-wrapper bg-white">
-<div *ngIf="isMobileMenu()">
-  <form class="navbar-form">
-    <span class="bmd-form-group">
-      <div class="input-group no-border ">
-        <input type="text" value="" class="form-control" placeholder="Search...">
-        <button mat-raised-button type="submit" class="btn btn-white btn-round btn-just-icon">
-          <i class="material-icons">search</i>
-          <div class="ripple-container"></div>
-        </button>
+<div class="sidebar-container">
+  <!-- Logo section -->
+  <div class="logo">
+    <div class="logo-container">
+      <div class="logo-img">
+        <div class="logo-gradient"></div>
       </div>
-    </span>
-  </form>
+      <span class="logo-text">ALCODEX</span>
+    </div>
+  </div>
 
-</div>
-
-  <ul class="nav">
+  <!-- Navigation -->
+  <div class="sidebar-wrapper">
+    <!-- Added margin-top class for spacing -->
+    <ul class="nav nav-margin-top">
       <li routerLinkActive="active" *ngFor="let menuItem of menuItems" class="{{menuItem.class}} nav-item">
-          <a class="nav-link" [routerLink]="[menuItem.path]">
-              <i class="material-icons">{{menuItem.icon}}</i>
-              <p>{{menuItem.title}}</p>
-          </a>
+        <a class="nav-link" [routerLink]="[menuItem.path]">
+          <i class="material-icons">{{menuItem.icon}}</i>
+          <p>{{menuItem.title}}</p>
+        </a>
       </li>
-  </ul>
-  
+    </ul>
+  </div>
 </div>
