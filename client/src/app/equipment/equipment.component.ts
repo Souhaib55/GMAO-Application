@@ -2,7 +2,8 @@ import { Component, OnInit, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { trigger, transition, style, animate } from '@angular/animations';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subject } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 
 @Component({
   selector: 'app-equipment',
@@ -36,6 +37,7 @@ export class EquipmentComponent implements OnInit {
   popupMessage = '';
   popupType: 'success' | 'error' = 'success';
   isLoading = false;
+  searchTerm = '';
 
   criticiteMap: Map<number, string> = new Map();
   etatMap: Map<number, string> = new Map();
@@ -49,11 +51,16 @@ export class EquipmentComponent implements OnInit {
   totalPages = 1;
   pageSizeOptions = [5, 10, 15];
 
+  private searchSubject = new Subject<string>();
+
   ngOnInit(): void {
     const state = history.state;
     if (state?.message) {
       this.showPopupMessage(state.message, state.type || 'success');
     }
+    this.searchSubject.pipe(debounceTime(300)).subscribe(() => {
+      this.filterItems();
+    });
     this.loadReferenceData();
   }
 
@@ -72,17 +79,9 @@ export class EquipmentComponent implements OnInit {
         res.familles.forEach(item => this.familleMap.set(item.idFamille, item.nomFamille));
         res.modeles.forEach(item => this.modeleMap.set(item.idModele, item.nomModele));
         res.groupes.forEach(item => this.groupeMap.set(item.idGroupe, item.nomGroupe));
-        console.log('Reference data loaded:', {
-          criticites: res.criticites.length,
-          etats: res.etats.length,
-          familles: res.familles.length,
-          modeles: res.modeles.length,
-          groupes: res.groupes.length
-        });
         this.getAllEquipment();
       },
       error: (err) => {
-        console.error('Error loading reference data:', err);
         this.showPopupMessage('Failed to load reference data', 'error');
         this.isLoading = false;
       }
@@ -94,7 +93,6 @@ export class EquipmentComponent implements OnInit {
     const url = `${this.baseUrl}?page=${this.currentPage}&pageSize=${this.pageSize}`;
     this.http.get<any>(url).subscribe({
       next: (res) => {
-        console.log('Raw API response:', JSON.stringify(res, null, 2));
         this.paginatedEquipmentList = res.data.map((item: any) => ({
           idEquipement: item.idEquipement || 0,
           codeEquipement: item.codeEquipement || '',
@@ -128,7 +126,58 @@ export class EquipmentComponent implements OnInit {
       },
       error: (err) => {
         this.showPopupMessage('Failed to fetch equipment', 'error');
-        console.error('Error fetching equipment:', err);
+        this.isLoading = false;
+      }
+    });
+  }
+
+  applyFilter(): void {
+    this.searchSubject.next(this.searchTerm);
+  }
+
+  filterItems(): void {
+    if (!this.searchTerm.trim()) {
+      this.getAllEquipment();
+      return;
+    }
+    const term = this.searchTerm.toLowerCase().trim();
+    this.isLoading = true;
+    const url = `${this.baseUrl}?page=${this.currentPage}&pageSize=${this.pageSize}&search=${term}`;
+    this.http.get<any>(url).subscribe({
+      next: (res) => {
+        this.paginatedEquipmentList = res.data.map((item: any) => ({
+          idEquipement: item.idEquipement || 0,
+          codeEquipement: item.codeEquipement || '',
+          designation: item.designation || '',
+          description: item.description || '',
+          idCriticite: item.idCriticite,
+          idEtat: item.idEtat,
+          idFamille: item.idFamille,
+          idModele: item.idModele,
+          idGroupe: item.idGroupe,
+          criticite: item.criticite?.nomCriticite || this.criticiteMap.get(item.idCriticite) || 'Unknown',
+          etat: item.etat?.nomEtat || this.etatMap.get(item.idEtat) || 'Unknown',
+          famille: item.famille?.nomFamille || this.familleMap.get(item.idFamille) || 'Unknown',
+          modele: item.modele?.nomModele || this.modeleMap.get(item.idModele) || 'Unknown',
+          groupe: item.groupe?.nomGroupe || this.groupeMap.get(item.idGroupe) || 'Unknown',
+          dateInstallation: item.dateInstallation ? new Date(item.dateInstallation) : null,
+          dateMiseEnService: item.dateMiseEnService ? new Date(item.dateMiseEnService) : null,
+          numeroSerie: item.numeroSerie || '',
+          sousGarantie: item.sousGarantie ?? false,
+          dateAchat: item.dateAchat ? new Date(item.dateAchat) : null,
+          dateFinGarantie: item.dateFinGarantie ? new Date(item.dateFinGarantie) : null,
+          dateConstruction: item.dateConstruction ? new Date(item.dateConstruction) : null,
+          coutAchat: item.coutAchat ?? null,
+          dateCreation: item.dateCreation ? new Date(item.dateCreation) : new Date(),
+          dateModification: item.dateModification ? new Date(item.dateModification) : null,
+          isDeleted: item.isDeleted ?? false
+        }));
+        this.totalCount = res.totalCount || 0;
+        this.totalPages = Math.ceil(this.totalCount / this.pageSize) || 1;
+        this.isLoading = false;
+      },
+      error: (err) => {
+        this.showPopupMessage('Failed to search equipment', 'error');
         this.isLoading = false;
       }
     });
@@ -153,6 +202,40 @@ export class EquipmentComponent implements OnInit {
     }
   }
 
+  goToPage(page: number): void {
+    if (page !== this.currentPage && page > 0 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.getAllEquipment();
+    }
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxVisiblePages = 3;
+    
+    if (this.totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(this.currentPage);
+      if (this.currentPage > 1) {
+        pages.unshift(this.currentPage - 1);
+      }
+      if (this.currentPage < this.totalPages) {
+        pages.push(this.currentPage + 1);
+      }
+      while (pages.length < maxVisiblePages && pages.length < this.totalPages) {
+        if (pages[0] > 1) {
+          pages.unshift(pages[0] - 1);
+        } else if (pages[pages.length - 1] < this.totalPages) {
+          pages.push(pages[pages.length - 1] + 1);
+        }
+      }
+    }
+    return pages;
+  }
+
   navigateToCreate(): void {
     this.router.navigate(['/equipment/create']);
   }
@@ -174,6 +257,14 @@ export class EquipmentComponent implements OnInit {
         this.isLoading = false;
       }
     });
+  }
+
+  getCriticiteClass(criticite: string): string {
+    const normalizedCriticite = criticite.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+    if (normalizedCriticite === 'high') return 'criticite-haute';
+    if (normalizedCriticite === 'medium') return 'criticite-moyenne';
+    if (normalizedCriticite === 'low') return 'criticite-basse';
+    return '';
   }
 
   private showPopupMessage(message: string, type: 'success' | 'error'): void {

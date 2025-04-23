@@ -110,7 +110,8 @@ namespace API.Controllers
                 IDCriticitePiece = pieceDto.IDCriticitePiece,
                 Quantite_Stock = pieceDto.Quantite_Stock,
                 PrixUnitaire = pieceDto.PrixUnitaire,
-                DateCreation = DateTime.Now,
+                DateCreation = pieceDto.DateCreation,
+                DateModification = pieceDto.DateModification,
                 IsActif = true
             };
 
@@ -168,7 +169,7 @@ namespace API.Controllers
             existingPiece.IDCriticitePiece = pieceDto.IDCriticitePiece;
             existingPiece.Quantite_Stock = pieceDto.Quantite_Stock;
             existingPiece.PrixUnitaire = pieceDto.PrixUnitaire;
-            existingPiece.DateModification = DateTime.Now;
+            existingPiece.DateModification = pieceDto.DateModification ?? DateTime.Now; // Use client-provided or fallback to now
 
             await _context.SaveChangesAsync();
 

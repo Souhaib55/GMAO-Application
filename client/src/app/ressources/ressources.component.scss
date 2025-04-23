@@ -1,131 +1,322 @@
-/* Popup Styles */
-.popup-container {
+/* Main Container Styles */
+.resource-container {
+    max-width: 1400px;
+    margin: 95px auto 20px !important; /* Increased top margin from 20px to 40px */
+    padding: 20px; /* Changed from '0 20px' to '20px' for padding on all sides */
+    font-family: 'Roboto', sans-serif;
+    background-color: white; /* Added to unify the background */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); /* Added shadow for a card-like effect */
+    border-radius: 8px; /* Added rounded corners for a cohesive look */
+  }
+  
+  /* Header Section */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #5c6bc0; /* Changed from #5c6bc0 to a light gray for consistency */
+    padding: 20px;
+    border-bottom: 1px solid #eee; /* Added to visually separate header from controls */
+    margin-bottom: 16px; /* Reduced from 24px to bring components closer */
+    color: #333; /* Changed from white to a dark color for visibility on light background */
+  }
+  
+  .header-left {
+    display: flex;
+    align-items: center;
+  }
+  
+  .icon-container {
+    background-color: #e0e0e0; /* Changed from rgba(255, 255, 255, 0.2) to a visible gray */
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16px;
+  }
+  
+  .database-icon {
+    color: #5c6bc0; /* Changed from white to match the theme */
+  }
+  
+  .title-container h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 500;
+    color:white;
+  }
+  
+  .subtitle {
+    margin: 0;
+    opacity: 0.8;
+    font-size: 0.9rem;
+    margin-top: 4px;
+    color:rgb(255, 255, 255);
+  }
+  
+  .create-button {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    color: #5c6bc0;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  
+    mat-icon {
+      margin-right: 8px;
+      font-size: 18px;
+      height: 18px;
+      width: 18px;
+    }
+  
+    &:hover {
+      background-color: #f5f5f5;
+    }
+  }
+  
+  /* Controls Section */
+  .controls {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 16px; /* Reduced from 20px to reduce separation */
+  }
+  
+  .entries-selector {
+    display: flex;
+    align-items: center;
+  
+    span {
+      margin-right: 10px;
+      color: #666;
+    }
+  
+    mat-form-field {
+      width: 80px;
+    }
+  }
+  
+  .search-container {
+    mat-form-field {
+      width: 250px;
+    }
+  }
+  
+  ::ng-deep .mat-form-field-wrapper {
+    margin-bottom: -1.25em;
+  }
+  
+  /* Table Styles */
+  .table-container {
+    overflow-x: auto;
+    background-color: white; /* Already present, kept for clarity */
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); /* Already present, kept for consistency */
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  th {
+    text-align: left;
+    padding: 16px;
+    font-weight: 500;
+    color: #666;
+    border-bottom: 1px solid #eee;
+    background-color: #f9f9f9; /* Added to match the header for a unified look */
+  }
+  
+  td {
+    padding: 16px;
+    border-bottom: 1px solid #eee;
+    color: #333;
+  }
+  
+  tr:last-child td {
+    border-bottom: none;
+  }
+  
+  /* Remaining styles (unchanged) */
+  .criticite-haute {
+    display: inline-block;
+    background-color: #ffebee;
+    color: #d32f2f;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+  }
+  
+  .criticite-moyenne {
+    display: inline-block;
+    background-color: #fff8e1;
+    color: #ffa000;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+  }
+
+  .criticite-basse {
+    display: inline-block;
+    background-color: #e8f5e9;
+    color: green;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+  }
+  
+  .actions {
+    white-space: nowrap;
+  }
+  
+  .no-data {
+    text-align: center;
+    padding: 24px;
+    color: #666;
+  }
+  
+  /* Loader Styles */
+  .loader-container {
+    display: flex;
+    justify-content: center;
+    padding: 40px;
+  }
+  
+  /* Pagination Styles */
+  .pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+  }
+  
+  .pagination-btn {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    color: #666;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  
+    &:hover:not(:disabled) {
+      background-color: #f5f5f5;
+    }
+  
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  
+    mat-icon {
+      font-size: 18px;
+      height: 18px;
+      width: 18px;
+    }
+  }
+  
+  .prev mat-icon {
+    margin-right: 8px;
+  }
+  
+  .next mat-icon {
+    margin-left: 8px;
+  }
+  
+  .page-numbers {
+    display: flex;
+  }
+  
+  .page-number {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 4px;
+    background: none;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #666;
+  
+    &.active {
+      background-color: #5c6bc0;
+      color: white;
+    }
+  
+    &:hover:not(.active) {
+      background-color: #f5f5f5;
+    }
+  }
+  
+  /* Popup Styles */
+  .popup-container {
     position: fixed;
     bottom: 20px;
     right: 20px;
     z-index: 1000;
-}
-
-.popup {
-    font-size: 1rem;
-    box-shadow: 0px 5px 25px 0px rgba(0, 0, 0, 0.2);
-    border: none;
+  }
+  
+  .popup {
+    font-size: 0.9rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     line-height: 1.7;
     max-width: 300px;
-    padding: 15px;
+    padding: 12px 16px;
     margin-bottom: 15px;
     border-radius: 4px;
     color: #ffffff;
     display: flex;
     align-items: center;
     animation: slideInUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-
-.popup.popup-success {
-    background-color: #28a745;
-}
-
-.popup.popup-error {
-    background-color: #dc3545;
-}
-
-.popup .popup-icon {
+  }
+  
+  .popup.popup-success {
+    background-color: #4caf50;
+  }
+  
+  .popup.popup-error {
+    background-color: #f44336;
+  }
+  
+  .popup .popup-icon {
     margin-right: 10px;
-    font-size: 1.5rem;
-}
-
-.popup .popup-close {
+    font-size: 1.2rem;
+  }
+  
+  .popup .popup-close {
     margin-left: 10px;
     cursor: pointer;
     opacity: 0.8;
-}
-
-.popup .popup-close:hover {
+  }
+  
+  .popup .popup-close:hover {
     opacity: 1;
-}
-
-@keyframes slideInUp {
+  }
+  
+  @keyframes slideInUp {
     from {
-        transform: translateY(100%);
-        opacity: 0;
+      transform: translateY(100%);
+      opacity: 0;
     }
     to {
-        transform: translateY(0);
-        opacity: 1;
+      transform: translateY(0);
+      opacity: 1;
     }
-}
+  }
 
-.slideOutDown {
-    animation: slideOutDown 0.6s ease-in forwards;
-}
 
-@keyframes slideOutDown {
-    from {
-        transform: translateY(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateY(100%);
-        opacity: 0;
-    }
-}
-
-/* Button Styles */
-.create-btn {
-    background-color: #3f51b5 !important; /* Blue color for create button */
-}
-
-.edit-btn {
-    background-color: #3f51b5 !important; /* Blue color for edit button */
-}
-
-/* Layout Adjustments */
-.row {
-    max-width: 90%;
-    margin: 0 auto;
-}
-
-/* Narrow Select */
-.narrow-select {
-    width: 7em;
-}
-
-.narrow-select .mat-select-trigger {
-    min-width: auto;
-}
-
-/* Table Styles */
-table.table td,
-table.table th {
-    padding: 8px 40px;
-}
-
-table.table td:last-child {
-    min-width: 180px;
-    white-space: nowrap;
-}
-
-table.table td .btn {
-    display: inline-block;
-    margin-right: 10px;
-}
-
-table.table td .btn:last-child {
-    margin-right: 0;
-}
-
-/* Pagination Styles */
-.pagination .btn {
-    min-width: 40px;
-}
-
-/* Snackbar Styles (optional, included for completeness) */
-.success-snackbar {
-    background-color: #4caf50;
-    color: white;
-}
-
-.error-snackbar {
-    background-color: #f44336;
-    color: white;
-}
+th {
+    color: #5c6bc0; /* Sets the table headers to blue to match the theme */
+  }

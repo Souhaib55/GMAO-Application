@@ -1,8 +1,10 @@
+// intervention.component.ts
 import { Component, OnInit, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { forkJoin } from 'rxjs';
+import { debounceTime, Subject } from 'rxjs';
 
 @Component({
   selector: 'app-interventions',
@@ -36,6 +38,7 @@ export class InterventionComponent implements OnInit {
   popupMessage = '';
   popupType: 'success' | 'error' = 'success';
   isLoading = false;
+  searchTerm = '';
 
   etatMap: Map<number, string> = new Map();
   typeInterventionMap: Map<number, string> = new Map();
@@ -49,11 +52,18 @@ export class InterventionComponent implements OnInit {
   totalPages = 1;
   pageSizeOptions = [5, 10, 15];
 
+  private searchSubject = new Subject<string>();
+
   ngOnInit(): void {
     const state = history.state;
     if (state?.message) {
       this.showPopupMessage(state.message, state.type || 'success');
     }
+
+    this.searchSubject.pipe(debounceTime(300)).subscribe(() => {
+      this.applyFilter();
+    });
+
     this.loadReferenceData();
   }
 
@@ -97,7 +107,7 @@ export class InterventionComponent implements OnInit {
           chaineProduction: item.chaineProduction?.libelle || this.chaineProductionMap.get(item.idChaineProduction) || 'Unknown',
           demandeur: item.demandeur ? `${item.demandeur.nom} ${item.demandeur.prenom}` : this.usersMap.get(item.demandeursID) || 'Unknown',
           destinataire: item.destinataire ? `${item.destinataire.nom} ${item.destinataire.prenom}` : this.usersMap.get(item.destinatairesID) || 'Unknown',
-          fileName: item.fileName || '' // Added fileName mapping
+          fileName: item.fileName || ''
         }));
         this.totalCount = res.totalCount || 0;
         this.totalPages = Math.ceil(this.totalCount / this.pageSize) || 1;
@@ -110,20 +120,41 @@ export class InterventionComponent implements OnInit {
     });
   }
 
-  downloadFile(id: number, fileName: string): void {
-    const url = `${this.baseUrl}/${id}/file`; // Assumes backend provides this endpoint
-    this.http.get(url, { responseType: 'blob' }).subscribe({
-      next: (blob) => {
-        const a = document.createElement('a');
-        const objectUrl = URL.createObjectURL(blob);
-        a.href = objectUrl;
-        a.download = fileName;
-        a.click();
-        URL.revokeObjectURL(objectUrl);
+  applyFilter(): void {
+    this.searchSubject.next(this.searchTerm);
+  }
+
+  filterItems(): void {
+    if (!this.searchTerm.trim()) {
+      this.getAllInterventions();
+      return;
+    }
+
+    const term = this.searchTerm.toLowerCase().trim();
+    this.isLoading = true;
+    const url = `${this.baseUrl}?page=${this.currentPage}&pageSize=${this.pageSize}&search=${term}`;
+    this.http.get<any>(url).subscribe({
+      next: (res) => {
+        this.paginatedInterventionList = res.data.map((item: any) => ({
+          idDemandeIntervention: item.idDemandeIntervention || 0,
+          titre: item.titre || '',
+          dateCreation: item.dateCreation ? new Date(item.dateCreation) : new Date(),
+          machineArretee: item.machineArretee || false,
+          etat: item.etat?.libelle || this.etatMap.get(item.idEtat) || 'Unknown',
+          typeIntervention: item.typeIntervention?.libelle || this.typeInterventionMap.get(item.idTypeIntervention) || 'Unknown',
+          urgence: item.urgence?.libelle || this.urgenceMap.get(item.idUrgence) || 'Unknown',
+          chaineProduction: item.chaineProduction?.libelle || this.chaineProductionMap.get(item.idChaineProduction) || 'Unknown',
+          demandeur: item.demandeur ? `${item.demandeur.nom} ${item.demandeur.prenom}` : this.usersMap.get(item.demandeursID) || 'Unknown',
+          destinataire: item.destinataire ? `${item.destinataire.nom} ${item.destinataire.prenom}` : this.usersMap.get(item.destinatairesID) || 'Unknown',
+          fileName: item.fileName || ''
+        }));
+        this.totalCount = res.totalCount || 0;
+        this.totalPages = Math.ceil(this.totalCount / this.pageSize) || 1;
+        this.isLoading = false;
       },
       error: (err) => {
-        this.showPopupMessage('Failed to download file', 'error');
-        console.error('Download failed', err);
+        this.showPopupMessage('Failed to search interventions', 'error');
+        this.isLoading = false;
       }
     });
   }
@@ -145,6 +176,40 @@ export class InterventionComponent implements OnInit {
       this.currentPage++;
       this.getAllInterventions();
     }
+  }
+
+  goToPage(page: number): void {
+    if (page !== this.currentPage && page > 0 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.getAllInterventions();
+    }
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxVisiblePages = 3;
+    
+    if (this.totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(this.currentPage);
+      if (this.currentPage > 1) {
+        pages.unshift(this.currentPage - 1);
+      }
+      if (this.currentPage < this.totalPages) {
+        pages.push(this.currentPage + 1);
+      }
+      while (pages.length < maxVisiblePages && pages.length < this.totalPages) {
+        if (pages[0] > 1) {
+          pages.unshift(pages[0] - 1);
+        } else if (pages[pages.length - 1] < this.totalPages) {
+          pages.push(pages[pages.length - 1] + 1);
+        }
+      }
+    }
+    return pages;
   }
 
   navigateToCreate(): void {
@@ -170,6 +235,34 @@ export class InterventionComponent implements OnInit {
     });
   }
 
+  downloadFile(id: number, fileName: string): void {
+    const url = `${this.baseUrl}/${id}/file`;
+    this.http.get(url, { responseType: 'blob' }).subscribe({
+      next: (blob) => {
+        const a = document.createElement('a');
+        const objectUrl = URL.createObjectURL(blob);
+        a.href = objectUrl;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(objectUrl);
+      },
+      error: (err) => {
+        this.showPopupMessage('Failed to download file', 'error');
+        console.error('Download failed', err);
+      }
+    });
+  }
+
+
+  getUrgenceClass(urgence: string): string {
+    const normalizedUrgence = urgence.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+    if (normalizedUrgence === 'haute') return 'urgence-tres-urgent';
+    if (normalizedUrgence === 'moyenne') return 'urgence-urgent';
+    if (normalizedUrgence === 'basse') return 'urgence-normal';
+    return '';
+  }
+
+
   private showPopupMessage(message: string, type: 'success' | 'error'): void {
     this.popupMessage = message;
     this.popupType = type;
@@ -193,5 +286,5 @@ interface InterventionListItem {
   chaineProduction: string;
   demandeur: string;
   destinataire: string;
-  fileName?: string; // Added optional fileName property
+  fileName?: string;
 }

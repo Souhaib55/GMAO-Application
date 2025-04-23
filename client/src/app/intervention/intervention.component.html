@@ -1,99 +1,129 @@
-<div class="popup-container">
-  <div *ngIf="showPopup" [class]="'popup popup-' + popupType" @slideInOut>
-    <mat-icon class="popup-icon">
-      {{ popupType === 'success' ? 'check_circle' : 'error' }}
-    </mat-icon>
-    <div>{{ popupMessage }}</div>
-    <mat-icon class="popup-close" (click)="hidePopup()">close</mat-icon>
+```html
+<!-- intervention.component.html -->
+<div class="intervention-container">
+  <!-- Header Section -->
+  <div class="header">
+    <div class="header-left">
+      <div class="icon-container">
+        <mat-icon class="database-icon">assignment</mat-icon>
+      </div>
+      <div class="title-container">
+        <h1>Intervention Management</h1>
+        <p class="subtitle">Manage your intervention requests</p>
+      </div>
+    </div>
+    <button class="create-button" (click)="navigateToCreate()">
+      <mat-icon>add</mat-icon>
+      CREATE NEW INTERVENTION
+    </button>
   </div>
-</div>
 
-<div class="row" style="margin-top: 100px;">
-  <div class="col-lg-12 col-md-12">
-    <div class="card">
-      <div class="card-header card-header-warning">
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
-            <h4 class="card-title">Intervention Management</h4>
-          </div>
-          <button class="btn btn-primary create-btn" (click)="navigateToCreate()">
-            <mat-icon class="me-2">add</mat-icon>Create New Intervention
-          </button>
-        </div>
-      </div>
-      <div class="card-body table-responsive">
-        <div *ngIf="isLoading" class="text-center">
-          <mat-spinner diameter="40"></mat-spinner>
-        </div>
-        <div class="d-flex justify-content-between align-items-center mb-3" *ngIf="!isLoading">
-          <div>
-            <mat-form-field appearance="outline" class="narrow-select">
-              <mat-label>Entries per page</mat-label>
-              <mat-select [(ngModel)]="pageSize" (selectionChange)="changePageSize()">
-                <mat-option *ngFor="let size of pageSizeOptions" [value]="size">
-                  {{ size }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-          </div>
-        </div>
+  <!-- Filter and Search Section -->
+  <div class="controls">
+    <div class="entries-selector">
+      <span>Interventions</span>
+      <mat-form-field appearance="outline">
+        <mat-select [(ngModel)]="pageSize" (selectionChange)="changePageSize()">
+          <mat-option *ngFor="let size of pageSizeOptions" [value]="size">
+            {{ size }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <div class="search-container">
+      <mat-form-field appearance="outline">
+        <input matInput placeholder="Search interventions..." [(ngModel)]="searchTerm" (keyup)="applyFilter()">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+    </div>
+  </div>
 
-        <div style="overflow-x: auto;">
-          <table class="table table-hover" *ngIf="!isLoading">
-            <thead class="text-warning">
-              <tr>
-                <th>Titre</th>
-                <th>Date Creation</th>
-                <th>Machine Arretee</th>
-                <th>File</th> <!-- Added File column -->
-                <th>Etat</th>
-                <th>Type Intervention</th>
-                <th>Urgence</th>
-                <th>Chaine Production</th>
-                <th>Demandeur</th>
-                <th>Destinataire</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of paginatedInterventionList">
-                <td>{{ item.titre }}</td>
-                <td>{{ item.dateCreation | date:'MM/dd/yyyy HH:mm' }}</td>
-                <td>{{ item.machineArretee ? 'Yes' : 'No' }}</td>
-                <td>
-                  <a *ngIf="item.fileName" (click)="downloadFile(item.idDemandeIntervention, item.fileName)" class="file-link" [title]="item.fileName">
-                    <mat-icon>attach_file</mat-icon> {{ item.fileName }}
-                  </a>
-                  <span *ngIf="!item.fileName">No file</span>
-                </td> <!-- Added file name display and download link -->
-                <td>{{ item.etat }}</td>
-                <td>{{ item.typeIntervention }}</td>
-                <td>{{ item.urgence }}</td>
-                <td>{{ item.chaineProduction }}</td>
-                <td>{{ item.demandeur }}</td>
-                <td>{{ item.destinataire }}</td>
-                <td>
-                  <button class="btn btn-primary btn-sm me-2 edit-btn" (click)="navigateToEdit(item.idDemandeIntervention)">
-                    <mat-icon class="me-1">edit</mat-icon>Edit
-                  </button>
-                  <button class="btn btn-danger btn-sm" (click)="deleteIntervention(item)">
-                    <mat-icon class="me-1">delete</mat-icon>Delete
-                  </button>
-                </td>
-              </tr>
-              <tr *ngIf="paginatedInterventionList.length === 0">
-                <td colspan="11" class="text-center">No interventions found.</td> <!-- Updated colspan to 11 -->
-              </tr>
-            </tbody>
-          </table>
-        </div>
+  <!-- Table Section -->
+  <div class="table-container" *ngIf="!isLoading">
+    <table>
+      <thead>
+        <tr>
+          <th>Titre</th>
+          <th>Date Creation</th>
+          <th>Machine Arretee</th>
+          <th>File</th>
+          <th>Etat</th>
+          <th>Type Intervention</th>
+          <th>Urgence</th>
+          <th>Chaine Production</th>
+          <th>Demandeur</th>
+          <th>Destinataire</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of paginatedInterventionList">
+          <td>{{ item.titre }}</td>
+          <td>{{ item.dateCreation | date:'MM/dd/yyyy HH:mm' }}</td>
+          <td>{{ item.machineArretee ? 'Yes' : 'No' }}</td>
+          <td>
+            <a *ngIf="item.fileName" (click)="downloadFile(item.idDemandeIntervention, item.fileName)" class="file-link" [title]="item.fileName">
+              <mat-icon>attach_file</mat-icon> {{ item.fileName }}
+            </a>
+            <span *ngIf="!item.fileName">No file</span>
+          </td>
+          <td>{{ item.etat }}</td>
+          <td>{{ item.typeIntervention }}</td>
+          <td><span [ngClass]="getUrgenceClass(item.urgence)">{{ item.urgence }}</span></td>
+          <td>{{ item.chaineProduction }}</td>
+          <td>{{ item.demandeur }}</td>
+          <td>{{ item.destinataire }}</td>
+          <td class="actions">
+            <button mat-icon-button color="primary" (click)="navigateToEdit(item.idDemandeIntervention)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="deleteIntervention(item)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="paginatedInterventionList.length === 0">
+          <td colspan="11" class="no-data">No interventions found.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
-        <div class="pagination mt-3 d-flex justify-content-between align-items-center" *ngIf="!isLoading">
-          <button class="btn btn-outline-primary" [disabled]="currentPage === 1 || isLoading" (click)="previousPage()">Previous</button>
-          <span>Page {{ currentPage }} of {{ totalPages }}</span>
-          <button class="btn btn-outline-primary" [disabled]="currentPage === totalPages || isLoading" (click)="nextPage()">Next</button>
-        </div>
-      </div>
-    </div>  
+  <!-- Loading Spinner -->
+  <div *ngIf="isLoading" class="loader-container">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <!-- Pagination Section -->
+  <div class="pagination" *ngIf="!isLoading && paginatedInterventionList.length > 0">
+    <button class="pagination-btn prev" [disabled]="currentPage === 1" (click)="previousPage()">
+      <mat-icon>chevron_left</mat-icon>
+      PREVIOUS
+    </button>
+    
+    <div class="page-numbers">
+      <button class="page-number" 
+              *ngFor="let page of getPageNumbers()" 
+              [class.active]="page === currentPage"
+              (click)="goToPage(page)">
+        {{ page }}
+      </button>
+    </div>
+    
+    <button class="pagination-btn next" [disabled]="currentPage === totalPages" (click)="nextPage()">
+      NEXT
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  </div>
+
+  <!-- Notification Popup -->
+  <div class="popup-container">
+    <div *ngIf="showPopup" [class]="'popup popup-' + popupType" @slideInOut>
+      <mat-icon class="popup-icon">
+        {{ popupType === 'success' ? 'check_circle' : 'error' }}
+      </mat-icon>
+      <div>{{ popupMessage }}</div>
+      <mat-icon class="popup-close" (click)="hidePopup()">close</mat-icon>
+    </div>
   </div>
 </div>
