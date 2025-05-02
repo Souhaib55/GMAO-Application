@@ -1,6 +1,9 @@
 <div class="form-container">
-  <div class="form-box">
-    <h2 class="form-title">{{ isEditMode ? 'Edit Intervention' : 'Create New Intervention' }}</h2>
+  <div class="header">
+    <h2>{{ isEditMode ? 'Edit Intervention' : 'Create New Intervention' }}</h2>
+  </div>
+
+  <div class="form-content">
     <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
     <form [formGroup]="interventionForm" (ngSubmit)="onSubmit()">
       <div class="row">
@@ -17,11 +20,11 @@
         <div class="col-md-6 input-group">
           <div *ngIf="isEditMode && existingFileName">
             Existing file: {{ existingFileName }}
-          </div>
+        </div>
           <input type="file" (change)="onFileSelected($event)" accept="application/pdf,text/plain">
           <div *ngIf="selectedFile">
             Selected file: {{ selectedFile.name }}
-          </div>
+        </div>
         </div>
 
         <div class="col-md-6 input-group">
@@ -41,7 +44,7 @@
               Etat is required
             </mat-error>
           </mat-form-field>
-        </div>
+      </div>
 
         <div class="col-md-6 input-group">
           <mat-form-field appearance="outline" class="w-100">
@@ -55,7 +58,7 @@
               Type Intervention is required
             </mat-error>
           </mat-form-field>
-        </div>
+      </div>
 
         <div class="col-md-6 input-group">
           <mat-form-field appearance="outline" class="w-100">
@@ -69,7 +72,7 @@
               Urgence is required
             </mat-error>
           </mat-form-field>
-        </div>
+  </div>
 
         <div class="col-md-6 input-group">
           <mat-form-field appearance="outline" class="w-100">
@@ -83,7 +86,7 @@
               Chaine Production is required
             </mat-error>
           </mat-form-field>
-        </div>
+</div>
 
         <!-- Different display based on role -->
         <!-- For Superviseur: Show dropdown -->
@@ -148,12 +151,14 @@
         </div>
       </div>
 
-      <div class="button-group mt-3">
+      <div class="button-group">
+        <button type="button" class="btn custom-btn secondary-btn" (click)="goBack()" [disabled]="isSubmitting">
+          <mat-icon>close</mat-icon> Cancel
+        </button>
         <button type="submit" class="btn custom-btn primary-btn" [disabled]="interventionForm.invalid || isSubmitting">
           <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
           {{ isEditMode ? 'Update' : 'Create' }}
         </button>
-        <button type="button" class="btn custom-btn secondary-btn" (click)="goBack()" [disabled]="isSubmitting">Cancel</button>
       </div>
     </form>
   </div>

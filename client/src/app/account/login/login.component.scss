@@ -24,8 +24,8 @@
 .logo {
   margin: 1.5rem 0;
   
-  img {
-    height: 40px;
+  .logo img {
+    height: 60px;
   }
 }
 
@@ -38,26 +38,30 @@
 }
 
 .text-section {
-  margin-bottom: 2.5rem;
-  
-  .main-title {
-    font-size: 3rem;
-    font-weight: 900;
-    color: #222;
-    margin-bottom: 1.2rem;
-    line-height: 1.1;
-    text-transform: uppercase;
-    font-family: 'Arial', sans-serif;
-    letter-spacing: -0.5px;
-  }
-  
-  .subtitle {
-    font-size: 1.1rem;
-    color: #444;
-    margin-bottom: 1.5rem;
-    font-weight: 400;
-    line-height: 1.4;
-  }
+  margin-bottom: 0.4rem !important;
+}
+
+.text-section .main-title {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #222;
+  margin-bottom: 1.2rem;
+  line-height: 1.1;
+  text-transform: uppercase;
+  font-family: 'Arial', sans-serif;
+  letter-spacing: -0.5px;
+}
+
+.no-wrap {
+  white-space: nowrap !important; /* Ensures "VOTRE MAINTENANCE" stays on the same line */
+}
+
+.text-section .subtitle {
+  font-size: 1.4rem;
+  color: #444;
+  margin-bottom: 1.5rem;
+  font-weight: 430;
+  line-height: 1.4;
 }
 
 .custom-input-container {
@@ -110,7 +114,8 @@
   span {
     color: #666;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
+    font-weight: 500;
     
     &:hover {
       color: #4285f4;
@@ -118,7 +123,7 @@
   }
   
   &.sign-up {
-    justify-content: flex-end;
+    justify-content: center;
     margin-bottom: 1rem;
   }
   
@@ -154,14 +159,15 @@
 .footer {
   margin-top: auto;
   text-align: left;
-  color: #666;
-  font-size: 0.75rem;
+  color: #3b3a3a;
+  font-size: 1.1rem;
+  font-weight: 560;
   padding: 1.5rem 0;
 }
 
 .illustration-section {
   width: 50%;
-  background-color: #e6f0ff;
+  background-color: #9ad1e4;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -210,48 +216,20 @@
   
   .gear {
     position: absolute;
+    right: 15px;
+    top: 15px;
     z-index: 1;
-    animation: spin 20s linear infinite;
+    animation: spin 27s linear infinite;
     filter: brightness(1.1);
-    
-    &.gear-1 {
-      width: 120px;
-      height: 120px;
-      top: 10%;
-      right: 10%;
-      opacity: 0.7;
-      color: #4285f4;
-    }
-    
-    &.gear-2 {
-      width: 90px;
-      height: 90px;
-      top: 20%;
-      left: 15%;
-      opacity: 0.7;
-      animation-direction: reverse;
-      animation-duration: 15s;
-      color: #4285f4;
-    }
-    
-    &.gear-3 {
-      width: 60px;
-      height: 60px;
-      top: 15%;
-      right: 30%;
-      opacity: 0.5;
-      animation-duration: 25s;
-      color: #4285f4;
-    }
   }
 }
 
 @keyframes spin {
   from {
-    transform: rotate(0deg);
+      transform: scale(0.4) rotate(0deg);
   }
   to {
-    transform: rotate(360deg);
+      transform: scale(0.6) rotate(360deg);
   }
 }
 
