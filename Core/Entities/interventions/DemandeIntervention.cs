@@ -19,8 +19,8 @@ namespace Core.Entities
         public ChaineProduction ChaineProduction { get; set; } = null!;
         public int DemandeursID { get; set; }
         public Users Demandeur { get; set; } = null!;
-        public int DestinatairesID { get; set; }
-        public Users Destinataire { get; set; } = null!;
+        public int? DestinatairesID { get; set; }
+        public Users? Destinataire { get; set; } = null!;
         public bool IsActif { get; set; }
     }
 }

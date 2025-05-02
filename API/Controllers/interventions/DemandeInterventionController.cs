@@ -1,23 +1,26 @@
 using API.DTOs;
 using Core.Entities;
 using Infrastructure.Data;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
+using System.IO;
 
 namespace API.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class DemandeInterventionController : ControllerBase
     {
         private readonly StoreContext _context;
+        private readonly UserManager<AppUser> _userManager;
 
-        public DemandeInterventionController(StoreContext context)
+        public DemandeInterventionController(StoreContext context, UserManager<AppUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         [HttpGet]
@@ -86,11 +89,17 @@ namespace API.Controllers
         [HttpPost]
         public async Task<ActionResult<DemandeIntervention>> CreateDemandeIntervention([FromForm] InterventionDto demandeDto, [FromForm] IFormFile file)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null) return Unauthorized("User not found");
+            var roles = await _userManager.GetRolesAsync(currentUser);
+            var role = roles.FirstOrDefault();
+
+            var userEntity = await _context.Users.FirstOrDefaultAsync(u => u.AppUserId == currentUser.Id);
+            if (userEntity == null) return BadRequest("User entity not found");
+
+            // Validation checks
             if (!await _context.Etats.AnyAsync(e => e.IDEtat == demandeDto.IDEtat && e.IsActif))
                 return BadRequest("Invalid or inactive Etat ID.");
             if (!await _context.TypeInterventions.AnyAsync(t => t.IDTypeIntervention == demandeDto.IDTypeIntervention && t.IsActif))
@@ -100,14 +109,19 @@ namespace API.Controllers
             if (!await _context.ChaineProductions.AnyAsync(c => c.IDChaineProduction == demandeDto.IDChaineProduction && c.IsActif))
                 return BadRequest("Invalid or inactive ChaineProduction ID.");
             if (!await _context.Users.AnyAsync(u => u.ID == demandeDto.DemandeursID && u.IsActif))
-                return BadRequest("Invalid or inactive Demandeur ID.");
-            if (!await _context.Users.AnyAsync(u => u.ID == demandeDto.DestinatairesID && u.IsActif))
-                return BadRequest("Invalid or inactive Destinataire ID.");
+                return BadRequest("Invalid or inactive DemandeursID.");
+            if (demandeDto.DestinatairesID != null && !await _context.Users.AnyAsync(u => u.ID == demandeDto.DestinatairesID && u.IsActif))
+                return BadRequest("Invalid or inactive DestinatairesID.");
+
+            if (role == "Demandeur" && demandeDto.DemandeursID != userEntity.ID)
+            {
+                return BadRequest("Demandeur can only create interventions for themselves.");
+            }
 
             var demande = new DemandeIntervention
             {
                 Titre = demandeDto.Titre,
-                DateCreation = DateTime.Now,
+                DateCreation = demandeDto.DateCreation,
                 MachineArretee = demandeDto.MachineArretee,
                 IDEtat = demandeDto.IDEtat,
                 IDTypeIntervention = demandeDto.IDTypeIntervention,
@@ -120,14 +134,6 @@ namespace API.Controllers
 
             if (file != null && file.Length > 0)
             {
-                if (file.ContentType != "application/pdf" && file.ContentType != "text/plain")
-                {
-                    return BadRequest("Only PDF and TXT files are allowed.");
-                }
-                if (file.Length > 10 * 1024 * 1024) // 10 MB limit
-                {
-                    return BadRequest("File size exceeds the limit of 10 MB.");
-                }
                 using (var memoryStream = new MemoryStream())
                 {
                     await file.CopyToAsync(memoryStream);
@@ -155,22 +161,32 @@ namespace API.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<DemandeIntervention>> UpdateDemandeIntervention(int id, [FromForm] InterventionDto demandeDto, [FromForm] IFormFile? file)
         {
-            if (id != demandeDto.IdDemandeIntervention)
-            {
-                return BadRequest("ID mismatch.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            if (id != demandeDto.IdDemandeIntervention) return BadRequest("ID mismatch.");
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var existingDemande = await _context.DemandeInterventions
+                .Include(d => d.Etat)
                 .FirstOrDefaultAsync(d => d.IdDemandeIntervention == id && d.IsActif);
+            if (existingDemande == null) return NotFound("DemandeIntervention not found or inactive.");
 
-            if (existingDemande == null)
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null) return Unauthorized("User not found");
+            var roles = await _userManager.GetRolesAsync(currentUser);
+            var role = roles.FirstOrDefault();
+
+            if (role != "Superviseur")
             {
-                return NotFound("DemandeIntervention not found or inactive.");
+                return Forbid("Only Superviseur can edit interventions.");
+            }
+
+            if (demandeDto.IDEtat != existingDemande.IDEtat)
+            {
+                var newEtat = await _context.Etats.FindAsync(demandeDto.IDEtat);
+                if (newEtat == null) return BadRequest("Invalid Etat ID.");
+                if (!IsAllowedStatusTransition(existingDemande.Etat.Libelle, newEtat.Libelle, role, currentUser.Id, existingDemande))
+                {
+                    return Forbid("You are not allowed to perform this status change.");
+                }
             }
 
             if (!await _context.Etats.AnyAsync(e => e.IDEtat == demandeDto.IDEtat && e.IsActif))
@@ -182,11 +198,12 @@ namespace API.Controllers
             if (!await _context.ChaineProductions.AnyAsync(c => c.IDChaineProduction == demandeDto.IDChaineProduction && c.IsActif))
                 return BadRequest("Invalid or inactive ChaineProduction ID.");
             if (!await _context.Users.AnyAsync(u => u.ID == demandeDto.DemandeursID && u.IsActif))
-                return BadRequest("Invalid or inactive Demandeur ID.");
-            if (!await _context.Users.AnyAsync(u => u.ID == demandeDto.DestinatairesID && u.IsActif))
-                return BadRequest("Invalid or inactive Destinataire ID.");
+                return BadRequest("Invalid or inactive DemandeursID.");
+            if (demandeDto.DestinatairesID != null && !await _context.Users.AnyAsync(u => u.ID == demandeDto.DestinatairesID && u.IsActif))
+                return BadRequest("Invalid or inactive DestinatairesID.");
 
             existingDemande.Titre = demandeDto.Titre;
+            existingDemande.DateCreation = demandeDto.DateCreation;
             existingDemande.MachineArretee = demandeDto.MachineArretee;
             existingDemande.IDEtat = demandeDto.IDEtat;
             existingDemande.IDTypeIntervention = demandeDto.IDTypeIntervention;
@@ -198,14 +215,6 @@ namespace API.Controllers
 
             if (file != null && file.Length > 0)
             {
-                if (file.ContentType != "application/pdf" && file.ContentType != "text/plain")
-                {
-                    return BadRequest("Only PDF and TXT files are allowed.");
-                }
-                if (file.Length > 10 * 1024 * 1024) // 10 MB limit
-                {
-                    return BadRequest("File size exceeds the limit of 10 MB.");
-                }
                 using (var memoryStream = new MemoryStream())
                 {
                     await file.CopyToAsync(memoryStream);
@@ -232,7 +241,9 @@ namespace API.Controllers
         [HttpGet("{id}/file")]
         public async Task<IActionResult> GetFile(int id)
         {
-            var demande = await _context.DemandeInterventions.FindAsync(id);
+            var demande = await _context.DemandeInterventions
+                .FirstOrDefaultAsync(d => d.IdDemandeIntervention == id && d.IsActif);
+
             if (demande == null || demande.FileData == null)
             {
                 return NotFound("File not found.");
@@ -241,6 +252,7 @@ namespace API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Superviseur")]
         public async Task<IActionResult> DeleteDemandeIntervention(int id)
         {
             var demande = await _context.DemandeInterventions
@@ -256,11 +268,38 @@ namespace API.Controllers
 
             return NoContent();
         }
+
+        private bool IsAllowedStatusTransition(string currentStatus, string newStatus, string userRole, string userId, DemandeIntervention demande)
+        {
+            switch (userRole)
+            {
+                case "Superviseur":
+                    return true;
+                case "Technicien":
+                    if (demande.DestinatairesID != null && demande.DestinatairesID.ToString() == userId)
+                    {
+                        if (currentStatus == "A traiter" && (newStatus == "En cours" || newStatus == "Terminé"))
+                            return true;
+                        if (currentStatus == "En cours" && newStatus == "Terminé")
+                            return true;
+                    }
+                    return false;
+                case "Demandeur":
+                    if (demande.DemandeursID.ToString() == userId)
+                    {
+                        if (currentStatus == "Terminé" && newStatus == "Validé")
+                            return true;
+                    }
+                    return false;
+                default:
+                    return false;
+            }
+        }
     }
 
     public class pagedResult<T>
     {
-        public required List<T> Data { get; set; }
+        public List<T> Data { get; set; } = new List<T>();
         public int TotalCount { get; set; }
         public int Page { get; set; }
         public int PageSize { get; set; }

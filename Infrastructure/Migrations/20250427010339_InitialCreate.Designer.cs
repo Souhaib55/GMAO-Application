@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(StoreContext))]
-    [Migration("20250419182542_InitialResourcesMigration")]
-    partial class InitialResourcesMigration
+    [Migration("20250427010339_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -96,6 +96,37 @@ namespace Infrastructure.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("Core.Entities.ChaineProduction", b =>
+                {
+                    b.Property<int>("IDChaineProduction")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IDChaineProduction"));
+
+                    b.Property<DateTime>("DateCreation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime?>("DateModification")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Libelle")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("IDChaineProduction");
+
+                    b.ToTable("ChaineProductions");
+                });
+
             modelBuilder.Entity("Core.Entities.Constructeur", b =>
                 {
                     b.Property<int>("IDConstructeur")
@@ -164,6 +195,78 @@ namespace Infrastructure.Migrations
                     b.HasKey("IDCriticitePiece");
 
                     b.ToTable("CriticitePieces");
+                });
+
+            modelBuilder.Entity("Core.Entities.DemandeIntervention", b =>
+                {
+                    b.Property<int>("IdDemandeIntervention")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdDemandeIntervention"));
+
+                    b.Property<string>("ContentType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("DateCreation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<int>("DemandeursID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DestinatairesID")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("FileData")
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int>("IDChaineProduction")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IDEtat")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IDTypeIntervention")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IDUrgence")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("MachineArretee")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Titre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("IdDemandeIntervention");
+
+                    b.HasIndex("DemandeursID");
+
+                    b.HasIndex("DestinatairesID");
+
+                    b.HasIndex("IDChaineProduction");
+
+                    b.HasIndex("IDEtat");
+
+                    b.HasIndex("IDTypeIntervention");
+
+                    b.HasIndex("IDUrgence");
+
+                    b.ToTable("DemandeInterventions");
                 });
 
             modelBuilder.Entity("Core.Entities.Equipment", b =>
@@ -293,6 +396,37 @@ namespace Infrastructure.Migrations
                     b.HasKey("IdCriticite");
 
                     b.ToTable("EquipmentCriticites");
+                });
+
+            modelBuilder.Entity("Core.Entities.Etat", b =>
+                {
+                    b.Property<int>("IDEtat")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IDEtat"));
+
+                    b.Property<DateTime>("DateCreation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime?>("DateModification")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Libelle")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("IDEtat");
+
+                    b.ToTable("Etats");
                 });
 
             modelBuilder.Entity("Core.Entities.EtatEquipement", b =>
@@ -581,6 +715,24 @@ namespace Infrastructure.Migrations
                     b.ToTable("Pieces");
                 });
 
+            modelBuilder.Entity("Core.Entities.Role", b =>
+                {
+                    b.Property<int>("IDRole")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IDRole"));
+
+                    b.Property<string>("Libelle")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("IDRole");
+
+                    b.ToTable("Roles");
+                });
+
             modelBuilder.Entity("Core.Entities.Stock", b =>
                 {
                     b.Property<int>("Id")
@@ -672,6 +824,68 @@ namespace Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("StockSuppliers");
+                });
+
+            modelBuilder.Entity("Core.Entities.TypeIntervention", b =>
+                {
+                    b.Property<int>("IDTypeIntervention")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IDTypeIntervention"));
+
+                    b.Property<DateTime>("DateCreation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime?>("DateModification")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Libelle")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("IDTypeIntervention");
+
+                    b.ToTable("TypeInterventions");
+                });
+
+            modelBuilder.Entity("Core.Entities.Urgence", b =>
+                {
+                    b.Property<int>("IDUrgence")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IDUrgence"));
+
+                    b.Property<DateTime>("DateCreation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime?>("DateModification")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Libelle")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("IDUrgence");
+
+                    b.ToTable("Urgences");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -805,6 +1019,111 @@ namespace Infrastructure.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("Users", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
+
+                    b.Property<string>("AppUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("DateCreation")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DateModification")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("IDRole")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Nom")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Prenom")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("AppUserId")
+                        .IsUnique();
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("IDRole");
+
+                    b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Core.Entities.DemandeIntervention", b =>
+                {
+                    b.HasOne("Users", "Demandeur")
+                        .WithMany()
+                        .HasForeignKey("DemandeursID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Users", "Destinataire")
+                        .WithMany()
+                        .HasForeignKey("DestinatairesID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Core.Entities.ChaineProduction", "ChaineProduction")
+                        .WithMany()
+                        .HasForeignKey("IDChaineProduction")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Core.Entities.Etat", "Etat")
+                        .WithMany()
+                        .HasForeignKey("IDEtat")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Core.Entities.TypeIntervention", "TypeIntervention")
+                        .WithMany()
+                        .HasForeignKey("IDTypeIntervention")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Core.Entities.Urgence", "Urgence")
+                        .WithMany()
+                        .HasForeignKey("IDUrgence")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ChaineProduction");
+
+                    b.Navigation("Demandeur");
+
+                    b.Navigation("Destinataire");
+
+                    b.Navigation("Etat");
+
+                    b.Navigation("TypeIntervention");
+
+                    b.Navigation("Urgence");
                 });
 
             modelBuilder.Entity("Core.Entities.Equipment", b =>
@@ -975,6 +1294,25 @@ namespace Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Users", b =>
+                {
+                    b.HasOne("Core.Entities.AppUser", "AppUser")
+                        .WithOne()
+                        .HasForeignKey("Users", "AppUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Core.Entities.Role", "Role")
+                        .WithMany()
+                        .HasForeignKey("IDRole")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AppUser");
+
+                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("Core.Entities.Constructeur", b =>

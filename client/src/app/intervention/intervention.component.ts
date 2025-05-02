@@ -1,10 +1,11 @@
-// intervention.component.ts
 import { Component, OnInit, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { forkJoin } from 'rxjs';
 import { debounceTime, Subject } from 'rxjs';
+import { AccountService } from 'app/core/services/account.service';
+import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-interventions',
@@ -20,11 +21,14 @@ import { debounceTime, Subject } from 'rxjs';
         animate('300ms ease-in', style({ transform: 'translateX(100%)', opacity: 0 }))
       ])
     ])
-  ]
+  ],
+  providers: [DatePipe]
 })
 export class InterventionComponent implements OnInit {
   private http = inject(HttpClient);
   private router = inject(Router);
+  private accountService = inject(AccountService);
+  private datePipe = inject(DatePipe);
 
   private baseUrl = 'https://localhost:5001/api/DemandeIntervention';
   private etatBaseUrl = 'https://localhost:5001/api/Etat';
@@ -54,6 +58,11 @@ export class InterventionComponent implements OnInit {
 
   private searchSubject = new Subject<string>();
 
+  get currentUserRole(): string | null {
+    const user = this.accountService.currentUser();
+    return user ? user.role : null;
+  }
+
   ngOnInit(): void {
     const state = history.state;
     if (state?.message) {
@@ -70,11 +79,11 @@ export class InterventionComponent implements OnInit {
   loadReferenceData(): void {
     this.isLoading = true;
     forkJoin({
-      etats: this.http.get<any[]>(this.etatBaseUrl),
-      types: this.http.get<any[]>(this.typeInterventionBaseUrl),
-      urgences: this.http.get<any[]>(this.urgenceBaseUrl),
-      chaines: this.http.get<any[]>(this.chaineProductionBaseUrl),
-      users: this.http.get<any[]>(this.usersBaseUrl)
+      etats: this.http.get<any[]>(this.etatBaseUrl, { withCredentials: true }),
+      types: this.http.get<any[]>(this.typeInterventionBaseUrl, { withCredentials: true }),
+      urgences: this.http.get<any[]>(this.urgenceBaseUrl, { withCredentials: true }),
+      chaines: this.http.get<any[]>(this.chaineProductionBaseUrl, { withCredentials: true }),
+      users: this.http.get<any[]>(this.usersBaseUrl, { withCredentials: true })
     }).subscribe({
       next: (res) => {
         res.etats.forEach(item => this.etatMap.set(item.idEtat, item.libelle));
@@ -85,6 +94,7 @@ export class InterventionComponent implements OnInit {
         this.getAllInterventions();
       },
       error: (err) => {
+        console.error('Failed to load reference data:', err);
         this.showPopupMessage('Failed to load reference data', 'error');
         this.isLoading = false;
       }
@@ -94,7 +104,7 @@ export class InterventionComponent implements OnInit {
   getAllInterventions(): void {
     this.isLoading = true;
     const url = `${this.baseUrl}?page=${this.currentPage}&pageSize=${this.pageSize}`;
-    this.http.get<any>(url).subscribe({
+    this.http.get<any>(url, { withCredentials: true }).subscribe({
       next: (res) => {
         this.paginatedInterventionList = res.data.map((item: any) => ({
           idDemandeIntervention: item.idDemandeIntervention || 0,
@@ -114,6 +124,7 @@ export class InterventionComponent implements OnInit {
         this.isLoading = false;
       },
       error: (err) => {
+        console.error('Failed to fetch interventions:', err);
         this.showPopupMessage('Failed to fetch interventions', 'error');
         this.isLoading = false;
       }
@@ -133,7 +144,7 @@ export class InterventionComponent implements OnInit {
     const term = this.searchTerm.toLowerCase().trim();
     this.isLoading = true;
     const url = `${this.baseUrl}?page=${this.currentPage}&pageSize=${this.pageSize}&search=${term}`;
-    this.http.get<any>(url).subscribe({
+    this.http.get<any>(url, { withCredentials: true }).subscribe({
       next: (res) => {
         this.paginatedInterventionList = res.data.map((item: any) => ({
           idDemandeIntervention: item.idDemandeIntervention || 0,
@@ -153,6 +164,7 @@ export class InterventionComponent implements OnInit {
         this.isLoading = false;
       },
       error: (err) => {
+        console.error('Failed to search interventions:', err);
         this.showPopupMessage('Failed to search interventions', 'error');
         this.isLoading = false;
       }
@@ -188,7 +200,6 @@ export class InterventionComponent implements OnInit {
   getPageNumbers(): number[] {
     const pages: number[] = [];
     const maxVisiblePages = 3;
-    
     if (this.totalPages <= maxVisiblePages) {
       for (let i = 1; i <= this.totalPages; i++) {
         pages.push(i);
@@ -223,12 +234,13 @@ export class InterventionComponent implements OnInit {
   deleteIntervention(item: InterventionListItem): void {
     if (!confirm(`Delete intervention: ${item.titre}?`)) return;
     this.isLoading = true;
-    this.http.delete(`${this.baseUrl}/${item.idDemandeIntervention}`).subscribe({
+    this.http.delete(`${this.baseUrl}/${item.idDemandeIntervention}`, { withCredentials: true }).subscribe({
       next: () => {
         this.showPopupMessage('Intervention deleted successfully!', 'success');
         this.getAllInterventions();
       },
       error: (err) => {
+        console.error('Failed to delete intervention:', err);
         this.showPopupMessage(err.error?.message || 'Failed to delete intervention', 'error');
         this.isLoading = false;
       }
@@ -237,7 +249,7 @@ export class InterventionComponent implements OnInit {
 
   downloadFile(id: number, fileName: string): void {
     const url = `${this.baseUrl}/${id}/file`;
-    this.http.get(url, { responseType: 'blob' }).subscribe({
+    this.http.get(url, { responseType: 'blob', withCredentials: true }).subscribe({
       next: (blob) => {
         const a = document.createElement('a');
         const objectUrl = URL.createObjectURL(blob);
@@ -247,12 +259,11 @@ export class InterventionComponent implements OnInit {
         URL.revokeObjectURL(objectUrl);
       },
       error: (err) => {
+        console.error('Download failed:', err);
         this.showPopupMessage('Failed to download file', 'error');
-        console.error('Download failed', err);
       }
     });
   }
-
 
   getUrgenceClass(urgence: string): string {
     const normalizedUrgence = urgence.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
@@ -261,7 +272,6 @@ export class InterventionComponent implements OnInit {
     if (normalizedUrgence === 'basse') return 'urgence-normal';
     return '';
   }
-
 
   private showPopupMessage(message: string, type: 'success' | 'error'): void {
     this.popupMessage = message;

@@ -1,4 +1,3 @@
-```html
 <!-- intervention.component.html -->
 <div class="intervention-container">
   <!-- Header Section -->
@@ -53,7 +52,7 @@
           <th>Chaine Production</th>
           <th>Demandeur</th>
           <th>Destinataire</th>
-          <th>Actions</th>
+          <th *ngIf="currentUserRole === 'Superviseur'">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -73,7 +72,7 @@
           <td>{{ item.chaineProduction }}</td>
           <td>{{ item.demandeur }}</td>
           <td>{{ item.destinataire }}</td>
-          <td class="actions">
+          <td class="actions" *ngIf="currentUserRole === 'Superviseur'">
             <button mat-icon-button color="primary" (click)="navigateToEdit(item.idDemandeIntervention)">
               <mat-icon>edit</mat-icon>
             </button>
@@ -83,7 +82,7 @@
           </td>
         </tr>
         <tr *ngIf="paginatedInterventionList.length === 0">
-          <td colspan="11" class="no-data">No interventions found.</td>
+          <td [attr.colspan]="currentUserRole === 'Superviseur' ? 11 : 10" class="no-data">No interventions found.</td>
         </tr>
       </tbody>
     </table>

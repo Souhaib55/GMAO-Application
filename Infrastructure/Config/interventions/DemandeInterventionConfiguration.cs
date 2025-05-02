@@ -16,6 +16,7 @@ namespace Infrastructure.Config
             builder.Property(d => d.ContentType).HasMaxLength(100);
             builder.Property(d => d.MachineArretee).IsRequired();
             builder.Property(d => d.IsActif).HasDefaultValue(true);
+            builder.Property(d => d.DestinatairesID).IsRequired(false); // Make it optional
 
             builder.HasOne(d => d.Etat)
                    .WithMany()
@@ -45,7 +46,7 @@ namespace Infrastructure.Config
             builder.HasOne(d => d.Destinataire)
                    .WithMany()
                    .HasForeignKey(d => d.DestinatairesID)
-                   .OnDelete(DeleteBehavior.Restrict);
+                   .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

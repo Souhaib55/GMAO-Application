@@ -21,7 +21,10 @@ namespace API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Users>>> GetUsers()
         {
-            return Ok(await _context.Users.Where(u => u.IsActif).ToListAsync());
+            return Ok(await _context.Users
+                .Where(u => u.IsActif)
+                .Include(u => u.Role)
+                .ToListAsync());
         }
 
         [HttpGet("{id}")]

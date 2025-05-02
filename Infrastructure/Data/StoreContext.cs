@@ -1,17 +1,21 @@
 using Core.Entities;
 using Infrastructure.Config;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data;
 
-public class StoreContext : IdentityDbContext<AppUser>
+public class StoreContext : IdentityDbContext<AppUser, IdentityRole, string>
 {
     public StoreContext(DbContextOptions<StoreContext> options) : base(options)
     {
     }
     // Users table    
     public DbSet<Users> Users { get; set; }
+
+    // Roles table
+    public DbSet<Role> Roles { get; set; }
 
     // Equipments Module
     public DbSet<Equipment> Equipments { get; set; }
@@ -44,9 +48,9 @@ public class StoreContext : IdentityDbContext<AppUser>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        
         // Users table
         modelBuilder.ApplyConfiguration(new UsersConfiguration());
+        modelBuilder.ApplyConfiguration(new RoleConfiguration()); 
 
         // Equipments Module
         modelBuilder.ApplyConfiguration(new EquipmentConfiguration());

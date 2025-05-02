@@ -1,266 +1,430 @@
 // Base variables matching the image's style
 :root {
-    --primary-color: #f97316; // Orange for login button
-    --border-color: #e5e7eb;
-    --text-dark: #111827;
-    --text-medium: #374151;
-    --text-light: #6b7280;
-    --bg-light: #f9fafb; // Light background for the page
-    --white: #ffffff;
-    --card-bg: var(--white);
-    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-    --card-border-radius: 12px;
-    --button-border-radius: 8px;
+  --primary-color: #3B82F6 !important; // Bleu correspondant à l'image
+  --primary-dark: #2563EB !important;
+  --background-color: #E1EFFE !important; // Fond bleu clair comme sur l'image
+  --white: #FFFFFF !important;
+  --text-dark: #1F2937 !important;
+  --text-medium: #4B5563 !important;
+  --text-light: #6B7280 !important;
+  --border-color: #E5E7EB !important;
+  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+  --border-radius: 8px !important;
 }
 
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+body {
+  background-color: var(--background-color) !important;
+  color: var(--text-dark) !important;
+  line-height: 1.5 !important;
 }
 
 :host {
-    display: block;
-    background-color: var(--bg-light);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+  display: block !important;
+  min-height: 100vh !important;
+  background-color: var(--background-color) !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 // Navbar Styles
 .navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 2rem; // Adjust padding as needed
-    background-color: var(--white);
-    border-bottom: 1px solid var(--border-color);
-    position: sticky; // Make navbar sticky if desired
-    top: 0;
-    z-index: 10;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 1rem 5% !important;
+  background-color: var(--white) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 100 !important;
 }
 
 .navbar-logo {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--text-dark);
-    // Add logo specific styles if it's an image or has icons
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+}
+
+.logo-image {
+  height: 24px !important;
+}
+
+.logo-text {
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  color: var(--text-dark) !important;
 }
 
 .navbar-actions {
-    display: flex;
-    gap: 0.75rem;
+  display: flex !important;
+  gap: 0.75rem !important;
 }
 
 .btn {
-    padding: 0.6rem 1.2rem;
-    border-radius: var(--button-border-radius);
-    text-decoration: none;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-    border: 1px solid transparent;
-    text-align: center;
+  padding: 0.5rem 1rem !important;
+  border-radius: var(--border-radius) !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  border: none !important;
+  font-size: 0.875rem !important;
 }
 
-.btn-login {
-    background-color: var(--primary-color);
-    color: var(--white);
-    border-color: var(--primary-color);
+.btn-primary {
+  background-color: #3B82F6 !important;
+  color: var(--white) !important;
+  border: none !important;
 }
 
-.btn-login:hover {
-    background-color: #ea580c; // Darker orange on hover
-    border-color: #ea580c;
+.btn-primary:hover {
+  background-color: #2563EB !important;
 }
 
-.btn-register {
-    background-color: var(--white);
-    color: var(--text-medium);
-    border: 1px solid var(--border-color);
+.btn-outline {
+  background-color: transparent !important;
+  color: var(--text-medium) !important;
+  border: 1px solid #D1D5DB !important;
 }
 
-.btn-register:hover {
-    background-color: #f3f4f6; // Slightly grey background on hover
-    border-color: #d1d5db;
+.btn-outline:hover {
+  background-color: #F9FAFB !important;
+  border-color: var(--text-medium) !important;
 }
 
-// Hero Section Styles
+.btn-large {
+  padding: 0.75rem 1.5rem !important;
+  font-size: 1rem !important;
+}
+
+// Hero Section - Exact match to the image
 .hero {
-    text-align: center;
-    padding: 4rem 1rem; // Adjust padding
-    background-color: var(--white); // White background for hero
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  padding: 5rem 1rem !important;
+  background: linear-gradient(to bottom, #E1EFFE, #EBF5FF) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  min-height: 350px !important;
+}
+
+.hero::before {
+  content: "" !important;
+  position: absolute !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 100%) !important;
+  top: 0 !important;
+  left: 0 !important;
+}
+
+.hero-content {
+  position: relative !important;
+  z-index: 2 !important;
 }
 
 .hero-title {
-    font-size: 2.5rem; // Adjust size
-    font-weight: 700;
-    color: var(--text-dark);
-    margin-bottom: 1rem;
+  font-size: 2.5rem !important;
+  font-weight: 700 !important;
+  color: #111827 !important;
+  margin-bottom: 1.5rem !important;
+  line-height: 1.2 !important;
+  text-transform: uppercase !important;
+  letter-spacing: -0.5px !important;
 }
 
 .hero-description {
-    font-size: 1rem; // Adjust size
-    color: var(--text-light);
-    max-width: 650px; // Limit width
-    margin: 0 auto;
-    line-height: 1.6;
+  font-size: 1.125rem !important;
+  color: var(--text-medium) !important;
+  max-width: 600px !important;
+  margin: 0 auto 2rem !important;
+  line-height: 1.6 !important;
 }
 
-// Feature Cards Section Styles
-.feature-cards-section {
-    display: flex;
-    justify-content: center;
-    gap: 1.5rem; // Space between cards
-    padding: 3rem 1rem; // Padding around the section
-    flex-wrap: wrap; // Allow cards to wrap on smaller screens
-    background-color: var(--bg-light); // Section background
-    flex-grow: 1; // Allow this section to grow and push footer down
+.hero-buttons {
+  display: flex !important;
+  gap: 1rem !important;
+  justify-content: center !important;
+}
+
+// Features Section
+.features-section {
+  padding: 5rem 5% !important;
+  background-color: var(--white) !important;
+}
+
+.features-header {
+  text-align: center !important;
+  margin-bottom: 3rem !important;
+}
+
+.section-title {
+  font-size: 2rem !important;
+  font-weight: 700 !important;
+  color: var(--text-dark) !important;
+  margin-bottom: 1rem !important;
+}
+
+.section-description {
+  font-size: 1.125rem !important;
+  color: var(--text-medium) !important;
+  max-width: 700px !important;
+  margin: 0 auto !important;
+}
+
+.feature-cards {
+  display: flex !important;
+  justify-content: center !important;
+  gap: 2rem !important;
+  flex-wrap: wrap !important;
+  max-width: 1200px !important;
+  margin: 0 auto !important;
 }
 
 .feature-card {
-    background-color: var(--card-bg);
-    border-radius: var(--card-border-radius);
-    box-shadow: var(--card-shadow);
-    padding: 1.5rem;
-    text-align: center;
-    width: 300px; // Fixed width or use flex-basis
-    border: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  background-color: var(--white) !important;
+  border-radius: var(--border-radius) !important;
+  box-shadow: var(--card-shadow) !important;
+  padding: 2rem !important;
+  text-align: center !important;
+  width: 300px !important;
+  border: 1px solid var(--border-color) !important;
+  transition: transform 0.3s ease, box-shadow 0.3s ease !important;
 }
 
-// Placeholder for where the image was
-.feature-placeholder-text {
-    width: 100%;
-    height: 150px; // Keep height similar to image placeholder for layout consistency
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #f3f4f6; // Light grey background for the placeholder area
-    border-radius: 8px; // Slightly rounded corners for the placeholder
-    margin-bottom: 1.5rem;
-    color: var(--text-light);
-    font-size: 0.9rem;
-    text-align: center;
-    padding: 1rem; // Padding inside the placeholder
-    border: 1px dashed var(--border-color); // Dashed border to indicate placeholder
+.feature-card:hover {
+  transform: translateY(-5px) !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.feature-icon {
+  width: 64px !important;
+  height: 64px !important;
+  margin: 0 auto 1.5rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color: #DBEAFE !important;
+  border-radius: 50% !important;
 }
 
 .feature-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--text-dark);
-    margin-bottom: 0.75rem;
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  color: var(--text-dark) !important;
+  margin-bottom: 1rem !important;
 }
 
 .feature-description {
-    font-size: 0.9rem;
-    color: var(--text-light);
-    line-height: 1.5;
-    flex-grow: 1; // Allow description to take available space
+  font-size: 0.875rem !important;
+  color: var(--text-medium) !important;
+  line-height: 1.6 !important;
 }
 
-// Footer Styles
+// Testimonials Section - Match the image
+.testimonials-section {
+  padding: 5rem 5% !important;
+  background-color: #F3F4F6 !important;
+  text-align: center !important;
+}
+
+// Footer
 .footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem 2rem;
-    background-color: var(--white);
-    border-top: 1px solid var(--border-color);
-    font-size: 0.85rem;
-    color: var(--text-light);
-    flex-wrap: wrap; // Allow wrapping on small screens
-    gap: 1rem; // Gap between footer sections when wrapped
+  background-color: var(--white) !important;
+  padding: 4rem 5% 2rem !important;
+  border-top: 1px solid var(--border-color) !important;
 }
 
-.footer-links-left,
-.footer-links-right {
-    display: flex;
-    gap: 1.5rem; // Space between links
+.footer-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  margin-bottom: 3rem !important;
+  flex-wrap: wrap !important;
+  gap: 2rem !important;
 }
 
-.footer a {
-    color: var(--text-light);
-    text-decoration: none;
-    transition: color 0.2s ease;
+.footer-logo {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  font-weight: 600 !important;
+  color: var(--text-dark) !important;
+  margin-bottom: 1rem !important;
 }
 
-.footer a:hover {
-    color: var(--primary-color); // Link hover color
+.footer-logo-image {
+  height: 24px !important;
 }
 
-.footer-copyright {
-    text-align: center;
-    flex-grow: 1; // Allow copyright to take space in the middle
-    min-width: 100%; // Ensure it takes full width when wrapped
-    order: 1; // Ensure copyright is below links on small screens if wrapped
+.footer-links {
+  display: flex !important;
+  gap: 4rem !important;
+  flex-wrap: wrap !important;
 }
 
-// Responsive Adjustments
+.footer-links-column {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.75rem !important;
+}
+
+.footer-links-column h4 {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  color: var(--text-dark) !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.footer-links-column a {
+  color: var(--text-medium) !important;
+  text-decoration: none !important;
+  font-size: 0.875rem !important;
+  transition: color 0.2s ease !important;
+}
+
+.footer-links-column a:hover {
+  color: var(--primary-color) !important;
+}
+
+.footer-bottom {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding-top: 2rem !important;
+  border-top: 1px solid var(--border-color) !important;
+  font-size: 0.875rem !important;
+  color: var(--text-light) !important;
+  flex-wrap: wrap !important;
+  gap: 1rem !important;
+}
+
+.footer-legal {
+  display: flex !important;
+  gap: 1.5rem !important;
+}
+
+.footer-legal a {
+  color: var(--text-light) !important;
+  text-decoration: none !important;
+  transition: color 0.2s ease !important;
+}
+
+.footer-legal a:hover {
+  color: var(--primary-color) !important;
+}
+
+// Responsive adjustments
+@media (max-width: 1024px) {
+  .feature-cards {
+    gap: 1.5rem !important;
+  }
+  
+  .feature-card {
+    width: calc(50% - 1.5rem) !important;
+    min-width: 280px !important;
+  }
+}
+
 @media (max-width: 768px) {
-    .navbar {
-        padding: 1rem;
-    }
-
-    .hero-title {
-        font-size: 2rem;
-    }
-
-    .hero-description {
-        font-size: 0.95rem;
-    }
-
-    .feature-cards-section {
-        flex-direction: column;
-        align-items: center;
-        padding: 2rem 1rem;
-        gap: 1.5rem;
-    }
-
-    .feature-card {
-        width: 90%; // Make cards wider on smaller screens
-        max-width: 400px;
-    }
-
-    .footer {
-        flex-direction: column;
-        text-align: center;
-        padding: 1.5rem 1rem;
-    }
-
-    .footer-links-left,
-    .footer-links-right {
-        justify-content: center;
-        gap: 1rem;
-        width: 100%;
-    }
-
-    .footer-copyright {
-        order: 0; // Put copyright first in column layout
-        margin-bottom: 1rem;
-    }
+  .navbar {
+    padding: 1rem !important;
+    flex-wrap: wrap !important;
+  }
+  
+  .hero-title {
+    font-size: 2rem !important;
+  }
+  
+  .feature-card {
+    width: 100% !important;
+  }
+  
+  .footer-content {
+    flex-direction: column !important;
+    gap: 2rem !important;
+  }
+  
+  .footer-links {
+    gap: 2rem !important;
+  }
+  
+  .footer-bottom {
+    flex-direction: column !important;
+    text-align: center !important;
+  }
+  
+  .footer-legal {
+    justify-content: center !important;
+  }
 }
 
 @media (max-width: 480px) {
-    .navbar-actions {
-        gap: 0.5rem;
-    }
+  .hero-buttons {
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 300px !important;
+    margin: 0 auto !important;
+  }
+  
+  .section-title {
+    font-size: 1.75rem !important;
+  }
+}
 
-    .btn {
-        padding: 0.5rem 1rem;
-        font-size: 0.85rem;
-    }
+// Additional styles for the dashboard button when logged in
+.btn-dashboard {
+  background-color: #3B82F6 !important;
+  color: var(--white) !important;
+}
 
-    .hero-title {
-        font-size: 1.75rem;
-    }
+.btn-dashboard:hover {
+  background-color: #2563EB !important;
+}
 
-    .feature-placeholder-text {
-        height: 120px; // Slightly smaller placeholder on mobile
-    }
+// Button styles to match the image exactly
+.btn-primary {
+  background-color: #3B82F6 !important;
+  border-color: #3B82F6 !important;
+  font-weight: 600 !important;
+}
+
+.btn-outline {
+  border: 1px solid #D1D5DB !important;
+  color: #4B5563 !important;
+}
+
+// Hero section specific adjustments to match the image
+.hero {
+  background: linear-gradient(to bottom, #E1EFFE, #EBF5FF) !important;
+}
+
+.hero-title {
+  color: #111827 !important;
+  font-weight: 700 !important;
+}
+
+// Feature card specific adjustments
+.feature-icon {
+  background-color: #DBEAFE !important;
+}
+
+// Ensure the logo appears correctly
+.navbar-logo img, .footer-logo img {
+  max-height: 28px !important;
+  width: auto !important;
+}
+
+// Fix button styles to match the image
+.btn-large {
+  padding: 0.75rem 1.75rem !important;
+  font-weight: 600 !important;
 }

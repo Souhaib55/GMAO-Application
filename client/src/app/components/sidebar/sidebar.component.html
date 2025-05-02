@@ -11,13 +11,35 @@
 
   <!-- Navigation -->
   <div class="sidebar-wrapper">
-    <!-- Added margin-top class for spacing -->
     <ul class="nav nav-margin-top">
-      <li routerLinkActive="active" *ngFor="let menuItem of menuItems" class="{{menuItem.class}} nav-item">
-        <a class="nav-link" [routerLink]="[menuItem.path]">
+      <li *ngFor="let menuItem of menuItems" 
+          [class.active]="isActive(menuItem)" 
+          class="{{menuItem.class}} nav-item">
+        <a *ngIf="!menuItem.children" 
+           class="nav-link" 
+           [routerLink]="[menuItem.path]" 
+           routerLinkActive="active-link" 
+           [routerLinkActiveOptions]="{exact: true}">
           <i class="material-icons">{{menuItem.icon}}</i>
           <p>{{menuItem.title}}</p>
         </a>
+        <a *ngIf="menuItem.children" 
+           class="nav-link has-submenu" 
+           (click)="toggleSubmenu(menuItem)">
+          <i class="material-icons">{{menuItem.icon}}</i>
+          <p>{{menuItem.title}} <i class="material-icons">{{ menuItem.expanded ? 'expand_less' : 'expand_more' }}</i></p>
+        </a>
+        <ul *ngIf="menuItem.children && menuItem.expanded" class="nav sub-nav">
+          <li *ngFor="let child of menuItem.children" 
+              class="nav-item" 
+              routerLinkActive="active" 
+              [routerLinkActiveOptions]="{exact: true}">
+            <a class="nav-link" [routerLink]="[child.path]">
+              <i class="material-icons">{{child.icon}}</i>
+              <p>{{child.title}}</p>
+            </a>
+          </li>
+        </ul>
       </li>
     </ul>
   </div>

@@ -1,7 +1,6 @@
 .sidebar-container {
   width: 250px;
-  background-color: white;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  background-color: white ;
   height: 100vh;
   position: fixed;
   display: flex;
@@ -34,20 +33,6 @@
   margin-top: 45px !important;
 }
 
-/* Section styling */
-.nav-section {
-  margin-bottom: 24px !important;
-}
-
-.section-header {
-  font-size: 12px;
-  font-weight: 600;
-  color: #6c757d;
-  padding: 8px 16px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
 /* Navigation items */
 .nav {
   list-style: none;
@@ -56,21 +41,49 @@
 }
 
 .nav-item {
-  margin: 15px 0; /* Increased from 4px to 15px for more spacing between items */
+  margin: 15px 0;
   border-radius: 8px;
   transition: background-color 0.2s ease;
 }
 
-.nav-item.active {
-  background-color: #5e72e4;
+/* Main sidebar active item styling */
+.nav-item.active,
+.nav-item .active-link {
+  background-color: #5e72e4 !important;
 }
 
-.nav-item.active .nav-link {
-  color: white;
+.nav-item.active .nav-link,
+.nav-item .active-link {
+  color: white !important;
 }
 
-.nav-item.active .material-icons {
-  color: white;
+.nav-item.active .nav-link .material-icons,
+.nav-item .active-link .material-icons {
+  color: white !important;
+}
+
+/* Set cursor to pointer for items with submenu */
+.nav-link.has-submenu {
+  cursor: pointer;
+}
+
+/* Submenu active item styling */
+.sub-nav .nav-item {
+  margin: 8px 0;
+  border-radius: 8px; /* Ensure submenu items have the same border-radius */
+  transition: background-color 0.2s ease; /* Consistent transition */
+}
+
+.sub-nav .nav-item.active {
+  background-color: #5e72e4 !important;
+}
+
+.sub-nav .nav-item.active .nav-link {
+  color: white !important;
+}
+
+.sub-nav .nav-item.active .nav-link .material-icons {
+  color: white !important;
 }
 
 .nav-link {
@@ -81,26 +94,63 @@
   text-decoration: none;
   border-radius: 8px;
   transition: all 0.2s ease;
+  position: relative;
 }
 
 .nav-link:hover {
   background-color: #f8f9fa;
 }
 
-.active .nav-link:hover {
-  background-color: #5e72e4;
+/* Prevent hover from overriding active state */
+.nav-item.active .nav-link:hover,
+.nav-item .active-link:hover,
+.sub-nav .nav-item.active .nav-link:hover {
+  background-color: #5e72e4 !important;
+  color: white !important;
+}
+
+/* Ensure icons in active items are white */
+.nav-item.active .material-icons,
+.nav-item .active-link .material-icons,
+.sub-nav .nav-item.active .material-icons {
+  color: white !important;
 }
 
 .material-icons {
-  margin-right: 12px;
+  margin-right: 8px;
   font-size: 20px;
   color: #6c757d;
 }
 
 .nav-link p {
   margin: 0;
-  font-size: 15px; /* Increased from 14px to 16px for slightly larger text */
+  font-size: 15px;
   font-weight: 500;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Position the arrow to the right side */
+.nav-link p i.material-icons {
+  margin-right: 0;
+  margin-left: auto;
+}
+
+/* Submenu/subsidebar styling */
+.sub-nav {
+  margin-top: 5px;
+  padding-left: 20px;
+}
+
+.sub-nav .nav-link {
+  padding: 8px 16px;
+  border-radius: 8px; /* Ensure submenu nav-link has rounded corners */
+}
+
+.sub-nav .material-icons {
+  font-size: 18px;
 }
 
 /* Make the sidebar responsive */

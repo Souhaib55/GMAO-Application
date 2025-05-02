@@ -12,7 +12,7 @@ namespace API.DTOs
         public int IDUrgence { get; set; }
         public int IDChaineProduction { get; set; }
         public int DemandeursID { get; set; }
-        public int DestinatairesID { get; set; }
+        public int? DestinatairesID { get; set; }
         public bool IsActif { get; set; }
     }
 }

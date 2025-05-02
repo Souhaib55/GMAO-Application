@@ -1,5 +1,5 @@
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { NgModule } from '@angular/core';
+import { APP_INITIALIZER, NgModule } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { AppRoutingModule } from './app.routing';
 import { ComponentsModule } from './components/components.module';
@@ -30,8 +30,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu'; // Added for MatMenu, MatMenuItem, MatMenuTrigger
-import { MatDividerModule } from '@angular/material/divider'; // Added for MatDivider
+import { MatMenuModule } from '@angular/material/menu';
+import { MatDividerModule } from '@angular/material/divider';
 import { HttpClientModule } from '@angular/common/http';
 import { MatNativeDateModule } from '@angular/material/core';
 import { EquipmentButtonComponent } from './equipment-button/equipment-button.component';
@@ -39,6 +39,9 @@ import { StockButtonComponent } from './stock-button/stock-button.component';
 import { RessourcesButtonComponent } from './ressources-button/ressources-button.component';
 import { InterventionButtonComponent } from './intervention-button/intervention-button.component';
 import { HomepageComponent } from './homepage/homepage.component';
+import { TriggerComponent } from './trigger/trigger.component';
+import { InitService } from './core/services/init.service';
+import { firstValueFrom } from 'rxjs'; // Import firstValueFrom
 
 @NgModule({
   imports: [
@@ -65,9 +68,8 @@ import { HomepageComponent } from './homepage/homepage.component';
     MatCheckboxModule,
     MatGridListModule,
     MatProgressSpinnerModule,
-    MatMenuModule, // Added for MatMenu, MatMenuItem, MatMenuTrigger
-    MatDividerModule, // Added for MatDivider
-    
+    MatMenuModule,
+    MatDividerModule,
   ],
   declarations: [
     AppComponent,
@@ -85,9 +87,20 @@ import { HomepageComponent } from './homepage/homepage.component';
     StockButtonComponent,
     RessourcesButtonComponent,
     InterventionButtonComponent,
-    HomepageComponent
+    HomepageComponent,
+    TriggerComponent
   ],
-  providers: [],
+  providers: [
+    {
+      provide: APP_INITIALIZER,
+      useFactory: (initService: InitService) => () => {
+        // Use firstValueFrom instead of toPromise
+        return firstValueFrom(initService.init());
+      },
+      deps: [InitService],
+      multi: true
+    },
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

@@ -1,9 +1,8 @@
 import { Component, OnInit, ElementRef, inject } from '@angular/core';
 import { ROUTES } from '../sidebar/sidebar.component';
-import {Location, LocationStrategy, PathLocationStrategy} from '@angular/common';
+import {Location, PathLocationStrategy} from '@angular/common';
 import { Router } from '@angular/router';
-import { AccountService } from 'app/core/services/account.service';
-
+import { AccountService } from '../../core/services/account.service';
 
 @Component({
   selector: 'app-navbar',
@@ -126,15 +125,11 @@ export class NavbarComponent implements OnInit {
     //accountService = inject(AccountService);
     private routervar = inject(Router);
 
+    // From AccountService
     logout() {
-        this.accountService.logout().subscribe({
-            next: () =>  {
-                this.accountService.currentUser.set(null);
-                this.routervar.navigateByUrl('/login');
-            }
-        })
-    }
-
-
-    
+        // The AccountService already handles removing user from storage and updating the BehaviorSubject
+        this.accountService.logout();
+        // Just navigate to login page after calling logout
+        this.routervar.navigateByUrl('/login');
+      }
 }

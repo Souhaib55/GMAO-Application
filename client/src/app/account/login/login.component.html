@@ -1,27 +1,66 @@
-<mat-card class="login-card">
-    <!-- Top-left corner -->
-    <div class="corner top-left">
-        <div class="block dark-blue"></div>
-        <div class="block light-blue"></div>
+<div class="login-container">
+  <div class="login-content">
+    <!-- Logo -->
+    <div class="logo">
+      <img src="assets/img/alcodex.png" alt="Alcodex">
+      <span class="alcodex-subtitle">alcodex.net</span>
     </div>
-    <!-- Bottom-right corner -->
-    <div class="corner bottom-right">
-        <div class="block light-blue"></div>
-        <div class="block dark-blue"></div>
-    </div>
-    <!-- Existing form content -->
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-        <div class="login-header">
-            <h1>Welcome </h1>
+    
+    <!-- Main content -->
+    <div class="main-section">
+      <div class="text-section">
+        <h1 class="main-title">VOTRE MAINTENANCE,<br>NOTRE PRIORITE.</h1>
+        <p class="subtitle">Gérez vos interventions, équipements et équipes en toute simplicité.</p>
+      </div>
+      
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <div class="custom-input-container">
+          <input type="email" formControlName="email" class="custom-input" placeholder="Name@mail.com">
+          <div class="custom-input-icon">
+            <i class="material-icons">mail</i>
+          </div>
         </div>
-        <mat-form-field appearance="outline" class="login-input">
-            <mat-label>Email address</mat-label>
-            <input formControlName="email" type="email" placeholder="name@example.com" matInput />
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="login-input">
-            <mat-label>Password</mat-label>
-            <input formControlName="password" type="password" placeholder="password" matInput />
-        </mat-form-field>
-        <button mat-flat-button type="submit" class="login-button">Sign In</button>
-    </form>
-</mat-card>
+        
+        <div class="custom-input-container">
+          <input type="password" formControlName="password" class="custom-input" placeholder="*******">
+          <div class="custom-input-icon">
+            <i class="material-icons">lock</i>
+          </div>
+        </div>
+        
+        <div class="form-links sign-up">
+          <span>Sign up now</span>
+        </div>
+        
+        <div class="form-actions">
+          <button type="submit" class="login-button">Login</button>
+        </div>
+        
+        <div class="form-links forgot-password">
+          <span>Forgot Password?</span>
+        </div>
+      </form>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+      <p>Solution GMAO — Powered by Alcodex.</p>
+    </div>
+  </div>
+  
+  <!-- Illustration -->
+  <div class="illustration-section">
+    <!-- Updated technician image -->
+    <div class="technician-image">
+      <img src="assets/login_images/asset1.png" alt="Maintenance Technician">
+    </div>
+    <div class="gear-icons">
+      <img src="assets/SVG/asset1.svg" class="gear gear-1" alt="Large Gear">
+      <img src="assets/SVG/asset1.svg" class="gear gear-2" alt="Medium Gear">
+      <img src="assets/SVG/asset1.svg" class="gear gear-3" alt="Small Gear">
+    </div>
+  </div>
+  
+  <!-- Black border at the bottom -->
+  <div class="bottom-border"></div>
+</div>

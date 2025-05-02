@@ -31,7 +31,8 @@
         <div class="col-md-6 input-group">
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Etat</mat-label>
-            <mat-select formControlName="idEtat" required placeholder="Select etat">
+            <mat-select formControlName="idEtat" required placeholder="Select etat"
+                      [disabled]="currentUser.role !== 'Superviseur' && isEditMode">
               <mat-option *ngFor="let etat of etatList" [value]="etat.idEtat">
                 {{ etat.libelle }}
               </mat-option>
@@ -84,11 +85,36 @@
           </mat-form-field>
         </div>
 
-        <div class="col-md-6 input-group">
+        <!-- Different display based on role -->
+        <!-- For Superviseur: Show dropdown -->
+        <div class="col-md-6 input-group" *ngIf="currentUser.role === 'Superviseur'">
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Demandeur</mat-label>
             <mat-select formControlName="demandeursID" required placeholder="Select demandeur">
-              <mat-option *ngFor="let user of usersList" [value]="user.id">
+              <mat-option *ngFor="let user of demandeurList" [value]="user.id">
+                {{ user.nom }} {{ user.prenom }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="interventionForm.get('demandeursID')?.touched && interventionForm.get('demandeursID')?.hasError('required')">
+              Demandeur is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+        
+        <!-- For Demandeur: Show their name and use hidden field -->
+        <div class="col-md-6 input-group" *ngIf="currentUser.role === 'Demandeur'">
+          <div class="form-field-static">
+            <strong>Demandeur:</strong> {{ currentUser.firstName }} {{ currentUser.lastName }}
+            <!-- Hidden field, already set in component -->
+          </div>
+        </div>
+        
+        <!-- For Utilisateur: Show dropdown -->
+        <div class="col-md-6 input-group" *ngIf="currentUser.role === 'Utilisateur'">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Demandeur</mat-label>
+            <mat-select formControlName="demandeursID" required placeholder="Select demandeur">
+              <mat-option *ngFor="let user of demandeurList" [value]="user.id">
                 {{ user.nom }} {{ user.prenom }}
               </mat-option>
             </mat-select>
@@ -98,25 +124,22 @@
           </mat-form-field>
         </div>
 
-        <div class="col-md-6 input-group">
+        <div class="col-md-6 input-group" *ngIf="currentUser.role === 'Superviseur'">
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Destinataire</mat-label>
-            <mat-select formControlName="destinatairesID" required placeholder="Select destinataire">
-              <mat-option *ngFor="let user of usersList" [value]="user.id">
+            <mat-select formControlName="destinatairesID" placeholder="Select destinataire">
+              <mat-option *ngFor="let user of destinataireList" [value]="user.id">
                 {{ user.nom }} {{ user.prenom }}
               </mat-option>
             </mat-select>
-            <mat-error *ngIf="interventionForm.get('destinatairesID')?.touched && interventionForm.get('destinatairesID')?.hasError('required')">
-              Destinataire is required
-            </mat-error>
           </mat-form-field>
         </div>
 
         <div class="col-md-6 input-group">
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Date Creation</mat-label>
-            <input matInput [matDatepicker]="pickerCreation" formControlName="dateCreation" [disabled]="isEditMode">
-            <mat-datepicker-toggle matSuffix [for]="pickerCreation" *ngIf="!isEditMode"></mat-datepicker-toggle>
+            <input matInput [matDatepicker]="pickerCreation" formControlName="dateCreation">
+            <mat-datepicker-toggle matSuffix [for]="pickerCreation"></mat-datepicker-toggle>
             <mat-datepicker #pickerCreation></mat-datepicker>
             <mat-error *ngIf="interventionForm.get('dateCreation')?.touched && interventionForm.get('dateCreation')?.hasError('required')">
               Date Creation is required

@@ -1,69 +1,131 @@
 <!-- Navbar -->
 <nav class="navbar">
-    <div class="navbar-logo">GMAO</div>
+    <div class="navbar-logo">
+        <img src="assets/img/alcodex.png" alt="aicodex" class="logo-image">
+        <span class="logo-text">alcodex</span>
+    </div>
+    <!-- La section navbar-links a été supprimée comme demandé -->
     <div class="navbar-actions">
-        <a routerLink="/login" class="btn btn-login">Login</a>
-        <a routerLink="/register" class="btn btn-register">Register</a>
+        <ng-container *ngIf="!isLoggedIn; else loggedInButtons">
+            <button class="btn btn-outline">S'inscrire</button>
+            <button class="btn btn-primary" (click)="goToLogin()">Connexion</button>
+        </ng-container>
+        <ng-template #loggedInButtons>
+            <button (click)="goToLogin()" class="btn btn-dashboard">Dashboard</button>
+        </ng-template>
     </div>
 </nav>
 
 <!-- Hero Section -->
 <section class="hero">
-    <h1 class="hero-title">Welcome to GMAO</h1>
-    <p class="hero-description">
-        Discover how our application can streamline your maintenance operations and improve
-        efficiency. Join us to explore the features and benefits that make GMAO the leading choice
-        for maintenance management.
-    </p>
+    <div class="hero-content">
+        <h1 class="hero-title">VOTRE MAINTENANCE,<br>NOTRE PRIORITÉ.</h1>
+        <p class="hero-description">
+            Gérez vos interventions, équipements et équipes en<br>toute simplicité.
+        </p>
+        <div class="hero-buttons">
+            <button class="btn btn-primary btn-large" (click)="goToLogin()">Commencer maintenant</button>
+            <button class="btn btn-outline btn-large">Voir la démo</button>
+        </div>
+    </div>
 </section>
 
-<!-- Feature Cards Section -->
-<section class="feature-cards-section">
-    <div class="feature-card">
-        <div class="feature-placeholder-text">
-            <span>Visual representation of the Dashboard feature</span>
-        </div>
-        <h2 class="feature-title">Dashboard</h2>
-        <p class="feature-description">
-            Get a comprehensive view of all your maintenance activities in one place,
-            with real-time updates and insights.
+<!-- Features Section -->
+<section class="features-section">
+    <div class="features-header">
+        <h2 class="section-title">Fonctionnalités principales</h2>
+        <p class="section-description">
+            Notre solution GMAO offre des outils puissants pour optimiser votre gestion de maintenance.
         </p>
     </div>
-    <div class="feature-card">
-        <div class="feature-placeholder-text">
-             <span>Visual representation of Mobile Access</span>
+    
+    <div class="feature-cards">
+        <div class="feature-card">
+            <div class="feature-icon dashboard-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="4" y="4" width="7" height="7" rx="1" stroke="#3B82F6" stroke-width="2"/>
+                    <rect x="4" y="13" width="7" height="7" rx="1" stroke="#3B82F6" stroke-width="2"/>
+                    <rect x="13" y="4" width="7" height="7" rx="1" stroke="#3B82F6" stroke-width="2"/>
+                    <rect x="13" y="13" width="7" height="7" rx="1" stroke="#3B82F6" stroke-width="2"/>
+                </svg>
+            </div>
+            <h3 class="feature-title">Dashboard</h3>
+            <p class="feature-description">
+                Obtenez une vue complète de toutes vos activités de maintenance en un seul endroit, avec mises à jour en temps réel et insights.
+            </p>
         </div>
-        <h2 class="feature-title">Mobile Access</h2>
-        <p class="feature-description">
-            Access your maintenance tasks from anywhere with our user-friendly
-            mobile app, designed for technicians on the go.
-        </p>
-    </div>
-    <div class="feature-card">
-         <div class="feature-placeholder-text">
-             <span>Visual representation of Team Collaboration</span>
+        
+        <div class="feature-card">
+            <div class="feature-icon mobile-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="7" y="2" width="10" height="20" rx="2" stroke="#3B82F6" stroke-width="2"/>
+                    <line x1="7" y1="18" x2="17" y2="18" stroke="#3B82F6" stroke-width="2"/>
+                </svg>
+            </div>
+            <h3 class="feature-title">Accès Mobile</h3>
+            <p class="feature-description">
+                Accédez à vos tâches de maintenance de n'importe où avec notre application mobile conviviale, conçue pour les techniciens en déplacement.
+            </p>
         </div>
-        <h2 class="feature-title">Team Collaboration</h2>
-        <p class="feature-description">
-            Enhance team collaboration with tools designed to streamline
-            communication and scheduling for maintenance tasks.
-        </p>
+        
+        <div class="feature-card">
+            <div class="feature-icon team-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="8" r="4" stroke="#3B82F6" stroke-width="2"/>
+                    <circle cx="6" cy="16" r="3" stroke="#3B82F6" stroke-width="2"/>
+                    <circle cx="18" cy="16" r="3" stroke="#3B82F6" stroke-width="2"/>
+                </svg>
+            </div>
+            <h3 class="feature-title">Collaboration d'Équipe</h3>
+            <p class="feature-description">
+                Améliorez la collaboration d'équipe avec des outils conçus pour rationaliser la communication et la planification des tâches de maintenance.
+            </p>
+        </div>
     </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="testimonials-section">
+    <h2 class="section-title">Ce que nos clients disent</h2>
+    <p class="section-description">
+        Découvrez pourquoi des entreprises du monde entier font confiance à notre solution GMAO
+    </p>
+    <!-- Testimonial cards would go here -->
 </section>
 
 <!-- Footer -->
 <footer class="footer">
-    <div class="footer-links-left">
-        <a href="#">About Us</a>
-        <a href="#">Services</a>
-        <a href="#">Contact</a>
+    <div class="footer-content">
+        <div class="footer-logo">
+            <img src="assets/img/alcodex.png" alt="aicodex" class="footer-logo-image">
+            <span>aicodex</span>
+        </div>
+        <div class="footer-links">
+            <div class="footer-links-column">
+                <h4>Produit</h4>
+                <a href="#">Fonctionnalités</a>
+                <a href="#">Tarifs</a>
+                <a href="#">Démo</a>
+            </div>
+            <div class="footer-links-column">
+                <h4>Ressources</h4>
+                <a href="#">Documentation</a>
+                <a href="#">Blog</a>
+                <a href="#">Support</a>
+            </div>
+            <div class="footer-links-column">
+                <h4>Entreprise</h4>
+                <a href="#">À propos</a>
+                <a href="#">Carrières</a>
+                <a href="#">Contact</a>
+            </div>
+        </div>
     </div>
-    <div class="footer-copyright">
-        © 2023 GMAO Application. All rights reserved.
-    </div>
-    <div class="footer-links-right">
-        <a href="#">Privacy Policy</a>
-        <a href="#">Terms of Service</a>
-        <a href="#">Support</a>
+    <div class="footer-bottom">
+        <p>© 2023 GMAO Application. Tous droits réservés.</p>
+        <div class="footer-legal">
+            <a href="#">Politique de confidentialité</a>
+            <a href="#">Conditions d'utilisation</a>
+        </div>
     </div>
 </footer>

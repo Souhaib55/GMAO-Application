@@ -214,7 +214,7 @@ namespace Infrastructure.Migrations
                     b.Property<int>("DemandeursID")
                         .HasColumnType("int");
 
-                    b.Property<int>("DestinatairesID")
+                    b.Property<int?>("DestinatairesID")
                         .HasColumnType("int");
 
                     b.Property<byte[]>("FileData")
@@ -712,6 +712,24 @@ namespace Infrastructure.Migrations
                     b.ToTable("Pieces");
                 });
 
+            modelBuilder.Entity("Core.Entities.Role", b =>
+                {
+                    b.Property<int>("IDRole")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IDRole"));
+
+                    b.Property<string>("Libelle")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("IDRole");
+
+                    b.ToTable("Roles");
+                });
+
             modelBuilder.Entity("Core.Entities.Stock", b =>
                 {
                     b.Property<int>("Id")
@@ -867,48 +885,6 @@ namespace Infrastructure.Migrations
                     b.ToTable("Urgences");
                 });
 
-            modelBuilder.Entity("Core.Entities.Users", b =>
-                {
-                    b.Property<int>("ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
-
-                    b.Property<DateTime>("DateCreation")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("DateModification")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<bool>("IsActif")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true);
-
-                    b.Property<string>("Nom")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Prenom")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("ID");
-
-                    b.HasIndex("Email")
-                        .IsUnique();
-
-                    b.ToTable("Users");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -1042,19 +1018,72 @@ namespace Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Users", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
+
+                    b.Property<string>("AppUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("DateCreation")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DateModification")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("IDRole")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Nom")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Prenom")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("AppUserId")
+                        .IsUnique();
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("IDRole");
+
+                    b.ToTable("Users");
+                });
+
             modelBuilder.Entity("Core.Entities.DemandeIntervention", b =>
                 {
-                    b.HasOne("Core.Entities.Users", "Demandeur")
+                    b.HasOne("Users", "Demandeur")
                         .WithMany()
                         .HasForeignKey("DemandeursID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Core.Entities.Users", "Destinataire")
+                    b.HasOne("Users", "Destinataire")
                         .WithMany()
                         .HasForeignKey("DestinatairesID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Core.Entities.ChaineProduction", "ChaineProduction")
                         .WithMany()
@@ -1261,6 +1290,25 @@ namespace Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Users", b =>
+                {
+                    b.HasOne("Core.Entities.AppUser", "AppUser")
+                        .WithOne()
+                        .HasForeignKey("Users", "AppUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Core.Entities.Role", "Role")
+                        .WithMany()
+                        .HasForeignKey("IDRole")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AppUser");
+
+                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("Core.Entities.Constructeur", b =>

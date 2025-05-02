@@ -153,7 +153,7 @@ export class EquipmentButtonComponent implements OnInit {
     }).subscribe({
       next: (response) => {
         console.log('Equipment created successfully:', response);
-        this.router.navigate(['/admin/equipment'], {
+        this.router.navigate(['/admin/equipment/crud'], {
           state: { message: 'Equipment created successfully!', type: 'success' }
         });
       },
@@ -172,7 +172,7 @@ export class EquipmentButtonComponent implements OnInit {
     }).subscribe({
       next: () => {
         console.log('Equipment updated successfully');
-        this.router.navigate(['/admin/equipment'], {
+        this.router.navigate(['/admin/equipment/crud'], {
           state: { message: 'Equipment updated successfully!', type: 'success' }
         });
       },
@@ -213,7 +213,7 @@ export class EquipmentButtonComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/admin/equipment']);
+    this.router.navigate(['/admin/equipment/crud']);
   }
 }
 

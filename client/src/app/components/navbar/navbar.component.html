@@ -1,7 +1,9 @@
-<nav class="navbar navbar-expand-lg navbar-transparent navbar-absolute fixed-top">
+<nav class="navbar navbar-expand-lg fixed-top navbar-main">
     <div class="container-fluid">
         <div class="navbar-wrapper">
-            <a class="navbar-brand d-none" href="#">Brand</a>
+            <a class="navbar-brand logo-container" href="#">
+             
+            </a>
         </div>
         
         <button mat-raised-button class="navbar-toggler" type="button" (click)="sidebarToggle()">
@@ -11,23 +13,13 @@
             <span class="navbar-toggler-icon icon-bar"></span>
         </button>
         
-        <!-- Search moved to left side -->
-        <div class="search-container">
-            <div class="search-input-wrapper">
-                <div class="search-icon">
-                    <i class="material-icons">search</i>
-                </div>
-                <input type="text" class="search-input" placeholder="Search here...">
-            </div>
-        </div>
-        
         <div class="collapse navbar-collapse" id="navigation">
             <div class="navbar-right-section">
                 <!-- User dropdown moved to the far right -->
                 <ng-container *ngIf="accountService.currentUser()">
                     <button mat-button class="user-dropdown-button" [matMenuTriggerFor]="menu">
                         <div class="dropdown-content">
-                            <span class="user-email">{{accountService.currentUser()?.email}}</span>
+                            <span class="user-name">{{accountService.currentUser()?.email}}</span>
                             <mat-icon class="dropdown-icon">arrow_drop_down</mat-icon>
                         </div>
                     </button>

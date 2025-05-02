@@ -1,5 +1,8 @@
-export type User = {
+export interface User {
+    email: string;
     firstName: string;
     lastName: string;
-    email: string;
+    role: string;
+    appUserId?: string;
+    internalId?: number;
 }
