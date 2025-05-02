@@ -14,7 +14,7 @@
       
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
         <div class="custom-input-container">
-          <input type="email" formControlName="email" class="custom-input" placeholder="Name@mail.com">
+          <input type="email" formControlName="email" class="custom-input" placeholder="name@gmail.com">
           <div class="custom-input-icon">
             <i class="material-icons">mail</i>
           </div>
@@ -60,4 +60,13 @@
   
   <!-- Black border at the bottom -->
   <div class="bottom-border"></div>
+  
+  <!-- Error Popup -->
+  <div class="popup-container" *ngIf="showPopup">
+    <div class="popup" [ngClass]="'popup-' + popupType">
+      <i class="material-icons popup-icon">{{ popupType === 'error' ? 'error' : 'check_circle' }}</i>
+      <span>{{ popupMessage }}</span>
+      <i class="material-icons popup-close" (click)="hidePopup()">close</i>
+    </div>
+  </div>
 </div>

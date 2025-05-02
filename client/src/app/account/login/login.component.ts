@@ -26,14 +26,10 @@ export class LoginComponent implements OnInit {
 
   ngOnInit() {
     console.log('LoginComponent: Initializing');
-    
-    // Initial auth check - check for existing user session
     this.performAuthCheck();
   }
-  
-  // Separate method to handle authentication check
+
   private performAuthCheck() {
-    // Check with the server if the user is already authenticated
     this.accountService.getUserInfo().subscribe({
       next: (user) => {
         if (user) {
@@ -41,13 +37,10 @@ export class LoginComponent implements OnInit {
           this.router.navigate(['/admin/dashboard']);
           return;
         }
-        
-        // Check if another session is active in a different tab
         if (this.accountService.isAnotherSessionActive()) {
           console.log('LoginComponent: Another session is active in a different tab');
-          this.showError('For security reasons, only one account is allowed per browser. Please log out of the other account first or use a private browsing window.');
+          this.showError('Pour des raisons de sécurité, un seul compte est autorisé par navigateur. Veuillez vous déconnecter de l\'autre compte ou utiliser une fenêtre de navigation privée.');
         }
-        
         this.authCheckCompleted = true;
       },
       error: () => {
@@ -58,8 +51,22 @@ export class LoginComponent implements OnInit {
   }
 
   onSubmit() {
+    // Client-side validation for empty or invalid fields
     if (this.loginForm.invalid) {
-      this.showError('Please provide valid email and password.');
+      const emailControl = this.loginForm.get('email');
+      if (emailControl?.errors?.['required']) {
+        this.showError('Veuillez entrer votre email.');
+        return;
+      }
+      if (emailControl?.errors?.['email']) {
+        this.showError('Email incorrect.');
+        return;
+      }
+      const passwordControl = this.loginForm.get('password');
+      if (passwordControl?.errors?.['required']) {
+        this.showError('Veuillez entrer votre mot de passe.');
+        return;
+      }
       return;
     }
 
@@ -67,7 +74,7 @@ export class LoginComponent implements OnInit {
     if (this.isSubmitting) return;
     this.isSubmitting = true;
 
-    // Get login credentials
+    // Prepare login credentials
     const loginCredentials = {
       email: this.loginForm.get('email')?.value || '',
       password: this.loginForm.get('password')?.value || ''
@@ -81,12 +88,40 @@ export class LoginComponent implements OnInit {
       },
       error: (err) => {
         console.error('LoginComponent: Login failed', err);
-        let errorMessage = 'Login failed. Please check your credentials.';
+        
+        // Parse error message from server
+        let errorText = '';
         if (err && err.error) {
-          errorMessage = typeof err.error === 'string' ? err.error : 
-                        (err.error.message || errorMessage);
+          errorText = typeof err.error === 'string' ? 
+                      err.error.toLowerCase() : 
+                      (err.error.message ? err.error.message.toLowerCase() : '');
         }
-        this.showError(errorMessage);
+
+        // Show specific error messages based on the error
+        if (errorText.includes('user not found') || 
+            errorText.includes('email not found') || 
+            errorText.includes('email introuvable') || 
+            errorText.includes('utilisateur introuvable') || 
+            errorText.includes('utilisateur non trouvé') ||
+            errorText.includes('email incorrect')) {
+          this.showError('Email incorrect.');
+        } 
+        else if (errorText.includes('password') || 
+                errorText.includes('mot de passe') ||
+                errorText.includes('invalid credentials') ||
+                errorText.includes('wrong password')) {
+          this.showError('Mot de passe incorrect.');
+        } 
+        else if (errorText.includes('both') || 
+                errorText.includes('credentials') ||
+                errorText.includes('authentication failed')) {
+          this.showError('Email et mot de passe incorrect.');
+        } 
+        else {
+          // Default message if we can't determine the specific error
+          this.showError('Échec de connexion. Veuillez vérifier vos identifiants.');
+        }
+        
         this.isSubmitting = false;
       }
     });

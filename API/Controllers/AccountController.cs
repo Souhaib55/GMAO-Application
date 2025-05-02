@@ -97,10 +97,10 @@ namespace API.Controllers
             }
 
             var user = await _userManager.FindByEmailAsync(loginDto.Email);
-            if (user == null) return Unauthorized("Invalid login attempt.");
+            if (user == null) return Unauthorized("Email incorrect.");
 
             var result = await _signInManager.PasswordSignInAsync(user.UserName, loginDto.Password, true, false);
-            if (!result.Succeeded) return Unauthorized("Invalid login attempt.");
+            if (!result.Succeeded) return Unauthorized("Mot de passe incorrect.");
 
             var roles = await _userManager.GetRolesAsync(user);
             var role = roles.FirstOrDefault();
