@@ -6,7 +6,7 @@
   overflow: hidden;
   background: linear-gradient(rgba(240, 245, 255, 0.05), rgba(240, 245, 255, 0.2)), 
               url('/assets/login_images/asset4.png') !important;
-  background-size: cover;
+  background-size: 70%;
   background-position: center;
   background-repeat: no-repeat;
 }
@@ -22,7 +22,7 @@
 }
 
 .logo {
-  margin: 1.5rem 0;
+  margin: 1.7rem 0;
   
   .logo img {
     height: 60px;
@@ -158,10 +158,11 @@
 
 .footer {
   margin-top: auto;
-  text-align: left;
+  text-align: center;
+  margin-left: 40px;
   color: #3b3a3a;
   font-size: 1.1rem;
-  font-weight: 560;
+  font-weight: 570;
   padding: 1.5rem 0;
 }
 
@@ -172,8 +173,8 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  border-top-left-radius: 120px;
-  border-bottom-left-radius: 140px;
+  border-top-left-radius: 150px;
+  border-bottom-left-radius: 180px;
   overflow: hidden;
   
   &:before {
@@ -199,7 +200,8 @@
     
     img {
       width: 100%;
-      height: auto;
+      height: 100% ;
+      max-height: 900px;
       object-fit: contain;
       filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
     }
@@ -219,7 +221,7 @@
     right: 15px;
     top: 15px;
     z-index: 1;
-    animation: spin 27s linear infinite;
+    animation: spin 35s linear infinite;
     filter: brightness(1.1);
   }
 }
@@ -229,7 +231,7 @@
       transform: scale(0.4) rotate(0deg);
   }
   to {
-      transform: scale(0.6) rotate(360deg);
+      transform: scale(0.4) rotate(360deg);
   }
 }
 
