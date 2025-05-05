@@ -35,6 +35,7 @@ export class InterventionComponent implements OnInit {
   private typeInterventionBaseUrl = 'https://localhost:5001/api/TypeIntervention';
   private urgenceBaseUrl = 'https://localhost:5001/api/Urgence';
   private chaineProductionBaseUrl = 'https://localhost:5001/api/ChaineProduction';
+  private panneBaseUrl = 'https://localhost:5001/api/Panne';
   private usersBaseUrl = 'https://localhost:5001/api/Users';
 
   paginatedInterventionList: InterventionListItem[] = [];
@@ -48,6 +49,7 @@ export class InterventionComponent implements OnInit {
   typeInterventionMap: Map<number, string> = new Map();
   urgenceMap: Map<number, string> = new Map();
   chaineProductionMap: Map<number, string> = new Map();
+  panneMap: Map<number, string> = new Map();
   usersMap: Map<number, string> = new Map();
 
   currentPage = 1;
@@ -83,6 +85,7 @@ export class InterventionComponent implements OnInit {
       types: this.http.get<any[]>(this.typeInterventionBaseUrl, { withCredentials: true }),
       urgences: this.http.get<any[]>(this.urgenceBaseUrl, { withCredentials: true }),
       chaines: this.http.get<any[]>(this.chaineProductionBaseUrl, { withCredentials: true }),
+      pannes: this.http.get<any[]>(this.panneBaseUrl, { withCredentials: true }),
       users: this.http.get<any[]>(this.usersBaseUrl, { withCredentials: true })
     }).subscribe({
       next: (res) => {
@@ -90,6 +93,7 @@ export class InterventionComponent implements OnInit {
         res.types.forEach(item => this.typeInterventionMap.set(item.idTypeIntervention, item.libelle));
         res.urgences.forEach(item => this.urgenceMap.set(item.idUrgence, item.libelle));
         res.chaines.forEach(item => this.chaineProductionMap.set(item.idChaineProduction, item.libelle));
+        res.pannes.forEach(item => this.panneMap.set(item.idPanne, item.libelle));
         res.users.forEach(item => this.usersMap.set(item.id, `${item.nom} ${item.prenom}`));
         this.getAllInterventions();
       },
@@ -115,6 +119,7 @@ export class InterventionComponent implements OnInit {
           typeIntervention: item.typeIntervention?.libelle || this.typeInterventionMap.get(item.idTypeIntervention) || 'Unknown',
           urgence: item.urgence?.libelle || this.urgenceMap.get(item.idUrgence) || 'Unknown',
           chaineProduction: item.chaineProduction?.libelle || this.chaineProductionMap.get(item.idChaineProduction) || 'Unknown',
+          panne: item.panne?.libelle || this.panneMap.get(item.idPanne) || 'Unknown',
           demandeur: item.demandeur ? `${item.demandeur.nom} ${item.demandeur.prenom}` : this.usersMap.get(item.demandeursID) || 'Unknown',
           destinataire: item.destinataire ? `${item.destinataire.nom} ${item.destinataire.prenom}` : this.usersMap.get(item.destinatairesID) || 'Unknown',
           fileName: item.fileName || ''
@@ -155,6 +160,7 @@ export class InterventionComponent implements OnInit {
           typeIntervention: item.typeIntervention?.libelle || this.typeInterventionMap.get(item.idTypeIntervention) || 'Unknown',
           urgence: item.urgence?.libelle || this.urgenceMap.get(item.idUrgence) || 'Unknown',
           chaineProduction: item.chaineProduction?.libelle || this.chaineProductionMap.get(item.idChaineProduction) || 'Unknown',
+          panne: item.panne?.libelle || this.panneMap.get(item.idPanne) || 'Unknown',
           demandeur: item.demandeur ? `${item.demandeur.nom} ${item.demandeur.prenom}` : this.usersMap.get(item.demandeursID) || 'Unknown',
           destinataire: item.destinataire ? `${item.destinataire.nom} ${item.destinataire.prenom}` : this.usersMap.get(item.destinatairesID) || 'Unknown',
           fileName: item.fileName || ''
@@ -294,6 +300,7 @@ interface InterventionListItem {
   typeIntervention: string;
   urgence: string;
   chaineProduction: string;
+  panne: string;
   demandeur: string;
   destinataire: string;
   fileName?: string;

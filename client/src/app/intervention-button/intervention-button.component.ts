@@ -22,6 +22,7 @@ export class InterventionButtonComponent implements OnInit {
   private typeInterventionBaseUrl = 'https://localhost:5001/api/TypeIntervention';
   private urgenceBaseUrl = 'https://localhost:5001/api/Urgence';
   private chaineProductionBaseUrl = 'https://localhost:5001/api/ChaineProduction';
+  private panneBaseUrl = 'https://localhost:5001/api/Panne';
   private usersBaseUrl = 'https://localhost:5001/api/Users';
 
   interventionForm: FormGroup;
@@ -29,6 +30,7 @@ export class InterventionButtonComponent implements OnInit {
   typeInterventionList: any[] = [];
   urgenceList: any[] = [];
   chaineProductionList: any[] = [];
+  panneList: any[] = [];
   demandeurList: any[] = [];
   destinataireList: any[] = [];
   currentUser: any = null;
@@ -47,6 +49,7 @@ export class InterventionButtonComponent implements OnInit {
       idTypeIntervention: [null, Validators.required],
       idUrgence: [null, Validators.required],
       idChaineProduction: [null, Validators.required],
+      idPanne: [null, Validators.required],
       demandeursID: [null, Validators.required],
       destinatairesID: [null],
       dateCreation: [new Date(), Validators.required],
@@ -103,6 +106,7 @@ export class InterventionButtonComponent implements OnInit {
       types: this.http.get<any[]>(this.typeInterventionBaseUrl, { withCredentials: true }),
       urgences: this.http.get<any[]>(this.urgenceBaseUrl, { withCredentials: true }),
       chaines: this.http.get<any[]>(this.chaineProductionBaseUrl, { withCredentials: true }),
+      pannes: this.http.get<any[]>(this.panneBaseUrl, { withCredentials: true }),
       users: this.http.get<any[]>(this.usersBaseUrl, { withCredentials: true })
     }).subscribe({
       next: (res) => {
@@ -110,6 +114,7 @@ export class InterventionButtonComponent implements OnInit {
         this.typeInterventionList = res.types;
         this.urgenceList = res.urgences;
         this.chaineProductionList = res.chaines;
+        this.panneList = res.pannes;
         this.demandeurList = res.users.filter(user => user.idRole === 2);
         this.destinataireList = res.users.filter(user => user.idRole === 3);
       },
@@ -132,6 +137,7 @@ export class InterventionButtonComponent implements OnInit {
           idTypeIntervention: data.idTypeIntervention,
           idUrgence: data.idUrgence,
           idChaineProduction: data.idChaineProduction,
+          idPanne: data.idPanne,
           demandeursID: data.demandeursID,
           destinatairesID: data.destinatairesID,
           dateCreation: new Date(data.dateCreation),
@@ -183,11 +189,14 @@ export class InterventionButtonComponent implements OnInit {
     formData.append('idTypeIntervention', formValue.idTypeIntervention.toString());
     formData.append('idUrgence', formValue.idUrgence.toString());
     formData.append('idChaineProduction', formValue.idChaineProduction.toString());
+    formData.append('idPanne', formValue.idPanne.toString());
     formData.append('demandeursID', formValue.demandeursID.toString());
     if (formValue.destinatairesID != null) {
       formData.append('destinatairesID', formValue.destinatairesID.toString());
     }
-    formData.append('dateCreation', new Date(formValue.dateCreation).toISOString());
+    const date = new Date(formValue.dateCreation);
+    date.setMinutes(date.getMinutes() - date.getTimezoneOffset()); // Adjust for timezone
+    formData.append('dateCreation', date.toISOString());
     formData.append('isActif', formValue.isActif.toString());
     if (this.selectedFile) {
       formData.append('file', this.selectedFile, this.selectedFile.name);

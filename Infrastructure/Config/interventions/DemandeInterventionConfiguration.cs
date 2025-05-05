@@ -38,6 +38,11 @@ namespace Infrastructure.Config
                    .HasForeignKey(d => d.IDChaineProduction)
                    .OnDelete(DeleteBehavior.Restrict);
 
+            builder.HasOne(d => d.Panne)
+                   .WithMany()
+                   .HasForeignKey(d => d.IDPanne)
+                   .OnDelete(DeleteBehavior.Restrict);
+
             builder.HasOne(d => d.Demandeur)
                    .WithMany()
                    .HasForeignKey(d => d.DemandeursID)

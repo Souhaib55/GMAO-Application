@@ -1,1 +1,57 @@
-<p>planning works!</p>
+<div class="planning-container">
+  <!-- Header Section -->
+  <div class="header">
+    <div class="header-left">
+      <div class="title-container">
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="calendar-controls">
+        <button mat-icon-button class="nav-button" (click)="previous()">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <button mat-icon-button class="nav-button" (click)="today()">
+          <mat-icon>today</mat-icon>
+        </button>
+        <button mat-icon-button class="nav-button" (click)="next()">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+        <span class="current-date">{{ currentDate }}</span>
+        <mat-form-field appearance="outline" class="view-selector">
+          <mat-select [(value)]="currentView" (selectionChange)="changeView()">
+            <mat-option value="dayGridMonth">Month</mat-option>
+            <mat-option value="timeGridWeek">Week</mat-option>
+            <mat-option value="timeGridDay">Day</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <button *ngIf="isSuperviseur" mat-raised-button color="primary" class="add-event-btn" (click)="addNewEvent()">
+          <mat-icon>add</mat-icon> New Event
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Calendar Layout - Removed sidebar -->
+  <div class="main-content">
+    <!-- Calendar Container -->
+    <div class="calendar-container">
+      <div id="calendar"></div>
+      
+      <!-- Loading Spinner -->
+      <div *ngIf="isLoading" class="loader-container">
+        <mat-spinner diameter="40"></mat-spinner>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Popup -->
+  <div class="popup-container">
+    <div *ngIf="showPopup" [class]="'popup popup-' + popupType">
+      <mat-icon class="popup-icon">
+        {{ popupType === 'success' ? 'check_circle' : 'error' }}
+      </mat-icon>
+      <div>{{ popupMessage }}</div>
+      <mat-icon class="popup-close" (click)="hidePopup()">close</mat-icon>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,468 @@
+.planning-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8f9fa;
+  padding: 20px;
+  overflow: hidden;
+}
+
+/* Header Styles */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 48px;
+  padding-bottom: 15px;
+  margin-bottom: 0; /* Removed margin-bottom that was creating space */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+  
+  .header-left {
+    display: flex;
+    align-items: center;
+    
+    .title-container {
+      h1 {
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: 500;
+        color: #3c4858;
+      }
+      
+      .subtitle {
+        margin: 5px 0 0;
+        font-size: 0.9rem;
+        color: #777;
+      }
+    }
+  }
+  
+  .header-right {
+    .calendar-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      
+      .nav-button {
+        color: #555;
+        background-color: #fff;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+        border-radius: 50%;
+        
+        &:hover {
+          background-color: #f5f5f5;
+        }
+      }
+      
+      .current-date {
+        margin: 0 15px;
+        font-size: 1.1rem;
+        font-weight: 500;
+        min-width: 150px;
+        text-align: center;
+        color: #3c4858;
+      }
+      
+      .view-selector {
+        margin-right: 10px;
+        width: 100px;
+        
+        ::ng-deep .mat-form-field-wrapper {
+          margin-bottom: -1.25em;
+        }
+      }
+      
+      .add-event-btn {
+        height: 36px;
+        line-height: 36px;
+        padding: 0 16px;
+        border-radius: 18px;
+        box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+      }
+    }
+  }
+}
+
+/* Main Content Layout */
+.main-content {
+  flex: 1;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+  margin-top: 0; /* Ensure no top margin */
+}
+
+/* Calendar Container */
+.calendar-container {
+  width: 100%;
+  height: 100%;
+  background: white;
+  padding: 15px;
+  padding-top: 10px; /* Reduced top padding */
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: auto;
+  
+  #calendar {
+    flex: 1;
+    width: 100%;
+  }
+}
+
+/* FullCalendar Custom Styles */
+:host ::ng-deep {
+  .fc {
+    height: 100% !important;
+    width: 100% !important;
+    font-family: 'Roboto', sans-serif;
+    
+    .fc-toolbar {
+      margin-bottom: 1.2em;
+      display: none; /* Hide default toolbar */
+    }
+    
+    .fc-view-harness {
+      flex: 1;
+      background-color: white;
+      min-height: 600px;
+    }
+    
+    /* Day headers - Week view */
+    .fc-col-header-cell {
+      text-align: center;
+      padding: 12px 0;
+      
+      .fc-col-header-cell-cushion {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 8px 0;
+        text-decoration: none !important;
+        color: #555;
+        font-weight: 500;
+        
+        &:before {
+          content: attr(data-weekday);
+          text-transform: uppercase;
+          font-size: 0.9rem;
+          letter-spacing: 1px;
+          font-weight: 500;
+          margin-bottom: 5px;
+          color: #777;
+        }
+      }
+    }
+    
+    /* Current day styling */
+    .fc-day-today .fc-col-header-cell-cushion:after {
+      content: "";
+      display: block;
+      width: 36px;
+      height: 36px;
+      background-color: #1a73e8;
+      border-radius: 50%;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: -1;
+    }
+    
+    /* Time grid specific styles */
+    .fc-timegrid {
+      .fc-timegrid-slot {
+        height: 48px !important; /* Make time slots taller */
+        line-height: 48px;
+      }
+      
+      .fc-timegrid-slot-label {
+        vertical-align: middle;
+        
+        .fc-timegrid-slot-label-frame {
+          padding-right: 10px;
+          text-align: right;
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+          height: 100%;
+          
+          .fc-timegrid-slot-label-cushion {
+            font-size: 0.85rem;
+            color: #666;
+            font-weight: 500;
+            padding-right: 5px;
+          }
+        }
+      }
+      
+      /* Cell border styling */
+      .fc-timegrid-col {
+        border-left: 1px solid #eee;
+        
+        &.fc-day-today {
+          background-color: rgba(26, 115, 232, 0.05);
+        }
+      }
+      
+      /* Time slots styling */
+      .fc-timegrid-slot {
+        border-bottom: 1px solid #eee;
+      }
+      
+      /* Day headers in week view */
+      .fc-col-header {
+        .fc-col-header-cell {
+          border-bottom: 1px solid #eee;
+          
+          .fc-col-header-cell-cushion {
+            padding: 8px 0;
+            
+            &::before {
+              display: block;
+              font-size: 0.7rem;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              color: #888;
+              font-weight: normal;
+            }
+          }
+        }
+      }
+      
+      /* Current time indicator */
+      .fc-timegrid-now-indicator-line {
+        border-color: #f44336;
+        border-width: 2px;
+      }
+      
+      .fc-timegrid-now-indicator-arrow {
+        border-color: #f44336;
+        color: #f44336;
+      }
+    }
+    
+    /* Month view styling */
+    .fc-daygrid {
+      .fc-daygrid-day-frame {
+        min-height: 120px;
+      }
+      
+      .fc-daygrid-day-top {
+        justify-content: center;
+        padding-top: 5px;
+      }
+      
+      .fc-daygrid-day-number {
+        font-size: 1rem;
+        padding: 8px;
+        color: #333;
+        font-weight: normal;
+        text-decoration: none;
+      }
+      
+      .fc-day-today {
+        .fc-daygrid-day-number {
+          background-color: #1a73e8;
+          color: white;
+          border-radius: 50%;
+          height: 36px;
+          width: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto;
+        }
+      }
+    }
+    
+    /* Event styling */
+    .fc-event {
+      margin: 1px 0;
+      border: none;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      border-radius: 4px;
+      
+      .fc-event-main {
+        padding: 4px 8px;
+      }
+      
+      .fc-event-time {
+        font-size: 0.75rem;
+        opacity: 0.85;
+      }
+      
+      .fc-event-title {
+        font-weight: 500;
+      }
+      
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        transition: all 0.15s ease;
+      }
+    }
+    
+    /* Custom event content wrapper */
+    .fc-event-content-wrapper {
+      width: 100%;
+      
+      .fc-event-title {
+        font-weight: 500;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      .fc-event-info {
+        font-size: 0.7rem;
+        opacity: 0.9;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+    
+    /* Ensure proper scrolling */
+    .fc-scroller {
+      overflow: auto !important;
+    }
+    
+    /* Fix content visibility */
+    .fc-view-harness-active > .fc-view {
+      position: relative !important;
+    }
+    
+    /* Highlight current day column in week/day view */
+    .fc-timegrid-col.fc-day-today {
+      background-color: rgba(26, 115, 232, 0.05);
+    }
+  }
+}
+
+/* Add styles for displaying all 24 hours */
+:host ::ng-deep .fc-timegrid-body {
+  .fc-timegrid-slot-label {
+    height: 48px;
+  }
+  
+  .fc-timegrid-slot-lane {
+    height: 48px;
+  }
+  
+  .fc-timegrid-slot-minor {
+    border-top: none;
+  }
+}
+
+/* Loading Spinner */
+.loader-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+/* Notification Popup */
+.popup-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  
+  .popup {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.14);
+    color: white;
+    min-width: 300px;
+    max-width: 400px;
+    animation: slide-in 0.3s ease-out;
+    
+    &.popup-success {
+      background-color: #2ecc71;
+    }
+    
+    &.popup-error {
+      background-color: #e74c3c;
+    }
+    
+    .popup-icon {
+      margin-right: 15px;
+    }
+    
+    .popup-close {
+      margin-left: auto;
+      cursor: pointer;
+    }
+  }
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+  .calendar-container {
+    min-height: 600px;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    
+    .header-right {
+      margin-top: 15px;
+      width: 100%;
+      
+      .calendar-controls {
+        flex-wrap: wrap;
+        
+        .current-date {
+          order: -1;
+          width: 100%;
+          margin: 10px 0;
+        }
+        
+        .view-selector {
+          margin-left: auto;
+        }
+      }
+    }
+  }
+}
+
+.view-selector{
+  width: 100px;
+  
+  margin-right: 10px;
+  margin-top: 10px ;
+  
+  ::ng-deep .mat-form-field-wrapper {
+    margin-bottom: -1.25em;
+  }
+}

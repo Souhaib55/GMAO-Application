@@ -1,4 +1,3 @@
-<!-- intervention.component.html -->
 <div class="intervention-container">
   <!-- Header Section -->
   <div class="header">
@@ -50,6 +49,7 @@
           <th>Type Intervention</th>
           <th>Urgence</th>
           <th>Chaine Production</th>
+          <th>Panne</th>
           <th>Demandeur</th>
           <th>Destinataire</th>
           <th *ngIf="currentUserRole === 'Superviseur'">Actions</th>
@@ -70,6 +70,7 @@
           <td>{{ item.typeIntervention }}</td>
           <td><span [ngClass]="getUrgenceClass(item.urgence)">{{ item.urgence }}</span></td>
           <td>{{ item.chaineProduction }}</td>
+          <td>{{ item.panne }}</td>
           <td>{{ item.demandeur }}</td>
           <td>{{ item.destinataire }}</td>
           <td class="actions" *ngIf="currentUserRole === 'Superviseur'">
@@ -82,7 +83,7 @@
           </td>
         </tr>
         <tr *ngIf="paginatedInterventionList.length === 0">
-          <td [attr.colspan]="currentUserRole === 'Superviseur' ? 11 : 10" class="no-data">No interventions found.</td>
+          <td [attr.colspan]="currentUserRole === 'Superviseur' ? 12 : 11" class="no-data">No interventions found.</td>
         </tr>
       </tbody>
     </table>

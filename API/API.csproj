@@ -18,7 +18,6 @@
 
 
   <ItemGroup>
-    <Folder Include="Controllers\interventions\" />
     <Folder Include="Extensions\" />
   </ItemGroup>
 

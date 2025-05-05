@@ -32,6 +32,7 @@ namespace API.Controllers
                 .Include(d => d.TypeIntervention)
                 .Include(d => d.Urgence)
                 .Include(d => d.ChaineProduction)
+                .Include(d => d.Panne)
                 .Include(d => d.Demandeur)
                 .Include(d => d.Destinataire);
 
@@ -51,6 +52,7 @@ namespace API.Controllers
                     TypeIntervention = d.TypeIntervention != null ? new { d.TypeIntervention.IDTypeIntervention, d.TypeIntervention.Libelle } : null,
                     Urgence = d.Urgence != null ? new { d.Urgence.IDUrgence, d.Urgence.Libelle } : null,
                     ChaineProduction = d.ChaineProduction != null ? new { d.ChaineProduction.IDChaineProduction, d.ChaineProduction.Libelle } : null,
+                    Panne = d.Panne != null ? new { d.Panne.IDPanne, d.Panne.Libelle } : null,
                     Demandeur = d.Demandeur != null ? new { d.Demandeur.ID, d.Demandeur.Nom, d.Demandeur.Prenom } : null,
                     Destinataire = d.Destinataire != null ? new { d.Destinataire.ID, d.Destinataire.Nom, d.Destinataire.Prenom } : null,
                     d.IsActif
@@ -74,6 +76,7 @@ namespace API.Controllers
                 .Include(d => d.TypeIntervention)
                 .Include(d => d.Urgence)
                 .Include(d => d.ChaineProduction)
+                .Include(d => d.Panne)
                 .Include(d => d.Demandeur)
                 .Include(d => d.Destinataire)
                 .FirstOrDefaultAsync(d => d.IdDemandeIntervention == id && d.IsActif);
@@ -108,6 +111,8 @@ namespace API.Controllers
                 return BadRequest("Invalid or inactive Urgence ID.");
             if (!await _context.ChaineProductions.AnyAsync(c => c.IDChaineProduction == demandeDto.IDChaineProduction && c.IsActif))
                 return BadRequest("Invalid or inactive ChaineProduction ID.");
+            if (!await _context.Pannes.AnyAsync(p => p.IDPanne == demandeDto.IDPanne && p.IsActif))
+                return BadRequest("Invalid or inactive Panne ID.");
             if (!await _context.Users.AnyAsync(u => u.ID == demandeDto.DemandeursID && u.IsActif))
                 return BadRequest("Invalid or inactive DemandeursID.");
             if (demandeDto.DestinatairesID != null && !await _context.Users.AnyAsync(u => u.ID == demandeDto.DestinatairesID && u.IsActif))
@@ -127,6 +132,7 @@ namespace API.Controllers
                 IDTypeIntervention = demandeDto.IDTypeIntervention,
                 IDUrgence = demandeDto.IDUrgence,
                 IDChaineProduction = demandeDto.IDChaineProduction,
+                IDPanne = demandeDto.IDPanne,
                 DemandeursID = demandeDto.DemandeursID,
                 DestinatairesID = demandeDto.DestinatairesID,
                 IsActif = true
@@ -151,6 +157,7 @@ namespace API.Controllers
                 .Include(d => d.TypeIntervention)
                 .Include(d => d.Urgence)
                 .Include(d => d.ChaineProduction)
+                .Include(d => d.Panne)
                 .Include(d => d.Demandeur)
                 .Include(d => d.Destinataire)
                 .FirstOrDefaultAsync(d => d.IdDemandeIntervention == demande.IdDemandeIntervention);
@@ -179,6 +186,7 @@ namespace API.Controllers
                 return Forbid("Only Superviseur can edit interventions.");
             }
 
+            // Check if Etat is being updated and validate the transition
             if (demandeDto.IDEtat != existingDemande.IDEtat)
             {
                 var newEtat = await _context.Etats.FindAsync(demandeDto.IDEtat);
@@ -189,30 +197,57 @@ namespace API.Controllers
                 }
             }
 
-            if (!await _context.Etats.AnyAsync(e => e.IDEtat == demandeDto.IDEtat && e.IsActif))
+            // Validate the foreign keys that are being updated
+            if (demandeDto.IDEtat != existingDemande.IDEtat && !await _context.Etats.AnyAsync(e => e.IDEtat == demandeDto.IDEtat && e.IsActif))
                 return BadRequest("Invalid or inactive Etat ID.");
-            if (!await _context.TypeInterventions.AnyAsync(t => t.IDTypeIntervention == demandeDto.IDTypeIntervention && t.IsActif))
+            if (demandeDto.IDTypeIntervention != existingDemande.IDTypeIntervention && !await _context.TypeInterventions.AnyAsync(t => t.IDTypeIntervention == demandeDto.IDTypeIntervention && t.IsActif))
                 return BadRequest("Invalid or inactive TypeIntervention ID.");
-            if (!await _context.Urgences.AnyAsync(u => u.IDUrgence == demandeDto.IDUrgence && u.IsActif))
+            if (demandeDto.IDUrgence != existingDemande.IDUrgence && !await _context.Urgences.AnyAsync(u => u.IDUrgence == demandeDto.IDUrgence && u.IsActif))
                 return BadRequest("Invalid or inactive Urgence ID.");
-            if (!await _context.ChaineProductions.AnyAsync(c => c.IDChaineProduction == demandeDto.IDChaineProduction && c.IsActif))
+            if (demandeDto.IDChaineProduction != existingDemande.IDChaineProduction && !await _context.ChaineProductions.AnyAsync(c => c.IDChaineProduction == demandeDto.IDChaineProduction && c.IsActif))
                 return BadRequest("Invalid or inactive ChaineProduction ID.");
-            if (!await _context.Users.AnyAsync(u => u.ID == demandeDto.DemandeursID && u.IsActif))
+            if (demandeDto.IDPanne != existingDemande.IDPanne && !await _context.Pannes.AnyAsync(p => p.IDPanne == demandeDto.IDPanne && p.IsActif))
+                return BadRequest("Invalid or inactive Panne ID.");
+            if (demandeDto.DemandeursID != existingDemande.DemandeursID && !await _context.Users.AnyAsync(u => u.ID == demandeDto.DemandeursID && u.IsActif))
                 return BadRequest("Invalid or inactive DemandeursID.");
-            if (demandeDto.DestinatairesID != null && !await _context.Users.AnyAsync(u => u.ID == demandeDto.DestinatairesID && u.IsActif))
+            if (demandeDto.DestinatairesID != existingDemande.DestinatairesID && demandeDto.DestinatairesID.HasValue && !await _context.Users.AnyAsync(u => u.ID == demandeDto.DestinatairesID && u.IsActif))
                 return BadRequest("Invalid or inactive DestinatairesID.");
 
-            existingDemande.Titre = demandeDto.Titre;
-            existingDemande.DateCreation = demandeDto.DateCreation;
-            existingDemande.MachineArretee = demandeDto.MachineArretee;
-            existingDemande.IDEtat = demandeDto.IDEtat;
-            existingDemande.IDTypeIntervention = demandeDto.IDTypeIntervention;
-            existingDemande.IDUrgence = demandeDto.IDUrgence;
-            existingDemande.IDChaineProduction = demandeDto.IDChaineProduction;
-            existingDemande.DemandeursID = demandeDto.DemandeursID;
-            existingDemande.DestinatairesID = demandeDto.DestinatairesID;
-            existingDemande.IsActif = demandeDto.IsActif;
+            // Update only the provided fields
+            if (demandeDto.Titre != existingDemande.Titre)
+                existingDemande.Titre = demandeDto.Titre;
+                
+            if (demandeDto.DateCreation != existingDemande.DateCreation)
+                existingDemande.DateCreation = demandeDto.DateCreation;
+                
+            if (demandeDto.MachineArretee != existingDemande.MachineArretee)
+                existingDemande.MachineArretee = demandeDto.MachineArretee;
+                
+            if (demandeDto.IDEtat != existingDemande.IDEtat)
+                existingDemande.IDEtat = demandeDto.IDEtat;
+                
+            if (demandeDto.IDTypeIntervention != existingDemande.IDTypeIntervention)
+                existingDemande.IDTypeIntervention = demandeDto.IDTypeIntervention;
+                
+            if (demandeDto.IDUrgence != existingDemande.IDUrgence)
+                existingDemande.IDUrgence = demandeDto.IDUrgence;
+                
+            if (demandeDto.IDChaineProduction != existingDemande.IDChaineProduction)
+                existingDemande.IDChaineProduction = demandeDto.IDChaineProduction;
+                
+            if (demandeDto.IDPanne != existingDemande.IDPanne)
+                existingDemande.IDPanne = demandeDto.IDPanne;
+                
+            if (demandeDto.DemandeursID != existingDemande.DemandeursID)
+                existingDemande.DemandeursID = demandeDto.DemandeursID;
+                
+            if (demandeDto.DestinatairesID != existingDemande.DestinatairesID)
+                existingDemande.DestinatairesID = demandeDto.DestinatairesID;
+                
+            if (demandeDto.IsActif != existingDemande.IsActif)
+                existingDemande.IsActif = demandeDto.IsActif;
 
+            // Update the file only if a new one is provided
             if (file != null && file.Length > 0)
             {
                 using (var memoryStream = new MemoryStream())
@@ -223,6 +258,19 @@ namespace API.Controllers
                     existingDemande.ContentType = file.ContentType;
                 }
             }
+            // If file is explicitly cleared (frontend logic would need to send a specific flag)
+            else if (demandeDto.FileName == string.Empty)
+            {
+                existingDemande.FileData = null;
+                existingDemande.FileName = null;
+                existingDemande.ContentType = null;
+            }
+
+            // Update DateModification on Panne if it was modified
+            if (demandeDto.IDPanne != existingDemande.IDPanne)
+            {
+                existingDemande.Panne.DateModification = DateTime.Now;
+            }
 
             await _context.SaveChangesAsync();
 
@@ -231,6 +279,7 @@ namespace API.Controllers
                 .Include(d => d.TypeIntervention)
                 .Include(d => d.Urgence)
                 .Include(d => d.ChaineProduction)
+                .Include(d => d.Panne)
                 .Include(d => d.Demandeur)
                 .Include(d => d.Destinataire)
                 .FirstOrDefaultAsync(d => d.IdDemandeIntervention == id);

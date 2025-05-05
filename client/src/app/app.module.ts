@@ -41,7 +41,8 @@ import { InterventionButtonComponent } from './intervention-button/intervention-
 import { HomepageComponent } from './homepage/homepage.component';
 import { TriggerComponent } from './trigger/trigger.component';
 import { InitService } from './core/services/init.service';
-import { firstValueFrom } from 'rxjs'; // Import firstValueFrom
+import { firstValueFrom } from 'rxjs';
+import { InterventionFormDialogComponent } from './intervention-form-dialog/intervention-form-dialog.component'; // Import firstValueFrom
 
 @NgModule({
   imports: [
@@ -88,7 +89,8 @@ import { firstValueFrom } from 'rxjs'; // Import firstValueFrom
     RessourcesButtonComponent,
     InterventionButtonComponent,
     HomepageComponent,
-    TriggerComponent
+    TriggerComponent,
+    InterventionFormDialogComponent
   ],
   providers: [
     {

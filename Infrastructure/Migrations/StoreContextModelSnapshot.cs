@@ -230,6 +230,9 @@ namespace Infrastructure.Migrations
                     b.Property<int>("IDEtat")
                         .HasColumnType("int");
 
+                    b.Property<int>("IDPanne")
+                        .HasColumnType("int");
+
                     b.Property<int>("IDTypeIntervention")
                         .HasColumnType("int");
 
@@ -258,6 +261,8 @@ namespace Infrastructure.Migrations
                     b.HasIndex("IDChaineProduction");
 
                     b.HasIndex("IDEtat");
+
+                    b.HasIndex("IDPanne");
 
                     b.HasIndex("IDTypeIntervention");
 
@@ -647,6 +652,37 @@ namespace Infrastructure.Migrations
                     b.ToTable("ModeleEquipements");
                 });
 
+            modelBuilder.Entity("Core.Entities.Panne", b =>
+                {
+                    b.Property<int>("IDPanne")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IDPanne"));
+
+                    b.Property<DateTime>("DateCreation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime?>("DateModification")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Libelle")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("IDPanne");
+
+                    b.ToTable("Pannes");
+                });
+
             modelBuilder.Entity("Core.Entities.Piece", b =>
                 {
                     b.Property<int>("IDPiece")
@@ -1027,7 +1063,6 @@ namespace Infrastructure.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
 
                     b.Property<string>("AppUserId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("DateCreation")
@@ -1062,7 +1097,8 @@ namespace Infrastructure.Migrations
                     b.HasKey("ID");
 
                     b.HasIndex("AppUserId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[AppUserId] IS NOT NULL");
 
                     b.HasIndex("Email")
                         .IsUnique();
@@ -1097,6 +1133,12 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Core.Entities.Panne", "Panne")
+                        .WithMany()
+                        .HasForeignKey("IDPanne")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Core.Entities.TypeIntervention", "TypeIntervention")
                         .WithMany()
                         .HasForeignKey("IDTypeIntervention")
@@ -1116,6 +1158,8 @@ namespace Infrastructure.Migrations
                     b.Navigation("Destinataire");
 
                     b.Navigation("Etat");
+
+                    b.Navigation("Panne");
 
                     b.Navigation("TypeIntervention");
 
@@ -1297,8 +1341,7 @@ namespace Infrastructure.Migrations
                     b.HasOne("Core.Entities.AppUser", "AppUser")
                         .WithOne()
                         .HasForeignKey("Users", "AppUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Core.Entities.Role", "Role")
                         .WithMany()
