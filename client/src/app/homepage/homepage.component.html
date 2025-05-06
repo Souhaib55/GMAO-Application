@@ -1,128 +1,222 @@
 <!-- Navbar -->
-<nav class="navbar">
-    <div class="navbar-logo">
-        <img src="assets/img/alcodex.png" alt="aicodex" class="logo-image">
-        <span class="logo-text">alcodex</span>
+<nav class="navbar dark-navbar">
+    <div class="navbar-logo large-logo">
+        <div class="logo-square">AC</div>
+        <span class="logo-text large-logo-text">alcodex</span>
     </div>
-    <!-- La section navbar-links a été supprimée comme demandé -->
     <div class="navbar-actions">
         <ng-container *ngIf="!isLoggedIn; else loggedInButtons">
-            <button class="btn btn-outline">S'inscrire</button>
-            <button class="btn btn-primary" (click)="goToLogin()">Connexion</button>
+            <button (click)="goToLogin()" class="btn btn-outline login-btn">Login</button>
+            <button class="btn btn-primary signup-btn">S'INSCRIRE</button>
         </ng-container>
         <ng-template #loggedInButtons>
-            <button (click)="goToLogin()" class="btn btn-dashboard">Dashboard</button>
+            <span class="welcome-text">Bienvenue</span>
         </ng-template>
     </div>
 </nav>
 
-<!-- Hero Section -->
-<section class="hero">
-    <div class="hero-content">
-        <h1 class="hero-title">VOTRE MAINTENANCE,<br>NOTRE PRIORITÉ.</h1>
+<!-- Hero Section: Clean white background with blue accent -->
+<section class="hero light-hero">
+    <div class="hero-content left-hero-content">
+        <h1 class="hero-title">Alcodex</h1>
         <p class="hero-description">
-            Gérez vos interventions, équipements et équipes en<br>toute simplicité.
+            Votre société pour une bonne maintenance et solution moderne.
         </p>
-        <div class="hero-buttons">
-            <button class="btn btn-primary btn-large" (click)="goToLogin()">Commencer maintenant</button>
-            <button class="btn btn-outline btn-large">Voir la démo</button>
+    </div>
+</section>
+
+<!-- App Features Cards Section -->
+<section class="app-features-section">
+    <div class="app-features-container">
+        <!-- Dashboard Card -->
+        <div class="feature-card dashboard-card">
+            <h3>Dashboard</h3>
+            <p>Aperçu des activités et métriques clés</p>
+            <div class="feature-icon">
+                <svg width="24" height="24" fill="none" stroke="#3B82F6" stroke-width="2" viewBox="0 0 24 24">
+                    <rect x="3" y="3" width="7" height="7" rx="2"/>
+                    <rect x="3" y="14" width="7" height="7" rx="2"/>
+                    <rect x="14" y="3" width="7" height="7" rx="2"/>
+                    <rect x="14" y="14" width="7" height="7" rx="2"/>
+                </svg>
+            </div>
+            <div class="feature-preview dashboard-preview">
+                <div class="preview-line"></div>
+                <div class="preview-line"></div>
+                <div class="preview-line"></div>
+            </div>
+        </div>
+        
+        <!-- Solution BI Card -->
+        <div class="feature-card bi-card">
+            <h3>Solution BI</h3>
+            <p>Analyse des données et rapports</p>
+            <div class="feature-icon">
+                <svg width="24" height="24" fill="none" stroke="#3B82F6" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M8 3v18M16 3v18"/>
+                    <path d="M3 8h18M3 16h18"/>
+                </svg>
+            </div>
+            <div class="feature-preview bi-preview">
+                <div class="bi-code-preview">
+                    <div class="code-line">
+                        <span class="code-keyword">const</span>
+                        <span class="code-value">dataBI</span>
+                    </div>
+                    <div class="code-line">
+                        <span class="code-keyword">results</span>
+                        <span class="code-value">optimize()</span>
+                    </div>
+                    <div class="code-line">
+                        <span class="code-keyword">analyze</span>
+                        <span class="code-value">:</span>
+                    </div>
+                </div>
+                <button class="analyze-btn">Analyser</button>
+            </div>
+        </div>
+        
+        <!-- Intervention Rapide Card -->
+        <div class="feature-card intervention-card">
+            <h3>Intervention Rapide</h3>
+            <p>Gestion des interventions techniques</p>
+            <div class="feature-icon">
+                <svg width="24" height="24" fill="none" stroke="#3B82F6" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M12 2v20M2 12h20"/>
+                    <circle cx="12" cy="12" r="10"/>
+                </svg>
+            </div>
+            <div class="feature-preview intervention-preview">
+                <div class="intervention-item">
+                    <span class="intervention-number">Intervention #1</span>
+                    <span class="intervention-priority high">Priorité: Élevée</span>
+                    <span class="intervention-status">Status: En cours</span>
+                </div>
+                <div class="intervention-item">
+                    <span class="intervention-number">Intervention #2</span>
+                    <span class="intervention-priority medium">Priorité: Normale</span>
+                    <span class="intervention-status">Status: Planifié</span>
+                </div>
+                <div class="intervention-item">
+                    <span class="intervention-number">Intervention #3</span>
+                    <span class="intervention-priority low">Priorité: Basse</span>
+                    <span class="intervention-status">Date: 24/05/2025</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- GMAO Chatbot Card -->
+        <div class="feature-card chatbot-card">
+            <h3>GMAO Chatbot</h3>
+            <p>Assistant intelligent pour la maintenance</p>
+            <div class="feature-icon">
+                <svg width="24" height="24" fill="none" stroke="#3B82F6" stroke-width="2" viewBox="0 0 24 24">
+                    <rect x="3" y="5" width="18" height="14" rx="3"/>
+                    <circle cx="8" cy="12" r="1"/>
+                    <circle cx="12" cy="12" r="1"/>
+                    <circle cx="16" cy="12" r="1"/>
+                    <path d="M12 19v2"/>
+                </svg>
+            </div>
+            <div class="feature-preview chatbot-preview">
+                <div class="chat-message success">
+                    <span class="check-icon">✓</span>
+                    <span>Diagnostic système effectué avec succès</span>
+                </div>
+                <div class="chat-message warning">
+                    <span class="warning-icon">⚠</span>
+                    <span>Alerte: Maintenance préventive recommandée</span>
+                </div>
+                <button class="consult-btn">Consulter</button>
+            </div>
         </div>
     </div>
 </section>
 
-<!-- Features Section -->
-<section class="features-section">
-    <div class="features-header">
-        <h2 class="section-title">Fonctionnalités principales</h2>
-        <p class="section-description">
-            Notre solution GMAO offre des outils puissants pour optimiser votre gestion de maintenance.
-        </p>
+<!-- Feature Cards Section with Light Blue Background -->
+<section class="feature-cards-section">
+    <div class="feature-cards-container">
+        <!-- Card 1: Solution GMAO -->
+        <div class="feature-card solution-card">
+            <h3>Solution GMAO</h3>
+            <p>Gestion de maintenance assistée par ordinateur</p>
+        </div>
+        
+        <!-- Card 2: Maintenance Rapide -->
+        <div class="feature-card maintenance-card">
+            <h3>Maintenance Rapide</h3>
+            <p>Service d'intervention et support</p>
+        </div>
+        
+        <!-- Card 3: Rapport BI -->
+        <div class="feature-card rapport-card">
+            <h3>Rapport BI</h3>
+            <p>Business Intelligence et analyses</p>
+        </div>
+        
+        <!-- Card 4: Assistant intelligent -->
+        <div class="feature-card assistant-card">
+            <h3>Assistant intelligent</h3>
+            <p>IA pour optimiser vos solutions</p>
+        </div>
+    </div>
+</section>
+
+<!-- GMAO Technique Words Ticker -->
+<section class="gmao-ticker-section" appScrollAnimate>
+    <div class="gmao-ticker-container">
+        <div class="gmao-ticker-track">
+            <span class="gmao-ticker-word" *ngFor="let word of gmaoTickerWords">{{word}}</span>
+            <!-- Duplicate words for continuous scrolling -->
+            <span class="gmao-ticker-word" *ngFor="let word of gmaoTickerWords">{{word}}</span>
+        </div>
+    </div>
+</section>
+
+<!-- Footer with floating elements -->
+<footer class="gmao-footer dark-footer">
+    <div class="gmao-footer-content">
+        <div class="footer-left">
+            <h2>Une meilleure façon de gérer la maintenance</h2>
+            <p class="footer-subtitle">Obtenez la certification GMAO. Optimisez vos processus techniques.</p>
+            
+            <ul class="footer-benefits">
+                <li>Plus de pannes imprévues qui coûtent cher.</li>
+                <li>Plus d'équipements non suivis qui se détériorent.</li>
+                <li>Plus de planifications de maintenance inefficaces.</li>
+                <li>Plus de rapports incomplets qui manquent de précision.</li>
+                <li>Plus de ressources gaspillées par manque d'organisation.</li>
+            </ul>
+            
+            <p class="footer-conclusion">Avec Alcodex GMAO, la gestion de maintenance devient simple et efficace.</p>
+            
+            <button class="btn btn-primary blue-btn btn-large">En savoir plus</button>
+        </div>
+        
+        <div class="footer-right">
+            <div class="floating-elements-container">
+                <div class="floating-elements-bg"></div>
+                <div class="trash-icon">
+                  <span class="material-icons" style="font-size: 70px; color: #fff;">delete</span>
+                </div>
+                
+                <div class="floating-element maintenance-pill">Maintenance Préventive</div>
+                <div class="floating-element cold-pill">Équipements</div>
+                <div class="floating-element inmail-pill">Planification</div>
+                <div class="floating-element cold-pill">Rapports</div>
+                <div class="floating-element job-pill">Interventions</div>
+                <div class="floating-element inmail-pill">Notifications</div>
+                <div class="floating-element agency-pill">Ressources</div>
+                <div class="floating-element job-pill">Alertes</div>
+                <div class="floating-element referral-pill">Analyse</div>
+                <div class="floating-element inmail-pill">Dashboard</div>
+                <div class="floating-element cold-pill">Historique</div>
+            </div>
+        </div>
     </div>
     
-    <div class="feature-cards">
-        <div class="feature-card">
-            <div class="feature-icon dashboard-icon">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="4" y="4" width="7" height="7" rx="1" stroke="#3B82F6" stroke-width="2"/>
-                    <rect x="4" y="13" width="7" height="7" rx="1" stroke="#3B82F6" stroke-width="2"/>
-                    <rect x="13" y="4" width="7" height="7" rx="1" stroke="#3B82F6" stroke-width="2"/>
-                    <rect x="13" y="13" width="7" height="7" rx="1" stroke="#3B82F6" stroke-width="2"/>
-                </svg>
-            </div>
-            <h3 class="feature-title">Dashboard</h3>
-            <p class="feature-description">
-                Obtenez une vue complète de toutes vos activités de maintenance en un seul endroit, avec mises à jour en temps réel et insights.
-            </p>
-        </div>
-        
-        <div class="feature-card">
-            <div class="feature-icon mobile-icon">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="7" y="2" width="10" height="20" rx="2" stroke="#3B82F6" stroke-width="2"/>
-                    <line x1="7" y1="18" x2="17" y2="18" stroke="#3B82F6" stroke-width="2"/>
-                </svg>
-            </div>
-            <h3 class="feature-title">Accès Mobile</h3>
-            <p class="feature-description">
-                Accédez à vos tâches de maintenance de n'importe où avec notre application mobile conviviale, conçue pour les techniciens en déplacement.
-            </p>
-        </div>
-        
-        <div class="feature-card">
-            <div class="feature-icon team-icon">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="8" r="4" stroke="#3B82F6" stroke-width="2"/>
-                    <circle cx="6" cy="16" r="3" stroke="#3B82F6" stroke-width="2"/>
-                    <circle cx="18" cy="16" r="3" stroke="#3B82F6" stroke-width="2"/>
-                </svg>
-            </div>
-            <h3 class="feature-title">Collaboration d'Équipe</h3>
-            <p class="feature-description">
-                Améliorez la collaboration d'équipe avec des outils conçus pour rationaliser la communication et la planification des tâches de maintenance.
-            </p>
-        </div>
-    </div>
-</section>
-
-<!-- Testimonials Section -->
-<section class="testimonials-section">
-    <h2 class="section-title">Ce que nos clients disent</h2>
-    <p class="section-description">
-        Découvrez pourquoi des entreprises du monde entier font confiance à notre solution GMAO
-    </p>
-    <!-- Testimonial cards would go here -->
-</section>
-
-<!-- Footer -->
-<footer class="footer">
-    <div class="footer-content">
-        <div class="footer-logo">
-            <img src="assets/img/alcodex.png" alt="aicodex" class="footer-logo-image">
-            <span>aicodex</span>
-        </div>
-        <div class="footer-links">
-            <div class="footer-links-column">
-                <h4>Produit</h4>
-                <a href="#">Fonctionnalités</a>
-                <a href="#">Tarifs</a>
-                <a href="#">Démo</a>
-            </div>
-            <div class="footer-links-column">
-                <h4>Ressources</h4>
-                <a href="#">Documentation</a>
-                <a href="#">Blog</a>
-                <a href="#">Support</a>
-            </div>
-            <div class="footer-links-column">
-                <h4>Entreprise</h4>
-                <a href="#">À propos</a>
-                <a href="#">Carrières</a>
-                <a href="#">Contact</a>
-            </div>
-        </div>
-    </div>
     <div class="footer-bottom">
-        <p>© 2023 GMAO Application. Tous droits réservés.</p>
+        <p>© 2025 GMAO Application. Tous droits réservés.</p>
         <div class="footer-legal">
             <a href="#">Politique de confidentialité</a>
             <a href="#">Conditions d'utilisation</a>
