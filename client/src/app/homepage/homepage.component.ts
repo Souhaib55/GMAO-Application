@@ -96,4 +96,9 @@ export class HomepageComponent implements OnInit, AfterViewInit {
       this.router.navigate(['/login']);
     }
   }
+
+  // New method to navigate to dashboard when clicking on "Bienvenue"
+  goToDashboard() {
+    this.router.navigate(['/admin/dashboard']);
+  }
 }
