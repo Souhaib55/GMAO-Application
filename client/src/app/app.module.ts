@@ -8,7 +8,7 @@ import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.compon
 import { MatIconModule } from '@angular/material/icon';
 import { AskaidatabaseComponent } from './askaidatabase/askaidatabase.component';
 import { EquipmentComponent } from './equipment/equipment.component';
-import { InterventionComponent } from './intervention/intervention.component';
+import { InterventionComponent, DeleteConfirmationDialogComponent } from './intervention/intervention.component';
 import { PlanningComponent } from './planning/planning.component';
 import { StockComponent } from './stock/stock.component';
 import { RessourcesComponent } from './ressources/ressources.component';
@@ -71,6 +71,7 @@ import { InterventionFormDialogComponent } from './intervention-form-dialog/inte
     MatProgressSpinnerModule,
     MatMenuModule,
     MatDividerModule,
+    MatDialogModule,
   ],
   declarations: [
     AppComponent,
@@ -78,6 +79,7 @@ import { InterventionFormDialogComponent } from './intervention-form-dialog/inte
     AskaidatabaseComponent,
     EquipmentComponent,
     InterventionComponent,
+    DeleteConfirmationDialogComponent,
     PlanningComponent,
     StockComponent,
     RessourcesComponent,

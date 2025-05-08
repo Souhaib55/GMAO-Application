@@ -16,7 +16,7 @@
 <!-- Hero Section: Clean white background with blue accent -->
 <section class="hero light-hero">
     <div class="hero-content left-hero-content">
-        <h1 class="hero-title">Alcodex</h1>
+        <h1 class="hero-title">Alcodex , Bon choix !</h1>
         <p class="hero-description">
             Votre société pour une bonne maintenance et solution moderne.
             Spécialisée dans l'optimisation des processus industriels et la gestion efficace des ressources techniques.
@@ -44,7 +44,7 @@
 <section class="app-features-section">
     <div class="app-features-container" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; max-width: 1200px; margin: 0 auto;">
         <!-- Dashboard Card -->
-        <div class="feature-card dashboard-card" style="width: 100%; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); aspect-ratio: 3/2;">
+        <div class="feature-card dashboard-card">
             <h3>Dashboard</h3>
             <p>Aperçu des activités et métriques clés</p>
             <div class="feature-icon">
@@ -55,12 +55,12 @@
                     <rect x="14" y="14" width="7" height="7" rx="2"/>
                 </svg>
             </div>
-            <div class="feature-preview dashboard-preview" style="padding: 15px; background-color: #f8f9fa; border-radius: 8px; min-height: 160px; margin-top: auto;">
-                <div class="preview-line" style="height: 8px; width: 85%; background: linear-gradient(90deg, #3B82F6 0%, #3B82F6 75%, #e2e8f0 75%); margin-bottom: 12px; border-radius: 4px;"></div>
-                <div class="preview-line" style="height: 8px; width: 70%; background: linear-gradient(90deg, #10B981 0%, #10B981 60%, #e2e8f0 60%); margin-bottom: 12px; border-radius: 4px;"></div>
-                <div class="preview-line" style="height: 8px; width: 90%; background: linear-gradient(90deg, #F59E0B 0%, #F59E0B 40%, #e2e8f0 40%); margin-bottom: 12px; border-radius: 4px;"></div>
-                <div class="analytics-graphs" style="display: flex; margin-top: 15px; justify-content: space-between;">
-                    <div class="bar-chart" style="width: 45%; height: 50px; display: flex; align-items: flex-end; gap: 4px;">
+            <div class="feature-preview dashboard-preview">
+                <div class="preview-line"></div>
+                <div class="preview-line"></div>
+                <div class="preview-line"></div>
+                <div class="analytics-graphs">
+                    <div class="bar-chart">
                         <div style="flex: 1; height: 70%; background-color: #3B82F6; border-radius: 4px 4px 0 0;"></div>
                         <div style="flex: 1; height: 40%; background-color: #10B981; border-radius: 4px 4px 0 0;"></div>
                         <div style="flex: 1; height: 85%; background-color: #F59E0B; border-radius: 4px 4px 0 0;"></div>
@@ -72,7 +72,7 @@
         </div>
         
         <!-- Solution BI Card -->
-        <div class="feature-card bi-card" style="width: 100%; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); aspect-ratio: 3/2;">
+        <div class="feature-card bi-card">
             <h3>Solution BI</h3>
             <p>Analyse des données et rapports</p>
             <div class="feature-icon">
@@ -81,7 +81,7 @@
                     <path d="M3 8h18M3 16h18"/>
                 </svg>
             </div>
-            <div class="feature-preview bi-preview" style="margin-top: auto; min-height: 160px; background-color: #f8f9fa; border-radius: 8px; padding: 15px;">
+            <div class="feature-preview bi-preview">
                 <div class="bi-code-preview">
                     <div class="code-line">
                         <span class="code-keyword">const</span>
@@ -101,7 +101,7 @@
         </div>
         
         <!-- Intervention Rapide Card -->
-        <div class="feature-card intervention-card" style="width: 100%; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); aspect-ratio: 3/2;">
+        <div class="feature-card intervention-card">
             <h3>Intervention Rapide</h3>
             <p>Gestion des interventions techniques</p>
             <div class="feature-icon">
@@ -110,7 +110,7 @@
                     <circle cx="12" cy="12" r="10"/>
                 </svg>
             </div>
-            <div class="feature-preview intervention-preview" style="margin-top: auto; min-height: 160px; background-color: #f8f9fa; border-radius: 8px; padding: 15px;">
+            <div class="feature-preview intervention-preview">
                 <div class="intervention-item">
                     <span class="intervention-number">Intervention #1</span>
                     <span class="intervention-priority high">Priorité: Élevée</span>
@@ -124,13 +124,13 @@
                 <div class="intervention-item">
                     <span class="intervention-number">Intervention #3</span>
                     <span class="intervention-priority low">Priorité: Basse</span>
-                    <span class="intervention-status">Date: 24/05/2025</span>
+                    <span class="intervention-status">Date: 26/05/2025</span>
                 </div>
             </div>
         </div>
         
         <!-- GMAO Chatbot Card -->
-        <div class="feature-card chatbot-card" style="width: 100%; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); aspect-ratio: 3/2;">
+        <div class="feature-card chatbot-card">
             <h3>GMAO Chatbot</h3>
             <p>Assistant intelligent pour la maintenance</p>
             <div class="feature-icon">
@@ -142,7 +142,7 @@
                     <path d="M12 19v2"/>
                 </svg>
             </div>
-            <div class="feature-preview chatbot-preview" style="margin-top: auto; min-height: 160px; background-color: #f8f9fa; border-radius: 8px; padding: 15px;">
+            <div class="feature-preview chatbot-preview">
                 <div class="chat-message success">
                     <span class="check-icon">✓</span>
                     <span>Diagnostic système effectué avec succès</span>
@@ -216,8 +216,6 @@
             
             <button class="btn btn-primary blue-btn btn-large">En savoir plus</button>
         </div>
-        
-        
     </div>
     
     <div class="footer-bottom">

@@ -39,6 +39,7 @@ export class InterventionButtonComponent implements OnInit {
   errorMessage = '';
   selectedFile: File | null = null;
   existingFileName: string | null = null;
+  fileClearFlag = false; // Flag to indicate if the file should be cleared
 
   constructor() {
     this.interventionForm = this.fb.group({
@@ -155,8 +156,21 @@ export class InterventionButtonComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       this.selectedFile = input.files[0];
+      this.fileClearFlag = false; // Reset clear flag when a new file is selected
     } else {
       this.selectedFile = null;
+    }
+  }
+
+  clearFile(): void {
+    this.selectedFile = null;
+    this.existingFileName = null;
+    this.fileClearFlag = true;
+    
+    // Reset the file input element if it exists
+    const fileInput = document.getElementById('fileInput') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
     }
   }
 
@@ -198,9 +212,17 @@ export class InterventionButtonComponent implements OnInit {
     date.setMinutes(date.getMinutes() - date.getTimezoneOffset()); // Adjust for timezone
     formData.append('dateCreation', date.toISOString());
     formData.append('isActif', formValue.isActif.toString());
+    
+    // Handle file upload
     if (this.selectedFile) {
       formData.append('file', this.selectedFile, this.selectedFile.name);
     }
+    
+    // Handle file clearing in edit mode
+    if (this.isEditMode && this.fileClearFlag) {
+      formData.append('fileName', ''); // Send empty string to indicate file should be cleared
+    }
+    
     return formData;
   }
 

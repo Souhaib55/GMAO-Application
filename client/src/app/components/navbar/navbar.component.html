@@ -2,7 +2,7 @@
     <div class="container-fluid">
         <div class="navbar-wrapper">
             <a class="navbar-brand logo-container" href="#">
-             
+             <!-- Logo can be added here if needed -->
             </a>
         </div>
         
@@ -13,14 +13,28 @@
             <span class="navbar-toggler-icon icon-bar"></span>
         </button>
         
+        <!-- Search field - moved outside of collapsible section -->
+        <div class="search-container">
+            <div class="search-input-wrapper">
+                <i class="material-icons search-icon">search</i>
+                <input type="text" class="search-input" placeholder="Search here..." (input)="onSearch($event)">
+            </div>
+        </div>
+        
         <div class="collapse navbar-collapse" id="navigation">
             <div class="navbar-right-section">
-                <!-- User dropdown moved to the far right -->
+                <!-- User profile section -->
                 <ng-container *ngIf="accountService.currentUser()">
                     <button mat-button class="user-dropdown-button" [matMenuTriggerFor]="menu">
-                        <div class="dropdown-content">
-                            <span class="user-name">{{accountService.currentUser()?.email}}</span>
-                            <mat-icon class="dropdown-icon">arrow_drop_down</mat-icon>
+                        <div class="user-profile">
+                            <div class="avatar-circle">
+                                <!-- Display user initials -->
+                                <span class="initials">{{getUserInitials()}}</span>
+                            </div>
+                            <div class="user-info">
+                                <span class="user-email">{{accountService.currentUser()?.email}}</span>
+                                <span class="user-role">{{accountService.currentUser()?.role}}</span>
+                            </div>
                         </div>
                     </button>
                 </ng-container>

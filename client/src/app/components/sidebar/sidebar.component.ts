@@ -28,7 +28,7 @@ export const ROUTES: RouteInfo[] = [
       ]
   },
   { path: 'intervention', title: 'Interventions', icon: 'construction_rounded', class: '' }, // All roles
-  { path: 'planning', title: 'Planning', icon: 'content_paste', class: '', roles: ['Superviseur'] },
+  { path: 'planning', title: 'Planning', icon: 'content_paste', class: '', roles: ['Superviseur', 'Utilisateur'] },
   { path: 'stock', title: 'Stock/Achat', icon: 'shopping_cart_rounded', class: '', roles: ['Superviseur'] },
   { path: 'ressources', title: 'Ressources', icon: 'view_in_art_rounded', class: '', roles: ['Superviseur', 'Utilisateur'] },
   { path: 'reports', title: 'Rapports', icon: 'library_books', class: '', roles: ['Superviseur'] },

@@ -1,19 +1,30 @@
 import { Component, OnInit, inject, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Calendar, CalendarOptions } from '@fullcalendar/core';
+import { Calendar, CalendarOptions, EventClickArg } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import { AccountService } from 'app/core/services/account.service';
 import { MatDialog } from '@angular/material/dialog';
-import { InterventionFormDialogComponent } from '../intervention-form-dialog/intervention-form-dialog.component';
 import { forkJoin } from 'rxjs';
+import { trigger, transition, style, animate } from '@angular/animations';
 
 @Component({
   selector: 'app-planning',
   templateUrl: './planning.component.html',
-  styleUrls: ['./planning.component.scss']
+  styleUrls: ['./planning.component.scss'],
+  animations: [
+    trigger('slideInOut', [
+      transition(':enter', [
+        style({ transform: 'translateX(100%)' }),
+        animate('300ms ease-out', style({ transform: 'translateX(0)' }))
+      ]),
+      transition(':leave', [
+        animate('300ms ease-in', style({ transform: 'translateX(100%)' }))
+      ])
+    ])
+  ]
 })
 export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
   private http = inject(HttpClient);
@@ -45,6 +56,10 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
   showPopup = false;
   popupMessage = '';
   popupType: 'success' | 'error' = 'success';
+  
+  // Selected intervention details
+  selectedIntervention: any = null;
+  showInterventionDetails = false;
 
   currentView: string = 'dayGridMonth';
   currentDate: string = '';
@@ -54,12 +69,11 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
     return user?.role === 'Superviseur';
   }
 
+  get currentUser(): any {
+    return this.accountService.currentUser();
+  }
+
   ngOnInit(): void {
-    if (!this.isSuperviseur) {
-      this.router.navigate(['/admin/dashboard']);
-      return;
-    }
-    
     this.loadReferenceData();
     this.loadInterventions();
   }
@@ -67,7 +81,7 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     setTimeout(() => {
       this.calendarElement = document.getElementById('calendar');
-      if (this.calendarElement && this.isSuperviseur) {
+      if (this.calendarElement) {
         this.initializeCalendar();
       }
     }, 100);
@@ -112,7 +126,18 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
     this.isLoading = true;
     this.http.get<any>(`${this.baseUrl}?page=1&pageSize=1000`, { withCredentials: true }).subscribe({
       next: (res) => {
-        this.interventions = res.data;
+        // If user is a technician (Utilisateur), filter interventions assigned to them
+        if (this.isSuperviseur) {
+          this.interventions = res.data;
+        } else {
+          // Filter interventions where current user is the destinataire
+          const currentUserId = this.currentUser?.internalId;
+          this.interventions = res.data.filter((intervention: any) => 
+            intervention.destinatairesID === currentUserId || 
+            (intervention.destinataire && intervention.destinataire.id === currentUserId)
+          );
+        }
+        
         this.isLoading = false;
         if (this.calendar) {
           this.updateCalendarEvents();
@@ -127,7 +152,7 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   initializeCalendar(): void {
-    if (!this.calendarElement || !this.isSuperviseur) return;
+    if (!this.calendarElement) return;
 
     this.calendar = new Calendar(this.calendarElement, {
       plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
@@ -135,9 +160,9 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
       headerToolbar: { left: '', center: '', right: '' },
       height: '100%',
       contentHeight: 'auto',
-      editable: this.isSuperviseur,
-      selectable: this.isSuperviseur,
-      selectMirror: true,
+      editable: false, // No editing allowed, view only
+      selectable: false, // No selection allowed
+      selectMirror: false,
       dayMaxEvents: false,
       weekends: true,
       // Add settings for 24-hour display
@@ -148,16 +173,9 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
       dayHeaders: true,
       allDaySlot: false,
       // End of added settings
-      select: (info) => {
-        if (this.isSuperviseur) {
-          this.openInterventionFormDialog(info.start);
-        }
-      },
-      eventClick: (info) => {
-        if (this.isSuperviseur) {
-          const eventId = parseInt(info.event.id);
-          this.router.navigate(['/admin/intervention/edit', eventId]);
-        }
+      eventClick: (info: EventClickArg) => {
+        const eventId = parseInt(info.event.id);
+        this.showInterventionDetail(eventId);
       },
       events: this.getCalendarEvents(),
       eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
@@ -171,14 +189,30 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
         
         const infoEl = document.createElement('div');
         infoEl.className = 'fc-event-info';
-        infoEl.innerHTML = `Chaine: ${arg.event.extendedProps.chaineProduction || 'N/A'} | Type: ${arg.event.extendedProps.typeIntervention || 'N/A'} | Urgence: ${arg.event.extendedProps.urgence || 'N/A'}`;
+        infoEl.innerHTML = `${arg.event.extendedProps.typeIntervention || 'N/A'}`;
         
         wrapper.appendChild(titleEl);
         wrapper.appendChild(infoEl);
         
         return { domNodes: [wrapper] };
       },
-      eventDisplay: 'block'
+      eventDisplay: 'block',
+      views: {
+        timeGridWeek: {
+          slotLabelFormat: {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          }
+        },
+        timeGridDay: {
+          slotLabelFormat: {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          }
+        }
+      }
     });
 
     this.calendar.render();
@@ -197,18 +231,23 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.interventions || this.interventions.length === 0) return [];
 
     return this.interventions.map(intervention => {
-      let backgroundColor = '#3788d8';
-      if (intervention.urgence?.libelle?.toLowerCase() === 'haute') backgroundColor = '#e74c3c';
-      else if (intervention.urgence?.libelle?.toLowerCase() === 'moyenne') backgroundColor = '#f39c12';
-      else if (intervention.urgence?.libelle?.toLowerCase() === 'basse') backgroundColor = '#2ecc71';
+      let backgroundColor = '#3788d8'; // Default color
+      
+      // Set color based on urgence
+      if (intervention.urgence?.libelle?.toLowerCase() === 'haute') {
+        backgroundColor = '#e74c3c'; // Red for high urgency
+      } else if (intervention.urgence?.libelle?.toLowerCase() === 'moyenne') {
+        backgroundColor = '#f39c12'; // Orange for medium urgency
+      } else if (intervention.urgence?.libelle?.toLowerCase() === 'basse') {
+        backgroundColor = '#2ecc71'; // Green for low urgency
+      }
 
-      const title = `${intervention.machineArretee ? '[Stopped] ' : ''}${intervention.titre}`;
+      const title = `${intervention.machineArretee ? '⚠️ ' : ''}${intervention.titre}`;
 
       return {
         id: intervention.idDemandeIntervention.toString(),
         title: title,
         start: new Date(intervention.dateCreation),
-        // Changed from allDay: true to false to show in time grid
         allDay: false,
         backgroundColor: backgroundColor,
         borderColor: backgroundColor,
@@ -221,42 +260,24 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
           chaineProduction: intervention.chaineProduction?.libelle,
           panne: intervention.panne?.libelle,
           demandeur: intervention.demandeur ? `${intervention.demandeur.nom} ${intervention.demandeur.prenom}` : 'Unknown',
-          destinataire: intervention.destinataire ? `${intervention.destinataire.nom} ${intervention.destinataire.prenom}` : 'Not assigned'
+          destinataire: intervention.destinataire ? `${intervention.destinataire.nom} ${intervention.destinataire.prenom}` : 'Not assigned',
+          description: intervention.description || 'No description available'
         }
       };
     });
   }
 
-  openInterventionFormDialog(date: Date): void {
-    const dialogRef = this.dialog.open(InterventionFormDialogComponent, {
-      width: '600px',
-      data: { date: date, reference: this.reference }
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) this.createIntervention(result);
-    });
+  showInterventionDetail(id: number): void {
+    const intervention = this.interventions.find(i => i.idDemandeIntervention === id);
+    if (intervention) {
+      this.selectedIntervention = intervention;
+      this.showInterventionDetails = true;
+    }
   }
 
-  createIntervention(formData: FormData): void {
-    this.isLoading = true;
-    this.http.post<any>(this.baseUrl, formData, { withCredentials: true }).subscribe({
-      next: (res) => {
-        this.showPopupMessage('Intervention scheduled successfully', 'success');
-        this.loadInterventions();
-      },
-      error: (err) => {
-        console.error('Failed to create intervention:', err);
-        this.showPopupMessage(err.error?.message || 'Failed to schedule intervention', 'error');
-        this.isLoading = false;
-      }
-    });
-  }
-
-  addNewEvent(): void {
-    if (!this.isSuperviseur) return;
-    const currentDate = new Date();
-    this.openInterventionFormDialog(currentDate);
+  closeInterventionDetails(): void {
+    this.showInterventionDetails = false;
+    this.selectedIntervention = null;
   }
 
   changeView(): void {
@@ -304,6 +325,10 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
     } else {
       this.currentDate = date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     }
+  }
+
+  navigateToInterventionDetails(id: number): void {
+    this.router.navigate(['/intervention/edit', id]);
   }
 
   private showPopupMessage(message: string, type: 'success' | 'error'): void {

@@ -47,6 +47,7 @@
     "moment": "2.29.1",
     "perfect-scrollbar": "1.5.5",
     "rxjs": "~7.5.0",
+    "sweetalert2": "^11.21.0",
     "tslib": "^2.3.0",
     "web-animations-js": "2.3.2",
     "zone.js": "~0.13.0"

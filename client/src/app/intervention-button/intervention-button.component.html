@@ -18,12 +18,30 @@
         </div>
 
         <div class="col-md-6 input-group">
-          <div *ngIf="isEditMode && existingFileName">
-            Existing file: {{ existingFileName }}
-          </div>
-          <input type="file" (change)="onFileSelected($event)" accept="application/pdf,text/plain">
-          <div *ngIf="selectedFile">
-            Selected file: {{ selectedFile.name }}
+          <div class="file-upload-container">
+            <div class="file-upload-label">
+              <mat-icon>attach_file</mat-icon>
+              <span>File Attachment (Optional)</span>
+            </div>
+            
+            <div *ngIf="isEditMode && existingFileName" class="existing-file">
+              <mat-icon>insert_drive_file</mat-icon>
+              <span>{{ existingFileName }}</span>
+              <button type="button" class="btn btn-sm btn-outline-danger" (click)="clearFile()">
+                <mat-icon>clear</mat-icon>
+              </button>
+            </div>
+            
+            <div class="file-input-wrapper">
+              <input type="file" id="fileInput" (change)="onFileSelected($event)" accept="application/pdf,text/plain,image/*">
+              <label for="fileInput" class="btn btn-outline-primary">
+                {{ isEditMode ? 'Change File' : 'Choose File' }}
+              </label>
+              <div *ngIf="selectedFile" class="selected-file">
+                <mat-icon>check_circle</mat-icon>
+                <span>{{ selectedFile.name }}</span>
+              </div>
+            </div>
           </div>
         </div>
 

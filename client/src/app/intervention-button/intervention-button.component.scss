@@ -203,3 +203,100 @@ form {
     }
   }
 }
+
+
+
+// Add these styles to your existing scss file
+
+.file-upload-container {
+  border: 1px dashed #ccc;
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  
+  .file-upload-label {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    color: #666;
+    
+    mat-icon {
+      margin-right: 8px;
+      color: #3f51b5;
+    }
+    
+    span {
+      font-weight: 500;
+    }
+  }
+  
+  .existing-file {
+    display: flex;
+    align-items: center;
+    background-color: #e8f0fe;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    
+    mat-icon {
+      margin-right: 8px;
+      color: #4285f4;
+    }
+    
+    span {
+      flex-grow: 1;
+      margin-right: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    button {
+      padding: 0;
+      min-width: 24px;
+      width: 24px;
+      height: 24px;
+      line-height: 24px;
+      
+      mat-icon {
+        font-size: 16px;
+        margin: 0;
+      }
+    }
+  }
+  
+  .file-input-wrapper {
+    display: flex;
+    flex-direction: column;
+    
+    input[type="file"] {
+      display: none;
+    }
+    
+    label.btn {
+      display: inline-block;
+      cursor: pointer;
+      padding: 6px 12px;
+      max-width: fit-content;
+    }
+    
+    .selected-file {
+      display: flex;
+      align-items: center;
+      margin-top: 8px;
+      
+      mat-icon {
+        color: #34a853;
+        margin-right: 8px;
+      }
+      
+      span {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+  }
+}
+
+// Existing styles remain unchanged

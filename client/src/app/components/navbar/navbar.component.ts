@@ -1,8 +1,6 @@
-import { Component, OnInit, ElementRef, inject } from '@angular/core';
-import { ROUTES } from '../sidebar/sidebar.component';
-import {Location, PathLocationStrategy} from '@angular/common';
-import { Router } from '@angular/router';
+import { Component, OnInit } from '@angular/core';
 import { AccountService } from '../../core/services/account.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-navbar',
@@ -10,126 +8,60 @@ import { AccountService } from '../../core/services/account.service';
   styleUrls: ['./navbar.component.css']
 })
 export class NavbarComponent implements OnInit {
-    private listTitles: any[];
-    location: Location;
-      mobile_menu_visible: any = 0;
-    private toggleButton: any;
-    private sidebarVisible: boolean;
+  isNavOpen = false;
 
-    constructor(location: Location,  private element: ElementRef, private router: Router , public accountService: AccountService ) {
-      this.location = location;
-          this.sidebarVisible = false;
+  constructor(
+    public accountService: AccountService,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    // Check if the nav was previously open (could use localStorage if needed)
+    const body = document.getElementsByTagName('body')[0];
+    this.isNavOpen = body.classList.contains('nav-open');
+  }
+
+  sidebarToggle(): void {
+    const body = document.getElementsByTagName('body')[0];
+    this.isNavOpen = !this.isNavOpen;
+    
+    if (body.classList.contains('nav-open')) {
+      body.classList.remove('nav-open');
+    } else {
+      body.classList.add('nav-open');
+    }
+  }
+
+  logout(): void {
+    // Call the logout method and then navigate to login page
+    this.accountService.logout();
+    this.router.navigateByUrl('/login');
+  }
+
+  getUserInitials(): string {
+    const user = this.accountService.currentUser();
+    if (!user || !user.email) {
+      return '';
     }
 
-    ngOnInit() {
-        this.listTitles = ROUTES.filter(listTitle => listTitle);
-        const navbar: HTMLElement = this.element.nativeElement;
-        this.toggleButton = navbar.getElementsByClassName('navbar-toggler')[0];
-        this.router.events.subscribe((event) => {
-          this.sidebarClose();
-          var $layer: any = document.getElementsByClassName('close-layer')[0];
-          if ($layer) {
-            $layer.remove();
-            this.mobile_menu_visible = 0;
-          }
-        });
-      
-        // Add this to fetch user info
-        this.accountService.getUserInfo().subscribe({
-          next: (user) => {
-            console.log('User info loaded:', user); // Optional: for debugging
-          },
-          error: (err) => {
-            console.error('Failed to load user info:', err); // Handle errors (e.g., not logged in)
-          }
-        });
-      }
+    // Extract initials from email (e.g., "AM" from "ammani@gmail.com")
+    const email = user.email;
+    const username = email.split('@')[0];
+    
+    if (username.length >= 2) {
+      // Take first two characters and convert to uppercase
+      return username.substring(0, 2).toUpperCase();
+    } else if (username.length === 1) {
+      // If username is just one character, use that
+      return username.toUpperCase();
+    } else {
+      return '';
+    }
+  }
 
-    sidebarOpen() {
-        const toggleButton = this.toggleButton;
-        const body = document.getElementsByTagName('body')[0];
-        setTimeout(function(){
-            toggleButton.classList.add('toggled');
-        }, 500);
-
-        body.classList.add('nav-open');
-
-        this.sidebarVisible = true;
-    };
-    sidebarClose() {
-        const body = document.getElementsByTagName('body')[0];
-        this.toggleButton.classList.remove('toggled');
-        this.sidebarVisible = false;
-        body.classList.remove('nav-open');
-    };
-    sidebarToggle() {
-        // const toggleButton = this.toggleButton;
-        // const body = document.getElementsByTagName('body')[0];
-        var $toggle = document.getElementsByClassName('navbar-toggler')[0];
-
-        if (this.sidebarVisible === false) {
-            this.sidebarOpen();
-        } else {
-            this.sidebarClose();
-        }
-        const body = document.getElementsByTagName('body')[0];
-
-        if (this.mobile_menu_visible == 1) {
-            // $('html').removeClass('nav-open');
-            body.classList.remove('nav-open');
-            if ($layer) {
-                $layer.remove();
-            }
-            setTimeout(function() {
-                $toggle.classList.remove('toggled');
-            }, 400);
-
-            this.mobile_menu_visible = 0;
-        } else {
-            setTimeout(function() {
-                $toggle.classList.add('toggled');
-            }, 430);
-
-            var $layer = document.createElement('div');
-            $layer.setAttribute('class', 'close-layer');
-
-
-            if (body.querySelectorAll('.main-panel')) {
-                document.getElementsByClassName('main-panel')[0].appendChild($layer);
-            }else if (body.classList.contains('off-canvas-sidebar')) {
-                document.getElementsByClassName('wrapper-full-page')[0].appendChild($layer);
-            }
-
-            setTimeout(function() {
-                $layer.classList.add('visible');
-            }, 100);
-
-            $layer.onclick = function() { //asign a function
-              body.classList.remove('nav-open');
-              this.mobile_menu_visible = 0;
-              $layer.classList.remove('visible');
-              setTimeout(function() {
-                  $layer.remove();
-                  $toggle.classList.remove('toggled');
-              }, 400);
-            }.bind(this);
-
-            body.classList.add('nav-open');
-            this.mobile_menu_visible = 1;
-
-        }
-    };
-
-
-    // Logic of the component
-    //accountService = inject(AccountService);
-    private routervar = inject(Router);
-
-    // From AccountService
-    logout() {
-        // The AccountService already handles removing user from storage and updating the BehaviorSubject
-        this.accountService.logout();
-        // Just navigate to login page after calling logout
-        this.routervar.navigateByUrl('/login');
-      }
+  onSearch(event: any): void {
+    const searchTerm = event.target.value;
+    // Implement search logic here
+    console.log('Searching for:', searchTerm);
+  }
 }

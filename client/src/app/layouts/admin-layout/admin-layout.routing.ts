@@ -39,7 +39,7 @@ export const AdminLayoutRoutes: Routes = [
         path: 'planning', 
         component: PlanningComponent, 
         canActivate: [AuthGuard], 
-        data: { roles: ['Superviseur'] } 
+        data: { roles: ['Superviseur' , 'Utilisateur'] } 
     },
     { 
         path: 'stock', 

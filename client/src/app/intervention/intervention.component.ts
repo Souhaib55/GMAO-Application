@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, Inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { trigger, transition, style, animate } from '@angular/animations';
@@ -6,6 +6,100 @@ import { forkJoin } from 'rxjs';
 import { debounceTime, Subject } from 'rxjs';
 import { AccountService } from 'app/core/services/account.service';
 import { DatePipe } from '@angular/common';
+import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+
+// Composant de dialogue de confirmation de suppression
+@Component({
+  selector: 'app-delete-confirmation-dialog',
+  template: `
+    <div class="delete-dialog-container">
+      <div class="delete-dialog-header">
+        <mat-icon class="warning-icon">warning</mat-icon>
+        <h2 mat-dialog-title>Confirmation de suppression</h2>
+      </div>
+      <div mat-dialog-content>
+        <p>Êtes-vous sûr de vouloir supprimer l'intervention :</p>
+        <p class="intervention-title">{{ data.titre }}</p>
+        <p class="warning-text">Cette action est irréversible !</p>
+      </div>
+      <div mat-dialog-actions>
+        <button mat-button class="cancel-button" (click)="onCancel()">Annuler</button>
+        <button mat-raised-button class="delete-button" (click)="onConfirm()">Supprimer</button>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .delete-dialog-container {
+      padding: 0;
+    }
+    .delete-dialog-header {
+      background-color: #f44336;
+      color: white;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      border-top-left-radius: 4px;
+      border-top-right-radius: 4px;
+    }
+    .warning-icon {
+      font-size: 28px;
+      height: 28px;
+      width: 28px;
+      margin-right: 12px;
+    }
+    h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 500;
+      color: white !important;
+    }
+    mat-dialog-content {
+      padding: 24px;
+      text-align: center;
+    }
+    .intervention-title {
+      font-weight: 500;
+      font-size: 18px;
+      margin: 12px 0;
+      color: #333;
+    }
+    .warning-text {
+      color: #f44336;
+      font-weight: 500;
+      margin-top: 16px;
+      
+    }
+    mat-dialog-actions {
+      padding: 8px 24px 24px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .cancel-button {
+      color: #757575;
+    }
+    .delete-button {
+      background-color: #f44336;
+    }
+    .delete-button:hover {
+      background-color: #d32f2f;
+      color : white;
+    }
+  `]
+})
+export class DeleteConfirmationDialogComponent {
+  constructor(
+    public dialogRef: MatDialogRef<DeleteConfirmationDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: any
+  ) {}
+
+  onCancel(): void {
+    this.dialogRef.close(false);
+  }
+
+  onConfirm(): void {
+    this.dialogRef.close(true);
+  }
+}
 
 @Component({
   selector: 'app-interventions',
@@ -29,6 +123,7 @@ export class InterventionComponent implements OnInit {
   private router = inject(Router);
   private accountService = inject(AccountService);
   private datePipe = inject(DatePipe);
+  private dialog = inject(MatDialog);
 
   private baseUrl = 'https://localhost:5001/api/DemandeIntervention';
   private etatBaseUrl = 'https://localhost:5001/api/Etat';
@@ -238,17 +333,27 @@ export class InterventionComponent implements OnInit {
   }
 
   deleteIntervention(item: InterventionListItem): void {
-    if (!confirm(`Delete intervention: ${item.titre}?`)) return;
-    this.isLoading = true;
-    this.http.delete(`${this.baseUrl}/${item.idDemandeIntervention}`, { withCredentials: true }).subscribe({
-      next: () => {
-        this.showPopupMessage('Intervention deleted successfully!', 'success');
-        this.getAllInterventions();
-      },
-      error: (err) => {
-        console.error('Failed to delete intervention:', err);
-        this.showPopupMessage(err.error?.message || 'Failed to delete intervention', 'error');
-        this.isLoading = false;
+    // Ouvrir la boîte de dialogue de confirmation personnalisée
+    const dialogRef = this.dialog.open(DeleteConfirmationDialogComponent, {
+      width: '400px',
+      data: { titre: item.titre }
+    });
+
+    // S'abonner au résultat de la boîte de dialogue
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.isLoading = true;
+        this.http.delete(`${this.baseUrl}/${item.idDemandeIntervention}`, { withCredentials: true }).subscribe({
+          next: () => {
+            this.showPopupMessage('Intervention deleted successfully!', 'success');
+            this.getAllInterventions();
+          },
+          error: (err) => {
+            console.error('Failed to delete intervention:', err);
+            this.showPopupMessage(err.error?.message || 'Failed to delete intervention', 'error');
+            this.isLoading = false;
+          }
+        });
       }
     });
   }

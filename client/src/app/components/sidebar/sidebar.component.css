@@ -46,10 +46,10 @@
   transition: background-color 0.2s ease;
 }
 
-/* Main sidebar active item styling */
+/* Main sidebar active item styling - UPDATED COLOR */
 .nav-item.active,
 .nav-item .active-link {
-  background-color: #5e72e4 !important;
+  background-color: #6366F1 !important; /* Changed from #5e72e4 to match the image's purple color */
 }
 
 .nav-item.active .nav-link,
@@ -70,12 +70,12 @@
 /* Submenu active item styling */
 .sub-nav .nav-item {
   margin: 8px 0;
-  border-radius: 8px; /* Ensure submenu items have the same border-radius */
-  transition: background-color 0.2s ease; /* Consistent transition */
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
 }
 
 .sub-nav .nav-item.active {
-  background-color: #5e72e4 !important;
+  background-color: #6366F1 !important; /* Changed from #5e72e4 to match the image's purple color */
 }
 
 .sub-nav .nav-item.active .nav-link {
@@ -105,7 +105,7 @@
 .nav-item.active .nav-link:hover,
 .nav-item .active-link:hover,
 .sub-nav .nav-item.active .nav-link:hover {
-  background-color: #5e72e4 !important;
+  background-color: #6366F1 !important; /* Changed from #5e72e4 to match the image's purple color */
   color: white !important;
 }
 
@@ -146,7 +146,7 @@
 
 .sub-nav .nav-link {
   padding: 8px 16px;
-  border-radius: 8px; /* Ensure submenu nav-link has rounded corners */
+  border-radius: 8px;
 }
 
 .sub-nav .material-icons {

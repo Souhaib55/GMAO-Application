@@ -1,9 +1,15 @@
 .navbar-main {
-  background-color: #0a2756 !important; /* Dark blue background */
-  color: white;
+  color: #333;
   padding: 0;
   min-height: 60px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  background-color: #2E4373 !important;
+  background-image: linear-gradient(to right, #2E4373, #5A6DBA) !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1030;
 }
 
 .container-fluid {
@@ -18,6 +24,7 @@
   display: flex;
   align-items: center;
   height: 60px;
+  min-width: 50px; /* Ensure minimum width for logo area */
 }
 
 .logo-container {
@@ -27,27 +34,45 @@
   text-decoration: none;
 }
 
-.logo-box {
-  background-color: white;
-  padding: 6px 16px;
-  margin-top: 8px;
-  border-radius: 6px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 36px;
-  min-width: 200px;
-  transition: all 0.2s ease;
+/* Search field styling */
+.search-container {
+  flex: 1;
+  max-width: 500px;
+  margin: 0 20px;
+  position: relative; /* Keep position relative */
 }
 
-.logo-text {
-  color: #0a2756;
-  font-weight: 700;
-  font-size: 18px;
-  letter-spacing: 0.5px;
-  font-family: 'Poppins', sans-serif;
-  text-transform: uppercase;
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 0 15px;
+  transition: all 0.3s ease;
+}
+
+.search-input-wrapper:focus-within {
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.search-icon {
+  color: #9ca3af;
+  font-size: 20px;
+}
+
+.search-input {
+  border: none;
+  background: transparent;
+  padding: 10px;
+  width: 100%;
+  font-size: 14px;
+  outline: none;
+  color: #2d2c2c;
+}
+
+.search-input::placeholder {
+  color: #9ca3af;
 }
 
 /* Navbar right section with user */
@@ -57,17 +82,21 @@
   margin-left: auto;
 }
 
-/* Remove search styling as it's not in the reference image */
-.search-container, .search-input-wrapper {
-  display: none;
-}
-
 /* Mobile styles */
 .navbar-toggler {
   display: none;
+  order: 1; /* Ensure proper ordering on mobile */
+}
+
+.navbar-collapse {
+  flex-grow: 0; /* Don't let it grow to push other elements */
 }
 
 @media (max-width: 991px) {
+  .container-fluid {
+    flex-wrap: nowrap; /* Prevent wrapping */
+  }
+  
   .navbar-toggler {
     display: block;
   }
@@ -83,17 +112,26 @@
     width: 100%;
   }
   
-  .logo-box {
-    min-width: 100px;
-    height: 32px;
+  /* Keep search container visible and in the same position */
+  .search-container {
+    max-width: 60%;
+    margin: 0 10px;
+    order: 2; /* Control the order in flex layout */
   }
   
-  .logo-text {
-    font-size: 16px;
+  /* Ensure the navbar wrapper doesn't grow too much */
+  .navbar-wrapper {
+    flex: 0 0 auto;
+    order: 0; /* Control the order in flex layout */
+  }
+  
+  /* Ensure the navbar collapse is at the end */
+  .navbar-collapse {
+    order: 3; /* Control the order in flex layout */
   }
 }
 
-/* Enhanced User Dropdown Styling */
+/* User Profile Styling */
 .user-dropdown-button {
   background-color: transparent !important;
   border: none !important;
@@ -103,23 +141,57 @@
   height: 40px;
 }
 
-.dropdown-content {
+.user-profile {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 10px;
+  position: relative;
 }
 
-.user-name {
-  color: white; /* White text color */
+.avatar-circle {
+  width: 40px;
+  height: 40px;
+  background-color: #6366F1; /* Purple color */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.initials {
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  line-height: 1.2;
+}
+
+.user-email {
+  color: white;
   font-weight: 500;
-  font-size: 15px;
-  margin-right: 4px;
+  font-size: 14px;
 }
 
-.dropdown-icon {
-  color: white; /* White icon color */
-  transform: scale(1.2);
-  margin-right: 4px;
+.user-role {
+  color: white;
+  font-size: 12px;
+}
+
+/* Online indicator */
+.online-indicator {
+  width: 8px;
+  height: 8px;
+  background-color: #10B981; /* Green color for online status */
+  border-radius: 50%;
+  position: absolute;
+  bottom: 0;
+  right: -5px;
+  border: 2px solid white;
 }
 
 /* Override Material Menu Styles */
@@ -131,23 +203,16 @@
 
 ::ng-deep .mat-menu-item:hover {
   background-color: #f8f9fa !important;
-  color: #0a2756 !important;
+  color: #6366F1 !important;
 }
 
 ::ng-deep .mat-menu-item .mat-icon {
-  color: #0a2756;
+  color: #6366F1;
   margin-right: 12px;
 }
 
 ::ng-deep .mat-menu-panel {
   z-index: 1060 !important;
-}
-
-::ng-deep .mat-menu-panel.custom-menu {
-  min-width: 180px !important;
-  border-radius: 8px !important; 
-  margin-top: 10px;
-  transform: translateY(0) !important;
 }
 
 ::ng-deep .mat-menu-content {
@@ -162,16 +227,6 @@
   height: 36px !important;
 }
 
-::ng-deep .mat-menu-item:hover {
-  background-color: #f8f9fa !important;
-  color: #0a2756 !important;
-}
-
-::ng-deep .mat-menu-item .mat-icon {
-  color: #0a2756;
-  margin-right: 12px;
-}
-
 /* Fix positioning issues with mat-menu */
 ::ng-deep .cdk-overlay-container {
   z-index: 1060 !important;
@@ -181,4 +236,9 @@
   position: absolute !important;
   pointer-events: auto !important;
   z-index: 1060 !important;
+}
+
+/* Add this to ensure the navbar state is consistent on page load */
+body.nav-open .navbar-collapse {
+  display: block !important;
 }

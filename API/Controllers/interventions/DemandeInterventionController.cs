@@ -90,7 +90,7 @@ namespace API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<DemandeIntervention>> CreateDemandeIntervention([FromForm] InterventionDto demandeDto, [FromForm] IFormFile file)
+        public async Task<ActionResult<DemandeIntervention>> CreateDemandeIntervention([FromForm] InterventionDto demandeDto, [FromForm] IFormFile? file)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 

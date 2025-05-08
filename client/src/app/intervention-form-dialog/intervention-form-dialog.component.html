@@ -1,1 +1,58 @@
-<p>intervention-form-dialog works!</p>
+<div class="intervention-details-dialog">
+  <h2 mat-dialog-title>Intervention Details</h2>
+  
+  <mat-dialog-content>
+    <div class="intervention-details" *ngIf="data.intervention">
+      <div class="detail-header" [ngClass]="getUrgencyClass(data.intervention.urgence?.libelle)">
+        <h3>{{ data.intervention.titre }}</h3>
+        <div class="urgency-badge">{{ data.intervention.urgence?.libelle || 'N/A' }}</div>
+      </div>
+      
+      <div class="details-body">
+        <div class="detail-row">
+          <span class="detail-label">Date:</span>
+          <span class="detail-value">{{ data.intervention.dateCreation | date:'medium' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Status:</span>
+          <span class="detail-value">{{ data.intervention.etat?.libelle || 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Type:</span>
+          <span class="detail-value">{{ data.intervention.typeIntervention?.libelle || 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Production Line:</span>
+          <span class="detail-value">{{ data.intervention.chaineProduction?.libelle || 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Breakdown:</span>
+          <span class="detail-value">{{ data.intervention.panne?.libelle || 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Machine Stopped:</span>
+          <span class="detail-value">{{ data.intervention.machineArretee ? 'Yes' : 'No' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Requested by:</span>
+          <span class="detail-value">{{ data.intervention.demandeur ? data.intervention.demandeur.nom + ' ' + data.intervention.demandeur.prenom : 'Unknown' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Assigned to:</span>
+          <span class="detail-value">{{ data.intervention.destinataire ? data.intervention.destinataire.nom + ' ' + data.intervention.destinataire.prenom : 'Not assigned' }}</span>
+        </div>
+        <div class="detail-row description">
+          <span class="detail-label">Description:</span>
+          <span class="detail-value">{{ data.intervention.description || 'No description available' }}</span>
+        </div>
+      </div>
+    </div>
+  </mat-dialog-content>
+  
+  <mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close class="close-button">
+      <mat-icon>close</mat-icon>
+      Close
+    </button>
+  </mat-dialog-actions>
+</div>
