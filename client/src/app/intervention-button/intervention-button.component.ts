@@ -184,50 +184,50 @@ export class InterventionButtonComponent implements OnInit {
     this.isSubmitting = true;
     this.errorMessage = '';
 
-    const formData = this.prepareDataForApi();
+    const data = this.prepareDataForApi();
 
     if (this.isEditMode) {
-      this.updateIntervention(formData);
+      this.updateIntervention(data);
     } else {
-      this.createIntervention(formData);
+      this.createIntervention(data);
     }
   }
 
-  private prepareDataForApi(): FormData {
+  private prepareDataForApi(): any {
     const formValue = this.interventionForm.getRawValue();
-    const formData = new FormData();
-    formData.append('idDemandeIntervention', formValue.idDemandeIntervention.toString());
-    formData.append('titre', formValue.titre.trim());
-    formData.append('machineArretee', formValue.machineArretee.toString());
-    formData.append('idEtat', formValue.idEtat.toString());
-    formData.append('idTypeIntervention', formValue.idTypeIntervention.toString());
-    formData.append('idUrgence', formValue.idUrgence.toString());
-    formData.append('idChaineProduction', formValue.idChaineProduction.toString());
-    formData.append('idPanne', formValue.idPanne.toString());
-    formData.append('demandeursID', formValue.demandeursID.toString());
-    if (formValue.destinatairesID != null) {
-      formData.append('destinatairesID', formValue.destinatairesID.toString());
+    const dto = {
+      idDemandeIntervention: formValue.idDemandeIntervention,
+      titre: formValue.titre.trim(),
+      machineArretee: formValue.machineArretee,
+      idEtat: formValue.idEtat,
+      idTypeIntervention: formValue.idTypeIntervention,
+      idUrgence: formValue.idUrgence,
+      idChaineProduction: formValue.idChaineProduction,
+      idPanne: formValue.idPanne,
+      demandeursID: formValue.demandeursID,
+      destinatairesID: formValue.destinatairesID || null,
+      dateCreation: new Date(formValue.dateCreation).toISOString(),
+      isActif: formValue.isActif,
+      workflowAction: null, // Will be set separately if needed
+      raisonAnnulation: null // Will be set separately if needed
+    };
+
+    if (this.isEditMode && (this.selectedFile || this.fileClearFlag)) {
+      const formData = new FormData();
+      formData.append('demandeDto', JSON.stringify(dto));
+      if (this.selectedFile) {
+        formData.append('file', this.selectedFile, this.selectedFile.name);
+      }
+      if (this.fileClearFlag) {
+        formData.append('fileName', '');
+      }
+      return formData;
     }
-    const date = new Date(formValue.dateCreation);
-    date.setMinutes(date.getMinutes() - date.getTimezoneOffset()); // Adjust for timezone
-    formData.append('dateCreation', date.toISOString());
-    formData.append('isActif', formValue.isActif.toString());
-    
-    // Handle file upload
-    if (this.selectedFile) {
-      formData.append('file', this.selectedFile, this.selectedFile.name);
-    }
-    
-    // Handle file clearing in edit mode
-    if (this.isEditMode && this.fileClearFlag) {
-      formData.append('fileName', ''); // Send empty string to indicate file should be cleared
-    }
-    
-    return formData;
+    return dto;
   }
 
-  private createIntervention(formData: FormData): void {
-    this.http.post<any>(this.baseUrl, formData, { withCredentials: true }).subscribe({
+  private createIntervention(data: FormData): void {
+    this.http.post<any>(this.baseUrl, data, { withCredentials: true }).subscribe({
       next: () => {
         this.router.navigate(['/admin/intervention'], {
           state: { message: 'Intervention created successfully!', type: 'success' }
@@ -241,9 +241,12 @@ export class InterventionButtonComponent implements OnInit {
     });
   }
 
-  private updateIntervention(formData: FormData): void {
+  private updateIntervention(data: any): void {
     const id = this.interventionForm.get('idDemandeIntervention')?.value;
-    this.http.put(`${this.baseUrl}/${id}`, formData, { withCredentials: true }).subscribe({
+    const options = { withCredentials: true };
+    const headers = data instanceof FormData ? {} : { 'Content-Type': 'application/json' };
+
+    this.http.put(`${this.baseUrl}/${id}`, data, { ...options, headers }).subscribe({
       next: () => {
         this.router.navigate(['/admin/intervention'], {
           state: { message: 'Intervention updated successfully!', type: 'success' }
