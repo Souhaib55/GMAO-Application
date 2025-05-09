@@ -1,3 +1,4 @@
+/* Update the intervention-form-dialog.component.scss */
 .intervention-details-dialog {
   min-width: 500px;
 }
@@ -68,6 +69,39 @@
         color: #333;
         flex: 1;
       }
+      
+      .status-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        display: inline-block;
+        
+        &.status-new {
+          background-color: #e3f2fd;
+          color: #1976d2;
+        }
+        
+        &.status-in-progress {
+          background-color: #fff8e1;
+          color: #ff8f00;
+        }
+        
+        &.status-completed {
+          background-color: #e8f5e9;
+          color: #388e3c;
+        }
+        
+        &.status-closed {
+          background-color: #e0f2f1;
+          color: #00796b;
+        }
+        
+        &.status-cancelled {
+          background-color: #ffebee;
+          color: #c62828;
+        }
+      }
     }
   }
 }
@@ -77,7 +111,12 @@ mat-dialog-actions {
   padding-top: 10px;
   border-top: 1px solid #eee;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
 }
 
 .close-button {
@@ -92,4 +131,21 @@ mat-dialog-actions {
   &:hover {
     background-color: rgba(0, 0, 0, 0.04);
   }
+}
+
+.full-width {
+  width: 100%;
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.7);
+  z-index: 10;
 }

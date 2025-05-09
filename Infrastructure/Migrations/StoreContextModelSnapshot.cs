@@ -206,10 +206,19 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<DateTime?>("DateAssignation")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateCloture")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("DateCreation")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime?>("DateRealisation")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("DemandeursID")
                         .HasColumnType("int");
@@ -247,6 +256,14 @@ namespace Infrastructure.Migrations
                     b.Property<bool>("MachineArretee")
                         .HasColumnType("bit");
 
+                    b.Property<string>("RaisonAnnulation")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("StatusId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
                     b.Property<string>("Titre")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -267,6 +284,8 @@ namespace Infrastructure.Migrations
                     b.HasIndex("IDTypeIntervention");
 
                     b.HasIndex("IDUrgence");
+
+                    b.HasIndex("StatusId");
 
                     b.ToTable("DemandeInterventions");
                 });
@@ -766,6 +785,71 @@ namespace Infrastructure.Migrations
                     b.ToTable("Roles");
                 });
 
+            modelBuilder.Entity("Core.Entities.Status", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<bool>("IsActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Statut")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Statuses");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Description = "Nouvelle demande d'intervention",
+                            IsActif = true,
+                            Statut = "A traiter"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Description = "Intervention assignée à un technicien",
+                            IsActif = true,
+                            Statut = "En cours"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Description = "Intervention terminée par le technicien",
+                            IsActif = true,
+                            Statut = "Réalisée"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Description = "Intervention validée par le superviseur",
+                            IsActif = true,
+                            Statut = "Cloturée"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Description = "Intervention annulée",
+                            IsActif = true,
+                            Statut = "Annulée"
+                        });
+                });
+
             modelBuilder.Entity("Core.Entities.Stock", b =>
                 {
                     b.Property<int>("Id")
@@ -1151,6 +1235,12 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Core.Entities.Status", "Status")
+                        .WithMany("DemandeInterventions")
+                        .HasForeignKey("StatusId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("ChaineProduction");
 
                     b.Navigation("Demandeur");
@@ -1160,6 +1250,8 @@ namespace Infrastructure.Migrations
                     b.Navigation("Etat");
 
                     b.Navigation("Panne");
+
+                    b.Navigation("Status");
 
                     b.Navigation("TypeIntervention");
 
@@ -1401,6 +1493,11 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Core.Entities.ModeleEquipement", b =>
                 {
                     b.Navigation("Equipments");
+                });
+
+            modelBuilder.Entity("Core.Entities.Status", b =>
+                {
+                    b.Navigation("DemandeInterventions");
                 });
 
             modelBuilder.Entity("Core.Entities.StockEntities", b =>

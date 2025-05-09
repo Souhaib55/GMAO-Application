@@ -3,27 +3,31 @@
   <div class="header">
     <div class="header-left">
       <div class="title-container">
-        <h1>Planning Calendar</h1>
-        <p class="subtitle">{{ isSuperviseur ? 'All interventions' : 'My assigned interventions' }}</p>
+        <h1>Calendrier des Interventions</h1>
+        <p class="subtitle">
+          {{ isSuperviseur ? 'Toutes les interventions' : 
+             isTechnicien ? 'Mes interventions assignées' : 
+             'Mes demandes d\'intervention' }}
+        </p>
       </div>
     </div>
     <div class="header-right">
       <div class="calendar-controls">
-        <button mat-icon-button class="nav-button" (click)="previous()">
+        <button mat-icon-button class="nav-button" (click)="previous()" matTooltip="Précédent">
           <mat-icon>chevron_left</mat-icon>
         </button>
-        <button mat-icon-button class="nav-button" (click)="today()">
+        <button mat-icon-button class="nav-button" (click)="today()" matTooltip="Aujourd'hui">
           <mat-icon>today</mat-icon>
         </button>
-        <button mat-icon-button class="nav-button" (click)="next()">
+        <button mat-icon-button class="nav-button" (click)="next()" matTooltip="Suivant">
           <mat-icon>chevron_right</mat-icon>
         </button>
         <span class="current-date">{{ currentDate }}</span>
         <mat-form-field appearance="outline" class="view-selector">
           <mat-select [(value)]="currentView" (selectionChange)="changeView()">
-            <mat-option value="dayGridMonth">Month</mat-option>
-            <mat-option value="timeGridWeek">Week</mat-option>
-            <mat-option value="timeGridDay">Day</mat-option>
+            <mat-option value="dayGridMonth">Mois</mat-option>
+            <mat-option value="timeGridWeek">Semaine</mat-option>
+            <mat-option value="timeGridDay">Jour</mat-option>
           </mat-select>
         </mat-form-field>
       </div>
@@ -46,16 +50,14 @@
   <!-- Intervention Details Sidebar -->
   <div class="intervention-details-sidebar" [class.show]="showInterventionDetails" [@slideInOut]>
     <div class="details-header">
-      <h2>Intervention Details</h2>
+      <h2>Détails de l'Intervention</h2>
       <button mat-icon-button class="close-button" (click)="closeInterventionDetails()">
         <mat-icon>close</mat-icon>
       </button>
     </div>
     <div class="details-content" *ngIf="selectedIntervention">
       <div class="detail-card">
-        <div class="card-header" [ngClass]="{'high-urgency': selectedIntervention.urgence?.libelle === 'Haute', 
-                                           'medium-urgency': selectedIntervention.urgence?.libelle === 'Moyenne',
-                                           'low-urgency': selectedIntervention.urgence?.libelle === 'Basse'}">
+        <div class="card-header" [ngClass]="getUrgencyClass(selectedIntervention.urgence?.libelle)">
           <h3>{{ selectedIntervention.titre }}</h3>
           <div class="urgency-badge">{{ selectedIntervention.urgence?.libelle || 'N/A' }}</div>
         </div>
@@ -65,42 +67,99 @@
             <span class="detail-value">{{ selectedIntervention.dateCreation | date:'medium' }}</span>
           </div>
           <div class="detail-row">
-            <span class="detail-label">Status:</span>
-            <span class="detail-value">{{ selectedIntervention.etat?.libelle || 'N/A' }}</span>
+            <span class="detail-label">Statut:</span>
+            <span class="detail-value status-badge" [ngClass]="getStatusClass(selectedIntervention.status?.id)">
+              {{ selectedIntervention.status?.statut || 'N/A' }}
+            </span>
           </div>
           <div class="detail-row">
             <span class="detail-label">Type:</span>
             <span class="detail-value">{{ selectedIntervention.typeIntervention?.libelle || 'N/A' }}</span>
           </div>
           <div class="detail-row">
-            <span class="detail-label">Production Line:</span>
+            <span class="detail-label">Ligne de Production:</span>
             <span class="detail-value">{{ selectedIntervention.chaineProduction?.libelle || 'N/A' }}</span>
           </div>
           <div class="detail-row">
-            <span class="detail-label">Breakdown:</span>
+            <span class="detail-label">Panne:</span>
             <span class="detail-value">{{ selectedIntervention.panne?.libelle || 'N/A' }}</span>
           </div>
           <div class="detail-row">
-            <span class="detail-label">Machine Stopped:</span>
-            <span class="detail-value">{{ selectedIntervention.machineArretee ? 'Yes' : 'No' }}</span>
+            <span class="detail-label">Machine Arrêtée:</span>
+            <span class="detail-value">{{ selectedIntervention.machineArretee ? 'Oui' : 'Non' }}</span>
           </div>
           <div class="detail-row">
-            <span class="detail-label">Requested by:</span>
-            <span class="detail-value">{{ selectedIntervention.demandeur ? selectedIntervention.demandeur.nom + ' ' + selectedIntervention.demandeur.prenom : 'Unknown' }}</span>
+            <span class="detail-label">Demandé par:</span>
+            <span class="detail-value">{{ selectedIntervention.demandeur ? selectedIntervention.demandeur.nom + ' ' + selectedIntervention.demandeur.prenom : 'Inconnu' }}</span>
           </div>
           <div class="detail-row">
-            <span class="detail-label">Assigned to:</span>
-            <span class="detail-value">{{ selectedIntervention.destinataire ? selectedIntervention.destinataire.nom + ' ' + selectedIntervention.destinataire.prenom : 'Not assigned' }}</span>
+            <span class="detail-label">Assigné à:</span>
+            <span class="detail-value">{{ selectedIntervention.destinataire ? selectedIntervention.destinataire.nom + ' ' + selectedIntervention.destinataire.prenom : 'Non assigné' }}</span>
           </div>
-          <div class="detail-row description">
-            <span class="detail-label">Description:</span>
-            <span class="detail-value">{{ selectedIntervention.description || 'No description available' }}</span>
+          
+          <!-- Dates importantes du workflow -->
+          <div class="detail-row" *ngIf="selectedIntervention.dateAssignation">
+            <span class="detail-label">Date d'assignation:</span>
+            <span class="detail-value">{{ selectedIntervention.dateAssignation | date:'medium' }}</span>
+          </div>
+          <div class="detail-row" *ngIf="selectedIntervention.dateRealisation">
+            <span class="detail-label">Date de réalisation:</span>
+            <span class="detail-value">{{ selectedIntervention.dateRealisation | date:'medium' }}</span>
+          </div>
+          <div class="detail-row" *ngIf="selectedIntervention.dateCloture">
+            <span class="detail-label">Date de clôture:</span>
+            <span class="detail-value">{{ selectedIntervention.dateCloture | date:'medium' }}</span>
+          </div>
+          
+          <!-- Boutons d'action selon le workflow -->
+          <div class="workflow-actions">
+            <!-- Superviseur: Quand statut est "A traiter" (ID: 1) -->
+            <button mat-raised-button color="primary" *ngIf="canAssign" (click)="editIntervention()"
+                    matTooltip="Assigner cette intervention à un technicien">
+              <mat-icon>person_add</mat-icon>
+              Assigner un utilisateur
+            </button>
+            
+            <!-- Superviseur: Quand statut est "Réalisée" (ID: 3) -->
+            <button mat-raised-button color="primary" *ngIf="canValidate" (click)="performAction('validate')"
+                    matTooltip="Valider l'intervention comme terminée">
+              <mat-icon>verified</mat-icon>
+              Approuver
+            </button>
+            
+            <!-- Superviseur: Bouton d'édition pour interventions non-terminées -->
+            <button mat-raised-button color="accent" *ngIf="canEdit" (click)="editIntervention()"
+                    matTooltip="Modifier les détails de l'intervention">
+              <mat-icon>edit</mat-icon>
+              Modifier
+            </button>
+            
+            <!-- Utilisateur: Quand statut est "En cours" (ID: 2) et pas encore accepté -->
+            <button mat-raised-button color="primary" *ngIf="canAccept" (click)="performAction('accept')"
+                    matTooltip="Accepter cette intervention">
+              <mat-icon>check_circle</mat-icon>
+              Accepter
+            </button>
+            
+            <!-- Utilisateur: Quand intervention est acceptée mais pas encore terminée -->
+            <button mat-raised-button color="accent" *ngIf="hasAccepted && canComplete" (click)="performAction('complete')"
+                    matTooltip="Marquer l'intervention comme réalisée">
+              <mat-icon>done_all</mat-icon>
+              Réaliser
+            </button>
+            
+            <!-- Bouton d'annulation pour Superviseur et Demandeur et Utilisateur -->
+            <button mat-raised-button color="warn" *ngIf="canCancel" (click)="performAction('cancel')"
+                    matTooltip="Annuler cette intervention">
+              <mat-icon>delete</mat-icon>
+              Supprimer
+            </button>
           </div>
         </div>
         <div class="card-footer">
           <button mat-button class="close-sidebar-button" (click)="closeInterventionDetails()">
             <mat-icon>close</mat-icon>
-            Close
+            Fermer
           </button>
         </div>
       </div>

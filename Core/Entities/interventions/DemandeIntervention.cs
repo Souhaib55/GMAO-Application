@@ -9,8 +9,15 @@ namespace Core.Entities
         public string? FileName { get; set; }
         public string? ContentType { get; set; }
         public bool MachineArretee { get; set; }
+        
+        // Keep the existing Etat for backward compatibility
         public int IDEtat { get; set; }
         public Etat Etat { get; set; } = null!;
+        
+        // Add the new Status relationship
+        public int StatusId { get; set; }
+        public Status Status { get; set; } = null!;
+        
         public int IDTypeIntervention { get; set; }
         public TypeIntervention TypeIntervention { get; set; } = null!;
         public int IDUrgence { get; set; }
@@ -24,5 +31,12 @@ namespace Core.Entities
         public int? DestinatairesID { get; set; }
         public Users? Destinataire { get; set; } = null!;
         public bool IsActif { get; set; }
+        
+        // Add fields to track workflow actions
+        public DateTime? DateAssignation { get; set; }
+        public DateTime? DateRealisation { get; set; }
+        public DateTime? DateCloture { get; set; }
+        public string? RaisonAnnulation { get; set; }
+        
     }
 }

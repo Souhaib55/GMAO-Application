@@ -45,6 +45,7 @@ public class StoreContext : IdentityDbContext<AppUser, IdentityRole, string>
     public DbSet<ChaineProduction> ChaineProductions { get; set; }
     public DbSet<DemandeIntervention> DemandeInterventions { get; set; }
     public DbSet<Panne> Pannes { get; set; }
+    public DbSet<Status> Statuses { get; set; } // Add the Status entity
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -75,5 +76,6 @@ public class StoreContext : IdentityDbContext<AppUser, IdentityRole, string>
         modelBuilder.ApplyConfiguration(new ChaineProductionConfiguration());
         modelBuilder.ApplyConfiguration(new DemandeInterventionConfiguration());
         modelBuilder.ApplyConfiguration(new PanneConfiguration());
+        modelBuilder.ApplyConfiguration(new StatusConfiguration()); // Add the Status configuration
     }
 }

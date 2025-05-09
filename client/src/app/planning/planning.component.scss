@@ -652,3 +652,66 @@
     margin-bottom: -1.25em;
   }
 }
+
+
+
+
+
+// Add these styles to the existing SCSS file
+
+// Workflow action buttons
+.workflow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+  margin-bottom: 15px;
+  
+  button {
+    flex: 1;
+    min-width: 120px;
+    
+    mat-icon {
+      margin-right: 5px;
+    }
+  }
+}
+
+// Status badges
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  
+  &.status-new {
+    background-color: #e3f2fd;
+    color: #1976d2;
+  }
+  
+  &.status-in-progress {
+    background-color: #fff8e1;
+    color: #ff8f00;
+  }
+  
+  &.status-completed {
+    background-color: #e8f5e9;
+    color: #388e3c;
+  }
+  
+  &.status-closed {
+    background-color: #e0f2f1;
+    color: #00796b;
+  }
+  
+  &.status-cancelled {
+    background-color: #ffebee;
+    color: #c62828;
+  }
+}
+
+// Full width form fields
+.full-width {
+  width: 100%;
+}
