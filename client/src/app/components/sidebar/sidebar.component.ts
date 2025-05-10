@@ -17,16 +17,8 @@ declare interface RouteInfo {
 export const ROUTES: RouteInfo[] = [
   { path: 'dashboard', title: 'Dashboard', icon: 'grid_view_rounded', class: '' }, // All roles
   { path: 'askaidatabase', title: 'GMAO Chat', icon: 'chat_bubble_rounded', class: '', roles: ['Superviseur'] },
-  {
-      title: 'Equipements',
-      icon: 'construction_rounded',
-      class: '',
-      roles: ['Superviseur', 'Utilisateur'],
-      children: [
-          { path: 'equipment/crud', title: 'Table Equipements', icon: 'construction_rounded', class: '', roles: ['Superviseur', 'Utilisateur'] },
-          { path: 'equipment/trigger', title: 'Trigger', icon: 'notifications_active_rounded', class: '', roles: ['Superviseur', 'Utilisateur'] }
-      ]
-  },
+  // Replace the nested equipment menu with a direct link
+  { path: 'equipment', title: 'Equipements', icon: 'construction_rounded', class: '', roles: ['Superviseur', 'Utilisateur'] },
   { path: 'intervention', title: 'Interventions', icon: 'manage_accounts_rounded', class: '' }, // All roles
   { path: 'planning', title: 'Planning', icon: 'content_paste', class: '', roles: ['Superviseur', 'Utilisateur'] },
   { path: 'stock', title: 'Stock/Achat', icon: 'shopping_cart_rounded', class: '', roles: ['Superviseur'] },

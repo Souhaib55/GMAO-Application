@@ -1,9 +1,15 @@
-<div class="dialog-container">
+<div class="intervention-dialog-container">
   <div class="dialog-header" [ngClass]="getUrgencyClass(data.intervention?.urgence?.libelle)">
-    <h2 mat-dialog-title>{{ data.intervention?.titre }}</h2>
-    <button mat-icon-button (click)="onClose()" class="close-button">
-      <mat-icon>close</mat-icon>
-    </button>
+    <h2 class="dialog-title">{{ data.intervention?.titre || 'Intervention' }}</h2>
+    <div class="header-badges">
+      <span class="urgency-badge" *ngIf="data.intervention?.urgence?.libelle">
+        <mat-icon>priority_high</mat-icon>
+        {{ data.intervention?.urgence?.libelle }}
+      </span>
+      <button mat-icon-button class="close-button" (click)="onClose()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
   </div>
   
   <mat-dialog-content class="dialog-content">
@@ -11,121 +17,162 @@
       <mat-spinner diameter="40"></mat-spinner>
     </div>
     
-    <div class="detail-card" *ngIf="data.intervention">
-      <div class="status-row">
+    <div class="intervention-details" *ngIf="data.intervention">
+      <div class="status-card">
         <span class="status-badge" [ngClass]="getStatusClass(data.intervention.status?.id)">
+          <span class="status-dot"></span>
           {{ data.intervention.status?.statut || 'N/A' }}
         </span>
-        <span class="urgency-badge">{{ data.intervention.urgence?.libelle || 'N/A' }}</span>
       </div>
       
-      <div class="detail-row">
-        <span class="detail-label">Date:</span>
-        <span class="detail-value">{{ data.intervention.dateCreation | date:'medium' }}</span>
+      <div class="details-grid">
+        <div class="details-section">
+          <h3 class="section-title">Informations générales</h3>
+          
+          <div class="detail-row">
+            <span class="detail-label"><mat-icon>calendar_today</mat-icon> Date:</span>
+            <span class="detail-value">{{ data.intervention.dateCreation | date:'medium' }}</span>
+          </div>
+          
+          <div class="detail-row">
+            <span class="detail-label"><mat-icon>category</mat-icon> Type:</span>
+            <span class="detail-value">{{ data.intervention.typeIntervention?.libelle || 'N/A' }}</span>
+          </div>
+          
+          <div class="detail-row">
+            <span class="detail-label"><mat-icon>precision_manufacturing</mat-icon> Ligne:</span>
+            <span class="detail-value">{{ data.intervention.chaineProduction?.libelle || 'N/A' }}</span>
+          </div>
+          
+          <div class="detail-row">
+            <span class="detail-label"><mat-icon>build</mat-icon> Panne:</span>
+            <span class="detail-value">{{ data.intervention.panne?.libelle || 'N/A' }}</span>
+          </div>
+          
+          <div class="detail-row">
+            <span class="detail-label"><mat-icon>power_off</mat-icon> Machine Arrêtée:</span>
+            <span class="detail-value" [ngClass]="{'highlight-warning': data.intervention.machineArretee}">
+              {{ data.intervention.machineArretee ? 'Oui' : 'Non' }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="details-section">
+          <h3 class="section-title">Participants</h3>
+          
+          <div class="detail-row">
+            <span class="detail-label"><mat-icon>person</mat-icon> Demandé par:</span>
+            <span class="detail-value">{{ data.intervention.demandeur ? data.intervention.demandeur.nom + ' ' + data.intervention.demandeur.prenom : 'Inconnu' }}</span>
+          </div>
+          
+          <div class="detail-row">
+            <span class="detail-label"><mat-icon>engineering</mat-icon> Assigné à:</span>
+            <span class="detail-value">{{ data.intervention.destinataire ? data.intervention.destinataire.nom + ' ' + data.intervention.destinataire.prenom : 'Non assigné' }}</span>
+          </div>
+        </div>
       </div>
       
-      <div class="detail-row">
-        <span class="detail-label">Type:</span>
-        <span class="detail-value">{{ data.intervention.typeIntervention?.libelle || 'N/A' }}</span>
+      <!-- Timeline section -->
+      <div class="timeline-section" *ngIf="data.intervention.dateAssignation || data.intervention.dateRealisation || data.intervention.dateCloture">
+        <h3 class="section-title">Suivi de l'intervention</h3>
+        
+        <div class="timeline">
+          <div class="timeline-item" *ngIf="data.intervention.dateCreation">
+            <div class="timeline-marker completed"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">{{ data.intervention.dateCreation | date:'medium' }}</div>
+              <div class="timeline-title">Création</div>
+            </div>
+          </div>
+          
+          <div class="timeline-item" *ngIf="data.intervention.dateAssignation">
+            <div class="timeline-marker completed"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">{{ data.intervention.dateAssignation | date:'medium' }}</div>
+              <div class="timeline-title">Acceptation</div>
+            </div>
+          </div>
+          
+          <div class="timeline-item" *ngIf="data.intervention.dateRealisation">
+            <div class="timeline-marker completed"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">{{ data.intervention.dateRealisation | date:'medium' }}</div>
+              <div class="timeline-title">Réalisation</div>
+            </div>
+          </div>
+          
+          <div class="timeline-item" *ngIf="data.intervention.dateCloture">
+            <div class="timeline-marker completed"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">{{ data.intervention.dateCloture | date:'medium' }}</div>
+              <div class="timeline-title">Clôture</div>
+            </div>
+          </div>
+        </div>
       </div>
       
-      <div class="detail-row">
-        <span class="detail-label">Ligne de Production:</span>
-        <span class="detail-value">{{ data.intervention.chaineProduction?.libelle || 'N/A' }}</span>
-      </div>
-      
-      <div class="detail-row">
-        <span class="detail-label">Panne:</span>
-        <span class="detail-value">{{ data.intervention.panne?.libelle || 'N/A' }}</span>
-      </div>
-      
-      <div class="detail-row">
-        <span class="detail-label">Machine Arrêtée:</span>
-        <span class="detail-value">{{ data.intervention.machineArretee ? 'Oui' : 'Non' }}</span>
-      </div>
-      
-      <div class="detail-row">
-        <span class="detail-label">Demandé par:</span>
-        <span class="detail-value">{{ data.intervention.demandeur ? data.intervention.demandeur.nom + ' ' + data.intervention.demandeur.prenom : 'Inconnu' }}</span>
-      </div>
-      
-      <div class="detail-row">
-        <span class="detail-label">Assigné à:</span>
-        <span class="detail-value">{{ data.intervention.destinataire ? data.intervention.destinataire.nom + ' ' + data.intervention.destinataire.prenom : 'Non assigné' }}</span>
-      </div>
-      
-      <!-- Dates importantes du workflow -->
-      <div class="detail-row" *ngIf="data.intervention.dateAssignation">
-        <span class="detail-label">Date d'acceptation:</span>
-        <span class="detail-value">{{ data.intervention.dateAssignation | date:'medium' }}</span>
-      </div>
-      
-      <div class="detail-row" *ngIf="data.intervention.dateRealisation">
-        <span class="detail-label">Date de réalisation:</span>
-        <span class="detail-value">{{ data.intervention.dateRealisation | date:'medium' }}</span>
-      </div>
-      
-      <div class="detail-row" *ngIf="data.intervention.dateCloture">
-        <span class="detail-label">Date de clôture:</span>
-        <span class="detail-value">{{ data.intervention.dateCloture | date:'medium' }}</span>
-      </div>
-      
-      <div class="detail-row" *ngIf="data.intervention.raisonAnnulation">
-        <span class="detail-label">Raison d'annulation:</span>
-        <span class="detail-value">{{ data.intervention.raisonAnnulation }}</span>
+      <!-- Cancellation reason, if any -->
+      <div class="cancellation-section" *ngIf="data.intervention.raisonAnnulation">
+        <div class="cancellation-box">
+          <mat-icon class="cancellation-icon">cancel</mat-icon>
+          <div class="cancellation-content">
+            <h4>Raison d'annulation</h4>
+            <p>{{ data.intervention.raisonAnnulation }}</p>
+          </div>
+        </div>
       </div>
     </div>
   </mat-dialog-content>
   
-  <mat-dialog-actions align="end">
-    <!-- Boutons d'action selon le workflow -->
-    <div class="workflow-actions">
-      <!-- Superviseur: Quand statut est "A traiter" (ID: 1) -->
-      <button mat-raised-button color="primary" *ngIf="canAssign" (click)="editIntervention()"
-              matTooltip="Assigner cette intervention à un technicien">
+  <mat-dialog-actions class="dialog-actions">
+    <!-- Workflow action buttons -->
+    <div class="action-buttons">
+      <!-- Superviseur: Assigner -->
+      <button mat-flat-button color="primary" *ngIf="canAssign" (click)="editIntervention()"
+              class="action-button assign-button">
         <mat-icon>person_add</mat-icon>
-        Assigner un utilisateur
+        <span>Assigner</span>
       </button>
       
-      <!-- Superviseur: Quand statut est "Réalisée" (ID: 3) -->
-      <button mat-raised-button color="primary" *ngIf="canValidate" (click)="performAction('validate')"
-              matTooltip="Valider l'intervention comme terminée">
+      <!-- Superviseur: Valider -->
+      <button mat-flat-button color="primary" *ngIf="canValidate" (click)="performAction('validate')"
+              class="action-button validate-button">
         <mat-icon>verified</mat-icon>
-        Approuver
+        <span>Approuver</span>
       </button>
       
-      <!-- Superviseur: Bouton d'édition pour interventions non-terminées -->
-      <button mat-raised-button color="accent" *ngIf="canEdit" (click)="editIntervention()"
-              matTooltip="Modifier les détails de l'intervention">
+      <!-- Superviseur: Modifier -->
+      <button mat-stroked-button color="accent" *ngIf="canEdit" (click)="editIntervention()"
+              class="action-button edit-button">
         <mat-icon>edit</mat-icon>
-        Modifier
+        <span>Modifier</span>
       </button>
       
-      <!-- Utilisateur: Quand statut est "En cours" (ID: 2) et pas encore accepté -->
-      <button mat-raised-button color="primary" *ngIf="canAccept" (click)="performAction('accept')"
-              matTooltip="Accepter cette intervention">
+      <!-- Utilisateur: Accepter -->
+      <button mat-flat-button color="primary" *ngIf="canAccept" (click)="performAction('accept')"
+              class="action-button accept-button">
         <mat-icon>check_circle</mat-icon>
-        Accepter
+        <span>Accepter</span>
       </button>
       
-      <!-- Utilisateur: Quand intervention est acceptée mais pas encore terminée -->
-      <button mat-raised-button color="accent" *ngIf="hasAccepted && canComplete" (click)="performAction('complete')"
-              matTooltip="Marquer l'intervention comme réalisée">
+      <!-- Utilisateur: Réaliser -->
+      <button mat-flat-button color="accent" *ngIf="hasAccepted && canComplete" (click)="performAction('complete')"
+              class="action-button complete-button">
         <mat-icon>done_all</mat-icon>
-        Réaliser
+        <span>Réaliser</span>
       </button>
       
-      <!-- Bouton d'annulation pour Superviseur, Demandeur et Utilisateur -->
-      <button mat-raised-button color="warn" *ngIf="canCancel" (click)="performAction('cancel')"
-              matTooltip="Annuler cette intervention">
+      <!-- Annuler l'intervention -->
+      <button mat-stroked-button color="warn" *ngIf="canCancel" (click)="performAction('cancel')"
+              class="action-button cancel-button">
         <mat-icon>delete</mat-icon>
-        Supprimer
+        <span>Supprimer</span>
       </button>
       
-      <!-- Bouton Fermer -->
-      <button mat-button (click)="onClose()" matTooltip="Fermer la fenêtre">
-        <mat-icon>close</mat-icon>
-        Fermer
+      <!-- Fermer le dialogue -->
+      <button mat-button (click)="onClose()" class="close-dialog-button">
+        <mat-icon>arrow_back</mat-icon>
+        <span>Retour</span>
       </button>
     </div>
   </mat-dialog-actions>

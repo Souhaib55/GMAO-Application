@@ -2,15 +2,12 @@ import { Routes } from '@angular/router';
 import { DashboardComponent } from '../../dashboard/dashboard.component';
 import { AskaidatabaseComponent } from 'app/askaidatabase/askaidatabase.component';
 import { EquipmentComponent } from 'app/equipment/equipment.component';
-import { TriggerComponent } from 'app/trigger/trigger.component'; // Import new TriggerComponent
-import { EquipmentButtonComponent } from 'app/equipment-button/equipment-button.component';
 import { InterventionComponent } from 'app/intervention/intervention.component';
 import { PlanningComponent } from 'app/planning/planning.component';
 import { StockComponent } from 'app/stock/stock.component';
 import { RessourcesComponent } from 'app/ressources/ressources.component';
 import { ReportsComponent } from 'app/reports/reports.component';
 import { HelpcomponentComponent } from 'app/helpcomponent/helpcomponent.component';
-import { StockButtonComponent } from 'app/stock-button/stock-button.component';
 import { AuthGuard } from 'app/guards/auth.guard';
 
 export const AdminLayoutRoutes: Routes = [
@@ -23,14 +20,8 @@ export const AdminLayoutRoutes: Routes = [
         data: { roles: ['Superviseur'] } 
     },
     { 
-        path: 'equipment/crud', 
+        path: 'equipment', 
         component: EquipmentComponent, 
-        canActivate: [AuthGuard], 
-        data: { roles: ['Superviseur', 'Utilisateur'] } 
-    },
-    { 
-        path: 'equipment/trigger', 
-        component: TriggerComponent, 
         canActivate: [AuthGuard], 
         data: { roles: ['Superviseur', 'Utilisateur'] } 
     },
