@@ -4,13 +4,17 @@
   </div>
 
   <div class="form-content">
-    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+    <div *ngIf="errorMessage" class="alert alert-danger">
+      <mat-icon>error_outline</mat-icon> 
+      {{ errorMessage }}
+    </div>
     <form [formGroup]="interventionForm" (ngSubmit)="onSubmit()">
       <div class="row">
         <div class="col-md-6 input-group">
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Titre</mat-label>
             <input matInput formControlName="titre" required placeholder="Enter titre">
+            <mat-icon matSuffix>title</mat-icon>
             <mat-error *ngIf="interventionForm.get('titre')?.touched && interventionForm.get('titre')?.hasError('required')">
               Titre is required
             </mat-error>
@@ -35,6 +39,7 @@
             <div class="file-input-wrapper">
               <input type="file" id="fileInput" (change)="onFileSelected($event)" accept="application/pdf,text/plain,image/*">
               <label for="fileInput" class="btn btn-outline-primary">
+                <mat-icon>upload_file</mat-icon>
                 {{ isEditMode ? 'Change File' : 'Choose File' }}
               </label>
               <div *ngIf="selectedFile" class="selected-file">
@@ -46,7 +51,9 @@
         </div>
 
         <div class="col-md-6 input-group">
-          <mat-checkbox formControlName="machineArretee">Machine Arretee</mat-checkbox>
+          <mat-checkbox formControlName="machineArretee">
+            <span class="checkbox-label">Machine Arretee</span>
+          </mat-checkbox>
         </div>
 
         <div class="col-md-6 input-group">
@@ -58,6 +65,7 @@
                 {{ etat.libelle }}
               </mat-option>
             </mat-select>
+            <mat-icon matSuffix>info</mat-icon>
             <mat-error *ngIf="interventionForm.get('idEtat')?.touched && interventionForm.get('idEtat')?.hasError('required')">
               Etat is required
             </mat-error>
@@ -72,6 +80,7 @@
                 {{ type.libelle }}
               </mat-option>
             </mat-select>
+            <mat-icon matSuffix>category</mat-icon>
             <mat-error *ngIf="interventionForm.get('idTypeIntervention')?.touched && interventionForm.get('idTypeIntervention')?.hasError('required')">
               Type Intervention is required
             </mat-error>
@@ -86,6 +95,7 @@
                 {{ urgence.libelle }}
               </mat-option>
             </mat-select>
+            <mat-icon matSuffix>priority_high</mat-icon>
             <mat-error *ngIf="interventionForm.get('idUrgence')?.touched && interventionForm.get('idUrgence')?.hasError('required')">
               Urgence is required
             </mat-error>
@@ -100,6 +110,7 @@
                 {{ chaine.libelle }}
               </mat-option>
             </mat-select>
+            <mat-icon matSuffix>settings_applications</mat-icon>
             <mat-error *ngIf="interventionForm.get('idChaineProduction')?.touched && interventionForm.get('idChaineProduction')?.hasError('required')">
               Chaine Production is required
             </mat-error>
@@ -114,6 +125,7 @@
                 {{ panne.libelle }}
               </mat-option>
             </mat-select>
+            <mat-icon matSuffix>build</mat-icon>
             <mat-error *ngIf="interventionForm.get('idPanne')?.touched && interventionForm.get('idPanne')?.hasError('required')">
               Panne is required
             </mat-error>
@@ -130,6 +142,7 @@
                 {{ user.nom }} {{ user.prenom }}
               </mat-option>
             </mat-select>
+            <mat-icon matSuffix>person</mat-icon>
             <mat-error *ngIf="interventionForm.get('demandeursID')?.touched && interventionForm.get('demandeursID')?.hasError('required')">
               Demandeur is required
             </mat-error>
@@ -153,6 +166,7 @@
                 {{ user.nom }} {{ user.prenom }}
               </mat-option>
             </mat-select>
+            <mat-icon matSuffix>person</mat-icon>
             <mat-error *ngIf="interventionForm.get('demandeursID')?.touched && interventionForm.get('demandeursID')?.hasError('required')">
               Demandeur is required
             </mat-error>
@@ -167,6 +181,7 @@
                 {{ user.nom }} {{ user.prenom }}
               </mat-option>
             </mat-select>
+            <mat-icon matSuffix>person_add</mat-icon>
           </mat-form-field>
         </div>
 
@@ -189,6 +204,7 @@
         </button>
         <button type="submit" class="btn custom-btn primary-btn" [disabled]="interventionForm.invalid || isSubmitting">
           <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          <mat-icon>{{ isEditMode ? 'save' : 'add_circle' }}</mat-icon>
           {{ isEditMode ? 'Update' : 'Create' }}
         </button>
       </div>

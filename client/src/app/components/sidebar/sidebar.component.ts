@@ -19,15 +19,15 @@ export const ROUTES: RouteInfo[] = [
   { path: 'askaidatabase', title: 'GMAO Chat', icon: 'chat_bubble_rounded', class: '', roles: ['Superviseur'] },
   {
       title: 'Equipements',
-      icon: 'home_repair_service_rounded',
+      icon: 'construction_rounded',
       class: '',
       roles: ['Superviseur', 'Utilisateur'],
       children: [
-          { path: 'equipment/crud', title: 'Table Equipements', icon: 'table_rows_rounded', class: '', roles: ['Superviseur', 'Utilisateur'] },
+          { path: 'equipment/crud', title: 'Table Equipements', icon: 'construction_rounded', class: '', roles: ['Superviseur', 'Utilisateur'] },
           { path: 'equipment/trigger', title: 'Trigger', icon: 'notifications_active_rounded', class: '', roles: ['Superviseur', 'Utilisateur'] }
       ]
   },
-  { path: 'intervention', title: 'Interventions', icon: 'construction_rounded', class: '' }, // All roles
+  { path: 'intervention', title: 'Interventions', icon: 'manage_accounts_rounded', class: '' }, // All roles
   { path: 'planning', title: 'Planning', icon: 'content_paste', class: '', roles: ['Superviseur', 'Utilisateur'] },
   { path: 'stock', title: 'Stock/Achat', icon: 'shopping_cart_rounded', class: '', roles: ['Superviseur'] },
   { path: 'ressources', title: 'Ressources', icon: 'view_in_art_rounded', class: '', roles: ['Superviseur', 'Utilisateur'] },

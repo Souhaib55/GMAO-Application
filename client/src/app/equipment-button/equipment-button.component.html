@@ -1,7 +1,13 @@
 <div class="form-container">
-  <div class="form-box">
-    <h2 class="form-title">{{ isEditMode ? 'Edit Equipment' : 'Create New Equipment' }}</h2>
-    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+  <div class="header">
+    <h2>{{ isEditMode ? 'Edit Equipment' : 'Create New Equipment' }}</h2>
+  </div>
+
+  <div class="form-content">
+    <div *ngIf="errorMessage" class="alert alert-danger">
+      <mat-icon>error_outline</mat-icon> 
+      {{ errorMessage }}
+    </div>
     <form [formGroup]="equipmentForm" (ngSubmit)="onSubmit()">
       <div class="row">
         <!-- Code Equipement --> 
@@ -9,6 +15,7 @@
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Equipment Code</mat-label>
             <input matInput formControlName="codeEquipement" required placeholder="Enter equipment code">
+            <mat-icon matSuffix>qr_code</mat-icon>
             <mat-error *ngIf="equipmentForm.get('codeEquipement')?.touched && equipmentForm.get('codeEquipement')?.hasError('required')">
               Equipment Code is required
             </mat-error>
@@ -20,6 +27,7 @@
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Designation</mat-label>
             <input matInput formControlName="designation" required placeholder="Enter designation">
+            <mat-icon matSuffix>label</mat-icon>
             <mat-error *ngIf="equipmentForm.get('designation')?.touched && equipmentForm.get('designation')?.hasError('required')">
               Designation is required
             </mat-error>
@@ -27,10 +35,11 @@
         </div>
 
         <!-- Description -->
-        <div class="col-md-12 input-group">
+        <div class="col-md-12 input-group description-field">
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Description</mat-label>
             <textarea matInput formControlName="description" placeholder="Enter description"></textarea>
+            <mat-icon matSuffix>description</mat-icon>
           </mat-form-field>
         </div>
 
@@ -43,6 +52,7 @@
                 {{ famille.nomFamille }}
               </mat-option>
             </mat-select>
+            <mat-icon matSuffix>category</mat-icon>
             <mat-error *ngIf="equipmentForm.get('idFamille')?.touched && equipmentForm.get('idFamille')?.hasError('required')">
               Family is required
             </mat-error>
@@ -58,6 +68,7 @@
                 {{ criticite.nomCriticite }}
               </mat-option>
             </mat-select>
+            <mat-icon matSuffix>warning</mat-icon>
             <mat-error *ngIf="equipmentForm.get('idCriticite')?.touched && equipmentForm.get('idCriticite')?.hasError('required')">
               Criticite is required
             </mat-error>
@@ -73,6 +84,7 @@
                 {{ etat.nomEtat }}
               </mat-option>
             </mat-select>
+            <mat-icon matSuffix>info</mat-icon>
             <mat-error *ngIf="equipmentForm.get('idEtat')?.touched && equipmentForm.get('idEtat')?.hasError('required')">
               Etat is required
             </mat-error>
@@ -88,6 +100,7 @@
                 {{ modele.nomModele }} ({{ modele.marque?.nomMarque || 'N/A' }})
               </mat-option>
             </mat-select>
+            <mat-icon matSuffix>devices</mat-icon>
             <mat-error *ngIf="equipmentForm.get('idModele')?.touched && equipmentForm.get('idModele')?.hasError('required')">
               Modele is required
             </mat-error>
@@ -103,6 +116,7 @@
                 {{ groupe.nomGroupe }}
               </mat-option>
             </mat-select>
+            <mat-icon matSuffix>group_work</mat-icon>
             <mat-error *ngIf="equipmentForm.get('idGroupe')?.touched && equipmentForm.get('idGroupe')?.hasError('required')">
               Groupe is required
             </mat-error>
@@ -134,12 +148,15 @@
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Numero Serie</mat-label>
             <input matInput formControlName="numeroSerie" placeholder="Enter numero serie">
+            <mat-icon matSuffix>tag</mat-icon>
           </mat-form-field>
         </div>
 
         <!-- Sous Garantie -->
         <div class="col-md-6 input-group">
-          <mat-checkbox formControlName="sousGarantie">Sous Garantie</mat-checkbox>
+          <mat-checkbox formControlName="sousGarantie">
+            <span class="checkbox-label">Sous Garantie</span>
+          </mat-checkbox>
         </div>
 
         <!-- Date Achat -->
@@ -177,6 +194,7 @@
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Cout Achat</mat-label>
             <input matInput type="number" formControlName="coutAchat" placeholder="Enter cout achat">
+            <mat-icon matSuffix>euro</mat-icon>
           </mat-form-field>
         </div>
 
@@ -195,12 +213,15 @@
       </div>
 
       <!-- Buttons -->
-      <div class="button-group mt-3">
+      <div class="button-group">
+        <button type="button" class="btn custom-btn secondary-btn" (click)="goBack()" [disabled]="isSubmitting">
+          <mat-icon>close</mat-icon> Cancel
+        </button>
         <button type="submit" class="btn custom-btn primary-btn" [disabled]="equipmentForm.invalid || isSubmitting">
           <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          <mat-icon>{{ isEditMode ? 'save' : 'add_circle' }}</mat-icon>
           {{ isEditMode ? 'Update' : 'Create' }}
         </button>
-        <button type="button" class="btn custom-btn secondary-btn" (click)="goBack()" [disabled]="isSubmitting">Cancel</button>
       </div>
     </form>
   </div>
