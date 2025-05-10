@@ -93,6 +93,7 @@ namespace API.Controllers
 
             if (demande == null)
             {
+                _logger.LogWarning($"DemandeIntervention with ID {id} not found or inactive.");
                 return NotFound("DemandeIntervention not found or inactive.");
             }
 
@@ -102,15 +103,28 @@ namespace API.Controllers
         [HttpPost]
         public async Task<ActionResult<DemandeIntervention>> CreateDemandeIntervention([FromForm] InterventionDto demandeDto, [FromForm] IFormFile? file)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Invalid model state for CreateDemandeIntervention.");
+                return BadRequest(ModelState);
+            }
 
             var currentUser = await _userManager.GetUserAsync(User);
-            if (currentUser == null) return Unauthorized("User not found");
+            if (currentUser == null)
+            {
+                _logger.LogWarning("No authenticated user found.");
+                return Unauthorized("User not found");
+            }
             var roles = await _userManager.GetRolesAsync(currentUser);
             var role = roles.FirstOrDefault();
             var userEntity = await _context.Users.FirstOrDefaultAsync(u => u.AppUserId == currentUser.Id);
-            if (userEntity == null) return BadRequest("User entity not found");
+            if (userEntity == null)
+            {
+                _logger.LogWarning($"User entity not found for AppUserId {currentUser.Id}");
+                return BadRequest("User entity not found");
+            }
 
+            // Validation checks
             if (!await _context.Etats.AnyAsync(e => e.IDEtat == demandeDto.IDEtat && e.IsActif))
                 return BadRequest("Invalid or inactive Etat ID.");
             if (!await _context.TypeInterventions.AnyAsync(t => t.IDTypeIntervention == demandeDto.IDTypeIntervention && t.IsActif))
@@ -123,11 +137,12 @@ namespace API.Controllers
                 return BadRequest("Invalid or inactive Panne ID.");
             if (!await _context.Users.AnyAsync(u => u.ID == demandeDto.DemandeursID && u.IsActif))
                 return BadRequest("Invalid or inactive DemandeursID.");
-            if (demandeDto.DestinatairesID != null && !await _context.Users.AnyAsync(u => u.ID == demandeDto.DestinatairesID && u.IsActif))
+            if (demandeDto.DestinatairesID.HasValue && !await _context.Users.AnyAsync(u => u.ID == demandeDto.DestinatairesID && u.IsActif))
                 return BadRequest("Invalid or inactive DestinatairesID.");
 
             if (role == "Demandeur" && demandeDto.DemandeursID != userEntity.ID)
             {
+                _logger.LogWarning($"Demandeur {userEntity.ID} attempted to create intervention for another user {demandeDto.DemandeursID}");
                 return BadRequest("Demandeur can only create interventions for themselves.");
             }
 
@@ -140,7 +155,7 @@ namespace API.Controllers
             var demande = new DemandeIntervention
             {
                 Titre = demandeDto.Titre,
-                DateCreation = demandeDto.DateCreation,
+                DateCreation = demandeDto.DateCreation.ToUniversalTime(), // Ensure UTC
                 MachineArretee = demandeDto.MachineArretee,
                 IDEtat = demandeDto.IDEtat,
                 StatusId = statusId,
@@ -156,6 +171,7 @@ namespace API.Controllers
 
             if (file != null && file.Length > 0)
             {
+                _logger.LogInformation($"Processing file upload: {file.FileName}, Size: {file.Length}");
                 using (var memoryStream = new MemoryStream())
                 {
                     await file.CopyToAsync(memoryStream);
@@ -167,6 +183,7 @@ namespace API.Controllers
 
             _context.DemandeInterventions.Add(demande);
             await _context.SaveChangesAsync();
+            _logger.LogInformation($"Created intervention with ID {demande.IdDemandeIntervention}");
 
             var createdDemande = await _context.DemandeInterventions
                 .Include(d => d.Etat)
@@ -189,7 +206,7 @@ namespace API.Controllers
             IFormFile? file = null;
             IFormCollection? form = null;
 
-            // Handle JSON content type
+            // Handle content type
             if (Request.ContentType == "application/json")
             {
                 demandeDto = await Request.ReadFromJsonAsync<InterventionDto>();
@@ -199,12 +216,11 @@ namespace API.Controllers
                     return BadRequest("Invalid JSON data");
                 }
             }
-            // Handle multipart/form-data
             else if (Request.ContentType.StartsWith("multipart/form-data"))
             {
                 form = await Request.ReadFormAsync();
                 var demandeDtoJson = form["demandeDto"];
-                file = form.Files["file"];
+                file = form.Files.GetFile("file");
 
                 if (string.IsNullOrEmpty(demandeDtoJson))
                 {
@@ -212,11 +228,20 @@ namespace API.Controllers
                     return BadRequest("FormData must include 'demandeDto' field");
                 }
 
-                demandeDto = JsonSerializer.Deserialize<InterventionDto>(demandeDtoJson);
-                if (demandeDto == null)
+                _logger.LogInformation($"Received FormData - demandeDto: {demandeDtoJson}, File: {(file != null ? file.FileName : "None")}");
+                try
                 {
-                    _logger.LogWarning("Failed to deserialize demandeDto from FormData");
-                    return BadRequest("Invalid demandeDto data in FormData");
+                    demandeDto = JsonSerializer.Deserialize<InterventionDto>(demandeDtoJson);
+                    if (demandeDto == null)
+                    {
+                        _logger.LogWarning("Deserialization resulted in null InterventionDto");
+                        return BadRequest("Invalid demandeDto data in FormData");
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogError($"Deserialization error: {ex.Message}");
+                    return BadRequest("Failed to parse demandeDto JSON in FormData");
                 }
             }
             else
@@ -225,16 +250,15 @@ namespace API.Controllers
                 return BadRequest("Unsupported content type");
             }
 
-            // Validation logic
-            _logger.LogInformation($"Starting update - ID: {id}, Action: {demandeDto.WorkflowAction}");
+            _logger.LogInformation($"Processing update - ID: {id}, Action: {demandeDto.WorkflowAction}");
 
             if (!string.IsNullOrEmpty(demandeDto.WorkflowAction))
             {
-                demandeDto.IdDemandeIntervention = id; // Force ID from route for workflow actions
+                demandeDto.IdDemandeIntervention = id;
             }
             else if (id > 0 && demandeDto.IdDemandeIntervention > 0 && id != demandeDto.IdDemandeIntervention)
             {
-                _logger.LogWarning($"ID mismatch: {id} != {demandeDto.IdDemandeIntervention}");
+                _logger.LogWarning($"ID mismatch: Route ID {id} != DTO ID {demandeDto.IdDemandeIntervention}");
                 return BadRequest("ID mismatch.");
             }
 
@@ -266,7 +290,7 @@ namespace API.Controllers
                 return BadRequest("User entity not found");
             }
 
-            // Handle workflow actions
+            // Workflow actions
             if (!string.IsNullOrEmpty(demandeDto.WorkflowAction))
             {
                 _logger.LogInformation($"Processing workflow action: {demandeDto.WorkflowAction} by {role} (User ID: {userEntity.ID})");
@@ -276,7 +300,7 @@ namespace API.Controllers
                     return result;
                 }
             }
-            // Handle standard updates (Superviseur only)
+            // Standard updates (Superviseur only)
             else if (role == "Superviseur")
             {
                 if (demandeDto.DestinatairesID.HasValue && existingDemande.DestinatairesID != demandeDto.DestinatairesID)
@@ -289,7 +313,7 @@ namespace API.Controllers
                 }
 
                 if (demandeDto.Titre != null) existingDemande.Titre = demandeDto.Titre;
-                if (demandeDto.DateCreation != DateTime.MinValue) existingDemande.DateCreation = demandeDto.DateCreation;
+                if (demandeDto.DateCreation != DateTime.MinValue) existingDemande.DateCreation = demandeDto.DateCreation.ToUniversalTime();
                 if (demandeDto.MachineArretee != existingDemande.MachineArretee) existingDemande.MachineArretee = demandeDto.MachineArretee;
                 if (demandeDto.IDEtat > 0 && existingDemande.IDEtat != demandeDto.IDEtat)
                 {
@@ -322,9 +346,10 @@ namespace API.Controllers
                     existingDemande.DemandeursID = demandeDto.DemandeursID;
                 }
 
-                // Handle file upload or clear
+                // File handling
                 if (file != null && file.Length > 0)
                 {
+                    _logger.LogInformation($"Updating file: {file.FileName}, Size: {file.Length}");
                     using (var memoryStream = new MemoryStream())
                     {
                         await file.CopyToAsync(memoryStream);
@@ -335,6 +360,7 @@ namespace API.Controllers
                 }
                 else if (form != null && form["fileName"] == "")
                 {
+                    _logger.LogInformation("Clearing existing file data");
                     existingDemande.FileData = null;
                     existingDemande.FileName = null;
                     existingDemande.ContentType = null;
@@ -377,93 +403,51 @@ namespace API.Controllers
             {
                 case "accept":
                     if (userRole != "Technicien" && userRole != "Utilisateur")
-                    {
-                        _logger.LogWarning($"Accept action denied - Invalid role: {userRole}");
                         return BadRequest("Only Technicien or Utilisateur can accept an intervention");
-                    }
                     if (demande.DestinatairesID != userId)
-                    {
-                        _logger.LogWarning($"Accept action denied - User {userId} is not the assigned recipient: {demande.DestinatairesID}");
                         return BadRequest("You are not the assigned recipient of this intervention");
-                    }
                     if (demande.StatusId != 2)
-                    {
-                        _logger.LogWarning($"Accept action denied - Invalid status: {demande.StatusId}");
                         return BadRequest("This intervention is not awaiting acceptance");
-                    }
                     if (demande.DateAssignation != null)
-                    {
-                        _logger.LogWarning($"Accept action denied - Already accepted: {demande.DateAssignation}");
                         return BadRequest("This intervention has already been accepted");
-                    }
-                    demande.DateAssignation = DateTime.Now;
+                    demande.DateAssignation = DateTime.UtcNow;
                     _logger.LogInformation($"Intervention accepted by {userRole}: {userId}, timestamp: {demande.DateAssignation}");
                     return null;
 
                 case "complete":
                     if (userRole != "Technicien" && userRole != "Utilisateur")
-                    {
-                        _logger.LogWarning($"Complete action denied - Invalid role: {userRole}");
                         return BadRequest("Only Technicien or Utilisateur can complete an intervention");
-                    }
                     if (demande.DestinatairesID != userId)
-                    {
-                        _logger.LogWarning($"Complete action denied - User {userId} is not the assigned recipient: {demande.DestinatairesID}");
                         return BadRequest("You are not the assigned recipient of this intervention");
-                    }
                     if (demande.StatusId != 2)
-                    {
-                        _logger.LogWarning($"Complete action denied - Invalid status: {demande.StatusId}, expected 2");
                         return BadRequest("This intervention is not in 'En cours' state");
-                    }
                     if (demande.DateAssignation == null)
-                    {
-                        _logger.LogWarning($"Complete action denied - Not accepted yet");
                         return BadRequest("This intervention has not been accepted yet");
-                    }
                     demande.StatusId = 3; // "Réalisée"
-                    demande.DateRealisation = DateTime.Now;
+                    demande.DateRealisation = DateTime.UtcNow;
                     _logger.LogInformation($"Intervention completed by {userRole}: {userId}, timestamp: {demande.DateRealisation}");
                     return null;
 
                 case "validate":
                     if (userRole != "Superviseur")
-                    {
-                        _logger.LogWarning($"Validate action denied - Invalid role: {userRole}");
                         return BadRequest("Only a Superviseur can validate an intervention");
-                    }
                     if (demande.StatusId != 3)
-                    {
-                        _logger.LogWarning($"Validate action denied - Invalid status: {demande.StatusId}, expected 3");
                         return BadRequest("Only a completed intervention can be validated");
-                    }
                     demande.StatusId = 4; // "Clôturée"
-                    demande.DateCloture = DateTime.Now;
+                    demande.DateCloture = DateTime.UtcNow;
                     _logger.LogInformation($"Intervention validated by Superviseur: {userId}, timestamp: {demande.DateCloture}");
                     return null;
 
                 case "cancel":
                     bool canCancel = false;
                     if (userRole == "Superviseur")
-                    {
                         canCancel = (demande.StatusId != 4 && demande.StatusId != 5);
-                        _logger.LogInformation($"Superviseur cancel check: {canCancel}");
-                    }
                     else if (userRole == "Demandeur" && demande.DemandeursID == userId)
-                    {
                         canCancel = (demande.StatusId == 1 || (demande.StatusId == 2 && demande.DateAssignation == null));
-                        _logger.LogInformation($"Demandeur cancel check: {canCancel} (StatusId: {demande.StatusId}, DateAssignation: {demande.DateAssignation})");
-                    }
                     else if ((userRole == "Utilisateur" || userRole == "Technicien") && demande.DestinatairesID == userId)
-                    {
                         canCancel = (demande.StatusId == 2 && demande.DateAssignation == null);
-                        _logger.LogInformation($"Utilisateur/Technicien cancel check: {canCancel} (StatusId: {demande.StatusId}, DateAssignation: {demande.DateAssignation})");
-                    }
                     if (!canCancel)
-                    {
-                        _logger.LogWarning($"Cancel action denied - Role: {userRole}, StatusId: {demande.StatusId}, DateAssignation: {demande.DateAssignation}");
                         return BadRequest("You are not authorized to cancel this intervention at its current state");
-                    }
                     demande.StatusId = 5; // "Annulée"
                     demande.RaisonAnnulation = raisonAnnulation;
                     _logger.LogInformation($"Intervention cancelled by {userRole}: {userId}, reason: {raisonAnnulation}");

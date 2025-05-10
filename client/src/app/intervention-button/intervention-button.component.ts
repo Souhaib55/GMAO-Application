@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { forkJoin } from 'rxjs';
@@ -39,7 +39,7 @@ export class InterventionButtonComponent implements OnInit {
   errorMessage = '';
   selectedFile: File | null = null;
   existingFileName: string | null = null;
-  fileClearFlag = false; // Flag to indicate if the file should be cleared
+  fileClearFlag = false;
 
   constructor() {
     this.interventionForm = this.fb.group({
@@ -61,6 +61,7 @@ export class InterventionButtonComponent implements OnInit {
   ngOnInit(): void {
     this.currentUser = this.accountService.currentUser();
     if (!this.currentUser) {
+      console.warn('No current user found, redirecting to login');
       this.router.navigate(['/login']);
       return;
     }
@@ -72,6 +73,7 @@ export class InterventionButtonComponent implements OnInit {
       if (id) {
         if (this.currentUser.role !== 'Superviseur') {
           this.errorMessage = 'Only Superviseur can edit interventions.';
+          console.warn(this.errorMessage);
           this.router.navigate(['/admin/intervention']);
           return;
         }
@@ -97,6 +99,7 @@ export class InterventionButtonComponent implements OnInit {
         break;
       default:
         this.errorMessage = 'Unknown user role';
+        console.error(this.errorMessage);
         this.router.navigate(['/admin/dashboard']);
     }
   }
@@ -118,10 +121,18 @@ export class InterventionButtonComponent implements OnInit {
         this.panneList = res.pannes;
         this.demandeurList = res.users.filter(user => user.idRole === 2);
         this.destinataireList = res.users.filter(user => user.idRole === 3);
+        console.log('Reference data loaded successfully');
+        console.log('Etats:', this.etatList);
+        console.log('TypeInterventions:', this.typeInterventionList);
+        console.log('Urgences:', this.urgenceList);
+        console.log('ChaineProductions:', this.chaineProductionList);
+        console.log('Pannes:', this.panneList);
+        console.log('Demandeurs:', this.demandeurList);
+        console.log('Destinataires:', this.destinataireList);
       },
       error: (err) => {
         console.error('Failed to load reference data:', err);
-        this.errorMessage = 'Failed to load reference data.';
+        this.errorMessage = 'Failed to load reference data. Please try again later.';
       }
     });
   }
@@ -130,6 +141,8 @@ export class InterventionButtonComponent implements OnInit {
     this.http.get<any>(`${this.baseUrl}/${id}`, { withCredentials: true }).subscribe({
       next: (data) => {
         this.existingFileName = data.fileName;
+        console.log('Loaded intervention data:', data);
+        
         const formattedData = {
           idDemandeIntervention: data.idDemandeIntervention,
           titre: data.titre,
@@ -141,13 +154,15 @@ export class InterventionButtonComponent implements OnInit {
           idPanne: data.idPanne,
           demandeursID: data.demandeursID,
           destinatairesID: data.destinatairesID,
-          dateCreation: new Date(data.dateCreation),
+          dateCreation: new Date(data.dateCreation), // Local time for display
           isActif: data.isActif
         };
         this.interventionForm.patchValue(formattedData);
+        console.log(`Loaded intervention ID ${id}:`, formattedData);
       },
       error: (err) => {
-        this.errorMessage = err.error?.message || 'Failed to load intervention';
+        this.errorMessage = err.error?.message || 'Failed to load intervention data';
+        console.error(`Error loading intervention ID ${id}:`, err);
       }
     });
   }
@@ -156,7 +171,8 @@ export class InterventionButtonComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       this.selectedFile = input.files[0];
-      this.fileClearFlag = false; // Reset clear flag when a new file is selected
+      this.fileClearFlag = false;
+      console.log(`File selected: ${this.selectedFile.name}, size: ${this.selectedFile.size} bytes, type: ${this.selectedFile.type}`);
     } else {
       this.selectedFile = null;
     }
@@ -166,98 +182,273 @@ export class InterventionButtonComponent implements OnInit {
     this.selectedFile = null;
     this.existingFileName = null;
     this.fileClearFlag = true;
-    
-    // Reset the file input element if it exists
     const fileInput = document.getElementById('fileInput') as HTMLInputElement;
-    if (fileInput) {
-      fileInput.value = '';
-    }
+    if (fileInput) fileInput.value = '';
+    console.log('File cleared - Will remove existing file on save');
   }
 
   onSubmit(): void {
     if (this.interventionForm.invalid) {
       this.errorMessage = 'Please fill all required fields correctly.';
       this.interventionForm.markAllAsTouched();
+      console.warn('Form invalid:', this.interventionForm.errors, this.getInvalidControls());
       return;
     }
 
     this.isSubmitting = true;
     this.errorMessage = '';
 
-    const data = this.prepareDataForApi();
-
-    if (this.isEditMode) {
-      this.updateIntervention(data);
-    } else {
-      this.createIntervention(data);
+    try {
+      const data = this.prepareDataForApi();
+      
+      if (this.isEditMode) {
+        this.updateIntervention(data);
+      } else {
+        this.createIntervention(data);
+      }
+    } catch (err) {
+      console.error('Error preparing data:', err);
+      this.errorMessage = 'Error preparing form data. Please check your inputs.';
+      this.isSubmitting = false;
     }
   }
 
-  private prepareDataForApi(): any {
+  private getInvalidControls(): string[] {
+    const invalid = [];
+    const controls = this.interventionForm.controls;
+    for (const name in controls) {
+      if (controls[name].invalid) {
+        invalid.push(`${name}: ${JSON.stringify(controls[name].errors)}`);
+      }
+    }
+    return invalid;
+  }
+
+  private prepareDataForApi(): FormData {
+    // Get raw values including disabled fields
     const formValue = this.interventionForm.getRawValue();
+    const dateCreation = new Date(formValue.dateCreation);
+
+    // Create DTO object with all necessary fields - NOTE: Property names must match exactly what the backend expects
+    // The backend is expecting PascalCase property names (IDEtat, IDTypeIntervention, etc.)
     const dto = {
-      idDemandeIntervention: formValue.idDemandeIntervention,
-      titre: formValue.titre.trim(),
-      machineArretee: formValue.machineArretee,
-      idEtat: formValue.idEtat,
-      idTypeIntervention: formValue.idTypeIntervention,
-      idUrgence: formValue.idUrgence,
-      idChaineProduction: formValue.idChaineProduction,
-      idPanne: formValue.idPanne,
-      demandeursID: formValue.demandeursID,
-      destinatairesID: formValue.destinatairesID || null,
-      dateCreation: new Date(formValue.dateCreation).toISOString(),
-      isActif: formValue.isActif,
-      workflowAction: null, // Will be set separately if needed
-      raisonAnnulation: null // Will be set separately if needed
+      IdDemandeIntervention: parseInt(formValue.idDemandeIntervention) || 0,
+      Titre: formValue.titre?.trim() || '',
+      MachineArretee: !!formValue.machineArretee, // Ensure boolean
+      IDEtat: parseInt(formValue.idEtat) || 1, // This field must be IDEtat, not idEtat
+      IDTypeIntervention: parseInt(formValue.idTypeIntervention) || 0,
+      IDUrgence: parseInt(formValue.idUrgence) || 0,
+      IDChaineProduction: parseInt(formValue.idChaineProduction) || 0,
+      IDPanne: parseInt(formValue.idPanne) || 0,
+      DemandeursID: parseInt(formValue.demandeursID) || 0,
+      DestinatairesID: formValue.destinatairesID ? parseInt(formValue.destinatairesID) : null,
+      DateCreation: dateCreation.toISOString(), // Backend expects UTC
+      IsActif: true,
+      WorkflowAction: null,
+      RaisonAnnulation: null
     };
 
-    if (this.isEditMode && (this.selectedFile || this.fileClearFlag)) {
-      const formData = new FormData();
-      formData.append('demandeDto', JSON.stringify(dto));
-      if (this.selectedFile) {
-        formData.append('file', this.selectedFile, this.selectedFile.name);
-      }
-      if (this.fileClearFlag) {
-        formData.append('fileName', '');
-      }
-      return formData;
+    console.log('Prepared DTO object:', dto);
+
+    // Create FormData object
+    const formData = new FormData();
+    formData.append('demandeDto', JSON.stringify(dto));
+    
+    // Handle file upload
+    if (this.selectedFile) {
+      formData.append('file', this.selectedFile, this.selectedFile.name);
+      console.log(`Appending file: ${this.selectedFile.name}, size: ${this.selectedFile.size}`);
+    } 
+    
+    // Clear existing file in edit mode if flag is set
+    if (this.isEditMode && this.fileClearFlag) {
+      formData.append('fileName', '');
+      console.log('Appending empty fileName to clear existing file');
     }
-    return dto;
+
+    return formData;
   }
 
-  private createIntervention(data: FormData): void {
-    this.http.post<any>(this.baseUrl, data, { withCredentials: true }).subscribe({
-      next: () => {
+    // Only update the createIntervention method - the fix for the property names has already been applied
+
+    private createIntervention(data: FormData): void {
+    console.log('Sending POST request to create intervention');
+    
+    // Log Form Data content (for debugging)
+    this.logFormDataContent(data);
+    
+    // Extract the DTO from FormData for debugging
+    const dtoJson = data.get('demandeDto') as string;
+    let dto = null;
+    
+    if (dtoJson) {
+      try {
+        dto = JSON.parse(dtoJson);
+        console.log('Sending data with IDEtat =', dto.IDEtat);
+        
+        // Create a NEW FormData with individual fields instead of a JSON string
+        const properFormData = new FormData();
+        
+        // Add each field individually to the form data
+        Object.entries(dto).forEach(([key, value]) => {
+          if (value !== null && value !== undefined) {
+            properFormData.append(key, String(value));
+          }
+        });
+        
+        // Handle file upload - reattach the file if present
+        if (this.selectedFile) {
+          properFormData.append('file', this.selectedFile, this.selectedFile.name);
+        }
+        
+        // Replace the original formdata with our new properly formatted one
+        data = properFormData;
+        
+        // Log the newly formatted FormData
+        console.log('Reformatted FormData with individual fields:');
+        this.logFormDataContent(data);
+      } catch (e) {
+        console.error('Error parsing DTO JSON:', e);
+      }
+    }
+    
+    // Do not set Content-Type header as the browser will set it correctly with boundary for multipart/form-data
+    const headers = new HttpHeaders({
+      'Accept': 'application/json'
+    });
+    
+    this.http.post<any>(this.baseUrl, data, { 
+      headers: headers,
+      withCredentials: true,
+      observe: 'response'
+    }).subscribe({
+      next: (response) => {
+        console.log('Intervention created successfully. Status:', response.status);
+        console.log('Response headers:', response.headers);
+        console.log('Response body:', response.body);
+        
         this.router.navigate(['/admin/intervention'], {
           state: { message: 'Intervention created successfully!', type: 'success' }
         });
       },
       error: (err) => {
-        this.errorMessage = err.error?.message || 'Failed to create intervention';
+        console.error('Create intervention error. Status:', err.status);
+        console.error('Error details:', err);
+        console.error('Error response:', err.error);
+        
+        // Add more detailed error logging
+        if (err.error && typeof err.error === 'object') {
+          console.error('Error object keys:', Object.keys(err.error));
+          
+          // If the server returned validation errors
+          if (err.error.errors) {
+            console.error('Validation errors:', err.error.errors);
+          }
+        }
+        
+        let errorMsg = 'Failed to create intervention. ';
+        if (err.error && typeof err.error === 'string') {
+          errorMsg += err.error;
+        } else if (err.error?.message) {
+          errorMsg += err.error.message;
+        } else if (err.status === 400) {
+          errorMsg += 'Please check your input data.';
+        }
+        
+        this.errorMessage = errorMsg;
         this.isSubmitting = false;
       },
       complete: () => this.isSubmitting = false
     });
   }
 
-  private updateIntervention(data: any): void {
+  private updateIntervention(data: FormData): void {
     const id = this.interventionForm.get('idDemandeIntervention')?.value;
-    const options = { withCredentials: true };
-    const headers = data instanceof FormData ? {} : { 'Content-Type': 'application/json' };
-
-    this.http.put(`${this.baseUrl}/${id}`, data, { ...options, headers }).subscribe({
-      next: () => {
+    console.log(`Sending PUT request to update intervention ID ${id}`);
+    
+    // Log Form Data contents (for debugging)
+    this.logFormDataContent(data);
+    
+    this.http.put<any>(`${this.baseUrl}/${id}`, data, { 
+      withCredentials: true,
+      observe: 'response' // Get the full response including headers
+    }).subscribe({
+      next: (response) => {
+        console.log('Intervention updated successfully. Status:', response.status);
+        console.log('Response headers:', response.headers);
+        console.log('Response body:', response.body);
+        
         this.router.navigate(['/admin/intervention'], {
           state: { message: 'Intervention updated successfully!', type: 'success' }
         });
       },
       error: (err) => {
-        this.errorMessage = err.error?.message || 'Failed to update intervention';
+        console.error('Update intervention error. Status:', err.status);
+        console.error('Error details:', err);
+        console.error('Error response:', err.error);
+        
+        let errorMsg = 'Failed to update intervention. ';
+        if (err.error && typeof err.error === 'string') {
+          errorMsg += err.error;
+        } else if (err.error?.message) {
+          errorMsg += err.error.message;
+        } else if (err.status === 400) {
+          errorMsg += 'Please check your input data.';
+        }
+        
+        this.errorMessage = errorMsg;
         this.isSubmitting = false;
       },
       complete: () => this.isSubmitting = false
     });
+  }
+
+  // Helper method to log FormData content for debugging
+  private logFormDataContent(formData: FormData): void {
+    console.log('--- FormData Content ---');
+    formData.forEach((value, key) => {
+      if (key === 'demandeDto') {
+        console.log(`${key}: ${value}`);
+        try {
+          // Pretty print the JSON for better readability in console
+          const dto = JSON.parse(value as string);
+          console.log('Parsed demandeDto:', dto);
+          
+          // Validate required fields
+          this.validateDto(dto);
+        } catch (e) {
+          console.error('Error parsing demandeDto:', e);
+        }
+      } else if (key === 'file' && value instanceof File) {
+        console.log(`${key}: ${value.name} (${value.size} bytes, ${value.type})`);
+      } else {
+        console.log(`${key}: ${value}`);
+      }
+    });
+    console.log('----------------------');
+  }
+
+  // Validate DTO to catch common issues
+  private validateDto(dto: any): void {
+    const requiredNumericFields = ['IDTypeIntervention', 'IDUrgence', 'IDChaineProduction', 'IDPanne', 'DemandeursID'];
+    const issues = [];
+
+    for (const field of requiredNumericFields) {
+      const value = dto[field];
+      if (value === null || value === undefined || value === 0) {
+        issues.push(`Missing or invalid ${field}: ${value}`);
+      }
+    }
+
+    if (!dto.Titre || dto.Titre.trim() === '') {
+      issues.push('Missing Titre');
+    }
+
+    if (issues.length > 0) {
+      console.warn('Potential issues with DTO:', issues);
+    } else {
+      console.log('DTO validation passed');
+    }
   }
 
   goBack(): void {
