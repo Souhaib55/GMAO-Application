@@ -23,30 +23,20 @@
         
         <div class="collapse navbar-collapse" id="navigation">
             <div class="navbar-right-section">
-                <!-- User profile section -->
+                <!-- User profile section - removed dropdown functionality -->
                 <ng-container *ngIf="accountService.currentUser()">
-                    <button mat-button class="user-dropdown-button" [matMenuTriggerFor]="menu">
-                        <div class="user-profile">
-                            <div class="avatar-circle">
-                                <!-- Display user initials -->
-                                <span class="initials">{{getUserInitials()}}</span>
-                            </div>
-                            <div class="user-info">
-                                <span class="user-email">{{accountService.currentUser()?.email}}</span>
-                                <span class="user-role">{{accountService.currentUser()?.role}}</span>
-                            </div>
+                    <div class="user-profile">
+                        <div class="avatar-circle">
+                            <!-- Display user initials -->
+                            <span class="initials">{{getUserInitials()}}</span>
                         </div>
-                    </button>
+                        <div class="user-info">
+                            <span class="user-email">{{accountService.currentUser()?.email}}</span>
+                            <span class="user-role">{{accountService.currentUser()?.role}}</span>
+                        </div>
+                    </div>
                 </ng-container>
             </div>
         </div>
     </div>
 </nav>
-
-<!-- Fixed menu reference -->
-<mat-menu #menu="matMenu" class="custom-menu" yPosition="below" [overlapTrigger]="false">
-    <button mat-menu-item (click)="logout()">
-        <mat-icon>logout</mat-icon>
-        <span>Logout</span>
-    </button>
-</mat-menu>

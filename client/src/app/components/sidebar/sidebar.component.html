@@ -43,4 +43,12 @@
       </li>
     </ul>
   </div>
+
+  <!-- Logout section at bottom of sidebar -->
+  <div class="sidebar-footer" *ngIf="accountService.currentUser()">
+    <button class="logout-button" (click)="logout()">
+      <i class="material-icons">logout</i>
+      <span>Logout</span>
+    </button>
+  </div>
 </div>

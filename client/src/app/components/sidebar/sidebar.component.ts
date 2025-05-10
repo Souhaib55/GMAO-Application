@@ -48,7 +48,7 @@ export class SidebarComponent implements OnInit {
 
   constructor(
     private router: Router,
-    private accountService: AccountService
+    public accountService: AccountService  // Changed to public for template access
   ) { }
 
   ngOnInit() {
@@ -135,5 +135,17 @@ export class SidebarComponent implements OnInit {
       return false;
     }
     return true;
+  }
+  
+  // Add logout method
+  logout(): void {
+    // Call the logout method and then navigate to login page
+    this.accountService.logout();
+    this.router.navigateByUrl('/login');
+  }
+
+  // Get user's email for display in the logout section
+  getUserEmail(): string {
+    return this.currentUser?.email || '';
   }
 }
