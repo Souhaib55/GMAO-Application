@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { DashboardComponent } from '../../dashboard/dashboard.component';
-import { AskaidatabaseComponent } from 'app/askaidatabase/askaidatabase.component';
+import { AskAiDatabaseComponent } from 'app/askaidatabase/askaidatabase.component';
 import { EquipmentComponent } from 'app/equipment/equipment.component';
 import { InterventionComponent } from 'app/intervention/intervention.component';
 import { PlanningComponent } from 'app/planning/planning.component';
@@ -15,7 +15,7 @@ export const AdminLayoutRoutes: Routes = [
     { path: 'dashboard', component: DashboardComponent }, // Accessible to all
     { 
         path: 'askaidatabase', 
-        component: AskaidatabaseComponent, 
+        component: AskAiDatabaseComponent, 
         canActivate: [AuthGuard], 
         data: { roles: ['Superviseur'] } 
     },

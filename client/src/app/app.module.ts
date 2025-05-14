@@ -6,7 +6,7 @@ import { ComponentsModule } from './components/components.module';
 import { AppComponent } from './app.component';
 import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.component';
 import { MatIconModule } from '@angular/material/icon';
-import { AskaidatabaseComponent } from './askaidatabase/askaidatabase.component';
+import { AskAiDatabaseComponent } from './askaidatabase/askaidatabase.component';
 import { EquipmentComponent } from './equipment/equipment.component';
 import { InterventionComponent, DeleteConfirmationDialogComponent } from './intervention/intervention.component';
 import { PlanningComponent } from './planning/planning.component';
@@ -43,6 +43,7 @@ import { TriggerComponent } from './trigger/trigger.component';
 import { InitService } from './core/services/init.service';
 import { firstValueFrom } from 'rxjs';
 import { InterventionFormDialogComponent } from './intervention-form-dialog/intervention-form-dialog.component'; // Import firstValueFrom
+import { MatToolbarModule } from '@angular/material/toolbar';
 
 @NgModule({
   imports: [
@@ -72,11 +73,21 @@ import { InterventionFormDialogComponent } from './intervention-form-dialog/inte
     MatMenuModule,
     MatDividerModule,
     MatDialogModule,
+    
+
+    MatButtonModule,
+    MatCardModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatProgressSpinnerModule,
+    MatToolbarModule,
   ],
   declarations: [
     AppComponent,
     AdminLayoutComponent,
-    AskaidatabaseComponent,
+    AskAiDatabaseComponent,
     EquipmentComponent,
     InterventionComponent,
     DeleteConfirmationDialogComponent,
