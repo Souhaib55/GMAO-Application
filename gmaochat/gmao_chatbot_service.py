@@ -371,54 +371,77 @@ async def query_chatbot(request: ChatRequest = Body(...)):
         max_retries = 3
         visualizations = []
         retry_count = 0
+        sql_executed = False
+        sql_query_used = None
         
         while retry_count < max_retries:
             response_text = query_openrouter(messages)
             has_sql, sql_query, clean_response = extract_sql_query(response_text)
             
             if has_sql:
+                logger.info(f"Executing SQL query: {sql_query}")
+                sql_query_used = sql_query
                 sql_result = execute_sql_query(sql_query)
+                sql_executed = True
+                
                 if not sql_result.startswith("Erreur"):
                     follow_up_messages = messages + [{"role": "assistant", "content": clean_response}]
-                    data_interpretation = f"Résultat: \n{sql_result}\n\nInterprète ce résultat pour répondre à ma question sans mentionner la requête."
-                    result_data = [json.loads(row.replace("'", "\"")) for row in sql_result.split("\n") if row and not row.startswith("...")]
+                    data_interpretation = f"Résultat de ta requête SQL: \n{sql_result}\n\nInterprète ce résultat pour répondre à ma question de manière complète. Inclus les données spécifiques du résultat dans ta réponse. Ne dis pas que tu ne peux pas exécuter de SQL, car tu viens de le faire."
                     
-                    if result_data and len(result_data) > 1:
-                        chart_type = "bar"
-                        if "tendance" in request.query.lower():
-                            chart_type = "line"
-                        elif "répartition" in request.query.lower():
-                            chart_type = "pie"
+                    # Try to parse the SQL result into structured data for visualization
+                    try:
+                        result_data = []
+                        for row in sql_result.split("\n"):
+                            if row and not row.startswith("..."):
+                                # Convert single quotes to double quotes for JSON parsing
+                                json_str = row.replace("'", "\"")
+                                # Handle potential JSON parsing issues
+                                try:
+                                    result_data.append(json.loads(json_str))
+                                except json.JSONDecodeError:
+                                    logger.warning(f"Could not parse row as JSON: {row}")
                         
-                        x_column = next(iter(result_data[0].keys()))
-                        y_column = list(result_data[0].keys())[1] if len(result_data[0].keys()) > 1 else None
-                        
-                        if y_column:
-                            viz_title = f"Visualisation pour: {request.query[:30]}..."
-                            img_b64 = visualization_generator.generate_chart(
-                                data=result_data, chart_type=chart_type, title=viz_title, x_column=x_column, y_column=y_column
-                            )
-                            if img_b64:
-                                visualizations.append({"type": "image", "format": "base64", "data": img_b64, "title": viz_title})
-                                data_interpretation += f" Un graphique {chart_type} est disponible."
+                        # Generate visualization if we have valid data
+                        if result_data and len(result_data) > 1:
+                            chart_type = "bar"
+                            if "tendance" in request.query.lower() or "évolution" in request.query.lower():
+                                chart_type = "line"
+                            elif "répartition" in request.query.lower() or "proportion" in request.query.lower():
+                                chart_type = "pie"
+                            
+                            x_column = next(iter(result_data[0].keys()))
+                            y_column = list(result_data[0].keys())[1] if len(result_data[0].keys()) > 1 else None
+                            
+                            if y_column:
+                                viz_title = f"Visualisation pour: {request.query[:30]}..."
+                                img_b64 = visualization_generator.generate_chart(
+                                    data=result_data, chart_type=chart_type, title=viz_title, x_column=x_column, y_column=y_column
+                                )
+                                if img_b64:
+                                    visualizations.append({"type": "image", "format": "base64", "data": img_b64, "title": viz_title})
+                                    data_interpretation += f" Un graphique {chart_type} est disponible."
+                    except Exception as viz_error:
+                        logger.error(f"Error generating visualization: {viz_error}")
                     
                     follow_up_messages.append({"role": "user", "content": data_interpretation})
                     response_text = query_openrouter(follow_up_messages)
                     break
                 else:
-                    messages.append({"role": "user", "content": f"La requête a échoué: {sql_result}. Corrige-la."})
+                    error_message = f"La requête SQL a échoué: {sql_result}. Corrige-la et essaie à nouveau avec une requête valide."
+                    messages.append({"role": "user", "content": error_message})
                     retry_count += 1
             else:
                 break
         
         if retry_count == max_retries:
-            response_text = "Désolé, échec après plusieurs tentatives. Reformulez votre question."
+            response_text = "Désolé, échec après plusieurs tentatives. J'ai essayé d'exécuter une requête SQL mais elle a échoué. Veuillez reformuler votre question."
         
         suggestions = ["Quels équipements sont critiques ?", "Interventions en cours ?", "Stock faible ?"]
         metadata = {
             "db_available": DB_AVAILABLE,
             "model_used": OPENROUTER_MODEL,
-            "sql_executed": has_sql if 'has_sql' in locals() else False,
+            "sql_executed": sql_executed,
+            "sql_query": sql_query_used if sql_executed else None,
             "total_time_ms": round((time.time() - start_time) * 1000)
         }
         
@@ -429,7 +452,7 @@ async def query_chatbot(request: ChatRequest = Body(...)):
             suggestions=suggestions
         )
     except Exception as e:
-        logger.error(f"Error processing query: {e}")
+        logger.error(f"Error processing query: {e}", exc_info=True)
         return EnhancedChatResponse(
             response=f"Erreur : {str(e)}",
             metadata={"error": str(e)}
