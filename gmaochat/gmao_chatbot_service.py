@@ -27,6 +27,7 @@ from langchain.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
+from datetime import datetime  # Added for current date
 
 # Configure logging
 logging.basicConfig(
@@ -119,22 +120,13 @@ class EnhancedChatResponse(BaseModel):
     visualizations: Optional[List[Dict[str, str]]] = None
     suggestions: Optional[List[str]] = None
 
-# System prompt
-SYSTEM_PROMPT = """Tu es un assistant IA spécialisé dans la GMAO (Gestion de Maintenance Assistée par Ordinateur). Tu as accès à des enregistrements spécifiques de la base de données GMAO, fournis dans le contexte. Utilise ces informations pour répondre précisément aux questions des utilisateurs. Si les données du contexte suffisent, base-toi dessus. Sinon, pour des données agrégées ou complexes, demande une requête SQL avec [EXECUTE_SQL: ta requête].
+# System prompt with dynamic current date
+def get_system_prompt():
+    current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S %Z")
+    return f"""Tu es un assistant IA spécialisé dans la GMAO (Gestion de Maintenance Assistée par Ordinateur). La date et l'heure actuelles sont {current_date}. Tu as accès à des enregistrements spécifiques de la base de données GMAO, fournis dans le contexte. Utilise ces informations pour répondre précisément aux questions des utilisateurs. Si les données du contexte suffisent, base-toi dessus. Sinon, pour des données agrégées ou complexes, tu peux proposer une requête SQL à exécuter. Lorsqu'un résultat SQL est fourni, base ta réponse EXCLUSIVEMENT sur ce résultat.
 
-- Réponds en langage naturel, sans mentionner SQL dans les réponses.
+- Réponds en langage naturel, sans mentionner les requêtes SQL dans les réponses.
 - Pour les questions ambiguës, demande des précisions.
-- Filtres obligatoires : 
-  - Equipments: WHERE IsDeleted = 0
-  - DemandeInterventions: WHERE IsActif = 1
-  - Pieces: WHERE IsActif = 1
-  - Users: WHERE IsActif = 1
-
-Exemples :
-- "Quels sont les équipements critiques ?"  
-  Réponse basée sur contexte ou [EXECUTE_SQL: SELECT TOP 100 e.CodeEquipement, e.Designation FROM Equipments e INNER JOIN EquipmentCriticites ec ON e.IdCriticite = ec.IdCriticite WHERE ec.NiveauCriticite = 'Critique' AND e.IsDeleted = 0]
-- "Combien d'interventions en cours ?"  
-  [EXECUTE_SQL: SELECT COUNT(*) AS EnCours FROM DemandeInterventions WHERE StatusId = 2 AND IsActif = 1]
 """
 
 # Function to fetch GMAO data
@@ -359,8 +351,9 @@ async def query_chatbot(request: ChatRequest = Body(...)):
                 metadata={"error": "OpenRouter client not available"}
             )
         
-        # Format messages for OpenRouter
-        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        # Format messages for OpenRouter with dynamic system prompt
+        system_prompt = get_system_prompt()
+        messages = [{"role": "system", "content": system_prompt}]
         if relevant_docs:
             messages.append({"role": "system", "content": context_enrichment})
         if request.conversation_history:
@@ -373,6 +366,7 @@ async def query_chatbot(request: ChatRequest = Body(...)):
         retry_count = 0
         sql_executed = False
         sql_query_used = None
+        sql_result = None  # To store the result for metadata
         
         while retry_count < max_retries:
             response_text = query_openrouter(messages)
@@ -382,26 +376,24 @@ async def query_chatbot(request: ChatRequest = Body(...)):
                 logger.info(f"Executing SQL query: {sql_query}")
                 sql_query_used = sql_query
                 sql_result = execute_sql_query(sql_query)
+                logger.info(f"SQL result: {sql_result}")  # Log the result for debugging
                 sql_executed = True
                 
                 if not sql_result.startswith("Erreur"):
                     follow_up_messages = messages + [{"role": "assistant", "content": clean_response}]
-                    data_interpretation = f"Résultat de ta requête SQL: \n{sql_result}\n\nInterprète ce résultat pour répondre à ma question de manière complète. Inclus les données spécifiques du résultat dans ta réponse. Ne dis pas que tu ne peux pas exécuter de SQL, car tu viens de le faire."
+                    data_interpretation = f"Résultat de ta requête SQL: \n{sql_result}\n\nUtilise UNIQUEMENT ces données pour répondre à la question de l'utilisateur. Ne génère pas de données supplémentaires. Si les données sont insuffisantes, dis-le clairement."
                     
                     # Try to parse the SQL result into structured data for visualization
                     try:
                         result_data = []
                         for row in sql_result.split("\n"):
                             if row and not row.startswith("..."):
-                                # Convert single quotes to double quotes for JSON parsing
                                 json_str = row.replace("'", "\"")
-                                # Handle potential JSON parsing issues
                                 try:
                                     result_data.append(json.loads(json_str))
                                 except json.JSONDecodeError:
                                     logger.warning(f"Could not parse row as JSON: {row}")
                         
-                        # Generate visualization if we have valid data
                         if result_data and len(result_data) > 1:
                             chart_type = "bar"
                             if "tendance" in request.query.lower() or "évolution" in request.query.lower():
@@ -442,6 +434,7 @@ async def query_chatbot(request: ChatRequest = Body(...)):
             "model_used": OPENROUTER_MODEL,
             "sql_executed": sql_executed,
             "sql_query": sql_query_used if sql_executed else None,
+            "sql_result": sql_result if sql_executed else None,  # Include raw result for verification
             "total_time_ms": round((time.time() - start_time) * 1000)
         }
         

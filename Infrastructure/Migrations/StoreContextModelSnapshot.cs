@@ -217,8 +217,14 @@ namespace Infrastructure.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETDATE()");
 
+                    b.Property<DateTime?>("DatePriseEnCharge")
+                        .HasColumnType("datetime");
+
                     b.Property<DateTime?>("DateRealisation")
                         .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateResolution")
+                        .HasColumnType("datetime");
 
                     b.Property<int>("DemandeursID")
                         .HasColumnType("int");

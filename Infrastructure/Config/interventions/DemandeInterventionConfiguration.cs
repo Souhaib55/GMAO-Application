@@ -18,8 +18,11 @@ namespace Infrastructure.Config
             builder.Property(d => d.IsActif).HasDefaultValue(true);
             builder.Property(d => d.DestinatairesID).IsRequired(false); // Make it optional
             
+            builder.Property(d => d.DatePriseEnCharge).HasColumnType("datetime");
+            builder.Property(d => d.DateResolution).HasColumnType("datetime");
+            
             // Add the new Status relationship
-            builder.Property(d => d.StatusId).IsRequired().HasDefaultValue(1); // Default to "A traiter"
+                     builder.Property(d => d.StatusId).IsRequired().HasDefaultValue(1); // Default to "A traiter"
             builder.HasOne(d => d.Status)
                    .WithMany(s => s.DemandeInterventions)
                    .HasForeignKey(d => d.StatusId)

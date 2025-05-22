@@ -64,7 +64,9 @@ namespace API.Controllers
                     d.DateRealisation,
                     d.DateCloture,
                     d.RaisonAnnulation,
-                    d.IsActif
+                    d.IsActif,
+                    d.DatePriseEnCharge,
+                    d.DateResolution
                 })
                 .ToListAsync();
 
@@ -155,7 +157,7 @@ namespace API.Controllers
             var demande = new DemandeIntervention
             {
                 Titre = demandeDto.Titre,
-                DateCreation = demandeDto.DateCreation.ToUniversalTime(), // Ensure UTC
+                DateCreation = demandeDto.DateCreation.ToUniversalTime(),
                 MachineArretee = demandeDto.MachineArretee,
                 IDEtat = demandeDto.IDEtat,
                 StatusId = statusId,
@@ -168,6 +170,11 @@ namespace API.Controllers
                 DateAssignation = null,
                 IsActif = true
             };
+
+            if (statusId == 2)
+            {
+                demande.DatePriseEnCharge = DateTime.UtcNow;
+            }
 
             if (file != null && file.Length > 0)
             {
@@ -206,7 +213,6 @@ namespace API.Controllers
             IFormFile? file = null;
             IFormCollection? form = null;
 
-            // Handle content type
             if (Request.ContentType == "application/json")
             {
                 demandeDto = await Request.ReadFromJsonAsync<InterventionDto>();
@@ -290,7 +296,6 @@ namespace API.Controllers
                 return BadRequest("User entity not found");
             }
 
-            // Workflow actions
             if (!string.IsNullOrEmpty(demandeDto.WorkflowAction))
             {
                 _logger.LogInformation($"Processing workflow action: {demandeDto.WorkflowAction} by {role} (User ID: {userEntity.ID})");
@@ -300,7 +305,6 @@ namespace API.Controllers
                     return result;
                 }
             }
-            // Standard updates (Superviseur only)
             else if (role == "Superviseur")
             {
                 if (demandeDto.DestinatairesID.HasValue && existingDemande.DestinatairesID != demandeDto.DestinatairesID)
@@ -309,7 +313,10 @@ namespace API.Controllers
                         return BadRequest("Invalid or inactive DestinatairesID.");
                     existingDemande.DestinatairesID = demandeDto.DestinatairesID;
                     if (existingDemande.StatusId == 1)
+                    {
                         existingDemande.StatusId = 2; // "En cours"
+                        existingDemande.DatePriseEnCharge = DateTime.UtcNow;
+                    }
                 }
 
                 if (demandeDto.Titre != null) existingDemande.Titre = demandeDto.Titre;
@@ -346,7 +353,6 @@ namespace API.Controllers
                     existingDemande.DemandeursID = demandeDto.DemandeursID;
                 }
 
-                // File handling
                 if (file != null && file.Length > 0)
                 {
                     _logger.LogInformation($"Updating file: {file.FileName}, Size: {file.Length}");
@@ -425,6 +431,7 @@ namespace API.Controllers
                         return BadRequest("This intervention has not been accepted yet");
                     demande.StatusId = 3; // "Réalisée"
                     demande.DateRealisation = DateTime.UtcNow;
+                    demande.DateResolution = DateTime.UtcNow;
                     _logger.LogInformation($"Intervention completed by {userRole}: {userId}, timestamp: {demande.DateRealisation}");
                     return null;
 
