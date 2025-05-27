@@ -1,209 +1,280 @@
-.popup-container {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1000;
+/* Main Container Styles */
+.resource-container {
+  max-width: 1400px;
+  margin: 95px auto 20px !important;
+  padding: 20px;
+  font-family: 'Roboto', sans-serif;
+  background-color: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+}
+
+/* Header Section */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #5c6bc0;
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 16px;
+  border-radius: 8px 8px 0 0;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.icon-container {
+  background-color: #e0e0e0;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16px;
+}
+
+.database-icon {
+  color: #5c6bc0;
+}
+
+.title-container h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: white;
+}
+
+.subtitle {
+  margin: 0;
+  opacity: 0.8;
+  font-size: 0.9rem;
+  margin-top: 4px;
+  color: rgb(255, 255, 255);
+}
+
+.create-button {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  color: #5c6bc0;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  mat-icon {
+    margin-right: 8px;
+    font-size: 18px;
+    height: 18px;
+    width: 18px;
   }
-  
-  .popup {
-    font-size: 1rem;
-    box-shadow: 0px 5px 25px 0px rgba(0, 0, 0, 0.2);
-    border: none;
-    line-height: 1.7;
-    max-width: 300px;
-    padding: 15px;
-    margin-bottom: 15px;
-    border-radius: 4px;
-    color: #ffffff;
-    display: flex;
-    align-items: center;
-    // Slowed down entrance animation (changed from 0.3s to 0.6s)
-    animation: slideInUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-  
-    &.popup-success {
-      background-color: #28a745;
-    }
-  
-    &.popup-error {
-      background-color: #dc3545;
-    }
-  
-    .popup-icon {
-      margin-right: 10px;
-      font-size: 1.5rem;
-    }
-  
-    .popup-close {
-      margin-left: 10px;
-      cursor: pointer;
-      opacity: 0.8;
-      &:hover {
-        opacity: 1;
-      }
-    }
+
+  &:hover {
+    background-color: #f5f5f5;
   }
-  
-  /* Slower slide up from bottom animation */
-  @keyframes slideInUp {
-    from {
-      transform: translateY(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-  
-  /* Slower slide down exit animation */
-  .slideOutDown {
-    // Changed from 0.3s to 0.6s
-    animation: slideOutDown 0.6s ease-in forwards;
-  }
-  
-  @keyframes slideOutDown {
-    from {
-      transform: translateY(0);
-      opacity: 1;
-    }
-    to {
-      transform: translateY(100%);
-      opacity: 0;
-    }
+}
+
+/* Controls Section */
+.controls {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.entries-selector {
+  display: flex;
+  align-items: center;
+
+  span {
+    margin-right: 10px;
+    color: #666;
   }
 
-// Rest of your component styles...
-
-
-
-/* Modal Styling */
-.custom-modal {
-    border-radius: 10px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+  mat-form-field {
+    width: 80px;
+  }
 }
 
-.create-btn {
-    background-color: #3f51b5 !important; /* Blue color for create button */
+::ng-deep .mat-form-field-wrapper {
+  margin-bottom: -1.25em;
 }
 
-.edit-btn {
-    background-color: #3f51b5 !important; /* Blue color for edit button */
-}
-.custom-modal-header {
-    background-color: #3f51b5; /* Gold color matching the table */
-    color: white;
-    padding: 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+/* Table Styles */
+.table-container {
+  overflow-x: auto;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
-.custom-modal-header .close-btn {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 1.5rem;
-    cursor: pointer;
+table {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-.custom-modal-body {
-    padding: 20px 25px;
-    background-color: #f8f9fa;
+th {
+  text-align: left;
+  padding: 16px;
+  font-weight: 500;
+  color: #5c6bc0;
+  border-bottom: 1px solid #eee;
+  background-color: #f9f9f9;
 }
 
-.custom-modal-body .form-label {
-    font-weight: 600;
-    color: #6c757d;
-    margin-bottom: 5px;
+td {
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+  color: #333;
 }
 
-.custom-modal-body .form-control,
-.custom-modal-body .form-select {
-    border-radius: 5px;
-    border: 1px solid #ced4da;
-    padding: 10px;
-    font-size: 14px;
-    transition: border-color 0.3s ease-in-out;
+tr:last-child td {
+  border-bottom: none;
 }
 
-
-
-.custom-modal-footer {
-    background-color: #f1f1f1;
-    padding: 15px;
-    text-align: right;
+.actions {
+  white-space: nowrap;
 }
 
-.custom-modal-footer .btn {
-    border-radius: 20px;
-    padding: 10px 20px;
-    font-weight: 600;
+.no-data {
+  text-align: center;
+  padding: 24px;
+  color: #666;
 }
 
-.custom-modal-footer .btn-secondary {
-    background-color: #dc3545; /* Red cancel button */
-    color: white;
-    border: none;
-}
-
-.custom-modal-footer .btn-secondary:hover {
-    background-color: #c82333;
-}
-
-.custom-modal-footer .btn-primary {
-    background-color: #3f51b5; /* Purple create/update button */
-    color: white;
-    border: none;
-}
-
-.custom-modal-footer .btn-primary:hover {
-    background-color: #3f51b5;
-}
-
-/* Add spacing between form fields */
-.custom-modal-body .row .col-md-12 {
-    margin-bottom: 15px;
-}
-
-
+/* Pagination Styles */
 .pagination {
-    .btn {
-        min-width: 40px;
-    }
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.pagination-btn {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  color: #666;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover:not(:disabled) {
+    background-color: #f5f5f5;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  mat-icon {
+    font-size: 18px;
+    height: 18px;
+    width: 18px;
+  }
+}
+
+.prev mat-icon {
+  margin-right: 8px;
+}
+
+.next mat-icon {
+  margin-left: 8px;
+}
+
+/* Popup Styles */
+.popup-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.popup {
+  font-size: 0.9rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  line-height: 1.7;
+  max-width: 300px;
+  padding: 12px 16px;
+  margin-bottom: 15px;
+  border-radius: 4px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  animation: slideInUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.popup.popup-success {
+  background-color: #4caf50;
+}
+
+.popup.popup-error {
+  background-color: #f44336;
+}
+
+.popup .popup-icon {
+  margin-right: 10px;
+  font-size: 1.2rem;
+}
+
+.popup .popup-close {
+  margin-left: 10px;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.popup .popup-close:hover {
+  opacity: 1;
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.slideOutDown {
+  animation: slideOutDown 0.6s ease-in forwards;
+}
+
+@keyframes slideOutDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
 }
 
 
 
-.row {
-    max-width: 90%; /* Reduce the width of the row to take less browser width */
-    margin: 0 auto; /* Center the row */
+/* Controls Section - Add search container styles */
+.search-container {
+  mat-form-field {
+    width: 250px;
   }
-  
-/* Reduce mat-select width */
-.narrow-select {
-    width: 7em;  /* Adjust this value as needed */
-  }
-  
-  /* Target the select trigger to make it more compact */
-  .narrow-select .mat-select-trigger {
-    min-width: auto;
-  }
-  
-  /* Style for the entries text */
-  .entries-text {
-    font-size: 1.1rem;  /* Increase font size */
-    margin-left: 0.5rem;  /* Adjust spacing */
-    vertical-align: middle;  /* Align with select */
-  }
-
-
-.success-snackbar {
-    background-color: #4caf50;
-    color: white;
 }
 
-.error-snackbar {
-    background-color: #f44336;
-    color: white;
+/* Loader Styles */
+.loader-container {
+  display: flex;
+  justify-content: center;
+  padding: 40px;
 }

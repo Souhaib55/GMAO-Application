@@ -7,13 +7,13 @@
         <mat-icon class="database-icon">storage</mat-icon>
       </div>
       <div class="title-container">
-        <h1>Piece Management</h1>
-        <p class="subtitle">Manage your inventory items</p>
+        <h1>Gestion des pièces</h1>
+        <p class="subtitle">Gérer vos pièces...</p>
       </div>
     </div>
     <button class="create-button" (click)="navigateToCreate()">
       <mat-icon>add</mat-icon>
-      CREATE NEW PIECE
+      Créer une pièce
             </button>
           </div>
 
@@ -31,7 +31,7 @@
             </div>
     <div class="search-container">
       <mat-form-field appearance="outline">
-        <input matInput placeholder="Search pieces..." [(ngModel)]="searchTerm" (keyup)="applyFilter()">
+        <input matInput placeholder="Chercher pièces..." [(ngModel)]="searchTerm" (keyup)="applyFilter()">
         <mat-icon matSuffix>search</mat-icon>
       </mat-form-field>
           </div>

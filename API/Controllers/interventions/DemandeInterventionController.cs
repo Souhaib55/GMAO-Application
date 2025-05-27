@@ -496,7 +496,128 @@ namespace API.Controllers
 
             return NoContent();
         }
+
+
+
+
+
+        // Ajouter cette méthode dans le DemandeInterventionController pour dahboard stats
+
+        [HttpGet("dashboard-stats")]
+        public async Task<ActionResult<object>> GetDashboardStats()
+        {
+            try
+            {
+                // Statistiques d'intervention par statut
+                var interventionStats = new
+                {
+                    enAttente = await _context.DemandeInterventions
+                        .CountAsync(d => d.IsActif && d.StatusId == 1),
+                    enCours = await _context.DemandeInterventions
+                        .CountAsync(d => d.IsActif && d.StatusId == 2),
+                    terminee = await _context.DemandeInterventions
+                        .CountAsync(d => d.IsActif && (d.StatusId == 3 || d.StatusId == 4)),
+                    annulee = await _context.DemandeInterventions
+                        .CountAsync(d => d.IsActif && d.StatusId == 5)
+                };
+                
+                // Statistiques des machines
+                var machineCount = await _context.ChaineProductions.CountAsync(c => c.IsActif);
+                var machinesArretees = await _context.DemandeInterventions
+                    .CountAsync(d => d.IsActif && d.MachineArretee && (d.StatusId == 1 || d.StatusId == 2));
+                
+                var machineStats = new
+                {
+                    arretees = machinesArretees,
+                    enFonctionnement = machineCount - machinesArretees,
+                    total = machineCount,
+                    pourcentageArretees = machineCount > 0 ? Math.Round((double)machinesArretees / machineCount * 100, 1) : 0
+                };
+                
+                // Interventions récentes
+                var recentInterventions = await _context.DemandeInterventions
+                    .Where(d => d.IsActif)
+                    .Include(d => d.Status)
+                    .OrderByDescending(d => d.DateCreation)
+                    .Take(5)
+                    .Select(d => new
+                    {
+                        idDemandeIntervention = d.IdDemandeIntervention,
+                        titre = d.Titre,
+                        dateCreation = d.DateCreation,
+                        status = new { id = d.Status.Id, statut = d.Status.Statut }
+                    })
+                    .ToListAsync();
+                
+                // Données pour le graphique mensuel
+                var sixMonthsAgo = DateTime.UtcNow.AddMonths(-6);
+                var monthlyData = await _context.DemandeInterventions
+                    .Where(d => d.IsActif && d.DateCreation >= sixMonthsAgo)
+                    .GroupBy(d => new { Year = d.DateCreation.Year, Month = d.DateCreation.Month })
+                    .Select(g => new
+                    {
+                        year = g.Key.Year,
+                        month = g.Key.Month,
+                        count = g.Count()
+                    })
+                    .OrderBy(d => d.year)
+                    .ThenBy(d => d.month)
+                    .ToListAsync();
+                
+                // Données pour le graphique de répartition par urgence
+                var urgenceData = await _context.DemandeInterventions
+                    .Where(d => d.IsActif)
+                    .GroupBy(d => d.IDUrgence)
+                    .Select(g => new
+                    {
+                        urgenceId = g.Key,
+                        count = g.Count()
+                    })
+                    .Join(_context.Urgences, 
+                        ud => ud.urgenceId, 
+                        u => u.IDUrgence, 
+                        (ud, u) => new { 
+                            id = ud.urgenceId, 
+                            libelle = u.Libelle, 
+                            count = ud.count 
+                        })
+                    .ToListAsync();
+                
+                return Ok(new
+                {
+                    interventionStats,
+                    machineStats,
+                    recentInterventions,
+                    monthlyData,
+                    urgenceData
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error retrieving dashboard stats: {ex.Message}");
+                return StatusCode(500, "Internal server error while retrieving dashboard statistics");
+            }
+        }
+
+
+
+
+
+
     }
+
+
+
+    
+
+
+
+
+
+
+
+
+
 
     public class pagedResult<T>
     {

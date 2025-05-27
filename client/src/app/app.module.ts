@@ -83,6 +83,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
     MatInputModule,
     MatProgressSpinnerModule,
     MatToolbarModule,
+
   ],
   declarations: [
     AppComponent,

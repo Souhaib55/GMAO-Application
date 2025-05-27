@@ -6,13 +6,13 @@
         <mat-icon class="database-icon">assignment</mat-icon>
       </div>
       <div class="title-container">
-        <h1>Intervention Management</h1>
-        <p class="subtitle">Manage your intervention requests</p>
+        <h1>Gestion des interventions</h1>
+        <p class="subtitle">Gérer vos interventions...</p>
       </div>
     </div>
     <button class="create-button" (click)="navigateToCreate()">
       <mat-icon>add</mat-icon>
-      CREATE NEW INTERVENTION
+      Créer une intervention
     </button>
   </div>
 
@@ -30,7 +30,7 @@
     </div>
     <div class="search-container">
       <mat-form-field appearance="outline">
-        <input matInput placeholder="Search interventions..." [(ngModel)]="searchTerm" (keyup)="applyFilter()">
+        <input matInput placeholder="Chercher interventions..." [(ngModel)]="searchTerm" (keyup)="applyFilter()">
         <mat-icon matSuffix>search</mat-icon>
       </mat-form-field>
     </div>

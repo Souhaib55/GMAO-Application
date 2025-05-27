@@ -1,119 +1,111 @@
 <div class="form-container">
-    <div class="form-box">
-        <h2 class="form-title">{{ isEditMode ? 'Edit Stock' : 'Create New Stock' }}</h2>
-        <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
-        <form (ngSubmit)="onSubmit()" class="form-content">
-            <!-- Code -->
-            <div class="input-group">
-                <label for="codeInput" class="form-label">Stock Code <span class="required-asterisk">*</span></label>
-                <input
-                    type="text"
-                    class="form-control custom-input"
-                    [(ngModel)]="stockObj.code"
-                    name="code"
-                    id="codeInput"
-                    placeholder="Enter stock code"
-                    required
-                />
-            </div>
+  <div class="header">
+    <h2>{{ isEditMode ? 'Edit Stock' : 'Create New Stock' }}</h2>
+  </div>
 
-            <!-- Description -->
-            <div class="input-group">
-                <label for="descriptionInput" class="form-label">Description <span class="required-asterisk">*</span></label>
-                <input
-                    type="text"
-                    class="form-control custom-input"
-                    [(ngModel)]="stockObj.description"
-                    name="description"
-                    id="descriptionInput"
-                    placeholder="Enter description"
-                    required
-                />
-            </div>
-
-            <!-- Entities -->
-            <div class="input-group">
-                <label for="entitiesSelect" class="form-label">Entities <span class="required-asterisk">*</span></label>
-                <mat-form-field class="custom-mat-form-field" appearance="outline">
-                    <mat-select
-                        [(ngModel)]="stockObj.stockEntitiesId"
-                        name="stockEntitiesId"
-                        id="entitiesSelect"
-                        placeholder="Select entities"
-                        required
-                    >
-                        <mat-option *ngFor="let entity of entitiesList" [value]="entity.id">
-                            {{ entity.name }}
-                        </mat-option>
-                    </mat-select>
-                </mat-form-field>
-            </div>
-
-            <!-- Status -->
-            <div class="input-group">
-                <label for="statusSelect" class="form-label">Status <span class="required-asterisk">*</span></label>
-                <mat-form-field class="custom-mat-form-field" appearance="outline">
-                    <mat-select
-                        [(ngModel)]="stockObj.stockStatusId"
-                        name="stockStatusId"
-                        id="statusSelect"
-                        placeholder="Select status"
-                        required
-                    >
-                        <mat-option *ngFor="let status of statusList" [value]="status.id">
-                            {{ status.status }}
-                        </mat-option>
-                    </mat-select>
-                </mat-form-field>
-            </div>
-
-            <!-- Supplier -->
-            <div class="input-group">
-                <label for="supplierSelect" class="form-label">Supplier <span class="required-asterisk">*</span></label>
-                <mat-form-field class="custom-mat-form-field" appearance="outline">
-                    <mat-select
-                        [(ngModel)]="stockObj.stockSupplierId"
-                        name="stockSupplierId"
-                        id="supplierSelect"
-                        placeholder="Select supplier"
-                        required
-                    >
-                        <mat-option *ngFor="let supplier of supplierList" [value]="supplier.id">
-                            {{ supplier.supplierName }}
-                        </mat-option>
-                    </mat-select>
-                </mat-form-field>
-            </div>
-
-            <!-- Created On -->
-            <div class="input-group">
-                <label for="createdOnInput" class="form-label">Created On <span class="required-asterisk">*</span></label>
-                <mat-form-field class="custom-mat-form-field" appearance="outline">
-                    <input
-                        matInput
-                        [matDatepicker]="picker"
-                        [(ngModel)]="stockObj.createdOn"
-                        name="createdOn"
-                        id="createdOnInput"
-                        placeholder="Select date"
-                        required
-                    />
-                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-                    <mat-datepicker #picker></mat-datepicker>
-                </mat-form-field>
-            </div>
-
-            <!-- Buttons -->
-            <div class="button-group">
-                <button
-                    type="submit"
-                    class="btn custom-btn primary-btn"
-                    [disabled]="!isValidStock()"
-                >
-                    {{ isEditMode ? 'Update' : 'Create' }}
-                </button>
-                <button type="button" class="btn custom-btn secondary-btn" (click)="goBack()">Cancel</button>
-            </div>
-        </form>
+  <div class="form-content">
+    <div *ngIf="errorMessage" class="alert alert-danger">
+      <mat-icon>error_outline</mat-icon> 
+      {{ errorMessage }}
     </div>
+    <form [formGroup]="stockForm" (ngSubmit)="onSubmit()">
+      <div class="row">
+        <!-- Code -->
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Stock Code</mat-label>
+            <input matInput formControlName="code" required placeholder="Enter stock code">
+            <mat-icon matSuffix>qr_code</mat-icon>
+            <mat-error *ngIf="stockForm.get('code')?.touched && stockForm.get('code')?.hasError('required')">
+              Stock code is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Description -->
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Description</mat-label>
+            <input matInput formControlName="description" required placeholder="Enter description">
+            <mat-icon matSuffix>description</mat-icon>
+            <mat-error *ngIf="stockForm.get('description')?.touched && stockForm.get('description')?.hasError('required')">
+              Description is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Entities -->
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Entities</mat-label>
+            <mat-select formControlName="stockEntitiesId" required placeholder="Select entities">
+              <mat-option *ngFor="let entity of entitiesList" [value]="entity.id">
+                {{ entity.name }}
+              </mat-option>
+            </mat-select>
+            <mat-icon matSuffix>domain</mat-icon>
+            <mat-error *ngIf="stockForm.get('stockEntitiesId')?.touched && stockForm.get('stockEntitiesId')?.hasError('required')">
+              Entities are required
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Status -->
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="stockStatusId" required placeholder="Select status">
+              <mat-option *ngFor="let status of statusList" [value]="status.id">
+                {{ status.status }}
+              </mat-option>
+            </mat-select>
+            <mat-icon matSuffix>info</mat-icon>
+            <mat-error *ngIf="stockForm.get('stockStatusId')?.touched && stockForm.get('stockStatusId')?.hasError('required')">
+              Status is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Supplier -->
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Supplier</mat-label>
+            <mat-select formControlName="stockSupplierId" required placeholder="Select supplier">
+              <mat-option *ngFor="let supplier of supplierList" [value]="supplier.id">
+                {{ supplier.supplierName }}
+              </mat-option>
+            </mat-select>
+            <mat-icon matSuffix>business</mat-icon>
+            <mat-error *ngIf="stockForm.get('stockSupplierId')?.touched && stockForm.get('stockSupplierId')?.hasError('required')">
+              Supplier is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Created On -->
+        <div class="col-md-6 input-group">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Created On</mat-label>
+            <input matInput [matDatepicker]="picker" formControlName="createdOn" required>
+            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+            <mat-error *ngIf="stockForm.get('createdOn')?.touched && stockForm.get('createdOn')?.hasError('required')">
+              Creation date is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button type="button" class="btn custom-btn secondary-btn" (click)="goBack()" [disabled]="isSubmitting">
+          <mat-icon>close</mat-icon> Cancel
+        </button>
+        <button type="submit" class="btn custom-btn primary-btn" [disabled]="stockForm.invalid || isSubmitting">
+          <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          <mat-icon>{{ isEditMode ? 'save' : 'add_circle' }}</mat-icon>
+          {{ isEditMode ? 'Update' : 'Create' }}
+        </button>
+      </div>
+    </form>
+  </div>
 </div>

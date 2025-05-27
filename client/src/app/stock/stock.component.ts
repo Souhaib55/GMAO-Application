@@ -2,6 +2,8 @@ import { Component, OnInit, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { trigger, transition, style, animate } from '@angular/animations';
+import { Subject } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 //import { Stock, StockEntities, StockStatus, StockSupplier } from './stock.interfaces';
 
 @Component({
@@ -38,12 +40,16 @@ export class StockComponent implements OnInit {
     showPopup: boolean = false;
     popupMessage: string = '';
     popupType: 'success' | 'error' = 'success';
+    isLoading: boolean = false;
+    searchTerm: string = '';
 
     currentPage: number = 1;
     pageSize: number = 5;
     totalCount: number = 0;
     totalPages: number = 1;
     pageSizeOptions: number[] = [5, 10, 15];
+
+    private searchSubject = new Subject<string>();
 
     ngOnInit(): void {
         const state = history.state;
@@ -53,6 +59,11 @@ export class StockComponent implements OnInit {
             this.showPopup = true;
             setTimeout(() => this.hidePopup(), 3000);
         }
+
+        this.searchSubject.pipe(debounceTime(300)).subscribe(() => {
+            this.filterItems();
+        });
+
         this.getAllStock();
         this.getStockEntities();
         this.getStockStatuses();
@@ -60,15 +71,35 @@ export class StockComponent implements OnInit {
     }
 
     getAllStock() {
-        const url = `${this.baseUrl}?page=${this.currentPage}&pageSize=${this.pageSize}`;
+        this.isLoading = true;
+        let url = `${this.baseUrl}?page=${this.currentPage}&pageSize=${this.pageSize}`;
+        
+        // Add search parameter if search term exists
+        if (this.searchTerm.trim()) {
+            url += `&search=${encodeURIComponent(this.searchTerm.trim())}`;
+        }
+
         this.http.get<any>(url).subscribe({
             next: (res: any) => {
                 this.paginatedStockList = res.data;
                 this.totalCount = res.totalCount;
                 this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+                this.isLoading = false;
             },
-            error: (err) => this.showError('Failed to fetch stock')
+            error: (err) => {
+                this.showError('Failed to fetch stock');
+                this.isLoading = false;
+            }
         });
+    }
+
+    applyFilter(): void {
+        this.searchSubject.next(this.searchTerm);
+    }
+
+    filterItems(): void {
+        this.currentPage = 1; // Reset to first page when searching
+        this.getAllStock();
     }
 
     getStockEntities() {
@@ -121,12 +152,16 @@ export class StockComponent implements OnInit {
 
     deleteStock(data: Stock) {
         if (!confirm(`Delete ${data.code} - ${data.description}?`)) return;
+        this.isLoading = true;
         this.http.delete(`${this.baseUrl}/${data.id}`).subscribe({
             next: () => {
                 this.getAllStock();
                 this.showSuccess('Stock deleted successfully!');
             },
-            error: (err) => this.showError('Failed to delete stock')
+            error: (err) => {
+                this.showError('Failed to delete stock');
+                this.isLoading = false;
+            }
         });
     }
 

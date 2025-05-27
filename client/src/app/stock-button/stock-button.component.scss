@@ -1,153 +1,292 @@
-/* Container for the entire form */
+// Modern Industrial UI Theme Variables
+$primary-color: #0062cc;
+$secondary-color: #1c2a48;
+$accent-color: #17a2b8;
+$success-color: #0ab39c;
+$warning-color: #f7b84b;
+$danger-color: #f06548;
+$light-bg: #f9fafb;
+$card-bg: #ffffff;
+$border-color: #e2e8f0;
+$text-primary: #2c3e50;
+$text-secondary: #6c757d;
+$box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+
+// Main Container
 .form-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    background-color: #f9f9f9;
-    padding: 20px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: $light-bg;
+  background-image: linear-gradient(to bottom, rgba(232, 236, 241, 0.5) 1px, transparent 1px),
+                    linear-gradient(to right, rgba(232, 236, 241, 0.5) 1px, transparent 1px);
+  background-size: 20px 20px;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, $primary-color, $accent-color);
   }
-  
-  /* Box containing the form */
-  .form-box {
-    background-color: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    padding: 30px;
-    max-width: 500px;
-    width: 100%;
-  }
-  
-  /* Form title */
-  .form-title {
+}
+
+// Enhanced Header
+.header {
+  background-color: $secondary-color;
+  color: white;
+  padding: 16px 24px;
+  box-shadow: $box-shadow;
+  position: relative;
+  z-index: 10;
+
+  h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
     text-align: center;
-    font-size: 1.8rem;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 20px;
-  }
-  
-  /* Input group spacing */
-  .input-group {
-    margin-bottom: 20px;
-  }
-  
-  /* Labels */
-  .form-label {
-    color: #6c757d;
-    font-size: 0.9rem;
-    font-weight: 500;
-    margin-bottom: 5px;
-  }
-  
-  /* Custom input fields (for text and date inputs) */
-  .custom-input {
-    height: 45px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 0 15px;
-    background-color: #f9f9f9;
-    font-size: 1rem;
-    width: 100%;
-    box-sizing: border-box;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  
-  .custom-input:focus {
-    border-color: #6c63ff;
-    box-shadow: 0 0 5px rgba(108, 99, 255, 0.5);
-    outline: none;
-  }
-  
-  /* Custom mat-form-field (for selects and datepicker) */
-  .custom-mat-form-field {
-    width: 100%;
-  }
-  
-  .custom-mat-form-field .mat-form-field-infix {
-    background-color: #f9f9f9;
-    height: 45px;
-    padding: 0 15px;
-    box-sizing: border-box;
-  }
-  
-  .custom-mat-form-field .mat-form-field-outline {
-    border-radius: 8px;
-    border-color: #ddd;
-  }
-  
-  .custom-mat-form-field .mat-form-field-outline-thick {
-    border-color: #6c63ff; /* When focused */
-  }
-  
-  .custom-mat-form-field .mat-form-field-label {
-    color: #6c757d;
-    font-size: 0.9rem;
-  }
-  
-  /* Adjust datepicker toggle icon */
-  .custom-mat-form-field .mat-datepicker-toggle {
-    color: #6c757d;
-  }
-  
-  /* Required asterisk */
-  .required-asterisk {
-    color: #dc3545; /* Red color */
-  }
-  
-  /* Button group */
-  .button-group {
+    letter-spacing: 0.5px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-top: 20px;
+    justify-content: center;
+
+    &::before {
+      content: '📦';
+      margin-right: 10px;
+      font-size: 24px;
+    }
   }
-  
-  /* Buttons */
-  .custom-btn {
-    font-size: 1rem;
-    padding: 10px 20px;
+}
+
+// Form Content Container
+.form-content {
+  max-width: 1000px;
+  margin: 20px auto;
+  width: 100%;
+  padding: 0 20px;
+  position: relative;
+
+  form {
+    background: $card-bg;
     border-radius: 8px;
-    font-weight: bold;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-    text-transform: uppercase;
-  }
-  
-  .primary-btn {
-    background-color: #6c63ff;
-    color: #ffffff;
-    border: none;
-  }
-  
-  .primary-btn:hover {
-    background-color: #5a55d6;
-    transform: translateY(-2px);
-  }
-  
-  .secondary-btn {
-    background-color: #f1f1f1;
-    color: #333;
-    border: none;
-  }
-  
-  .secondary-btn:hover {
-    background-color: #e2e2e2;
-    transform: translateY(-2px);
-  }
-  
-  /* Responsive Design */
-  @media (max-width: 768px) {
-    .form-box {
-      padding: 20px;
+    box-shadow: $box-shadow;
+    padding: 24px;
+    border: 1px solid $border-color;
+    position: relative;
+    
+    // Paper fold effect in the top right corner
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      border-width: 0 20px 20px 0;
+      border-style: solid;
+      border-color: #e9ecef $light-bg;
     }
+  }
+}
+
+// Alert Messages
+.alert {
+  border-radius: 6px;
+  padding: 12px 15px;
+  margin-bottom: 20px;
+  border-left: 4px solid $danger-color;
+  background-color: rgba($danger-color, 0.1);
+  color: darken($danger-color, 15%);
   
-    .custom-btn {
+  mat-icon {
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+}
+
+// Form Layout
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 15px;
+}
+
+// Form Field Columns
+.col-md-6, .col-md-12 {
+  display: flex;
+  flex-direction: column;
+  
+  &.input-group {
+    position: relative;
+    transition: transform 0.2s;
+    
+    &:hover {
+      transform: translateY(-2px);
+    }
+    
+    mat-form-field {
       width: 100%;
-      margin-bottom: 10px;
-    }
-  
-    .button-group {
-      flex-direction: column;
     }
   }
+}
+
+// Material Form Field Customization
+::ng-deep {
+  .mat-form-field-appearance-outline .mat-form-field-wrapper {
+    margin: 0;
+    padding-bottom: 0;
+  }
+
+  .mat-form-field-appearance-outline .mat-form-field-infix {
+    padding: 0.8em 0;
+  }
+
+  .mat-form-field-appearance-outline .mat-form-field-flex {
+    padding: 0 0.75em;
+    margin-top: 0;
+  }
+
+  .mat-form-field-appearance-outline .mat-form-field-outline {
+    color: rgba($text-primary, 0.2);
+  }
+
+  .mat-form-field-appearance-outline.mat-focused .mat-form-field-outline-thick {
+    color: $primary-color;
+  }
+
+  .mat-form-field-appearance-outline.mat-form-field-invalid.mat-form-field-invalid .mat-form-field-outline-thick {
+    color: $danger-color;
+  }
+
+  .mat-form-field-label {
+    color: $text-secondary;
+  }
+
+  .mat-form-field-required-marker {
+    color: $danger-color;
+  }
+
+  .mat-input-element {
+    color: $text-primary;
+  }
+
+  .mat-select-value {
+    color: $text-primary;
+  }
+
+  .mat-form-field-subscript-wrapper {
+    margin-top: 0;
+  }
+}
+
+// Form field utilities
+.w-100 {
+  width: 100%;
+}
+
+// Button Group
+.button-group {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 30px;
+  gap: 15px;
+}
+
+// Primary Button
+.btn.custom-btn.primary-btn {
+  background: linear-gradient(135deg, $primary-color, darken($primary-color, 10%));
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 6px;
+  padding: 10px 24px;
+  height: 44px;
+  border: none;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 6px rgba($primary-color, 0.25);
+  transition: all 0.3s ease;
+  
+  &:hover:not(:disabled) {
+    box-shadow: 0 6px 10px rgba($primary-color, 0.35);
+    transform: translateY(-2px);
+  }
+  
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba($primary-color, 0.2);
+  }
+  
+  &:disabled {
+    background: #e0e0e0;
+    color: #9e9e9e;
+    box-shadow: none;
+  }
+}
+
+// Secondary Button
+.btn.custom-btn.secondary-btn {
+  background-color: rgba($text-secondary, 0.1);
+  color: $text-secondary;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 6px;
+  padding: 10px 24px;
+  height: 44px;
+  font-weight: 500;
+  border: 1px solid rgba($text-secondary, 0.2);
+  transition: all 0.3s ease;
+  
+  &:hover:not(:disabled) {
+    background-color: rgba($danger-color, 0.1);
+    color: $danger-color;
+    border-color: rgba($danger-color, 0.2);
+  }
+
+  mat-icon {
+    font-size: 20px;
+  }
+}
+
+// Loading Spinner
+.spinner-border-sm {
+  width: 18px;
+  height: 18px;
+  border-width: 2px;
+}
+
+// Media queries for responsiveness
+@media (max-width: 768px) {
+  .row {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .form-content {
+    padding: 0 12px;
+    margin: 15px auto;
+
+    form {
+      padding: 18px;
+    }
+  }
+  
+  .button-group {
+    flex-direction: column-reverse;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .btn.custom-btn {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .header h2 {
+    font-size: 20px;
+  }
+}
