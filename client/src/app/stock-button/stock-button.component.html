@@ -1,6 +1,6 @@
 <div class="form-container">
   <div class="header">
-    <h2>{{ isEditMode ? 'Edit Stock' : 'Create New Stock' }}</h2>
+    <h2>{{ isEditMode ? 'Modifier le Stock' : 'Créer un Nouveau Stock' }}</h2>
   </div>
 
   <div class="form-content">
@@ -13,11 +13,11 @@
         <!-- Code -->
         <div class="col-md-6 input-group">
           <mat-form-field appearance="outline" class="w-100">
-            <mat-label>Stock Code</mat-label>
-            <input matInput formControlName="code" required placeholder="Enter stock code">
+            <mat-label>Code du Stock</mat-label>
+            <input matInput formControlName="code" required placeholder="Entrez le code du stock">
             <mat-icon matSuffix>qr_code</mat-icon>
             <mat-error *ngIf="stockForm.get('code')?.touched && stockForm.get('code')?.hasError('required')">
-              Stock code is required
+              Le code du stock est requis
             </mat-error>
           </mat-form-field>
         </div>
@@ -26,10 +26,10 @@
         <div class="col-md-6 input-group">
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Description</mat-label>
-            <input matInput formControlName="description" required placeholder="Enter description">
+            <input matInput formControlName="description" required placeholder="Entrez la description">
             <mat-icon matSuffix>description</mat-icon>
             <mat-error *ngIf="stockForm.get('description')?.touched && stockForm.get('description')?.hasError('required')">
-              Description is required
+              La description est requise
             </mat-error>
           </mat-form-field>
         </div>
@@ -37,15 +37,15 @@
         <!-- Entities -->
         <div class="col-md-6 input-group">
           <mat-form-field appearance="outline" class="w-100">
-            <mat-label>Entities</mat-label>
-            <mat-select formControlName="stockEntitiesId" required placeholder="Select entities">
+            <mat-label>Entités</mat-label>
+            <mat-select formControlName="stockEntitiesId" required placeholder="Sélectionnez les entités">
               <mat-option *ngFor="let entity of entitiesList" [value]="entity.id">
                 {{ entity.name }}
               </mat-option>
             </mat-select>
             <mat-icon matSuffix>domain</mat-icon>
             <mat-error *ngIf="stockForm.get('stockEntitiesId')?.touched && stockForm.get('stockEntitiesId')?.hasError('required')">
-              Entities are required
+              Les entités sont requises
             </mat-error>
           </mat-form-field>
         </div>
@@ -53,15 +53,15 @@
         <!-- Status -->
         <div class="col-md-6 input-group">
           <mat-form-field appearance="outline" class="w-100">
-            <mat-label>Status</mat-label>
-            <mat-select formControlName="stockStatusId" required placeholder="Select status">
+            <mat-label>Statut</mat-label>
+            <mat-select formControlName="stockStatusId" required placeholder="Sélectionnez le statut">
               <mat-option *ngFor="let status of statusList" [value]="status.id">
                 {{ status.status }}
               </mat-option>
             </mat-select>
             <mat-icon matSuffix>info</mat-icon>
             <mat-error *ngIf="stockForm.get('stockStatusId')?.touched && stockForm.get('stockStatusId')?.hasError('required')">
-              Status is required
+              Le statut est requis
             </mat-error>
           </mat-form-field>
         </div>
@@ -69,15 +69,15 @@
         <!-- Supplier -->
         <div class="col-md-6 input-group">
           <mat-form-field appearance="outline" class="w-100">
-            <mat-label>Supplier</mat-label>
-            <mat-select formControlName="stockSupplierId" required placeholder="Select supplier">
+            <mat-label>Fournisseur</mat-label>
+            <mat-select formControlName="stockSupplierId" required placeholder="Sélectionnez le fournisseur">
               <mat-option *ngFor="let supplier of supplierList" [value]="supplier.id">
                 {{ supplier.supplierName }}
               </mat-option>
             </mat-select>
             <mat-icon matSuffix>business</mat-icon>
             <mat-error *ngIf="stockForm.get('stockSupplierId')?.touched && stockForm.get('stockSupplierId')?.hasError('required')">
-              Supplier is required
+              Le fournisseur est requis
             </mat-error>
           </mat-form-field>
         </div>
@@ -85,12 +85,12 @@
         <!-- Created On -->
         <div class="col-md-6 input-group">
           <mat-form-field appearance="outline" class="w-100">
-            <mat-label>Created On</mat-label>
+            <mat-label>Date de création</mat-label>
             <input matInput [matDatepicker]="picker" formControlName="createdOn" required>
             <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
             <mat-datepicker #picker></mat-datepicker>
             <mat-error *ngIf="stockForm.get('createdOn')?.touched && stockForm.get('createdOn')?.hasError('required')">
-              Creation date is required
+              La date de création est requise
             </mat-error>
           </mat-form-field>
         </div>
@@ -98,12 +98,12 @@
 
       <div class="button-group">
         <button type="button" class="btn custom-btn secondary-btn" (click)="goBack()" [disabled]="isSubmitting">
-          <mat-icon>close</mat-icon> Cancel
+          <mat-icon>close</mat-icon> Annuler
         </button>
         <button type="submit" class="btn custom-btn primary-btn" [disabled]="stockForm.invalid || isSubmitting">
           <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
           <mat-icon>{{ isEditMode ? 'save' : 'add_circle' }}</mat-icon>
-          {{ isEditMode ? 'Update' : 'Create' }}
+          {{ isEditMode ? 'Mettre à jour' : 'Créer' }}
         </button>
       </div>
     </form>

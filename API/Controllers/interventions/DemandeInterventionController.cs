@@ -27,10 +27,20 @@ namespace API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<pagedResult<object>>> GetDemandeInterventions(int page = 1, int pageSize = 5)
+        public async Task<ActionResult<pagedResult<object>>> GetDemandeInterventions(int page = 1, int pageSize = 5, string search = null)
         {
             var query = _context.DemandeInterventions
-                .Where(d => d.IsActif)
+                .Where(d => d.IsActif);
+            
+            // Appliquer le filtre de recherche par titre si le paramètre search est fourni
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                search = search.ToLower().Trim();
+                query = query.Where(d => d.Titre.ToLower().Contains(search));
+                _logger.LogInformation($"Applying search filter: '{search}'");
+            }
+
+            query = query
                 .Include(d => d.Etat)
                 .Include(d => d.Status)
                 .Include(d => d.TypeIntervention)
@@ -70,12 +80,14 @@ namespace API.Controllers
                 })
                 .ToListAsync();
 
-            return Ok(new pagedResult<object>
+            _logger.LogInformation($"Retrieved {items.Count} interventions out of {totalCount} total (page {page}, pageSize {pageSize})");
+
+            return Ok(new PAGEDRESULT<object>
             {
-                Data = items.Cast<object>().ToList(),
-                TotalCount = totalCount,
-                Page = page,
-                PageSize = pageSize
+                DATA = items.Cast<object>().ToList(),
+                TOTALCOUNT = totalCount,
+                PAGE = page,
+                PAGESIZE = pageSize
             });
         }
 
@@ -497,12 +509,7 @@ namespace API.Controllers
             return NoContent();
         }
 
-
-
-
-
         // Ajouter cette méthode dans le DemandeInterventionController pour dahboard stats
-
         [HttpGet("dashboard-stats")]
         public async Task<ActionResult<object>> GetDashboardStats()
         {
@@ -598,32 +605,13 @@ namespace API.Controllers
                 return StatusCode(500, "Internal server error while retrieving dashboard statistics");
             }
         }
-
-
-
-
-
-
     }
 
-
-
-    
-
-
-
-
-
-
-
-
-
-
-    public class pagedResult<T>
+    public class PAGEDRESULT<T>
     {
-        public List<T> Data { get; set; } = new List<T>();
-        public int TotalCount { get; set; }
-        public int Page { get; set; }
-        public int PageSize { get; set; }
+        public List<T> DATA { get; set; } = new List<T>();
+        public int TOTALCOUNT { get; set; }
+        public int PAGE { get; set; }
+        public int PAGESIZE { get; set; }
     }
 }

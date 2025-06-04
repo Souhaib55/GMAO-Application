@@ -3,7 +3,9 @@ using Core.Entities;
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -14,17 +16,29 @@ namespace API.Controllers
     public class PieceController : ControllerBase
     {
         private readonly StoreContext _context;
+        private readonly ILogger<PieceController> _logger;
 
-        public PieceController(StoreContext context)
+        public PieceController(StoreContext context, ILogger<PieceController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         [HttpGet]
-        public async Task<ActionResult<PagedResult<object>>> GetPieces(int page = 1, int pageSize = 5)
+        public async Task<ActionResult<PagedResult<object>>> GetPieces(int page = 1, int pageSize = 5, string search = null)
         {
             var query = _context.Pieces
-                .Where(p => p.IsActif)
+                .Where(p => p.IsActif);
+
+            // Apply search filter if provided
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                search = search.ToLower().Trim();
+                query = query.Where(p => p.CodePiece.ToLower().Contains(search));
+                _logger.LogInformation($"Applying search filter: '{search}'");
+            }
+
+            query = query
                 .Include(p => p.FamillePiece)
                 .Include(p => p.Constructeur)
                 .Include(p => p.CriticitePiece);
@@ -54,7 +68,9 @@ namespace API.Controllers
                 })
                 .ToListAsync();
 
-            return Ok(new PageResult<object>
+            _logger.LogInformation($"Retrieved {items.Count} pieces out of {totalCount} total (page {page}, pageSize {pageSize})");
+
+            return Ok(new PagedResult<object>
             {
                 Data = items.Cast<object>().ToList(),
                 TotalCount = totalCount,
@@ -110,8 +126,7 @@ namespace API.Controllers
                 IDCriticitePiece = pieceDto.IDCriticitePiece,
                 Quantite_Stock = pieceDto.Quantite_Stock,
                 PrixUnitaire = pieceDto.PrixUnitaire,
-                DateCreation = pieceDto.DateCreation,
-                DateModification = pieceDto.DateModification,
+                DateCreation = DateTime.Now,
                 IsActif = true
             };
 
@@ -169,7 +184,7 @@ namespace API.Controllers
             existingPiece.IDCriticitePiece = pieceDto.IDCriticitePiece;
             existingPiece.Quantite_Stock = pieceDto.Quantite_Stock;
             existingPiece.PrixUnitaire = pieceDto.PrixUnitaire;
-            existingPiece.DateModification = pieceDto.DateModification ?? DateTime.Now; // Use client-provided or fallback to now
+            existingPiece.DateModification = DateTime.Now;
 
             await _context.SaveChangesAsync();
 
@@ -201,9 +216,9 @@ namespace API.Controllers
         }
     }
 
-    public class PageResult<T>
+    public class PagedResult<T>
     {
-        public required List<T> Data { get; set; }
+        public List<T> Data { get; set; } // Removed the 'required' keyword
         public int TotalCount { get; set; }
         public int Page { get; set; }
         public int PageSize { get; set; }

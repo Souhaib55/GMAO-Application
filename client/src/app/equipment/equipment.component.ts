@@ -1,9 +1,104 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject , Inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { forkJoin, Subject } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
+import { AccountService } from 'app/core/services/account.service';
+import { DatePipe } from '@angular/common';
+import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+
+// Composant de dialogue de confirmation de suppression
+@Component({
+  selector: 'app-delete-confirmation-dialog',
+  template: `
+    <div class="delete-dialog-container">
+      <div class="delete-dialog-header">
+        <mat-icon class="warning-icon">warning</mat-icon>
+        <h2 mat-dialog-title>Confirmation de suppression</h2>
+      </div>
+      <div mat-dialog-content>
+        <p>Êtes-vous sûr de vouloir supprimer l'équipement :</p>
+        <p class="equipment-title">{{ data.codeEquipement }} - {{ data.designation }}</p>
+        <p class="warning-text">Cette action est irréversible !</p>
+      </div>
+      <div mat-dialog-actions>
+        <button mat-button class="cancel-button" (click)="onCancel()">Annuler</button>
+        <button mat-raised-button class="delete-button" (click)="onConfirm()">Supprimer</button>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .delete-dialog-container {
+      padding: 0;
+    }
+    .delete-dialog-header {
+      background-color: #f44336;
+      color: white;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      border-top-left-radius: 4px;
+      border-top-right-radius: 4px;
+    }
+    .warning-icon {
+      font-size: 28px;
+      height: 28px;
+      width: 28px;
+      margin-right: 12px;
+    }
+    h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 500;
+      color: white !important;
+    }
+    mat-dialog-content {
+      padding: 24px;
+      text-align: center;
+    }
+    .equipment-title {
+      font-weight: 500;
+      font-size: 18px;
+      margin: 12px 0;
+      color: #333;
+    }
+    .warning-text {
+      color: #f44336;
+      font-weight: 500;
+      margin-top: 16px;
+    }
+    mat-dialog-actions {
+      padding: 8px 24px 24px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .cancel-button {
+      color: #757575;
+    }
+    .delete-button {
+      background-color: #f44336;
+      color: white;
+    }
+    .delete-button:hover {
+      background-color: #d32f2f;
+    }
+  `]
+})
+export class DeleteEquipmentConfirmationDialogComponent {
+  constructor(
+    public dialogRef: MatDialogRef<DeleteEquipmentConfirmationDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: any
+  ) {}
+
+  onCancel(): void {
+    this.dialogRef.close(false);
+  }
+
+  onConfirm(): void {
+    this.dialogRef.close(true);
+  }
+}
 
 @Component({
   selector: 'app-equipment',
@@ -24,13 +119,14 @@ import { debounceTime } from 'rxjs/operators';
 export class EquipmentComponent implements OnInit {
   private http = inject(HttpClient);
   private router = inject(Router);
+  private dialog = inject(MatDialog);
 
   private baseUrl = 'https://localhost:5001/api/Equipment';
-  private criticiteBaseUrl = 'https://localhost:5001/api/EquipmentCriticite';
-  private etatBaseUrl = 'https://localhost:5001/api/EtatEquipement';
-  private familleBaseUrl = 'https://localhost:5001/api/FamilleEquipment';
+  private criticiteBaseUrl = 'https://localhost:5001/api/Equipment/criticites';
+  private etatBaseUrl = 'https://localhost:5001/api/Equipment/etats';
+  private familleBaseUrl = 'https://localhost:5001/api/Equipment/familles';
   private modeleBaseUrl = 'https://localhost:5001/api/ModeleEquipement';
-  private groupeBaseUrl = 'https://localhost:5001/api/GroupeEquipement';
+  private groupeBaseUrl = 'https://localhost:5001/api/Equipment/groupes';
 
   paginatedEquipmentList: EquipmentListItem[] = [];
   showPopup = false;
@@ -82,6 +178,7 @@ export class EquipmentComponent implements OnInit {
         this.getAllEquipment();
       },
       error: (err) => {
+        console.error('Failed to load reference data:', err);
         this.showPopupMessage('Failed to load reference data', 'error');
         this.isLoading = false;
       }
@@ -93,38 +190,13 @@ export class EquipmentComponent implements OnInit {
     const url = `${this.baseUrl}?page=${this.currentPage}&pageSize=${this.pageSize}`;
     this.http.get<any>(url).subscribe({
       next: (res) => {
-        this.paginatedEquipmentList = res.data.map((item: any) => ({
-          idEquipement: item.idEquipement || 0,
-          codeEquipement: item.codeEquipement || '',
-          designation: item.designation || '',
-          description: item.description || '',
-          idCriticite: item.idCriticite,
-          idEtat: item.idEtat,
-          idFamille: item.idFamille,
-          idModele: item.idModele,
-          idGroupe: item.idGroupe,
-          criticite: item.criticite?.nomCriticite || this.criticiteMap.get(item.idCriticite) || 'Unknown',
-          etat: item.etat?.nomEtat || this.etatMap.get(item.idEtat) || 'Unknown',
-          famille: item.famille?.nomFamille || this.familleMap.get(item.idFamille) || 'Unknown',
-          modele: item.modele?.nomModele || this.modeleMap.get(item.idModele) || 'Unknown',
-          groupe: item.groupe?.nomGroupe || this.groupeMap.get(item.idGroupe) || 'Unknown',
-          dateInstallation: item.dateInstallation ? new Date(item.dateInstallation) : null,
-          dateMiseEnService: item.dateMiseEnService ? new Date(item.dateMiseEnService) : null,
-          numeroSerie: item.numeroSerie || '',
-          sousGarantie: item.sousGarantie ?? false,
-          dateAchat: item.dateAchat ? new Date(item.dateAchat) : null,
-          dateFinGarantie: item.dateFinGarantie ? new Date(item.dateFinGarantie) : null,
-          dateConstruction: item.dateConstruction ? new Date(item.dateConstruction) : null,
-          coutAchat: item.coutAchat ?? null,
-          dateCreation: item.dateCreation ? new Date(item.dateCreation) : new Date(),
-          dateModification: item.dateModification ? new Date(item.dateModification) : null,
-          isDeleted: item.isDeleted ?? false
-        }));
+        this.paginatedEquipmentList = this.mapEquipmentData(res.data);
         this.totalCount = res.totalCount || 0;
         this.totalPages = Math.ceil(this.totalCount / this.pageSize) || 1;
         this.isLoading = false;
       },
       error: (err) => {
+        console.error('Failed to fetch equipment:', err);
         this.showPopupMessage('Failed to fetch equipment', 'error');
         this.isLoading = false;
       }
@@ -132,6 +204,7 @@ export class EquipmentComponent implements OnInit {
   }
 
   applyFilter(): void {
+    this.currentPage = 1; // Reset to first page when filtering
     this.searchSubject.next(this.searchTerm);
   }
 
@@ -145,67 +218,89 @@ export class EquipmentComponent implements OnInit {
     const url = `${this.baseUrl}?page=${this.currentPage}&pageSize=${this.pageSize}&search=${term}`;
     this.http.get<any>(url).subscribe({
       next: (res) => {
-        this.paginatedEquipmentList = res.data.map((item: any) => ({
-          idEquipement: item.idEquipement || 0,
-          codeEquipement: item.codeEquipement || '',
-          designation: item.designation || '',
-          description: item.description || '',
-          idCriticite: item.idCriticite,
-          idEtat: item.idEtat,
-          idFamille: item.idFamille,
-          idModele: item.idModele,
-          idGroupe: item.idGroupe,
-          criticite: item.criticite?.nomCriticite || this.criticiteMap.get(item.idCriticite) || 'Unknown',
-          etat: item.etat?.nomEtat || this.etatMap.get(item.idEtat) || 'Unknown',
-          famille: item.famille?.nomFamille || this.familleMap.get(item.idFamille) || 'Unknown',
-          modele: item.modele?.nomModele || this.modeleMap.get(item.idModele) || 'Unknown',
-          groupe: item.groupe?.nomGroupe || this.groupeMap.get(item.idGroupe) || 'Unknown',
-          dateInstallation: item.dateInstallation ? new Date(item.dateInstallation) : null,
-          dateMiseEnService: item.dateMiseEnService ? new Date(item.dateMiseEnService) : null,
-          numeroSerie: item.numeroSerie || '',
-          sousGarantie: item.sousGarantie ?? false,
-          dateAchat: item.dateAchat ? new Date(item.dateAchat) : null,
-          dateFinGarantie: item.dateFinGarantie ? new Date(item.dateFinGarantie) : null,
-          dateConstruction: item.dateConstruction ? new Date(item.dateConstruction) : null,
-          coutAchat: item.coutAchat ?? null,
-          dateCreation: item.dateCreation ? new Date(item.dateCreation) : new Date(),
-          dateModification: item.dateModification ? new Date(item.dateModification) : null,
-          isDeleted: item.isDeleted ?? false
-        }));
+        this.paginatedEquipmentList = this.mapEquipmentData(res.data);
         this.totalCount = res.totalCount || 0;
         this.totalPages = Math.ceil(this.totalCount / this.pageSize) || 1;
         this.isLoading = false;
       },
       error: (err) => {
+        console.error('Failed to search equipment:', err);
         this.showPopupMessage('Failed to search equipment', 'error');
         this.isLoading = false;
       }
     });
   }
 
+  // Helper method to map API data to our component's data format
+  private mapEquipmentData(data: any[]): EquipmentListItem[] {
+    return data.map((item: any) => ({
+      idEquipement: item.idEquipement || 0,
+      codeEquipement: item.codeEquipement || '',
+      designation: item.designation || '',
+      description: item.description || '',
+      idCriticite: item.idCriticite,
+      idEtat: item.idEtat,
+      idFamille: item.idFamille,
+      idModele: item.idModele,
+      idGroupe: item.idGroupe,
+      criticite: item.criticite?.nomCriticite || this.criticiteMap.get(item.idCriticite) || 'Unknown',
+      etat: item.etat?.nomEtat || this.etatMap.get(item.idEtat) || 'Unknown',
+      famille: item.famille?.nomFamille || this.familleMap.get(item.idFamille) || 'Unknown',
+      modele: item.modele?.nomModele || this.modeleMap.get(item.idModele) || 'Unknown',
+      groupe: item.groupe?.nomGroupe || this.groupeMap.get(item.idGroupe) || 'Unknown',
+      dateInstallation: item.dateInstallation ? new Date(item.dateInstallation) : null,
+      dateMiseEnService: item.dateMiseEnService ? new Date(item.dateMiseEnService) : null,
+      numeroSerie: item.numeroSerie || '',
+      sousGarantie: item.sousGarantie ?? false,
+      dateAchat: item.dateAchat ? new Date(item.dateAchat) : null,
+      dateFinGarantie: item.dateFinGarantie ? new Date(item.dateFinGarantie) : null,
+      dateConstruction: item.dateConstruction ? new Date(item.dateConstruction) : null,
+      coutAchat: item.coutAchat ?? null,
+      dateCreation: item.dateCreation ? new Date(item.dateCreation) : new Date(),
+      dateModification: item.dateModification ? new Date(item.dateModification) : null,
+      isDeleted: item.isDeleted ?? false
+    }));
+  }
+
   changePageSize(): void {
     this.currentPage = 1;
-    this.getAllEquipment();
+    if (this.searchTerm.trim()) {
+      this.filterItems();
+    } else {
+      this.getAllEquipment();
+    }
   }
 
   previousPage(): void {
     if (this.currentPage > 1) {
       this.currentPage--;
-      this.getAllEquipment();
+      if (this.searchTerm.trim()) {
+        this.filterItems();
+      } else {
+        this.getAllEquipment();
+      }
     }
   }
 
   nextPage(): void {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
-      this.getAllEquipment();
+      if (this.searchTerm.trim()) {
+        this.filterItems();
+      } else {
+        this.getAllEquipment();
+      }
     }
   }
 
   goToPage(page: number): void {
     if (page !== this.currentPage && page > 0 && page <= this.totalPages) {
       this.currentPage = page;
-      this.getAllEquipment();
+      if (this.searchTerm.trim()) {
+        this.filterItems();
+      } else {
+        this.getAllEquipment();
+      }
     }
   }
 
@@ -245,25 +340,38 @@ export class EquipmentComponent implements OnInit {
   }
 
   deleteEquipment(item: EquipmentListItem): void {
-    if (!confirm(`Delete ${item.codeEquipement} - ${item.designation}?`)) return;
-    this.isLoading = true;
-    this.http.delete(`${this.baseUrl}/${item.idEquipement}`).subscribe({
-      next: () => {
-        this.showPopupMessage('Equipment deleted successfully!', 'success');
-        this.getAllEquipment();
-      },
-      error: (err) => {
-        this.showPopupMessage(err.error?.message || 'Failed to delete equipment', 'error');
-        this.isLoading = false;
+    const dialogRef = this.dialog.open(DeleteEquipmentConfirmationDialogComponent, {
+      width: '400px',
+      data: { codeEquipement: item.codeEquipement, designation: item.designation }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.isLoading = true;
+        this.http.delete(`${this.baseUrl}/${item.idEquipement}`).subscribe({
+          next: () => {
+            this.showPopupMessage('Equipment deleted successfully!', 'success');
+            if (this.searchTerm.trim()) {
+              this.filterItems();
+            } else {
+              this.getAllEquipment();
+            }
+          },
+          error: (err) => {
+            console.error('Failed to delete equipment:', err);
+            this.showPopupMessage(err.error?.message || 'Failed to delete equipment', 'error');
+            this.isLoading = false;
+          }
+        });
       }
     });
   }
 
   getCriticiteClass(criticite: string): string {
     const normalizedCriticite = criticite.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
-    if (normalizedCriticite === 'high') return 'criticite-haute';
-    if (normalizedCriticite === 'medium') return 'criticite-moyenne';
-    if (normalizedCriticite === 'low') return 'criticite-basse';
+    if (normalizedCriticite === 'high' || normalizedCriticite === 'haute') return 'criticite-haute';
+    if (normalizedCriticite === 'medium' || normalizedCriticite === 'moyenne') return 'criticite-moyenne';
+    if (normalizedCriticite === 'low' || normalizedCriticite === 'basse') return 'criticite-basse';
     return '';
   }
 

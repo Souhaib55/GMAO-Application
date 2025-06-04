@@ -3,6 +3,7 @@ using Core.Entities;
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,18 +16,30 @@ namespace API.Controllers
     public class EquipmentController : ControllerBase
     {
         private readonly StoreContext _context;
+        private readonly ILogger<EquipmentController> _logger;
 
-        public EquipmentController(StoreContext context)
+        public EquipmentController(StoreContext context, ILogger<EquipmentController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         // GET: api/Equipment
         [HttpGet]
-        public async Task<ActionResult<PagedResult<object>>> GetEquipments(int page = 1, int pageSize = 5)
+        public async Task<ActionResult<PagedResult<object>>> GetEquipments(int page = 1, int pageSize = 5, string search = null)
         {
             var query = _context.Equipments
-                .Where(e => !e.IsDeleted)
+                .Where(e => !e.IsDeleted);
+
+            // Appliquer le filtre de recherche par code d'équipement si le paramètre search est fourni
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                search = search.ToLower().Trim();
+                query = query.Where(e => e.CodeEquipement.ToLower().Contains(search));
+                _logger.LogInformation($"Applying search filter: '{search}'");
+            }
+
+            query = query
                 .Include(e => e.Criticite)
                 .Include(e => e.Etat)
                 .Include(e => e.Famille)
@@ -68,12 +81,14 @@ namespace API.Controllers
                 })
                 .ToListAsync();
 
-            return Ok(new PagedResult<object>
+            _logger.LogInformation($"Retrieved {items.Count} equipments out of {totalCount} total (page {page}, pageSize {pageSize})");
+
+            return Ok(new pagedResult<object>
             {
-                Data = items.Cast<object>().ToList(),
-                TotalCount = totalCount,
-                Page = page,
-                PageSize = pageSize
+                data = items.Cast<object>().ToList(),
+                totalCount = totalCount,
+                page = page,
+                pageSize = pageSize
             });
         }
 
@@ -91,6 +106,7 @@ namespace API.Controllers
 
             if (equipment == null)
             {
+                _logger.LogWarning($"Equipment with ID {id} not found or deleted.");
                 return NotFound("Equipment not found or deleted.");
             }
 
@@ -106,7 +122,7 @@ namespace API.Controllers
                 return BadRequest(ModelState);
             }
 
-            // Check for unique CodeEquipement
+            // Check if CodeEquipement is unique
             if (await _context.Equipments.AnyAsync(e => e.CodeEquipement == equipmentDto.CodeEquipement && !e.IsDeleted))
             {
                 return BadRequest("An equipment with this CodeEquipement already exists.");
@@ -311,11 +327,11 @@ namespace API.Controllers
         }
     }
 
-    public class PagedResult<T>
+    public class pagedResult<T>
     {
-        public required List<T> Data { get; set; }
-        public int TotalCount { get; set; }
-        public int Page { get; set; }
-        public int PageSize { get; set; }
+        public required List<T> data { get; set; }
+        public int totalCount { get; set; }
+        public int page { get; set; }
+        public int pageSize { get; set; }
     }
 }

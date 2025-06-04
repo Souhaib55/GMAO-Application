@@ -167,7 +167,7 @@ export class InterventionComponent implements OnInit {
     }
 
     this.searchSubject.pipe(debounceTime(300)).subscribe(() => {
-      this.applyFilter();
+      this.filterItems();
     });
 
     this.loadReferenceData();
@@ -205,20 +205,7 @@ export class InterventionComponent implements OnInit {
     const url = `${this.baseUrl}?page=${this.currentPage}&pageSize=${this.pageSize}`;
     this.http.get<any>(url, { withCredentials: true }).subscribe({
       next: (res) => {
-        this.paginatedInterventionList = res.data.map((item: any) => ({
-          idDemandeIntervention: item.idDemandeIntervention || 0,
-          titre: item.titre || '',
-          dateCreation: item.dateCreation ? new Date(item.dateCreation) : new Date(),
-          machineArretee: item.machineArretee || false,
-          etat: item.etat?.libelle || this.etatMap.get(item.idEtat) || 'Unknown',
-          typeIntervention: item.typeIntervention?.libelle || this.typeInterventionMap.get(item.idTypeIntervention) || 'Unknown',
-          urgence: item.urgence?.libelle || this.urgenceMap.get(item.idUrgence) || 'Unknown',
-          chaineProduction: item.chaineProduction?.libelle || this.chaineProductionMap.get(item.idChaineProduction) || 'Unknown',
-          panne: item.panne?.libelle || this.panneMap.get(item.idPanne) || 'Unknown',
-          demandeur: item.demandeur ? `${item.demandeur.nom} ${item.demandeur.prenom}` : this.usersMap.get(item.demandeursID) || 'Unknown',
-          destinataire: item.destinataire ? `${item.destinataire.nom} ${item.destinataire.prenom}` : this.usersMap.get(item.destinatairesID) || 'Unknown',
-          fileName: item.fileName || ''
-        }));
+        this.paginatedInterventionList = this.mapInterventionsData(res.data);
         this.totalCount = res.totalCount || 0;
         this.totalPages = Math.ceil(this.totalCount / this.pageSize) || 1;
         this.isLoading = false;
@@ -232,6 +219,7 @@ export class InterventionComponent implements OnInit {
   }
 
   applyFilter(): void {
+    this.currentPage = 1; // Reset to first page when filtering
     this.searchSubject.next(this.searchTerm);
   }
 
@@ -246,20 +234,7 @@ export class InterventionComponent implements OnInit {
     const url = `${this.baseUrl}?page=${this.currentPage}&pageSize=${this.pageSize}&search=${term}`;
     this.http.get<any>(url, { withCredentials: true }).subscribe({
       next: (res) => {
-        this.paginatedInterventionList = res.data.map((item: any) => ({
-          idDemandeIntervention: item.idDemandeIntervention || 0,
-          titre: item.titre || '',
-          dateCreation: item.dateCreation ? new Date(item.dateCreation) : new Date(),
-          machineArretee: item.machineArretee || false,
-          etat: item.etat?.libelle || this.etatMap.get(item.idEtat) || 'Unknown',
-          typeIntervention: item.typeIntervention?.libelle || this.typeInterventionMap.get(item.idTypeIntervention) || 'Unknown',
-          urgence: item.urgence?.libelle || this.urgenceMap.get(item.idUrgence) || 'Unknown',
-          chaineProduction: item.chaineProduction?.libelle || this.chaineProductionMap.get(item.idChaineProduction) || 'Unknown',
-          panne: item.panne?.libelle || this.panneMap.get(item.idPanne) || 'Unknown',
-          demandeur: item.demandeur ? `${item.demandeur.nom} ${item.demandeur.prenom}` : this.usersMap.get(item.demandeursID) || 'Unknown',
-          destinataire: item.destinataire ? `${item.destinataire.nom} ${item.destinataire.prenom}` : this.usersMap.get(item.destinatairesID) || 'Unknown',
-          fileName: item.fileName || ''
-        }));
+        this.paginatedInterventionList = this.mapInterventionsData(res.data);
         this.totalCount = res.totalCount || 0;
         this.totalPages = Math.ceil(this.totalCount / this.pageSize) || 1;
         this.isLoading = false;
@@ -272,29 +247,63 @@ export class InterventionComponent implements OnInit {
     });
   }
 
+  // Helper method to map API data to our component's data format
+  private mapInterventionsData(data: any[]): InterventionListItem[] {
+    return data.map((item: any) => ({
+      idDemandeIntervention: item.idDemandeIntervention || 0,
+      titre: item.titre || '',
+      dateCreation: item.dateCreation ? new Date(item.dateCreation) : new Date(),
+      machineArretee: item.machineArretee || false,
+      etat: item.etat?.libelle || this.etatMap.get(item.idEtat) || 'Unknown',
+      typeIntervention: item.typeIntervention?.libelle || this.typeInterventionMap.get(item.idTypeIntervention) || 'Unknown',
+      urgence: item.urgence?.libelle || this.urgenceMap.get(item.idUrgence) || 'Unknown',
+      chaineProduction: item.chaineProduction?.libelle || this.chaineProductionMap.get(item.idChaineProduction) || 'Unknown',
+      panne: item.panne?.libelle || this.panneMap.get(item.idPanne) || 'Unknown',
+      demandeur: item.demandeur ? `${item.demandeur.nom} ${item.demandeur.prenom}` : this.usersMap.get(item.demandeursID) || 'Unknown',
+      destinataire: item.destinataire ? `${item.destinataire.nom} ${item.destinataire.prenom}` : this.usersMap.get(item.destinatairesID) || 'Unknown',
+      fileName: item.fileName || ''
+    }));
+  }
+
   changePageSize(): void {
     this.currentPage = 1;
-    this.getAllInterventions();
+    if (this.searchTerm.trim()) {
+      this.filterItems();
+    } else {
+      this.getAllInterventions();
+    }
   }
 
   previousPage(): void {
     if (this.currentPage > 1) {
       this.currentPage--;
-      this.getAllInterventions();
+      if (this.searchTerm.trim()) {
+        this.filterItems();
+      } else {
+        this.getAllInterventions();
+      }
     }
   }
 
   nextPage(): void {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
-      this.getAllInterventions();
+      if (this.searchTerm.trim()) {
+        this.filterItems();
+      } else {
+        this.getAllInterventions();
+      }
     }
   }
 
   goToPage(page: number): void {
     if (page !== this.currentPage && page > 0 && page <= this.totalPages) {
       this.currentPage = page;
-      this.getAllInterventions();
+      if (this.searchTerm.trim()) {
+        this.filterItems();
+      } else {
+        this.getAllInterventions();
+      }
     }
   }
 
@@ -346,7 +355,11 @@ export class InterventionComponent implements OnInit {
         this.http.delete(`${this.baseUrl}/${item.idDemandeIntervention}`, { withCredentials: true }).subscribe({
           next: () => {
             this.showPopupMessage('Intervention deleted successfully!', 'success');
-            this.getAllInterventions();
+            if (this.searchTerm.trim()) {
+              this.filterItems();
+            } else {
+              this.getAllInterventions();
+            }
           },
           error: (err) => {
             console.error('Failed to delete intervention:', err);

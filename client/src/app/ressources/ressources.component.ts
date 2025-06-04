@@ -2,8 +2,9 @@ import { Component, OnInit, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { trigger, transition, style, animate } from '@angular/animations';
-import { forkJoin } from 'rxjs';
-import { debounceTime, Subject } from 'rxjs';
+import { forkJoin, Subject } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
+import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-ressources',
@@ -31,8 +32,6 @@ export class RessourcesComponent implements OnInit {
   private criticiteBaseUrl = 'https://localhost:5001/api/CriticitePiece';
 
   paginatedPieceList: PieceListItem[] = [];
-  filteredPieceList: PieceListItem[] = [];
-  allPieceList: PieceListItem[] = [];
   showPopup = false;
   popupMessage = '';
   popupType: 'success' | 'error' = 'success';
@@ -78,6 +77,7 @@ export class RessourcesComponent implements OnInit {
         this.getAllPieces();
       },
       error: (err) => {
+        console.error('Failed to load reference data:', err);
         this.showPopupMessage('Failed to load reference data', 'error');
         this.isLoading = false;
       }
@@ -89,28 +89,13 @@ export class RessourcesComponent implements OnInit {
     const url = `${this.baseUrl}?page=${this.currentPage}&pageSize=${this.pageSize}`;
     this.http.get<any>(url).subscribe({
       next: (res) => {
-        this.paginatedPieceList = res.data.map((item: any) => ({
-          idPiece: item.idPiece || 0,
-          codePiece: item.codePiece || '',
-          designation: item.designation || '',
-          description: item.description || '',
-          idFamillePiece: item.idFamillePiece,
-          idConstructeur: item.idConstructeur,
-          idCriticitePiece: item.idCriticitePiece,
-          famillePiece: item.famillePiece?.nomFamille || this.familleMap.get(item.idFamillePiece) || 'Unknown',
-          constructeur: item.constructeur?.nomConstructeur || this.constructeurMap.get(item.idConstructeur) || 'Unknown',
-          criticitePiece: item.criticitePiece?.niveauCriticitePiece || this.criticiteMap.get(item.idCriticitePiece) || 'Unknown',
-          quantite_Stock: item.quantite_Stock || 0,
-          prixUnitaire: item.prixUnitaire || 0,
-          dateCreation: item.dateCreation ? new Date(item.dateCreation) : new Date(),
-          dateModification: item.dateModification ? new Date(item.dateModification) : null,
-          isActif: item.isActif ?? true
-        }));
+        this.paginatedPieceList = this.mapPieceData(res.data);
         this.totalCount = res.totalCount || 0;
         this.totalPages = Math.ceil(this.totalCount / this.pageSize) || 1;
         this.isLoading = false;
       },
       error: (err) => {
+        console.error('Failed to fetch pieces:', err);
         this.showPopupMessage('Failed to fetch pieces', 'error');
         this.isLoading = false;
       }
@@ -118,6 +103,7 @@ export class RessourcesComponent implements OnInit {
   }
 
   applyFilter(): void {
+    this.currentPage = 1; // Reset to first page when filtering
     this.searchSubject.next(this.searchTerm);
   }
 
@@ -126,55 +112,84 @@ export class RessourcesComponent implements OnInit {
       this.getAllPieces();
       return;
     }
-
     const term = this.searchTerm.toLowerCase().trim();
-    
-    // For server-side filtering, you would implement this with API call
-    // Here's a client-side implementation as example
     this.isLoading = true;
-    
-    // In a real implementation, you would call the API with a search parameter
     const url = `${this.baseUrl}?page=${this.currentPage}&pageSize=${this.pageSize}&search=${term}`;
     this.http.get<any>(url).subscribe({
       next: (res) => {
-        // Same processing as getAllPieces
-        this.paginatedPieceList = res.data.map((item: any) => ({
-          // Same mapping as before
-        }));
+        this.paginatedPieceList = this.mapPieceData(res.data);
         this.totalCount = res.totalCount || 0;
         this.totalPages = Math.ceil(this.totalCount / this.pageSize) || 1;
         this.isLoading = false;
       },
       error: (err) => {
+        console.error('Failed to search pieces:', err);
         this.showPopupMessage('Failed to search pieces', 'error');
         this.isLoading = false;
       }
     });
   }
 
+  // Helper method to map API data to our component's data format
+  private mapPieceData(data: any[]): PieceListItem[] {
+    return data.map((item: any) => ({
+      idPiece: item.idPiece || 0,
+      codePiece: item.codePiece || '',
+      designation: item.designation || '',
+      description: item.description || '',
+      idFamillePiece: item.idFamillePiece,
+      idConstructeur: item.idConstructeur,
+      idCriticitePiece: item.idCriticitePiece,
+      famillePiece: item.famillePiece?.nomFamille || this.familleMap.get(item.idFamillePiece) || 'Unknown',
+      constructeur: item.constructeur?.nomConstructeur || this.constructeurMap.get(item.idConstructeur) || 'Unknown',
+      criticitePiece: item.criticitePiece?.niveauCriticitePiece || this.criticiteMap.get(item.idCriticitePiece) || 'Unknown',
+      quantite_Stock: item.quantite_Stock || 0,
+      prixUnitaire: item.prixUnitaire || 0,
+      dateCreation: item.dateCreation ? new Date(item.dateCreation) : new Date(),
+      dateModification: item.dateModification ? new Date(item.dateModification) : null,
+      isActif: item.isActif ?? true
+    }));
+  }
+
   changePageSize(): void {
     this.currentPage = 1;
-    this.getAllPieces();
+    if (this.searchTerm.trim()) {
+      this.filterItems();
+    } else {
+      this.getAllPieces();
+    }
   }
 
   previousPage(): void {
     if (this.currentPage > 1) {
       this.currentPage--;
-      this.getAllPieces();
+      if (this.searchTerm.trim()) {
+        this.filterItems();
+      } else {
+        this.getAllPieces();
+      }
     }
   }
 
   nextPage(): void {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
-      this.getAllPieces();
+      if (this.searchTerm.trim()) {
+        this.filterItems();
+      } else {
+        this.getAllPieces();
+      }
     }
   }
 
   goToPage(page: number): void {
     if (page !== this.currentPage && page > 0 && page <= this.totalPages) {
       this.currentPage = page;
-      this.getAllPieces();
+      if (this.searchTerm.trim()) {
+        this.filterItems();
+      } else {
+        this.getAllPieces();
+      }
     }
   }
 
@@ -183,25 +198,17 @@ export class RessourcesComponent implements OnInit {
     const maxVisiblePages = 3;
     
     if (this.totalPages <= maxVisiblePages) {
-      // Show all pages if there are only a few
       for (let i = 1; i <= this.totalPages; i++) {
         pages.push(i);
       }
     } else {
-      // Always include current page
       pages.push(this.currentPage);
-
-      // Try to add one page before
       if (this.currentPage > 1) {
         pages.unshift(this.currentPage - 1);
       }
-      
-      // Try to add one page after
       if (this.currentPage < this.totalPages) {
         pages.push(this.currentPage + 1);
       }
-      
-      // If we still have room, add more pages
       while (pages.length < maxVisiblePages && pages.length < this.totalPages) {
         if (pages[0] > 1) {
           pages.unshift(pages[0] - 1);
@@ -210,7 +217,6 @@ export class RessourcesComponent implements OnInit {
         }
       }
     }
-    
     return pages;
   }
 
@@ -223,25 +229,30 @@ export class RessourcesComponent implements OnInit {
   }
 
   deletePiece(item: PieceListItem): void {
-    if (!confirm(`Delete ${item.codePiece} - ${item.designation}?`)) return;
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer la pièce: ${item.codePiece} - ${item.designation}?`)) return;
     this.isLoading = true;
     this.http.delete(`${this.baseUrl}/${item.idPiece}`).subscribe({
       next: () => {
-        this.showPopupMessage('Piece deleted successfully!', 'success');
-        this.getAllPieces();
+        this.showPopupMessage('Pièce supprimée avec succès!', 'success');
+        if (this.searchTerm.trim()) {
+          this.filterItems();
+        } else {
+          this.getAllPieces();
+        }
       },
       error: (err) => {
-        this.showPopupMessage(err.error?.message || 'Failed to delete piece', 'error');
+        console.error('Failed to delete piece:', err);
+        this.showPopupMessage(err.error?.message || 'Échec de la suppression de la pièce', 'error');
         this.isLoading = false;
       }
     });
   }
 
   getCriticiteClass(criticite: string): string {
-    const lowerCriticite = criticite.toLowerCase();
-    if (lowerCriticite === 'haute') return 'criticite-haute';
-    if (lowerCriticite === 'moyenne') return 'criticite-moyenne';
-    if (lowerCriticite === 'basse') return 'criticite-basse';
+    const normalizedCriticite = criticite.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+    if (normalizedCriticite === 'high' || normalizedCriticite === 'haute') return 'criticite-haute';
+    if (normalizedCriticite === 'medium' || normalizedCriticite === 'moyenne') return 'criticite-moyenne';
+    if (normalizedCriticite === 'low' || normalizedCriticite === 'basse') return 'criticite-basse';
     return '';
   }
 

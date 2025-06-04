@@ -21,25 +21,36 @@ namespace API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Stock>>> GetStocks(int page = 1, int pageSize = 5)
+        public async Task<ActionResult<PagedResult<Stock>>> GetStocks(int page = 1, int pageSize = 5, string search = null)
         {
-            var totalCount = await _context.Stocks.Where(s => !s.IsDeleted).CountAsync();
-            var stocks = await _context.Stocks
-                .Where(s => !s.IsDeleted)
+            var query = _context.Stocks
+                .Where(s => !s.IsDeleted);
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                search = search.ToLower().Trim();
+                query = query.Where(s => s.Code.ToLower().Contains(search));
+            }
+
+            var totalCount = await query.CountAsync();
+            var stocks = await query
                 .Include(s => s.StockEntities)
                 .Include(s => s.StockStatus)
                 .Include(s => s.StockSupplier)
+                .OrderBy(s => s.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
-            return Ok(new
+            var result = new PagedResult<Stock>
             {
+                Data = stocks,
                 TotalCount = totalCount,
                 Page = page,
-                PageSize = pageSize,
-                Data = stocks
-            });
+                PageSize = pageSize
+            };
+
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
@@ -58,7 +69,6 @@ namespace API.Controllers
             return Ok(stock);
         }
 
-        // Update the CreateStock method
         [HttpPost]
         public async Task<ActionResult<Stock>> CreateStock([FromBody] CreateStockDTO stockDto)
         {
@@ -66,7 +76,6 @@ namespace API.Controllers
             if (string.IsNullOrWhiteSpace(stockDto.Code)) return BadRequest("Code is required");
             if (string.IsNullOrWhiteSpace(stockDto.Description)) return BadRequest("Description is required");
 
-            // Validate foreign keys
             var stockEntities = await _context.StockEntities.FindAsync(stockDto.StockEntitiesId);
             if (stockEntities == null) return BadRequest($"Invalid StockEntitiesId: {stockDto.StockEntitiesId}");
 
@@ -83,7 +92,7 @@ namespace API.Controllers
                 StockEntitiesId = stockDto.StockEntitiesId,
                 StockStatusId = stockDto.StockStatusId,
                 StockSupplierId = stockDto.StockSupplierId,
-                CreatedOn = DateTime.Now // Or use stockDto.CreatedOn if needed
+                CreatedOn = DateTime.Now
             };
 
             try
@@ -160,6 +169,14 @@ namespace API.Controllers
             {
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
+        }
+
+        public class PagedResult<T>
+        {
+            public List<T> Data { get; set; }
+            public int TotalCount { get; set; }
+            public int Page { get; set; }
+            public int PageSize { get; set; }
         }
     }
 }

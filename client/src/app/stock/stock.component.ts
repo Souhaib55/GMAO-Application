@@ -4,7 +4,6 @@ import { Router } from '@angular/router';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { Subject } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
-//import { Stock, StockEntities, StockStatus, StockSupplier } from './stock.interfaces';
 
 @Component({
     selector: 'app-stock',
@@ -74,7 +73,6 @@ export class StockComponent implements OnInit {
         this.isLoading = true;
         let url = `${this.baseUrl}?page=${this.currentPage}&pageSize=${this.pageSize}`;
         
-        // Add search parameter if search term exists
         if (this.searchTerm.trim()) {
             url += `&search=${encodeURIComponent(this.searchTerm.trim())}`;
         }
@@ -98,7 +96,7 @@ export class StockComponent implements OnInit {
     }
 
     filterItems(): void {
-        this.currentPage = 1; // Reset to first page when searching
+        this.currentPage = 1;
         this.getAllStock();
     }
 

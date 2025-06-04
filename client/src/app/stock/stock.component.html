@@ -8,7 +8,7 @@
       </div>
       <div class="title-container">
         <h1>Gestion du stock</h1>
-        <p class="subtitle">Gérer vos stock...</p>
+        <p class="subtitle">Gérer vos stocks...</p>
       </div>
     </div>
     <button class="create-button" (click)="navigateToCreate()">
@@ -46,10 +46,10 @@
         <tr>
           <th>Code</th>
           <th>Description</th>
-          <th>Entities</th>
-          <th>Status</th>
-          <th>Supplier</th>
-          <th>Created On</th>
+          <th>Entités</th>
+          <th>Statut</th>
+          <th>Fournisseur</th>
+          <th>Date de création</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -60,7 +60,7 @@
           <td>{{ item.stockEntities?.name || 'N/A' }}</td>
           <td>{{ item.stockStatus?.status || 'N/A' }}</td>
           <td>{{ item.stockSupplier?.supplierName || 'N/A' }}</td>
-          <td>{{ item.createdOn | date:'MM/dd/yyyy HH:mm' }}</td>
+          <td>{{ item.createdOn | date:'dd/MM/yyyy HH:mm' }}</td>
           <td class="actions">
             <button mat-icon-button color="primary" (click)="navigateToEdit(item.id)">
               <mat-icon>edit</mat-icon>
@@ -71,7 +71,7 @@
           </td>
         </tr>
         <tr *ngIf="paginatedStockList.length === 0">
-          <td colspan="7" class="no-data">No stock found.</td>
+          <td colspan="7" class="no-data">Aucun stock trouvé.</td>
         </tr>
       </tbody>
     </table>
@@ -81,13 +81,13 @@
   <div class="pagination">
     <button class="pagination-btn prev" [disabled]="currentPage === 1" (click)="previousPage()">
       <mat-icon>chevron_left</mat-icon>
-      PREVIOUS
+      PRÉCÉDENT
     </button>
     
-    <span>Page {{ currentPage }} of {{ totalPages }}</span>
+    <span>Page {{ currentPage }} sur {{ totalPages }}</span>
     
     <button class="pagination-btn next" [disabled]="currentPage === totalPages" (click)="nextPage()">
-      NEXT
+      SUIVANT
       <mat-icon>chevron_right</mat-icon>
     </button>
   </div>

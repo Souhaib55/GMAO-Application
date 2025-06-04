@@ -44,6 +44,7 @@ import { InitService } from './core/services/init.service';
 import { firstValueFrom } from 'rxjs';
 import { InterventionFormDialogComponent } from './intervention-form-dialog/intervention-form-dialog.component'; // Import firstValueFrom
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { DeleteEquipmentConfirmationDialogComponent } from './equipment/equipment.component';
 
 @NgModule({
   imports: [
@@ -104,7 +105,8 @@ import { MatToolbarModule } from '@angular/material/toolbar';
     InterventionButtonComponent,
     HomepageComponent,
     TriggerComponent,
-    InterventionFormDialogComponent
+    InterventionFormDialogComponent,
+    DeleteEquipmentConfirmationDialogComponent
   ],
   providers: [
     {
