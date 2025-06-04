@@ -244,12 +244,7 @@ body.nav-open .navbar-collapse {
   display: block !important;
 }
 
-
-
-
-
-/* Ajoutez ces styles à la fin du fichier CSS existant */
-
+/* Modern notification system styling */
 .notification-container {
   position: relative;
   margin-right: 20px;
@@ -260,12 +255,13 @@ body.nav-open .navbar-collapse {
 
 .notification-icon {
   font-size: 24px;
-  color: #555;
+  color: white;
   transition: color 0.3s ease;
 }
 
 .notification-container:hover .notification-icon {
-  color: #1976d2;
+  color: #fff;
+  opacity: 0.8;
 }
 
 .notification-badge {
@@ -283,4 +279,468 @@ body.nav-open .navbar-collapse {
   padding: 0 5px;
   font-weight: 700;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Modern Notifications Panel */
+.notifications-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 360px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  z-index: 1050;
+  overflow: hidden;
+  margin-top: 10px;
+  animation: slideDown 0.2s ease-out forwards;
+  transform-origin: top right;
+}
+
+@keyframes slideDown {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.notifications-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+}
+
+.notifications-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.clear-all {
+  background: none;
+  border: none;
+  color: #6366F1;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  font-weight: 500;
+}
+
+.clear-all:hover {
+  text-decoration: underline;
+}
+
+.notifications-content {
+  max-height: 350px;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.notifications-content.empty {
+  padding: 40px 0;
+  text-align: center;
+}
+
+.no-notifications {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  color: #9ca3af;
+}
+
+.empty-icon {
+  font-size: 48px;
+  color: #e5e7eb;
+  margin-bottom: 16px;
+}
+
+.notification-item {
+  display: flex;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.2s;
+  cursor: pointer;
+  position: relative;
+}
+
+.notification-item:hover {
+  background-color: #f9fafb;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-icon-container {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background-color: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+}
+
+/* Status-specific styling */
+.status-new .notification-icon-container {
+  background-color: #fff7ed;
+}
+
+.status-progress .notification-icon-container {
+  background-color: #eff6ff;
+}
+
+.status-done .notification-icon-container {
+  background-color: #ecfdf5;
+}
+
+.status-closed .notification-icon-container {
+  background-color: #f0fdfa;
+}
+
+.status-canceled .notification-icon-container {
+  background-color: #fef2f2;
+}
+
+.notification-item-icon {
+  font-size: 20px;
+  color: #2563eb;
+}
+
+.status-new .notification-item-icon {
+  color: #f97316;
+}
+
+.status-progress .notification-item-icon {
+  color: #2563eb;
+}
+
+.status-done .notification-item-icon {
+  color: #10b981;
+}
+
+.status-closed .notification-item-icon {
+  color: #14b8a6;
+}
+
+.status-canceled .notification-item-icon {
+  color: #ef4444;
+}
+
+.notification-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notification-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.notification-time {
+  color: #6b7280;
+}
+
+.notification-status {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  background-color: #f3f4f6;
+  white-space: nowrap;
+}
+
+.status-new .notification-status {
+  background-color: #ffedd5;
+  color: #c2410c;
+}
+
+.status-progress .notification-status {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.status-done .notification-status {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-closed .notification-status {
+  background-color: #ccfbf1;
+  color: #115e59;
+}
+
+.status-canceled .notification-status {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.notification-dismiss {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, background-color 0.2s;
+  color: #6b7280;
+}
+
+.notification-item:hover .notification-dismiss {
+  opacity: 1;
+}
+
+.notification-dismiss:hover {
+  background-color: #f3f4f6;
+  color: #111827;
+}
+
+.notification-dismiss i {
+  font-size: 16px;
+}
+
+.notifications-footer {
+  padding: 12px 20px;
+  border-top: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  text-align: center;
+}
+
+.view-all {
+  width: 100%;
+  border: none;
+  border-radius: 6px;
+  background-color: #6366F1;
+  color: white;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.view-all:hover {
+  background-color: #4f46e5;
+}
+
+/* Industrial touch elements */
+.notification-icon-container {
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.notification-item {
+  border-left: 3px solid transparent;
+}
+
+.status-new {
+  border-left-color: #f97316;
+}
+
+.status-progress {
+  border-left-color: #2563eb;
+}
+
+.status-done {
+  border-left-color: #10b981;
+}
+
+.status-closed {
+  border-left-color: #14b8a6;
+}
+
+.status-canceled {
+  border-left-color: #ef4444;
+}
+
+@media (max-width: 576px) {
+  .notifications-panel {
+    position: fixed;
+    width: 100%;
+    max-width: 100%;
+    height: calc(100vh - 60px);
+    top: 60px;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    margin-top: 0;
+    border-radius: 0;
+    box-shadow: none;
+    z-index: 1100;
+  }
+  
+  .notifications-content {
+    max-height: calc(100vh - 180px);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Add these styles to the existing CSS file */
+
+/* Notification Detail View */
+.notification-detail-view {
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.notification-detail-header {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+}
+
+.notification-detail-header h3 {
+  flex: 1;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  text-align: center;
+}
+
+.back-button, .dismiss-button {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-button:hover, .dismiss-button:hover {
+  background-color: #f3f4f6;
+}
+
+.back-button i, .dismiss-button i {
+  font-size: 20px;
+  color: #6b7280;
+}
+
+.notification-detail-content {
+  padding: 24px;
+}
+
+.notification-status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.notification-status-badge.status-new {
+  background-color: #ffedd5;
+  color: #c2410c;
+}
+
+.notification-status-badge.status-progress {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.notification-status-badge.status-done {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.notification-status-badge.status-closed {
+  background-color: #ccfbf1;
+  color: #115e59;
+}
+
+.notification-status-badge.status-canceled {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.notification-detail-content h2 {
+  margin: 0 0 16px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.3;
+}
+
+.notification-meta-detail {
+  margin-bottom: 20px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  color: #6b7280;
+}
+
+.meta-item i {
+  font-size: 18px;
+  margin-right: 8px;
+}
+
+.notification-instructions {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 16px;
+  margin: 0;
+  line-height: 1.5;
+  font-size: 14px;
+  color: #4b5563;
 }

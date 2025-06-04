@@ -113,13 +113,13 @@ export class NavbarComponent implements OnInit, OnDestroy {
   // Navigate to a specific intervention
   navigateToIntervention(interventionId: number): void {
     this.showNotificationsPanel = false;
-    this.router.navigateByUrl(`/intervention/edit/${interventionId}`);
+    this.router.navigateByUrl(`/admin/intervention/edit/${interventionId}`);
   }
   
   // Navigate to all interventions
   navigateToInterventions(): void {
     this.showNotificationsPanel = false;
-    this.router.navigateByUrl('/intervention');
+    this.router.navigateByUrl('/admin/intervention');
   }
   
   // Dismiss a notification

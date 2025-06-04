@@ -30,8 +30,8 @@ export class NotificationService {
   private notificationCountSubject = new BehaviorSubject<number>(0);
   public notificationCount$ = this.notificationCountSubject.asObservable();
   
-  // Cache for read notifications (persists during session)
-  private readNotifications: Set<number> = new Set();
+  // LocalStorage key for read notifications
+  private readonly STORAGE_KEY = 'gmao_read_notifications';
 
   constructor(
     private http: HttpClient,
@@ -39,6 +39,28 @@ export class NotificationService {
   ) {
     // Initial load of notifications
     this.loadTodayInterventions();
+  }
+
+  // Get the set of read notification IDs from localStorage
+  private getReadNotificationsFromStorage(): Set<number> {
+    try {
+      const stored = localStorage.getItem(this.STORAGE_KEY);
+      if (stored) {
+        return new Set(JSON.parse(stored));
+      }
+    } catch (err) {
+      console.error('Error reading from localStorage:', err);
+    }
+    return new Set<number>();
+  }
+
+  // Save read notification IDs to localStorage
+  private saveReadNotificationsToStorage(readSet: Set<number>): void {
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify([...readSet]));
+    } catch (err) {
+      console.error('Error writing to localStorage:', err);
+    }
   }
 
   // Get today's notification count 
@@ -50,6 +72,13 @@ export class NotificationService {
 
     return this.http.get<number>(`${this.baseUrl}/today-count`, { withCredentials: true })
       .pipe(
+        map(count => {
+          // Filter out read notifications
+          const readNotifications = this.getReadNotificationsFromStorage();
+          // We don't know which specific notifications make up this count,
+          // so we'll have to rely on our full list filtering
+          return count;
+        }),
         tap(count => this.notificationCountSubject.next(count)),
         catchError(error => {
           console.error('Error fetching notification count:', error);
@@ -67,8 +96,10 @@ export class NotificationService {
       return;
     }
 
+    // Get read notifications from localStorage
+    const readNotifications = this.getReadNotificationsFromStorage();
+
     // We'll use the existing endpoint with a date filter
-    // In a real implementation, you might want a dedicated endpoint for notifications
     this.http.get<any>(`${this.baseUrl}?page=1&pageSize=100`, { withCredentials: true })
       .pipe(
         map(response => {
@@ -78,13 +109,13 @@ export class NotificationService {
           
           return response.data
             .filter((item: any) => {
-              // Include only today's interventions that are not closed/approved
+              // Include only today's interventions that are not closed/approved and not read
               const creationDate = new Date(item.dateCreation);
               creationDate.setHours(0, 0, 0, 0);
               
               const isToday = creationDate.getTime() === today.getTime();
               const isNotClosed = item.status?.id !== 4; // Not "Cloturee"
-              const isNotRead = !this.readNotifications.has(item.idDemandeIntervention);
+              const isNotRead = !readNotifications.has(item.idDemandeIntervention);
               
               // For a user or technicien, only show notifications assigned to them
               const user = this.accountService.currentUser();
@@ -115,8 +146,14 @@ export class NotificationService {
 
   // Mark a specific notification as read
   markAsRead(interventionId: number): void {
+    // Get current read notifications
+    const readNotifications = this.getReadNotificationsFromStorage();
+    
     // Add to read set
-    this.readNotifications.add(interventionId);
+    readNotifications.add(interventionId);
+    
+    // Save back to localStorage
+    this.saveReadNotificationsToStorage(readNotifications);
     
     // Update notifications list
     const current = this.notificationsSubject.value;
@@ -128,9 +165,17 @@ export class NotificationService {
 
   // Clear all notifications
   clearAllNotifications(): void {
-    const current = this.notificationsSubject.value;
-    current.forEach(n => this.readNotifications.add(n.idDemandeIntervention));
+    // Get current read notifications 
+    const readNotifications = this.getReadNotificationsFromStorage();
     
+    // Add all current notification IDs to read set
+    const current = this.notificationsSubject.value;
+    current.forEach(n => readNotifications.add(n.idDemandeIntervention));
+    
+    // Save back to localStorage
+    this.saveReadNotificationsToStorage(readNotifications);
+    
+    // Update UI
     this.notificationsSubject.next([]);
     this.notificationCountSubject.next(0);
   }

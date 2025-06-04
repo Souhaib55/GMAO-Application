@@ -24,10 +24,93 @@
         
         <div class="collapse navbar-collapse" id="navigation">
             <div class="navbar-right-section">
-                <!-- Icône de notification avec badge -->
-                <div class="notification-container" *ngIf="shouldShowNotifications()" (click)="navigateToInterventions()">
+                <!-- Notification component with popup panel -->
+                <div class="notification-container" *ngIf="shouldShowNotifications()" (click)="toggleNotificationsPanel()">
                     <i class="material-icons notification-icon">notifications</i>
                     <span class="notification-badge" *ngIf="notificationCount > 0">{{ notificationCount }}</span>
+                    
+                    <!-- Notification panel - shown when clicked -->
+                    <div class="notifications-panel" *ngIf="showNotificationsPanel" #notificationsPanel (click)="$event.stopPropagation()">
+                        
+                        <!-- Notification Details View -->
+                        <div class="notification-detail-view" *ngIf="showNotificationDetail && selectedNotification">
+                            <div class="notification-detail-header">
+                                <button class="back-button" (click)="closeNotificationDetail()">
+                                    <i class="material-icons">arrow_back</i>
+                                </button>
+                                <h3>Détail de la notification</h3>
+                                <button class="dismiss-button" 
+                                        (click)="dismissNotification($event, selectedNotification.idDemandeIntervention)">
+                                    <i class="material-icons">close</i>
+                                </button>
+                            </div>
+                            <div class="notification-detail-content">
+                                <div class="notification-status-badge" 
+                                     [ngClass]="notificationService.getStatusClass(selectedNotification.status.id)">
+                                    {{ selectedNotification.status.statut }}
+                                </div>
+                                <h2 class="notification-title">{{ selectedNotification.titre }}</h2>
+                                <div class="notification-meta-detail">
+                                    <div class="meta-item">
+                                        <i class="material-icons">calendar_today</i>
+                                        <span>{{ formatDetailDate(selectedNotification.dateCreation) }}</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <i class="material-icons">assignment</i>
+                                        <span>ID: {{ selectedNotification.idDemandeIntervention }}</span>
+                                    </div>
+                                </div>
+                                <p class="notification-instructions">
+                                    Cette notification concerne une demande d'intervention qui requiert votre attention.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Main Notifications List View -->
+                        <ng-container *ngIf="!showNotificationDetail">
+                            <div class="notifications-header">
+                                <h3>Notifications</h3>
+                                <button class="clear-all" (click)="$event.stopPropagation(); notificationService.clearAllNotifications()">
+                                    Tout effacer
+                                </button>
+                            </div>
+                            
+                            <div class="notifications-content" [class.empty]="notifications.length === 0">
+                                <ng-container *ngIf="notifications.length > 0; else noNotifications">
+                                    <div class="notification-item" *ngFor="let notification of notifications" 
+                                         (click)="showInterventionDetail(notification)"
+                                         [ngClass]="notificationService.getStatusClass(notification.status.id)">
+                                        <div class="notification-icon-container">
+                                            <i class="material-icons notification-item-icon">engineering</i>
+                                        </div>
+                                        <div class="notification-details">
+                                            <div class="notification-title">{{ notification.titre }}</div>
+                                            <div class="notification-meta">
+                                                <span class="notification-time">{{ formatNotificationDate(notification.dateCreation) }}</span>
+                                                <span class="notification-status">{{ notification.status.statut }}</span>
+                                            </div>
+                                        </div>
+                                        <button class="notification-dismiss" 
+                                                (click)="dismissNotification($event, notification.idDemandeIntervention)">
+                                            <i class="material-icons">close</i>
+                                        </button>
+                                    </div>
+                                </ng-container>
+                                <ng-template #noNotifications>
+                                    <div class="no-notifications">
+                                        <i class="material-icons empty-icon">notifications_off</i>
+                                        <p>Pas de nouvelles notifications</p>
+                                    </div>
+                                </ng-template>
+                            </div>
+                            
+                            <div class="notifications-footer">
+                                <button class="view-all" (click)="navigateToInterventions()">
+                                    Voir toutes les interventions
+                                </button>
+                            </div>
+                        </ng-container>
+                    </div>
                 </div>
                 
                 <!-- Section profil utilisateur -->
