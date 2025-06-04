@@ -1,8 +1,9 @@
+<!-- gmao/client/src/app/components/navbar/navbar.component.html -->
 <nav class="navbar navbar-expand-lg fixed-top navbar-main">
     <div class="container-fluid">
         <div class="navbar-wrapper">
             <a class="navbar-brand logo-container" href="#">
-             <!-- Logo can be added here if needed -->
+             <!-- Le logo peut être ajouté ici au besoin -->
             </a>
         </div>
         
@@ -13,21 +14,26 @@
             <span class="navbar-toggler-icon icon-bar"></span>
         </button>
         
-        <!-- Search field - moved outside of collapsible section -->
+        <!-- Champ de recherche - placé en dehors de la section rétractable -->
         <div class="search-container">
             <div class="search-input-wrapper">
                 <i class="material-icons search-icon">search</i>
-                <input type="text" class="search-input" placeholder="Search here..." (input)="onSearch($event)">
+                <input type="text" class="search-input" placeholder="Rechercher..." (input)="onSearch($event)">
             </div>
         </div>
         
         <div class="collapse navbar-collapse" id="navigation">
             <div class="navbar-right-section">
-                <!-- User profile section - removed dropdown functionality -->
+                <!-- Icône de notification avec badge -->
+                <div class="notification-container" *ngIf="shouldShowNotifications()" (click)="navigateToInterventions()">
+                    <i class="material-icons notification-icon">notifications</i>
+                    <span class="notification-badge" *ngIf="notificationCount > 0">{{ notificationCount }}</span>
+                </div>
+                
+                <!-- Section profil utilisateur -->
                 <ng-container *ngIf="accountService.currentUser()">
                     <div class="user-profile">
                         <div class="avatar-circle">
-                            <!-- Display user initials -->
                             <span class="initials">{{getUserInitials()}}</span>
                         </div>
                         <div class="user-info">

@@ -1,25 +1,75 @@
-import { Component, OnInit } from '@angular/core';
+// gmao/client/src/app/components/navbar/navbar.component.ts
+import { Component, OnInit, OnDestroy, ElementRef, ViewChild, HostListener } from '@angular/core';
 import { AccountService } from '../../core/services/account.service';
 import { Router } from '@angular/router';
 import { ROUTES } from '../sidebar/sidebar.component';
+import { NotificationService, NotificationItem } from '../../core/services/notification.service';
+import { interval, Subscription } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-navbar',
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.css']
 })
-export class NavbarComponent implements OnInit {
+export class NavbarComponent implements OnInit, OnDestroy {
   isNavOpen = false;
+  notificationCount = 0;
+  notifications: NotificationItem[] = [];
+  showNotificationsPanel = false;
+  private refreshSubscription?: Subscription;
+  private notificationsSubscription?: Subscription;
+  
+  @ViewChild('notificationsPanel') notificationsPanel?: ElementRef;
 
   constructor(
     public accountService: AccountService,
-    private router: Router
+    private router: Router,
+    public notificationService: NotificationService
   ) {}
 
   ngOnInit(): void {
-    // Check if the nav was previously open (could use localStorage if needed)
+    // Check if the nav was previously open
     const body = document.getElementsByTagName('body')[0];
     this.isNavOpen = body.classList.contains('nav-open');
+    
+    // Subscribe to notification updates
+    this.notificationsSubscription = this.notificationService.notifications$
+      .subscribe(notifications => {
+        this.notifications = notifications;
+      });
+      
+    // Subscribe to notification count
+    this.notificationService.notificationCount$
+      .subscribe(count => {
+        this.notificationCount = count;
+      });
+    
+    // Load notifications immediately
+    this.loadNotifications();
+    
+    // Then refresh notifications every minute
+    this.refreshSubscription = interval(60000)
+      .pipe(
+        switchMap(() => {
+          this.notificationService.loadTodayInterventions();
+          return this.notificationService.notificationCount$;
+        })
+      )
+      .subscribe();
+  }
+  
+  ngOnDestroy(): void {
+    if (this.refreshSubscription) {
+      this.refreshSubscription.unsubscribe();
+    }
+    if (this.notificationsSubscription) {
+      this.notificationsSubscription.unsubscribe();
+    }
+  }
+  
+  loadNotifications(): void {
+    this.notificationService.loadTodayInterventions();
   }
 
   sidebarToggle(): void {
@@ -33,114 +83,74 @@ export class NavbarComponent implements OnInit {
     }
   }
 
-  logout(): void {
-    // Call the logout method and then navigate to login page
-    this.accountService.logout();
-    this.router.navigateByUrl('/login');
+  shouldShowNotifications(): boolean {
+    const user = this.accountService.currentUser();
+    if (!user) return false;
+    return ['Superviseur', 'Utilisateur', 'Technicien'].includes(user.role);
   }
 
+  // Toggle notifications panel
+  toggleNotificationsPanel(): void {
+    this.showNotificationsPanel = !this.showNotificationsPanel;
+  }
+  
+  // Hide notifications when clicking elsewhere
+  @HostListener('document:click', ['$event'])
+  clickOutside(event: Event): void {
+    // Check if click was outside notification area
+    const notificationIcon = document.querySelector('.notification-container');
+    const notificationsPanel = this.notificationsPanel?.nativeElement;
+    
+    if (this.showNotificationsPanel && 
+        notificationsPanel && 
+        !notificationsPanel.contains(event.target) &&
+        notificationIcon && 
+        !notificationIcon.contains(event.target as Node)) {
+      this.showNotificationsPanel = false;
+    }
+  }
+
+  // Navigate to a specific intervention
+  navigateToIntervention(interventionId: number): void {
+    this.showNotificationsPanel = false;
+    this.router.navigateByUrl(`/intervention/edit/${interventionId}`);
+  }
+  
+  // Navigate to all interventions
+  navigateToInterventions(): void {
+    this.showNotificationsPanel = false;
+    this.router.navigateByUrl('/intervention');
+  }
+  
+  // Dismiss a notification
+  dismissNotification(event: Event, interventionId: number): void {
+    event.stopPropagation(); // Prevent navigation
+    this.notificationService.markAsRead(interventionId);
+  }
+  
+  // Format date for display
+  formatNotificationDate(date: Date): string {
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - date.getTime()) / 1000 / 60); // diff in minutes
+    
+    if (diff < 1) return 'À l\'instant';
+    if (diff < 60) return `Il y a ${diff} min`;
+    
+    const hours = Math.floor(diff / 60);
+    if (hours < 24) return `Il y a ${hours}h`;
+    
+    return date.toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
+  }
+
+  onSearch(event: Event): void {
+    const term = (event.target as HTMLInputElement).value;
+    console.log('Search term:', term);
+    // Implémentez la fonctionnalité de recherche
+  }
+  
   getUserInitials(): string {
     const user = this.accountService.currentUser();
-    if (!user || !user.email) {
-      return '';
-    }
-
-    // Extract initials from email (e.g., "AM" from "ammani@gmail.com")
-    const email = user.email;
-    const username = email.split('@')[0];
-    
-    if (username.length >= 2) {
-      // Take first two characters and convert to uppercase
-      return username.substring(0, 2).toUpperCase();
-    } else if (username.length === 1) {
-      // If username is just one character, use that
-      return username.toUpperCase();
-    } else {
-      return '';
-    }
-  }
-
-  onSearch(event: any): void {
-    const searchTerm = event.target.value.trim().toLowerCase();
-    console.log('Search term:', searchTerm);
-    
-    // If search is empty, navigate to dashboard by default
-    if (!searchTerm) {
-      console.log('Empty search term, navigating to dashboard');
-      this.router.navigateByUrl('/admin/dashboard');
-      return;
-    }
-
-    // Track different types of matches
-    let exactMatch: string | null = null;
-    let startsWithMatch: string | null = null;
-    let containsMatch: string | null = null;
-    
-    // Helper function to search through routes
-    const searchRoutes = (routes: any[]): void => {
-      for (const route of routes) {
-        // Skip routes without titles or paths
-        if (!route.title || !route.path) continue;
-        
-        const routeTitle = route.title.toLowerCase();
-        
-        // Check for exact match (title equals search term)
-        if (routeTitle === searchTerm) {
-          exactMatch = route.path;
-          return; // Found perfect match, exit early
-        }
-        
-        // Check for starts-with match
-        if (!startsWithMatch && routeTitle.startsWith(searchTerm)) {
-          startsWithMatch = route.path;
-        }
-        
-        // Check for contains match
-        if (!containsMatch && routeTitle.includes(searchTerm)) {
-          containsMatch = route.path;
-        }
-        
-        // If this route has children, search through them
-        if (route.children && route.children.length > 0) {
-          for (const child of route.children) {
-            if (!child.title || !child.path) continue;
-            
-            const childTitle = child.title.toLowerCase();
-            
-            // Check for exact match
-            if (childTitle === searchTerm) {
-              exactMatch = child.path;
-              return; // Found perfect match, exit early
-            }
-            
-            // Check for starts-with match
-            if (!startsWithMatch && childTitle.startsWith(searchTerm)) {
-              startsWithMatch = child.path;
-            }
-            
-            // Check for contains match
-            if (!containsMatch && childTitle.includes(searchTerm)) {
-              containsMatch = child.path;
-            }
-          }
-        }
-      }
-    };
-    
-    // Start the search
-    searchRoutes(ROUTES);
-    
-    // Use the best match available, in priority order
-    const matchedPath = exactMatch || startsWithMatch || containsMatch;
-    
-    if (matchedPath) {
-      console.log('Navigating to:', matchedPath);
-      // FIX: Add '/admin/' prefix for correct routing
-      this.router.navigateByUrl('/admin/' + matchedPath);
-    } else {
-      console.log('No match found, navigating to dashboard');
-      // FIX: Use correct path for dashboard
-      this.router.navigateByUrl('/admin/dashboard');
-    }
+    if (!user) return '';
+    return (user.firstName.charAt(0) + user.lastName.charAt(0)).toUpperCase();
   }
 }

@@ -7,6 +7,7 @@ import { debounceTime, Subject } from 'rxjs';
 import { AccountService } from 'app/core/services/account.service';
 import { DatePipe } from '@angular/common';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { NotificationService } from 'app/core/services/notification.service';
 
 // Composant de dialogue de confirmation de suppression
 @Component({
@@ -124,6 +125,7 @@ export class InterventionComponent implements OnInit {
   private accountService = inject(AccountService);
   private datePipe = inject(DatePipe);
   private dialog = inject(MatDialog);
+  private notificationService = inject(NotificationService);
 
   private baseUrl = 'https://localhost:5001/api/DemandeIntervention';
   private etatBaseUrl = 'https://localhost:5001/api/Etat';
@@ -310,6 +312,7 @@ export class InterventionComponent implements OnInit {
   getPageNumbers(): number[] {
     const pages: number[] = [];
     const maxVisiblePages = 3;
+    
     if (this.totalPages <= maxVisiblePages) {
       for (let i = 1; i <= this.totalPages; i++) {
         pages.push(i);
@@ -354,7 +357,16 @@ export class InterventionComponent implements OnInit {
         this.isLoading = true;
         this.http.delete(`${this.baseUrl}/${item.idDemandeIntervention}`, { withCredentials: true }).subscribe({
           next: () => {
-            this.showPopupMessage('Intervention deleted successfully!', 'success');
+            this.showPopupMessage('Intervention supprimée avec succès!', 'success');
+            
+            // Après suppression, rafraîchir les notifications
+            this.notificationService.getTodayInterventionCount().subscribe();
+            
+            if (this.paginatedInterventionList.length === 1 && this.currentPage > 1) {
+              // Si c'était le dernier élément de la page, revenir à la page précédente
+              this.currentPage--;
+            }
+            
             if (this.searchTerm.trim()) {
               this.filterItems();
             } else {
@@ -363,7 +375,7 @@ export class InterventionComponent implements OnInit {
           },
           error: (err) => {
             console.error('Failed to delete intervention:', err);
-            this.showPopupMessage(err.error?.message || 'Failed to delete intervention', 'error');
+            this.showPopupMessage(err.error?.message || 'Échec de la suppression de l\'intervention', 'error');
             this.isLoading = false;
           }
         });
@@ -384,12 +396,14 @@ export class InterventionComponent implements OnInit {
       },
       error: (err) => {
         console.error('Download failed:', err);
-        this.showPopupMessage('Failed to download file', 'error');
+        this.showPopupMessage('Échec du téléchargement du fichier', 'error');
       }
     });
   }
 
   getUrgenceClass(urgence: string): string {
+    if (!urgence) return '';
+    
     const normalizedUrgence = urgence.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
     if (normalizedUrgence === 'haute') return 'urgence-tres-urgent';
     if (normalizedUrgence === 'moyenne') return 'urgence-urgent';

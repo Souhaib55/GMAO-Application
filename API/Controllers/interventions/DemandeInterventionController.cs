@@ -27,12 +27,11 @@ namespace API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<pagedResult<object>>> GetDemandeInterventions(int page = 1, int pageSize = 5, string search = null)
+        public async Task<ActionResult<PagedResult<object>>> GetDemandeInterventions(int page = 1, int pageSize = 5, string search = null)
         {
             var query = _context.DemandeInterventions
                 .Where(d => d.IsActif);
             
-            // Appliquer le filtre de recherche par titre si le paramètre search est fourni
             if (!string.IsNullOrWhiteSpace(search))
             {
                 search = search.ToLower().Trim();
@@ -82,13 +81,64 @@ namespace API.Controllers
 
             _logger.LogInformation($"Retrieved {items.Count} interventions out of {totalCount} total (page {page}, pageSize {pageSize})");
 
-            return Ok(new PAGEDRESULT<object>
+            return Ok(new PagedResulT<object>
             {
-                DATA = items.Cast<object>().ToList(),
-                TOTALCOUNT = totalCount,
-                PAGE = page,
-                PAGESIZE = pageSize
+                Data = items.Cast<object>().ToList(),
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
             });
+        }
+
+        [HttpGet("today-count")]
+        public async Task<ActionResult<int>> GetTodayInterventionCount()
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                _logger.LogWarning("No authenticated user found.");
+                return Unauthorized("User not found");
+            }
+
+            var roles = await _userManager.GetRolesAsync(currentUser);
+            var role = roles.FirstOrDefault();
+            if (role == null)
+            {
+                _logger.LogWarning($"User {currentUser.Id} has no role assigned.");
+                return BadRequest("User has no role");
+            }
+
+            var userEntity = await _context.Users.FirstOrDefaultAsync(u => u.AppUserId == currentUser.Id);
+            if (userEntity == null)
+            {
+                _logger.LogWarning($"User entity not found for AppUserId {currentUser.Id}");
+                return BadRequest("User entity not found");
+            }
+
+            var today = DateTime.UtcNow.Date;
+            var tomorrow = today.AddDays(1);
+
+            IQueryable<DemandeIntervention> query = _context.DemandeInterventions
+                .Where(d => d.IsActif && d.DateCreation >= today && d.DateCreation < tomorrow);
+
+            if (role == "Superviseur")
+            {
+                // Superviseur sees all interventions created today
+            }
+            else if (role == "Utilisateur" || role == "Technicien")
+            {
+                // Utilisateur or Technicien sees only interventions assigned to them
+                query = query.Where(d => d.DestinatairesID == userEntity.ID);
+            }
+            else
+            {
+                // Other roles see no notifications
+                return Ok(0);
+            }
+
+            var count = await query.CountAsync();
+            _logger.LogInformation($"User {userEntity.ID} ({role}) has {count} interventions for today.");
+            return Ok(count);
         }
 
         [HttpGet("{id}")]
@@ -138,7 +188,6 @@ namespace API.Controllers
                 return BadRequest("User entity not found");
             }
 
-            // Validation checks
             if (!await _context.Etats.AnyAsync(e => e.IDEtat == demandeDto.IDEtat && e.IsActif))
                 return BadRequest("Invalid or inactive Etat ID.");
             if (!await _context.TypeInterventions.AnyAsync(t => t.IDTypeIntervention == demandeDto.IDTypeIntervention && t.IsActif))
@@ -509,13 +558,11 @@ namespace API.Controllers
             return NoContent();
         }
 
-        // Ajouter cette méthode dans le DemandeInterventionController pour dahboard stats
         [HttpGet("dashboard-stats")]
         public async Task<ActionResult<object>> GetDashboardStats()
         {
             try
             {
-                // Statistiques d'intervention par statut
                 var interventionStats = new
                 {
                     enAttente = await _context.DemandeInterventions
@@ -528,7 +575,6 @@ namespace API.Controllers
                         .CountAsync(d => d.IsActif && d.StatusId == 5)
                 };
                 
-                // Statistiques des machines
                 var machineCount = await _context.ChaineProductions.CountAsync(c => c.IsActif);
                 var machinesArretees = await _context.DemandeInterventions
                     .CountAsync(d => d.IsActif && d.MachineArretee && (d.StatusId == 1 || d.StatusId == 2));
@@ -541,7 +587,6 @@ namespace API.Controllers
                     pourcentageArretees = machineCount > 0 ? Math.Round((double)machinesArretees / machineCount * 100, 1) : 0
                 };
                 
-                // Interventions récentes
                 var recentInterventions = await _context.DemandeInterventions
                     .Where(d => d.IsActif)
                     .Include(d => d.Status)
@@ -556,7 +601,6 @@ namespace API.Controllers
                     })
                     .ToListAsync();
                 
-                // Données pour le graphique mensuel
                 var sixMonthsAgo = DateTime.UtcNow.AddMonths(-6);
                 var monthlyData = await _context.DemandeInterventions
                     .Where(d => d.IsActif && d.DateCreation >= sixMonthsAgo)
@@ -571,7 +615,6 @@ namespace API.Controllers
                     .ThenBy(d => d.month)
                     .ToListAsync();
                 
-                // Données pour le graphique de répartition par urgence
                 var urgenceData = await _context.DemandeInterventions
                     .Where(d => d.IsActif)
                     .GroupBy(d => d.IDUrgence)
@@ -607,11 +650,11 @@ namespace API.Controllers
         }
     }
 
-    public class PAGEDRESULT<T>
+    public class PagedResulT<T>
     {
-        public List<T> DATA { get; set; } = new List<T>();
-        public int TOTALCOUNT { get; set; }
-        public int PAGE { get; set; }
-        public int PAGESIZE { get; set; }
+        public List<T> Data { get; set; } = new List<T>();
+        public int TotalCount { get; set; }
+        public int Page { get; set; }
+        public int PageSize { get; set; }
     }
 }
