@@ -143,9 +143,24 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   onSearch(event: Event): void {
-    const term = (event.target as HTMLInputElement).value;
-    console.log('Search term:', term);
-    // Implémentez la fonctionnalité de recherche
+    const term = (event.target as HTMLInputElement).value.toLowerCase().trim();
+    
+    // If search field is emptied, navigate to dashboard
+    if (!term) {
+      this.router.navigateByUrl('/admin/dashboard');
+      return;
+    }
+    
+    // Filter routes based on the search term (only those that start with the term)
+    const matchingRoutes = ROUTES.filter(route => 
+      route.title.toLowerCase().startsWith(term) && route.path
+    );
+    
+    // If only one match is found, navigate to that route
+    if (matchingRoutes.length === 1) {
+      this.router.navigateByUrl(`/admin/${matchingRoutes[0].path}`);
+    }
+    // If multiple or no matches, do nothing (user needs to type more)
   }
   
   getUserInitials(): string {

@@ -77,14 +77,26 @@
     </table>
   </div>
 
+  <!-- Loading Spinner -->
+  <div *ngIf="isLoading" class="loader-container">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
   <!-- Pagination Section -->
-  <div class="pagination">
+  <div class="pagination" *ngIf="!isLoading && paginatedStockList.length > 0">
     <button class="pagination-btn prev" [disabled]="currentPage === 1" (click)="previousPage()">
       <mat-icon>chevron_left</mat-icon>
       PRÉCÉDENT
     </button>
     
-    <span>Page {{ currentPage }} sur {{ totalPages }}</span>
+    <div class="page-numbers">
+      <button class="page-number" 
+              *ngFor="let page of getPageNumbers()" 
+              [class.active]="page === currentPage"
+              (click)="goToPage(page)">
+        {{ page }}
+      </button>
+    </div>
     
     <button class="pagination-btn next" [disabled]="currentPage === totalPages" (click)="nextPage()">
       SUIVANT

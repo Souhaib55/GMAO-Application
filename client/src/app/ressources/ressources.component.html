@@ -52,7 +52,6 @@
           <th>Quantite Stock</th>
           <th>Prix Unitaire</th>
           <th>Created On</th>
-          <th>Last Modified</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -71,7 +70,6 @@
           <td>{{ item.quantite_Stock }}</td>
           <td>{{ item.prixUnitaire | number:'1.2-2' }}</td>
           <td>{{ item.dateCreation | date:'MM/dd/yyyy HH:mm' }}</td>
-          <td>{{ item.dateModification ? (item.dateModification | date:'MM/dd/yyyy HH:mm') : 'Never modified' }}</td>
           <td class="actions">
             <button mat-icon-button color="primary" (click)="navigateToEdit(item.idPiece)">
               <mat-icon>edit</mat-icon>

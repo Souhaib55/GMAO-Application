@@ -14,12 +14,10 @@ export class StockButtonComponent implements OnInit {
   route = inject(ActivatedRoute);
   router = inject(Router);
   fb = inject(FormBuilder);
-
   baseUrl = "https://localhost:5001/api/Stock";
   entitiesUrl = "https://localhost:5001/api/StockEntities";
   statusUrl = "https://localhost:5001/api/StockStatus";
   supplierUrl = "https://localhost:5001/api/StockSupplier";
-
   stockForm: FormGroup;
   stockObj: Stock = {
     id: 0,
@@ -37,7 +35,7 @@ export class StockButtonComponent implements OnInit {
   isEditMode: boolean = false;
   isSubmitting: boolean = false;
   errorMessage: string = '';
-
+  
   constructor() {
     this.stockForm = this.fb.group({
       code: ['', Validators.required],
@@ -48,7 +46,7 @@ export class StockButtonComponent implements OnInit {
       createdOn: [new Date(), Validators.required]
     });
   }
-
+  
   ngOnInit(): void {
     this.getStockEntities();
     this.getStockStatuses();
@@ -64,28 +62,28 @@ export class StockButtonComponent implements OnInit {
       }
     });
   }
-
+  
   getStockEntities() {
     this.http.get<StockEntities[]>(this.entitiesUrl).subscribe({
       next: (res) => this.entitiesList = res,
       error: (err) => this.errorMessage = 'Failed to fetch entities'
     });
   }
-
+  
   getStockStatuses() {
     this.http.get<StockStatus[]>(this.statusUrl).subscribe({
       next: (res) => this.statusList = res,
       error: (err) => this.errorMessage = 'Failed to fetch statuses'
     });
   }
-
+  
   getStockSuppliers() {
     this.http.get<StockSupplier[]>(this.supplierUrl).subscribe({
       next: (res) => this.supplierList = res,
       error: (err) => this.errorMessage = 'Failed to fetch suppliers'
     });
   }
-
+  
   loadStock(id: number) {
     this.http.get<Stock>(`${this.baseUrl}/${id}`).subscribe({
       next: (data) => {
@@ -95,7 +93,7 @@ export class StockButtonComponent implements OnInit {
       error: (err) => this.errorMessage = 'Failed to load stock'
     });
   }
-
+  
   updateFormWithStockData() {
     this.stockForm.patchValue({
       code: this.stockObj.code,
@@ -106,17 +104,15 @@ export class StockButtonComponent implements OnInit {
       createdOn: new Date(this.stockObj.createdOn)
     });
   }
-
+  
   onSubmit() {
     if (this.stockForm.invalid) {
       this.stockForm.markAllAsTouched();
       this.errorMessage = 'Please fill all required fields';
       return;
     }
-
     this.isSubmitting = true;
     this.errorMessage = '';
-
     // Update stockObj with form values
     const formValues = this.stockForm.value;
     this.stockObj = {
@@ -128,22 +124,37 @@ export class StockButtonComponent implements OnInit {
       stockSupplierId: formValues.stockSupplierId,
       createdOn: formValues.createdOn
     };
-
     if (this.isEditMode) {
       this.updateStock();
     } else {
       this.createStock();
     }
   }
-
+  
+  // Format date to maintain local timezone
+  private formatDate(date: Date): string {
+    if (!date) return '';
+    
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+  }
+  
   createStock() {
+    const formattedDate = this.formatDate(this.stockObj.createdOn);
+    
     const newStock = {
       code: this.stockObj.code,
       description: this.stockObj.description,
       stockEntitiesId: this.stockObj.stockEntitiesId,
       stockStatusId: this.stockObj.stockStatusId,
       stockSupplierId: this.stockObj.stockSupplierId,
-      createdOn: this.stockObj.createdOn
+      createdOn: formattedDate // Using formatted date string instead of Date object
     };
     
     this.http.post<Stock>(this.baseUrl, newStock).subscribe({
@@ -159,6 +170,8 @@ export class StockButtonComponent implements OnInit {
   }
   
   updateStock() {
+    const formattedDate = this.formatDate(this.stockObj.createdOn);
+    
     const updateStock = {
       id: this.stockObj.id,
       code: this.stockObj.code,
@@ -166,7 +179,7 @@ export class StockButtonComponent implements OnInit {
       stockEntitiesId: this.stockObj.stockEntitiesId,
       stockStatusId: this.stockObj.stockStatusId,
       stockSupplierId: this.stockObj.stockSupplierId,
-      createdOn: this.stockObj.createdOn
+      createdOn: formattedDate // Using formatted date string instead of Date object
     };
     
     this.http.put(`${this.baseUrl}/${this.stockObj.id}`, updateStock).subscribe({
@@ -180,11 +193,11 @@ export class StockButtonComponent implements OnInit {
       }
     });
   }
-
+  
   goBack() {
     this.router.navigate(['/admin/stock']);
   }
-
+  
   resetForm() {
     this.stockObj = {
       id: 0,
@@ -196,7 +209,6 @@ export class StockButtonComponent implements OnInit {
       createdOn: new Date(),
       isDeleted: false
     };
-    
     this.stockForm.reset({
       code: '',
       description: '',
@@ -206,7 +218,7 @@ export class StockButtonComponent implements OnInit {
       createdOn: new Date()
     });
   }
-
+  
   // This method is kept for backward compatibility with the template
   // but the form validity is now primarily managed by the FormGroup
   isValidStock(): boolean {

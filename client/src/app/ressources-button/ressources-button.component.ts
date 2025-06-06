@@ -109,7 +109,7 @@ export class RessourcesButtonComponent implements OnInit {
     this.errorMessage = '';
 
     if (this.isEditMode) {
-        this.pieceForm.get('dateModification')?.setValue(new Date());
+      this.pieceForm.get('dateModification')?.setValue(new Date());
     }
 
     const piece = this.prepareDataForApi();
@@ -158,15 +158,25 @@ export class RessourcesButtonComponent implements OnInit {
 
   private prepareDataForApi(): any {
     const formValue = this.pieceForm.value;
+    
+    // Fixed date formatting to preserve local timezone
     const formatDate = (date: Date | null): string | null => {
       if (!date) return null;
-      // Format as YYYY-MM-DD to send only the date
-      return date.toISOString().split('T')[0];
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+      // Include time portion for full datetime precision
+      return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
     };
+    
     const now = new Date();
     if (this.isEditMode) {
       this.pieceForm.get('dateModification')?.setValue(now);
     }
+    
     return {
       idPiece: formValue.idPiece || 0,
       codePiece: formValue.codePiece.trim(),
@@ -177,8 +187,8 @@ export class RessourcesButtonComponent implements OnInit {
       idCriticitePiece: Number(formValue.idCriticitePiece),
       quantite_Stock: Number(formValue.quantite_Stock),
       prixUnitaire: Number(formValue.prixUnitaire),
-      dateCreation: formatDate(formValue.dateCreation || new Date()), // Format dateCreation
-      dateModification: this.isEditMode ? formatDate(now) : null, // Format dateModification
+      dateCreation: formatDate(formValue.dateCreation || new Date()),
+      dateModification: this.isEditMode ? formatDate(now) : null,
       isActif: Boolean(formValue.isActif)
     };
   }

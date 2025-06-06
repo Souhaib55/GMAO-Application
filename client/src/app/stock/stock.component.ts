@@ -140,6 +140,40 @@ export class StockComponent implements OnInit {
         }
     }
 
+    goToPage(page: number): void {
+        if (page !== this.currentPage && page > 0 && page <= this.totalPages) {
+            this.currentPage = page;
+            this.getAllStock();
+        }
+    }
+
+    getPageNumbers(): number[] {
+        const pages: number[] = [];
+        const maxVisiblePages = 3;
+        
+        if (this.totalPages <= maxVisiblePages) {
+            for (let i = 1; i <= this.totalPages; i++) {
+                pages.push(i);
+            }
+        } else {
+            pages.push(this.currentPage);
+            if (this.currentPage > 1) {
+                pages.unshift(this.currentPage - 1);
+            }
+            if (this.currentPage < this.totalPages) {
+                pages.push(this.currentPage + 1);
+            }
+            while (pages.length < maxVisiblePages && pages.length < this.totalPages) {
+                if (pages[0] > 1) {
+                    pages.unshift(pages[0] - 1);
+                } else if (pages[pages.length - 1] < this.totalPages) {
+                    pages.push(pages[pages.length - 1] + 1);
+                }
+            }
+        }
+        return pages;
+    }
+
     navigateToCreate() {
         this.router.navigate(['/stock/create']);
     }
