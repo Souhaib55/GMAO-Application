@@ -5,8 +5,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using System.IO;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace API.Controllers
 {
@@ -29,14 +31,13 @@ namespace API.Controllers
         [HttpGet]
         public async Task<ActionResult<PagedResult<object>>> GetDemandeInterventions(int page = 1, int pageSize = 5, string search = null)
         {
-            var query = _context.DemandeInterventions
-                .Where(d => d.IsActif);
-            
+            var query = _context.DemandeInterventions.Where(d => d.IsActif);
+
             if (!string.IsNullOrWhiteSpace(search))
             {
                 search = search.ToLower().Trim();
                 query = query.Where(d => d.Titre.ToLower().Contains(search));
-                _logger.LogInformation($"Applying search filter: '{search}'");
+                _logger.LogInformation($"Search filter applied: '{search}'");
             }
 
             query = query
@@ -79,65 +80,35 @@ namespace API.Controllers
                 })
                 .ToListAsync();
 
-            _logger.LogInformation($"Retrieved {items.Count} interventions out of {totalCount} total (page {page}, pageSize {pageSize})");
-
-            return Ok(new PagedResulT<object>
-            {
-                Data = items.Cast<object>().ToList(),
-                TotalCount = totalCount,
-                Page = page,
-                PageSize = pageSize
-            });
+            _logger.LogInformation($"Retrieved {items.Count} interventions (page {page}, size {pageSize})");
+            return Ok(new PagedResult<object> { Data = items.Cast<object>().ToList(), TotalCount = totalCount, Page = page, PageSize = pageSize });
         }
 
         [HttpGet("today-count")]
         public async Task<ActionResult<int>> GetTodayInterventionCount()
         {
             var currentUser = await _userManager.GetUserAsync(User);
-            if (currentUser == null)
-            {
-                _logger.LogWarning("No authenticated user found.");
-                return Unauthorized("User not found");
-            }
+            if (currentUser == null) return Unauthorized("User not found");
 
             var roles = await _userManager.GetRolesAsync(currentUser);
             var role = roles.FirstOrDefault();
-            if (role == null)
-            {
-                _logger.LogWarning($"User {currentUser.Id} has no role assigned.");
-                return BadRequest("User has no role");
-            }
+            if (role == null) return BadRequest("User has no role");
 
             var userEntity = await _context.Users.FirstOrDefaultAsync(u => u.AppUserId == currentUser.Id);
-            if (userEntity == null)
-            {
-                _logger.LogWarning($"User entity not found for AppUserId {currentUser.Id}");
-                return BadRequest("User entity not found");
-            }
+            if (userEntity == null) return BadRequest("User entity not found");
 
-            var today = DateTime.UtcNow.Date;
+            var today = DateTime.Now.Date;
             var tomorrow = today.AddDays(1);
-
             IQueryable<DemandeIntervention> query = _context.DemandeInterventions
                 .Where(d => d.IsActif && d.DateCreation >= today && d.DateCreation < tomorrow);
 
-            if (role == "Superviseur")
+            if (role == "Utilisateur" || role == "Technicien")
             {
-                // Superviseur sees all interventions created today
-            }
-            else if (role == "Utilisateur" || role == "Technicien")
-            {
-                // Utilisateur or Technicien sees only interventions assigned to them
                 query = query.Where(d => d.DestinatairesID == userEntity.ID);
-            }
-            else
-            {
-                // Other roles see no notifications
-                return Ok(0);
             }
 
             var count = await query.CountAsync();
-            _logger.LogInformation($"User {userEntity.ID} ({role}) has {count} interventions for today.");
+            _logger.LogInformation($"Today's count for {role} (ID: {userEntity.ID}): {count}");
             return Ok(count);
         }
 
@@ -157,68 +128,135 @@ namespace API.Controllers
 
             if (demande == null)
             {
-                _logger.LogWarning($"DemandeIntervention with ID {id} not found or inactive.");
-                return NotFound("DemandeIntervention not found or inactive.");
+                _logger.LogWarning($"Intervention ID {id} not found or inactive");
+                return NotFound("Intervention not found or inactive");
             }
-
             return Ok(demande);
         }
 
         [HttpPost]
-        public async Task<ActionResult<DemandeIntervention>> CreateDemandeIntervention([FromForm] InterventionDto demandeDto, [FromForm] IFormFile? file)
+        public async Task<ActionResult<DemandeIntervention>> CreateDemandeIntervention()
         {
+            InterventionDto demandeDto;
+            IFormFile? file = null;
+
+            // Handle form data similar to the PUT method
+            if (Request.ContentType.StartsWith("multipart/form-data"))
+            {
+                var form = await Request.ReadFormAsync();
+                var demandeDtoJson = form["demandeDto"];
+                file = form.Files.GetFile("file");
+                
+                if (string.IsNullOrEmpty(demandeDtoJson))
+                {
+                    _logger.LogWarning("Missing 'demandeDto' field in form data");
+                    return BadRequest("Missing 'demandeDto' field");
+                }
+                
+                try
+                {
+                    demandeDto = JsonSerializer.Deserialize<InterventionDto>(demandeDtoJson);
+                    if (demandeDto == null)
+                    {
+                        _logger.LogWarning("Could not deserialize demandeDto");
+                        return BadRequest("Invalid demandeDto data");
+                    }
+                    _logger.LogInformation($"Deserialized DTO: {JsonSerializer.Serialize(demandeDto)}");
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogError($"Deserialization error: {ex.Message}");
+                    return BadRequest($"Failed to parse demandeDto JSON: {ex.Message}");
+                }
+            }
+            else
+            {
+                _logger.LogWarning($"Unsupported content type: {Request.ContentType}");
+                return BadRequest("Expected multipart/form-data content type");
+            }
+
             if (!ModelState.IsValid)
             {
-                _logger.LogWarning("Invalid model state for CreateDemandeIntervention.");
+                _logger.LogWarning("Invalid ModelState");
                 return BadRequest(ModelState);
             }
 
-            var currentUser = await _userManager.GetUserAsync(User);
-            if (currentUser == null)
+            if (string.IsNullOrEmpty(demandeDto.DateCreation))
             {
-                _logger.LogWarning("No authenticated user found.");
-                return Unauthorized("User not found");
+                _logger.LogWarning("DateCreation is empty");
+                return BadRequest("DateCreation is required");
             }
+
+            DateTime dateCreation;
+            try
+            {
+                dateCreation = DateTime.Parse(demandeDto.DateCreation, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal);
+                _logger.LogInformation($"Parsed DateCreation: {dateCreation}");
+            }
+            catch (FormatException ex)
+            {
+                _logger.LogWarning($"Invalid DateCreation format: {demandeDto.DateCreation}, Error: {ex.Message}");
+                return BadRequest("Invalid DateCreation format. Use YYYY-MM-DDTHH:MM:SS");
+            }
+
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null) return Unauthorized("User not found");
+
             var roles = await _userManager.GetRolesAsync(currentUser);
             var role = roles.FirstOrDefault();
             var userEntity = await _context.Users.FirstOrDefaultAsync(u => u.AppUserId == currentUser.Id);
-            if (userEntity == null)
-            {
-                _logger.LogWarning($"User entity not found for AppUserId {currentUser.Id}");
-                return BadRequest("User entity not found");
-            }
+            if (userEntity == null) return BadRequest("User entity not found");
 
+            // Validation with detailed logging
             if (!await _context.Etats.AnyAsync(e => e.IDEtat == demandeDto.IDEtat && e.IsActif))
-                return BadRequest("Invalid or inactive Etat ID.");
+            {
+                _logger.LogWarning($"Invalid Etat ID: {demandeDto.IDEtat}");
+                return BadRequest("Invalid or inactive Etat ID");
+            }
             if (!await _context.TypeInterventions.AnyAsync(t => t.IDTypeIntervention == demandeDto.IDTypeIntervention && t.IsActif))
-                return BadRequest("Invalid or inactive TypeIntervention ID.");
+            {
+                _logger.LogWarning($"Invalid TypeIntervention ID: {demandeDto.IDTypeIntervention}");
+                return BadRequest("Invalid or inactive TypeIntervention ID");
+            }
             if (!await _context.Urgences.AnyAsync(u => u.IDUrgence == demandeDto.IDUrgence && u.IsActif))
-                return BadRequest("Invalid or inactive Urgence ID.");
+            {
+                _logger.LogWarning($"Invalid Urgence ID: {demandeDto.IDUrgence}");
+                return BadRequest("Invalid or inactive Urgence ID");
+            }
             if (!await _context.ChaineProductions.AnyAsync(c => c.IDChaineProduction == demandeDto.IDChaineProduction && c.IsActif))
-                return BadRequest("Invalid or inactive ChaineProduction ID.");
+            {
+                _logger.LogWarning($"Invalid ChaineProduction ID: {demandeDto.IDChaineProduction}");
+                return BadRequest("Invalid or inactive ChaineProduction ID");
+            }
             if (!await _context.Pannes.AnyAsync(p => p.IDPanne == demandeDto.IDPanne && p.IsActif))
-                return BadRequest("Invalid or inactive Panne ID.");
+            {
+                _logger.LogWarning($"Invalid Panne ID: {demandeDto.IDPanne}");
+                return BadRequest("Invalid or inactive Panne ID");
+            }
             if (!await _context.Users.AnyAsync(u => u.ID == demandeDto.DemandeursID && u.IsActif))
-                return BadRequest("Invalid or inactive DemandeursID.");
+            {
+                _logger.LogWarning($"Invalid DemandeursID: {demandeDto.DemandeursID}");
+                return BadRequest("Invalid or inactive DemandeursID");
+            }
             if (demandeDto.DestinatairesID.HasValue && !await _context.Users.AnyAsync(u => u.ID == demandeDto.DestinatairesID && u.IsActif))
-                return BadRequest("Invalid or inactive DestinatairesID.");
+            {
+                _logger.LogWarning($"Invalid DestinatairesID: {demandeDto.DestinatairesID}");
+                return BadRequest("Invalid or inactive DestinatairesID");
+            }
 
             if (role == "Demandeur" && demandeDto.DemandeursID != userEntity.ID)
             {
-                _logger.LogWarning($"Demandeur {userEntity.ID} attempted to create intervention for another user {demandeDto.DemandeursID}");
-                return BadRequest("Demandeur can only create interventions for themselves.");
+                _logger.LogWarning($"Demandeur {userEntity.ID} tried to create for {demandeDto.DemandeursID}");
+                return BadRequest("Demandeur can only create for themselves");
             }
 
             int statusId = 1; // "A traiter"
-            if (role == "Superviseur" && demandeDto.DestinatairesID.HasValue)
-            {
-                statusId = 2; // "En cours"
-            }
+            if (role == "Superviseur" && demandeDto.DestinatairesID.HasValue) statusId = 2; // "En cours"
 
             var demande = new DemandeIntervention
             {
                 Titre = demandeDto.Titre,
-                DateCreation = demandeDto.DateCreation.ToUniversalTime(),
+                DateCreation = dateCreation,
                 MachineArretee = demandeDto.MachineArretee,
                 IDEtat = demandeDto.IDEtat,
                 StatusId = statusId,
@@ -232,14 +270,11 @@ namespace API.Controllers
                 IsActif = true
             };
 
-            if (statusId == 2)
-            {
-                demande.DatePriseEnCharge = DateTime.UtcNow;
-            }
+            if (statusId == 2) demande.DatePriseEnCharge = DateTime.Now;
 
             if (file != null && file.Length > 0)
             {
-                _logger.LogInformation($"Processing file upload: {file.FileName}, Size: {file.Length}");
+                _logger.LogInformation($"File uploaded: {file.FileName}, Size: {file.Length}");
                 using (var memoryStream = new MemoryStream())
                 {
                     await file.CopyToAsync(memoryStream);
@@ -251,7 +286,7 @@ namespace API.Controllers
 
             _context.DemandeInterventions.Add(demande);
             await _context.SaveChangesAsync();
-            _logger.LogInformation($"Created intervention with ID {demande.IdDemandeIntervention}");
+            _logger.LogInformation($"Created intervention ID: {demande.IdDemandeIntervention}");
 
             var createdDemande = await _context.DemandeInterventions
                 .Include(d => d.Etat)
@@ -277,146 +312,112 @@ namespace API.Controllers
             if (Request.ContentType == "application/json")
             {
                 demandeDto = await Request.ReadFromJsonAsync<InterventionDto>();
-                if (demandeDto == null)
-                {
-                    _logger.LogWarning("Failed to deserialize JSON body");
-                    return BadRequest("Invalid JSON data");
-                }
+                if (demandeDto == null) return BadRequest("Invalid JSON data");
             }
             else if (Request.ContentType.StartsWith("multipart/form-data"))
             {
                 form = await Request.ReadFormAsync();
                 var demandeDtoJson = form["demandeDto"];
                 file = form.Files.GetFile("file");
-
-                if (string.IsNullOrEmpty(demandeDtoJson))
-                {
-                    _logger.LogWarning("FormData missing 'demandeDto' field");
-                    return BadRequest("FormData must include 'demandeDto' field");
-                }
-
-                _logger.LogInformation($"Received FormData - demandeDto: {demandeDtoJson}, File: {(file != null ? file.FileName : "None")}");
+                if (string.IsNullOrEmpty(demandeDtoJson)) return BadRequest("Missing 'demandeDto' field");
                 try
                 {
                     demandeDto = JsonSerializer.Deserialize<InterventionDto>(demandeDtoJson);
-                    if (demandeDto == null)
-                    {
-                        _logger.LogWarning("Deserialization resulted in null InterventionDto");
-                        return BadRequest("Invalid demandeDto data in FormData");
-                    }
+                    if (demandeDto == null) return BadRequest("Invalid demandeDto data");
                 }
                 catch (JsonException ex)
                 {
                     _logger.LogError($"Deserialization error: {ex.Message}");
-                    return BadRequest("Failed to parse demandeDto JSON in FormData");
+                    return BadRequest("Failed to parse demandeDto JSON");
                 }
             }
             else
             {
-                _logger.LogWarning($"Unsupported content type: {Request.ContentType}");
                 return BadRequest("Unsupported content type");
             }
 
-            _logger.LogInformation($"Processing update - ID: {id}, Action: {demandeDto.WorkflowAction}");
-
-            if (!string.IsNullOrEmpty(demandeDto.WorkflowAction))
-            {
-                demandeDto.IdDemandeIntervention = id;
-            }
-            else if (id > 0 && demandeDto.IdDemandeIntervention > 0 && id != demandeDto.IdDemandeIntervention)
-            {
-                _logger.LogWarning($"ID mismatch: Route ID {id} != DTO ID {demandeDto.IdDemandeIntervention}");
-                return BadRequest("ID mismatch.");
-            }
+            if (!string.IsNullOrEmpty(demandeDto.WorkflowAction)) demandeDto.IdDemandeIntervention = id;
+            else if (id != demandeDto.IdDemandeIntervention) return BadRequest("ID mismatch");
 
             var existingDemande = await _context.DemandeInterventions
                 .Include(d => d.Status)
                 .Include(d => d.Etat)
                 .FirstOrDefaultAsync(d => d.IdDemandeIntervention == id && d.IsActif);
 
-            if (existingDemande == null)
-            {
-                _logger.LogWarning($"Intervention not found: {id}");
-                return NotFound("DemandeIntervention not found or inactive.");
-            }
+            if (existingDemande == null) return NotFound("Intervention not found or inactive");
 
             var currentUser = await _userManager.GetUserAsync(User);
-            if (currentUser == null)
-            {
-                _logger.LogWarning("User not authenticated");
-                return Unauthorized("User not found");
-            }
+            if (currentUser == null) return Unauthorized("User not found");
 
             var roles = await _userManager.GetRolesAsync(currentUser);
             var role = roles.FirstOrDefault();
             var userEntity = await _context.Users.FirstOrDefaultAsync(u => u.AppUserId == currentUser.Id);
-
-            if (userEntity == null)
-            {
-                _logger.LogWarning($"User entity not found for {currentUser.Id}");
-                return BadRequest("User entity not found");
-            }
+            if (userEntity == null) return BadRequest("User entity not found");
 
             if (!string.IsNullOrEmpty(demandeDto.WorkflowAction))
             {
-                _logger.LogInformation($"Processing workflow action: {demandeDto.WorkflowAction} by {role} (User ID: {userEntity.ID})");
                 var result = await HandleWorkflowAction(existingDemande, demandeDto.WorkflowAction, role, userEntity.ID, demandeDto.RaisonAnnulation);
-                if (result != null)
-                {
-                    return result;
-                }
+                if (result != null) return result;
             }
             else if (role == "Superviseur")
             {
                 if (demandeDto.DestinatairesID.HasValue && existingDemande.DestinatairesID != demandeDto.DestinatairesID)
                 {
-                    if (!await _context.Users.AnyAsync(u => u.ID == demandeDto.DestinatairesID && u.IsActif))
-                        return BadRequest("Invalid or inactive DestinatairesID.");
+                    if (!await _context.Users.AnyAsync(u => u.ID == demandeDto.DestinatairesID && u.IsActif)) return BadRequest("Invalid or inactive DestinatairesID");
                     existingDemande.DestinatairesID = demandeDto.DestinatairesID;
                     if (existingDemande.StatusId == 1)
                     {
-                        existingDemande.StatusId = 2; // "En cours"
-                        existingDemande.DatePriseEnCharge = DateTime.UtcNow;
+                        existingDemande.StatusId = 2;
+                        existingDemande.DatePriseEnCharge = DateTime.Now;
                     }
                 }
 
                 if (demandeDto.Titre != null) existingDemande.Titre = demandeDto.Titre;
-                if (demandeDto.DateCreation != DateTime.MinValue) existingDemande.DateCreation = demandeDto.DateCreation.ToUniversalTime();
+                if (!string.IsNullOrEmpty(demandeDto.DateCreation))
+                {
+                    try
+                    {
+                        existingDemande.DateCreation = DateTime.Parse(demandeDto.DateCreation, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal);
+                    }
+                    catch (FormatException)
+                    {
+                        return BadRequest("Invalid DateCreation format. Use YYYY-MM-DDTHH:MM:SS");
+                    }
+                }
                 if (demandeDto.MachineArretee != existingDemande.MachineArretee) existingDemande.MachineArretee = demandeDto.MachineArretee;
                 if (demandeDto.IDEtat > 0 && existingDemande.IDEtat != demandeDto.IDEtat)
                 {
-                    if (!await _context.Etats.AnyAsync(e => e.IDEtat == demandeDto.IDEtat && e.IsActif)) return BadRequest("Invalid or inactive Etat ID.");
+                    if (!await _context.Etats.AnyAsync(e => e.IDEtat == demandeDto.IDEtat && e.IsActif)) return BadRequest("Invalid or inactive Etat ID");
                     existingDemande.IDEtat = demandeDto.IDEtat;
                 }
                 if (demandeDto.IDTypeIntervention > 0 && existingDemande.IDTypeIntervention != demandeDto.IDTypeIntervention)
                 {
-                    if (!await _context.TypeInterventions.AnyAsync(t => t.IDTypeIntervention == demandeDto.IDTypeIntervention && t.IsActif)) return BadRequest("Invalid or inactive TypeIntervention ID.");
+                    if (!await _context.TypeInterventions.AnyAsync(t => t.IDTypeIntervention == demandeDto.IDTypeIntervention && t.IsActif)) return BadRequest("Invalid or inactive TypeIntervention ID");
                     existingDemande.IDTypeIntervention = demandeDto.IDTypeIntervention;
                 }
                 if (demandeDto.IDUrgence > 0 && existingDemande.IDUrgence != demandeDto.IDUrgence)
                 {
-                    if (!await _context.Urgences.AnyAsync(u => u.IDUrgence == demandeDto.IDUrgence && u.IsActif)) return BadRequest("Invalid or inactive Urgence ID.");
+                    if (!await _context.Urgences.AnyAsync(u => u.IDUrgence == demandeDto.IDUrgence && u.IsActif)) return BadRequest("Invalid or inactive Urgence ID");
                     existingDemande.IDUrgence = demandeDto.IDUrgence;
                 }
                 if (demandeDto.IDChaineProduction > 0 && existingDemande.IDChaineProduction != demandeDto.IDChaineProduction)
                 {
-                    if (!await _context.ChaineProductions.AnyAsync(c => c.IDChaineProduction == demandeDto.IDChaineProduction && c.IsActif)) return BadRequest("Invalid or inactive ChaineProduction ID.");
+                    if (!await _context.ChaineProductions.AnyAsync(c => c.IDChaineProduction == demandeDto.IDChaineProduction && c.IsActif)) return BadRequest("Invalid or inactive ChaineProduction ID");
                     existingDemande.IDChaineProduction = demandeDto.IDChaineProduction;
                 }
                 if (demandeDto.IDPanne > 0 && existingDemande.IDPanne != demandeDto.IDPanne)
                 {
-                    if (!await _context.Pannes.AnyAsync(p => p.IDPanne == demandeDto.IDPanne && p.IsActif)) return BadRequest("Invalid or inactive Panne ID.");
+                    if (!await _context.Pannes.AnyAsync(p => p.IDPanne == demandeDto.IDPanne && p.IsActif)) return BadRequest("Invalid or inactive Panne ID");
                     existingDemande.IDPanne = demandeDto.IDPanne;
                 }
                 if (demandeDto.DemandeursID > 0 && existingDemande.DemandeursID != demandeDto.DemandeursID)
                 {
-                    if (!await _context.Users.AnyAsync(u => u.ID == demandeDto.DemandeursID && u.IsActif)) return BadRequest("Invalid or inactive DemandeursID.");
+                    if (!await _context.Users.AnyAsync(u => u.ID == demandeDto.DemandeursID && u.IsActif)) return BadRequest("Invalid or inactive DemandeursID");
                     existingDemande.DemandeursID = demandeDto.DemandeursID;
                 }
 
                 if (file != null && file.Length > 0)
                 {
-                    _logger.LogInformation($"Updating file: {file.FileName}, Size: {file.Length}");
                     using (var memoryStream = new MemoryStream())
                     {
                         await file.CopyToAsync(memoryStream);
@@ -427,7 +428,6 @@ namespace API.Controllers
                 }
                 else if (form != null && form["fileName"] == "")
                 {
-                    _logger.LogInformation("Clearing existing file data");
                     existingDemande.FileData = null;
                     existingDemande.FileName = null;
                     existingDemande.ContentType = null;
@@ -435,12 +435,11 @@ namespace API.Controllers
             }
             else
             {
-                _logger.LogWarning($"Standard update not allowed for role: {role}");
-                return Forbid("Only Superviseur can perform standard updates");
+                return Forbid("Only Superviseur can update");
             }
 
             await _context.SaveChangesAsync();
-            _logger.LogInformation($"Update successful for ID: {id}");
+            _logger.LogInformation($"Updated intervention ID: {id}");
 
             var updatedDemande = await _context.DemandeInterventions
                 .Include(d => d.Etat)
@@ -458,85 +457,54 @@ namespace API.Controllers
 
         private async Task<ActionResult> HandleWorkflowAction(DemandeIntervention demande, string action, string userRole, int? userId, string? raisonAnnulation)
         {
-            if (userId == null)
-            {
-                _logger.LogWarning("Workflow action attempted without user ID");
-                return Unauthorized("User ID not found");
-            }
-
-            _logger.LogInformation($"Processing action: {action}, Role: {userRole}, Current StatusId: {demande.StatusId}, User ID: {userId}, DateAssignation: {demande.DateAssignation}");
+            if (userId == null) return Unauthorized("User ID not found");
 
             switch (action.ToLower())
             {
                 case "accept":
-                    if (userRole != "Technicien" && userRole != "Utilisateur")
-                        return BadRequest("Only Technicien or Utilisateur can accept an intervention");
-                    if (demande.DestinatairesID != userId)
-                        return BadRequest("You are not the assigned recipient of this intervention");
-                    if (demande.StatusId != 2)
-                        return BadRequest("This intervention is not awaiting acceptance");
-                    if (demande.DateAssignation != null)
-                        return BadRequest("This intervention has already been accepted");
-                    demande.DateAssignation = DateTime.UtcNow;
-                    _logger.LogInformation($"Intervention accepted by {userRole}: {userId}, timestamp: {demande.DateAssignation}");
+                    if (userRole != "Technicien" && userRole != "Utilisateur") return BadRequest("Only Technicien or Utilisateur can accept");
+                    if (demande.DestinatairesID != userId) return BadRequest("Not the assigned recipient");
+                    if (demande.StatusId != 2) return BadRequest("Not awaiting acceptance");
+                    if (demande.DateAssignation != null) return BadRequest("Already accepted");
+                    demande.DateAssignation = DateTime.Now;
                     return null;
 
                 case "complete":
-                    if (userRole != "Technicien" && userRole != "Utilisateur")
-                        return BadRequest("Only Technicien or Utilisateur can complete an intervention");
-                    if (demande.DestinatairesID != userId)
-                        return BadRequest("You are not the assigned recipient of this intervention");
-                    if (demande.StatusId != 2)
-                        return BadRequest("This intervention is not in 'En cours' state");
-                    if (demande.DateAssignation == null)
-                        return BadRequest("This intervention has not been accepted yet");
-                    demande.StatusId = 3; // "Réalisée"
-                    demande.DateRealisation = DateTime.UtcNow;
-                    demande.DateResolution = DateTime.UtcNow;
-                    _logger.LogInformation($"Intervention completed by {userRole}: {userId}, timestamp: {demande.DateRealisation}");
+                    if (userRole != "Technicien" && userRole != "Utilisateur") return BadRequest("Only Technicien or Utilisateur can complete");
+                    if (demande.DestinatairesID != userId) return BadRequest("Not the assigned recipient");
+                    if (demande.StatusId != 2) return BadRequest("Not in 'En cours' state");
+                    if (demande.DateAssignation == null) return BadRequest("Not accepted yet");
+                    demande.StatusId = 3;
+                    demande.DateRealisation = DateTime.Now;
+                    demande.DateResolution = DateTime.Now;
                     return null;
 
                 case "validate":
-                    if (userRole != "Superviseur")
-                        return BadRequest("Only a Superviseur can validate an intervention");
-                    if (demande.StatusId != 3)
-                        return BadRequest("Only a completed intervention can be validated");
-                    demande.StatusId = 4; // "Clôturée"
-                    demande.DateCloture = DateTime.UtcNow;
-                    _logger.LogInformation($"Intervention validated by Superviseur: {userId}, timestamp: {demande.DateCloture}");
+                    if (userRole != "Superviseur") return BadRequest("Only Superviseur can validate");
+                    if (demande.StatusId != 3) return BadRequest("Only completed interventions can be validated");
+                    demande.StatusId = 4;
+                    demande.DateCloture = DateTime.Now;
                     return null;
 
                 case "cancel":
-                    bool canCancel = false;
-                    if (userRole == "Superviseur")
-                        canCancel = (demande.StatusId != 4 && demande.StatusId != 5);
-                    else if (userRole == "Demandeur" && demande.DemandeursID == userId)
-                        canCancel = (demande.StatusId == 1 || (demande.StatusId == 2 && demande.DateAssignation == null));
-                    else if ((userRole == "Utilisateur" || userRole == "Technicien") && demande.DestinatairesID == userId)
-                        canCancel = (demande.StatusId == 2 && demande.DateAssignation == null);
-                    if (!canCancel)
-                        return BadRequest("You are not authorized to cancel this intervention at its current state");
-                    demande.StatusId = 5; // "Annulée"
+                    bool canCancel = userRole == "Superviseur" ? (demande.StatusId != 4 && demande.StatusId != 5) :
+                        (userRole == "Demandeur" && demande.DemandeursID == userId) ? (demande.StatusId == 1 || (demande.StatusId == 2 && demande.DateAssignation == null)) :
+                        ((userRole == "Utilisateur" || userRole == "Technicien") && demande.DestinatairesID == userId) ? (demande.StatusId == 2 && demande.DateAssignation == null) : false;
+                    if (!canCancel) return BadRequest("Not authorized to cancel at this state");
+                    demande.StatusId = 5;
                     demande.RaisonAnnulation = raisonAnnulation;
-                    _logger.LogInformation($"Intervention cancelled by {userRole}: {userId}, reason: {raisonAnnulation}");
                     return null;
 
                 default:
-                    _logger.LogWarning($"Unknown workflow action: {action}");
-                    return BadRequest($"Unknown workflow action: {action}");
+                    return BadRequest($"Unknown action: {action}");
             }
         }
 
         [HttpGet("{id}/file")]
         public async Task<IActionResult> GetFile(int id)
         {
-            var demande = await _context.DemandeInterventions
-                .FirstOrDefaultAsync(d => d.IdDemandeIntervention == id && d.IsActif);
-
-            if (demande == null || demande.FileData == null)
-            {
-                return NotFound("File not found.");
-            }
+            var demande = await _context.DemandeInterventions.FirstOrDefaultAsync(d => d.IdDemandeIntervention == id && d.IsActif);
+            if (demande == null || demande.FileData == null) return NotFound("File not found");
             return File(demande.FileData, demande.ContentType, demande.FileName);
         }
 
@@ -544,17 +512,10 @@ namespace API.Controllers
         [Authorize(Roles = "Superviseur")]
         public async Task<IActionResult> DeleteDemandeIntervention(int id)
         {
-            var demande = await _context.DemandeInterventions
-                .FirstOrDefaultAsync(d => d.IdDemandeIntervention == id && d.IsActif);
-
-            if (demande == null)
-            {
-                return NotFound("DemandeIntervention not found or already inactive.");
-            }
-
+            var demande = await _context.DemandeInterventions.FirstOrDefaultAsync(d => d.IdDemandeIntervention == id && d.IsActif);
+            if (demande == null) return NotFound("Intervention not found or inactive");
             demande.IsActif = false;
             await _context.SaveChangesAsync();
-
             return NoContent();
         }
 
@@ -565,20 +526,14 @@ namespace API.Controllers
             {
                 var interventionStats = new
                 {
-                    enAttente = await _context.DemandeInterventions
-                        .CountAsync(d => d.IsActif && d.StatusId == 1),
-                    enCours = await _context.DemandeInterventions
-                        .CountAsync(d => d.IsActif && d.StatusId == 2),
-                    terminee = await _context.DemandeInterventions
-                        .CountAsync(d => d.IsActif && (d.StatusId == 3 || d.StatusId == 4)),
-                    annulee = await _context.DemandeInterventions
-                        .CountAsync(d => d.IsActif && d.StatusId == 5)
+                    enAttente = await _context.DemandeInterventions.CountAsync(d => d.IsActif && d.StatusId == 1),
+                    enCours = await _context.DemandeInterventions.CountAsync(d => d.IsActif && d.StatusId == 2),
+                    terminee = await _context.DemandeInterventions.CountAsync(d => d.IsActif && (d.StatusId == 3 || d.StatusId == 4)),
+                    annulee = await _context.DemandeInterventions.CountAsync(d => d.IsActif && d.StatusId == 5)
                 };
-                
+
                 var machineCount = await _context.ChaineProductions.CountAsync(c => c.IsActif);
-                var machinesArretees = await _context.DemandeInterventions
-                    .CountAsync(d => d.IsActif && d.MachineArretee && (d.StatusId == 1 || d.StatusId == 2));
-                
+                var machinesArretees = await _context.DemandeInterventions.CountAsync(d => d.IsActif && d.MachineArretee && (d.StatusId == 1 || d.StatusId == 2));
                 var machineStats = new
                 {
                     arretees = machinesArretees,
@@ -586,66 +541,36 @@ namespace API.Controllers
                     total = machineCount,
                     pourcentageArretees = machineCount > 0 ? Math.Round((double)machinesArretees / machineCount * 100, 1) : 0
                 };
-                
+
                 var recentInterventions = await _context.DemandeInterventions
                     .Where(d => d.IsActif)
                     .Include(d => d.Status)
                     .OrderByDescending(d => d.DateCreation)
                     .Take(5)
-                    .Select(d => new
-                    {
-                        idDemandeIntervention = d.IdDemandeIntervention,
-                        titre = d.Titre,
-                        dateCreation = d.DateCreation,
-                        status = new { id = d.Status.Id, statut = d.Status.Statut }
-                    })
+                    .Select(d => new { idDemandeIntervention = d.IdDemandeIntervention, titre = d.Titre, dateCreation = d.DateCreation, status = new { id = d.Status.Id, statut = d.Status.Statut } })
                     .ToListAsync();
-                
-                var sixMonthsAgo = DateTime.UtcNow.AddMonths(-6);
+
+                var sixMonthsAgo = DateTime.Now.AddMonths(-6);
                 var monthlyData = await _context.DemandeInterventions
                     .Where(d => d.IsActif && d.DateCreation >= sixMonthsAgo)
                     .GroupBy(d => new { Year = d.DateCreation.Year, Month = d.DateCreation.Month })
-                    .Select(g => new
-                    {
-                        year = g.Key.Year,
-                        month = g.Key.Month,
-                        count = g.Count()
-                    })
-                    .OrderBy(d => d.year)
-                    .ThenBy(d => d.month)
+                    .Select(g => new { year = g.Key.Year, month = g.Key.Month, count = g.Count() })
+                    .OrderBy(d => d.year).ThenBy(d => d.month)
                     .ToListAsync();
-                
+
                 var urgenceData = await _context.DemandeInterventions
                     .Where(d => d.IsActif)
                     .GroupBy(d => d.IDUrgence)
-                    .Select(g => new
-                    {
-                        urgenceId = g.Key,
-                        count = g.Count()
-                    })
-                    .Join(_context.Urgences, 
-                        ud => ud.urgenceId, 
-                        u => u.IDUrgence, 
-                        (ud, u) => new { 
-                            id = ud.urgenceId, 
-                            libelle = u.Libelle, 
-                            count = ud.count 
-                        })
+                    .Select(g => new { urgenceId = g.Key, count = g.Count() })
+                    .Join(_context.Urgences, ud => ud.urgenceId, u => u.IDUrgence, (ud, u) => new { id = ud.urgenceId, libelle = u.Libelle, count = ud.count })
                     .ToListAsync();
-                
-                return Ok(new
-                {
-                    interventionStats,
-                    machineStats,
-                    recentInterventions,
-                    monthlyData,
-                    urgenceData
-                });
+
+                return Ok(new { interventionStats, machineStats, recentInterventions, monthlyData, urgenceData });
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error retrieving dashboard stats: {ex.Message}");
-                return StatusCode(500, "Internal server error while retrieving dashboard statistics");
+                _logger.LogError($"Dashboard stats error: {ex.Message}");
+                return StatusCode(500, "Error retrieving dashboard stats");
             }
         }
     }
@@ -656,5 +581,22 @@ namespace API.Controllers
         public int TotalCount { get; set; }
         public int Page { get; set; }
         public int PageSize { get; set; }
+    }
+
+    public class InterventionDto
+    {
+        public int IdDemandeIntervention { get; set; }
+        public string Titre { get; set; }
+        public bool MachineArretee { get; set; }
+        public int IDEtat { get; set; }
+        public int IDTypeIntervention { get; set; }
+        public int IDUrgence { get; set; }
+        public int IDChaineProduction { get; set; }
+        public int IDPanne { get; set; }
+        public int DemandeursID { get; set; }
+        public int? DestinatairesID { get; set; }
+        public string DateCreation { get; set; }
+        public string WorkflowAction { get; set; }
+        public string RaisonAnnulation { get; set; }
     }
 }

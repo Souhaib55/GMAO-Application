@@ -45,6 +45,7 @@ import { firstValueFrom } from 'rxjs';
 import { InterventionFormDialogComponent } from './intervention-form-dialog/intervention-form-dialog.component'; // Import firstValueFrom
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { DeleteEquipmentConfirmationDialogComponent } from './equipment/equipment.component';
+import { SafePipe } from './pipe/safe-url.pipe';
 
 @NgModule({
   imports: [
@@ -106,7 +107,8 @@ import { DeleteEquipmentConfirmationDialogComponent } from './equipment/equipmen
     HomepageComponent,
     TriggerComponent,
     InterventionFormDialogComponent,
-    DeleteEquipmentConfirmationDialogComponent
+    DeleteEquipmentConfirmationDialogComponent,
+    SafePipe
   ],
   providers: [
     {
