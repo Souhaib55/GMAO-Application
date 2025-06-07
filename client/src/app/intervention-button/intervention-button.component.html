@@ -8,8 +8,28 @@
       <mat-icon>error_outline</mat-icon> 
       {{ errorMessage }}
     </div>
+    
+    <!-- Instructions spécifiques au rôle -->
+    <div *ngIf="!isEditMode" class="role-instructions">
+      <div *ngIf="currentUser.role === 'Demandeur'" class="alert alert-info">
+        <mat-icon>info</mat-icon>
+        <div>
+          <strong>Information pour Demandeur:</strong> Veuillez simplement décrire le problème et sélectionner la chaîne de production concernée. 
+          Les techniciens et superviseurs compléteront les informations techniques.
+        </div>
+      </div>
+      
+      <div *ngIf="currentUser.role === 'Utilisateur' || currentUser.role === 'Technicien'" class="alert alert-info">
+        <mat-icon>info</mat-icon>
+        <div>
+          <strong>Information pour Technicien:</strong> Veuillez fournir toutes les informations techniques nécessaires pour cette intervention.
+        </div>
+      </div>
+    </div>
+    
     <form [formGroup]="interventionForm" (ngSubmit)="onSubmit()">
       <div class="row">
+        <!-- Titre - visible pour tous -->
         <div class="col-md-6 input-group">
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Titre</mat-label>
@@ -21,6 +41,7 @@
           </mat-form-field>
         </div>
 
+        <!-- File upload - visible pour tous -->
         <div class="col-md-6 input-group">
           <div class="file-upload-container">
             <div class="file-upload-label">
@@ -50,17 +71,18 @@
           </div>
         </div>
 
+        <!-- Machine Arretee - visible pour tous -->
         <div class="col-md-6 input-group">
           <mat-checkbox formControlName="machineArretee">
             <span class="checkbox-label">Machine Arretee</span>
           </mat-checkbox>
         </div>
 
-        <div class="col-md-6 input-group">
+        <!-- Etat - visible uniquement pour Superviseur en mode édition -->
+        <div class="col-md-6 input-group" *ngIf="isEditMode && currentUser.role === 'Superviseur'">
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Etat</mat-label>
-            <mat-select formControlName="idEtat" required placeholder="Select etat"
-                      [disabled]="currentUser.role !== 'Superviseur' && isEditMode">
+            <mat-select formControlName="idEtat" required placeholder="Select etat">
               <mat-option *ngFor="let etat of etatList" [value]="etat.idEtat">
                 {{ etat.libelle }}
               </mat-option>
@@ -72,10 +94,14 @@
           </mat-form-field>
         </div>
 
-        <div class="col-md-6 input-group">
+        <!-- Type Intervention - visible pour Superviseur et Technicien uniquement -->
+        <div class="col-md-6 input-group" *ngIf="canAccessField('idTypeIntervention')">
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Type Intervention</mat-label>
-            <mat-select formControlName="idTypeIntervention" required placeholder="Select type intervention">
+            <mat-select formControlName="idTypeIntervention" 
+                      [required]="isFieldRequired('idTypeIntervention')" 
+                      placeholder="Select type intervention"
+                      [disabled]="isFieldReadOnly('idTypeIntervention')">
               <mat-option *ngFor="let type of typeInterventionList" [value]="type.idTypeIntervention">
                 {{ type.libelle }}
               </mat-option>
@@ -87,10 +113,14 @@
           </mat-form-field>
         </div>
 
-        <div class="col-md-6 input-group">
+        <!-- Urgence - visible pour Superviseur et Technicien uniquement -->
+        <div class="col-md-6 input-group" *ngIf="canAccessField('idUrgence')">
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Urgence</mat-label>
-            <mat-select formControlName="idUrgence" required placeholder="Select urgence">
+            <mat-select formControlName="idUrgence" 
+                      [required]="isFieldRequired('idUrgence')" 
+                      placeholder="Select urgence"
+                      [disabled]="isFieldReadOnly('idUrgence')">
               <mat-option *ngFor="let urgence of urgenceList" [value]="urgence.idUrgence">
                 {{ urgence.libelle }}
               </mat-option>
@@ -102,6 +132,7 @@
           </mat-form-field>
         </div>
 
+        <!-- Chaine Production - visible pour tous -->
         <div class="col-md-6 input-group">
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Chaine Production</mat-label>
@@ -117,10 +148,14 @@
           </mat-form-field>
         </div>
 
-        <div class="col-md-6 input-group">
+        <!-- Panne - visible pour Superviseur et Technicien uniquement -->
+        <div class="col-md-6 input-group" *ngIf="canAccessField('idPanne')">
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Panne</mat-label>
-            <mat-select formControlName="idPanne" required placeholder="Select panne">
+            <mat-select formControlName="idPanne" 
+                      [required]="isFieldRequired('idPanne')" 
+                      placeholder="Select panne"
+                      [disabled]="isFieldReadOnly('idPanne')">
               <mat-option *ngFor="let panne of panneList" [value]="panne.idPanne">
                 {{ panne.libelle }}
               </mat-option>
@@ -132,50 +167,23 @@
           </mat-form-field>
         </div>
 
-        <!-- Different display based on role -->
-        <!-- For Superviseur: Show dropdown -->
-        <div class="col-md-6 input-group" *ngIf="currentUser.role === 'Superviseur'">
+        <!-- Demandeur - Liste déroulante uniquement pour non-Demandeurs -->
+        <div class="col-md-6 input-group" *ngIf="canAccessField('demandeursID')">
           <mat-form-field appearance="outline" class="w-100">
-            <mat-label>Demandeur</mat-label>
-            <mat-select formControlName="demandeursID" required placeholder="Select demandeur">
+            <mat-label>Demandeur (Optional)</mat-label>
+            <mat-select formControlName="demandeursID" placeholder="Select demandeur">
               <mat-option *ngFor="let user of demandeurList" [value]="user.id">
                 {{ user.nom }} {{ user.prenom }}
               </mat-option>
             </mat-select>
             <mat-icon matSuffix>person</mat-icon>
-            <mat-error *ngIf="interventionForm.get('demandeursID')?.touched && interventionForm.get('demandeursID')?.hasError('required')">
-              Demandeur is required
-            </mat-error>
-          </mat-form-field>
-        </div>
-        
-        <!-- For Demandeur: Show their name and use hidden field -->
-        <div class="col-md-6 input-group" *ngIf="currentUser.role === 'Demandeur'">
-          <div class="form-field-static">
-            <strong>Demandeur:</strong> {{ currentUser.firstName }} {{ currentUser.lastName }}
-            <!-- Hidden field, already set in component -->
-          </div>
-        </div>
-        
-        <!-- For Utilisateur: Show dropdown -->
-        <div class="col-md-6 input-group" *ngIf="currentUser.role === 'Utilisateur'">
-          <mat-form-field appearance="outline" class="w-100">
-            <mat-label>Demandeur</mat-label>
-            <mat-select formControlName="demandeursID" required placeholder="Select demandeur">
-              <mat-option *ngFor="let user of demandeurList" [value]="user.id">
-                {{ user.nom }} {{ user.prenom }}
-              </mat-option>
-            </mat-select>
-            <mat-icon matSuffix>person</mat-icon>
-            <mat-error *ngIf="interventionForm.get('demandeursID')?.touched && interventionForm.get('demandeursID')?.hasError('required')">
-              Demandeur is required
-            </mat-error>
           </mat-form-field>
         </div>
 
-        <div class="col-md-6 input-group" *ngIf="currentUser.role === 'Superviseur'">
+        <!-- Destinataire - visible uniquement pour Superviseur -->
+        <div class="col-md-6 input-group" *ngIf="canAccessField('destinatairesID')">
           <mat-form-field appearance="outline" class="w-100">
-            <mat-label>Destinataire</mat-label>
+            <mat-label>Destinataire (Optional)</mat-label>
             <mat-select formControlName="destinatairesID" placeholder="Select destinataire">
               <mat-option *ngFor="let user of destinataireList" [value]="user.id">
                 {{ user.nom }} {{ user.prenom }}
@@ -185,6 +193,7 @@
           </mat-form-field>
         </div>
 
+        <!-- Date d'enregistrement - visible pour tous -->
         <div class="col-md-6 input-group">
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Date d'enregistrement panne</mat-label>

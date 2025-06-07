@@ -6,8 +6,8 @@
         <mat-icon class="database-icon">assignment</mat-icon>
       </div>
       <div class="title-container">
-        <h1>Gestion des interventions</h1>
-        <p class="subtitle">Gérer vos interventions...</p>
+        <h1>{{ pageTitle }}</h1>
+        <p class="subtitle">{{ pageSubtitle }}</p>
       </div>
     </div>
     <button class="create-button" (click)="navigateToCreate()">
@@ -36,93 +36,109 @@
     </div>
   </div>
 
+  <!-- Role-based explanation -->
+  <div class="role-info-box" *ngIf="currentUserRole !== 'Superviseur'">
+    <mat-icon class="info-icon">info</mat-icon>
+    <span *ngIf="currentUserRole === 'Demandeur'">Vous voyez uniquement les interventions que vous avez crées.</span>
+    <span *ngIf="currentUserRole === 'Utilisateur' || currentUserRole === 'Technicien'">Vous voyez les interventions que vous avez crées ou qui vous sont assignées.</span>
+  </div>
+
   <!-- Table Section -->
   <div class="table-container" *ngIf="!isLoading">
     <table>
       <thead>
         <tr>
-          <th>Titre</th>
-          <th>Date Creation</th>
-          <th>Machine Arretee</th>
-          <th>File</th>
-          <th>Etat</th>
-          <th>Type Intervention</th>
-          <th>Urgence</th>
-          <th>Chaine Production</th>
-          <th>Panne</th>
-          <th>Demandeur</th>
-          <th>Destinataire</th>
-          <th *ngIf="currentUserRole === 'Superviseur'">Actions</th>
+          <!-- Colonnes de base visibles pour tous les rôles -->
+          <th *ngIf="isColumnDisplayed('titre')">Titre</th>
+          <th *ngIf="isColumnDisplayed('dateCreation')">Date Creation</th>
+          <th *ngIf="isColumnDisplayed('machineArretee')">Machine Arretee</th>
+          <th *ngIf="isColumnDisplayed('file')">File</th>
+          <th *ngIf="isColumnDisplayed('chaineProduction')">Chaine Production</th>
+          
+          <!-- Colonnes spécifiques au rôle -->
+          <th *ngIf="isColumnDisplayed('etat')">Etat</th>
+          <th *ngIf="isColumnDisplayed('typeIntervention')">Type Intervention</th>
+          <th *ngIf="isColumnDisplayed('urgence')">Urgence</th>
+          <th *ngIf="isColumnDisplayed('panne')">Panne</th>
+          <th *ngIf="isColumnDisplayed('demandeur')">Demandeur</th>
+          <th *ngIf="isColumnDisplayed('destinataire')">Destinataire</th>
+          
+          <!-- Colonne d'actions conditionnelle -->
+          <th *ngIf="canDeleteIntervention()">Actions</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let item of paginatedInterventionList">
-          <td>{{ item.titre }}</td>
-          <td>{{ item.dateCreation | date:'MM/dd/yyyy HH:mm' }}</td>
-          <td>{{ item.machineArretee ? 'Yes' : 'No' }}</td>
-          <td>
+          <!-- Colonnes de base visibles pour tous les rôles -->
+          <td *ngIf="isColumnDisplayed('titre')">{{ item.titre }}</td>
+          <td *ngIf="isColumnDisplayed('dateCreation')">{{ item.dateCreation | date:'MM/dd/yyyy HH:mm' }}</td>
+          <td *ngIf="isColumnDisplayed('machineArretee')">{{ item.machineArretee ? 'Yes' : 'No' }}</td>
+          <td *ngIf="isColumnDisplayed('file')">
             <a *ngIf="item.fileName" (click)="downloadFile(item.idDemandeIntervention, item.fileName)" class="file-link" [title]="item.fileName">
               <mat-icon>attach_file</mat-icon> {{ item.fileName }}
             </a>
             <span *ngIf="!item.fileName">No file</span>
           </td>
-          <td>{{ item.etat }}</td>
-          <td>{{ item.typeIntervention }}</td>
-          <td><span [ngClass]="getUrgenceClass(item.urgence)">{{ item.urgence }}</span></td>
-          <td>{{ item.chaineProduction }}</td>
-          <td>{{ item.panne }}</td>
-          <td>{{ item.demandeur }}</td>
-          <td>{{ item.destinataire }}</td>
-          <td class="actions" *ngIf="currentUserRole === 'Superviseur'">
-            <button mat-icon-button color="primary" (click)="navigateToEdit(item.idDemandeIntervention)">
+          <td *ngIf="isColumnDisplayed('chaineProduction')">{{ item.chaineProduction }}</td>
+          
+          <!-- Colonnes spécifiques au rôle -->
+          <td *ngIf="isColumnDisplayed('etat')">{{ item.etat }}</td>
+          <td *ngIf="isColumnDisplayed('typeIntervention')">{{ item.typeIntervention }}</td>
+          <td *ngIf="isColumnDisplayed('urgence')">
+            <span [class]="getUrgenceClass(item.urgence)">{{ item.urgence }}</span>
+          </td>
+          <td *ngIf="isColumnDisplayed('panne')">{{ item.panne }}</td>
+          <td *ngIf="isColumnDisplayed('demandeur')">{{ item.demandeur }}</td>
+          <td *ngIf="isColumnDisplayed('destinataire')">{{ item.destinataire }}</td>
+          
+          <!-- Actions conditionnelles -->
+          <td *ngIf="canDeleteIntervention()" class="actions">
+            <button *ngIf="canEditIntervention(item)" mat-icon-button color="primary" (click)="navigateToEdit(item.idDemandeIntervention)" title="Edit Intervention">
               <mat-icon>edit</mat-icon>
             </button>
-            <button mat-icon-button color="warn" (click)="deleteIntervention(item)">
+            <button mat-icon-button color="warn" (click)="deleteIntervention(item)" title="Delete Intervention">
               <mat-icon>delete</mat-icon>
             </button>
           </td>
         </tr>
+        
+        <!-- Message when no data -->
         <tr *ngIf="paginatedInterventionList.length === 0">
-          <td [attr.colspan]="currentUserRole === 'Superviseur' ? 12 : 11" class="no-data">No interventions found.</td>
+          <td [attr.colspan]="getColspan()" class="no-data">
+            Aucune intervention trouvée
+          </td>
         </tr>
       </tbody>
     </table>
   </div>
 
-  <!-- Loading Spinner -->
-  <div *ngIf="isLoading" class="loader-container">
+  <!-- Loading Indicator -->
+  <div class="loader-container" *ngIf="isLoading">
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 
-  <!-- Pagination Section -->
-  <div class="pagination" *ngIf="!isLoading && paginatedInterventionList.length > 0">
-    <button class="pagination-btn prev" [disabled]="currentPage === 1" (click)="previousPage()">
-      <mat-icon>chevron_left</mat-icon>
-      PREVIOUS
+  <!-- Pagination Controls -->
+  <div class="pagination" *ngIf="totalPages > 1 && !isLoading">
+    <button class="pagination-btn prev" (click)="previousPage()" [disabled]="currentPage === 1">
+      <mat-icon>chevron_left</mat-icon> Précédent
     </button>
-    
     <div class="page-numbers">
-      <button class="page-number" 
-              *ngFor="let page of getPageNumbers()" 
-              [class.active]="page === currentPage"
-              (click)="goToPage(page)">
-        {{ page }}
-      </button>
+      <ng-container *ngFor="let page of getPageNumbers()">
+        <button class="page-number" [class.active]="page === currentPage" (click)="goToPage(page)">
+          {{ page }}
+        </button>
+      </ng-container>
     </div>
-    
-    <button class="pagination-btn next" [disabled]="currentPage === totalPages" (click)="nextPage()">
-      NEXT
-      <mat-icon>chevron_right</mat-icon>
+    <button class="pagination-btn next" (click)="nextPage()" [disabled]="currentPage === totalPages">
+      Suivant <mat-icon>chevron_right</mat-icon>
     </button>
   </div>
 
-  <!-- Notification Popup -->
-  <div class="popup-container">
-    <div *ngIf="showPopup" [class]="'popup popup-' + popupType" @slideInOut>
-      <mat-icon class="popup-icon">
-        {{ popupType === 'success' ? 'check_circle' : 'error' }}
-      </mat-icon>
-      <div>{{ popupMessage }}</div>
+  <!-- Popup Notification -->
+  <div class="popup-container" *ngIf="showPopup" [@slideInOut]>
+    <div class="popup" [ngClass]="'popup-' + popupType">
+      <mat-icon class="popup-icon">{{ popupType === 'success' ? 'check_circle' : 'error' }}</mat-icon>
+      <span>{{ popupMessage }}</span>
       <mat-icon class="popup-close" (click)="hidePopup()">close</mat-icon>
     </div>
   </div>

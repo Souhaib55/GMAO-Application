@@ -155,11 +155,48 @@ export class InterventionComponent implements OnInit {
   totalPages = 1;
   pageSizeOptions = [5, 10, 15];
 
+  // Colonnes à afficher selon le rôle
+  displayedColumns: string[] = [];
+
   private searchSubject = new Subject<string>();
 
+  // Récupère le rôle de l'utilisateur actuel
   get currentUserRole(): string | null {
     const user = this.accountService.currentUser();
     return user ? user.role : null;
+  }
+  
+  // Récupère l'ID de l'utilisateur actuel
+  get currentUserId(): number | null {
+    const user = this.accountService.currentUser();
+    return user ? user.internalId : null;
+  }
+
+  // Nouveaux getters pour les messages et titres spécifiques au rôle
+  get pageTitle(): string {
+    switch (this.currentUserRole) {
+      case 'Demandeur': 
+        return 'Mes demandes d\'intervention';
+      case 'Utilisateur':
+      case 'Technicien':
+        return 'Interventions assignées & demandées';
+      case 'Superviseur':
+      default:
+        return 'Gestion des interventions';
+    }
+  }
+
+  get pageSubtitle(): string {
+    switch (this.currentUserRole) {
+      case 'Demandeur': 
+        return 'Visualiser et gérer vos demandes d\'intervention';
+      case 'Utilisateur':
+      case 'Technicien':
+        return 'Gérer les interventions qui vous sont assignées ou que vous avez demandées';
+      case 'Superviseur':
+      default:
+        return 'Gérer toutes les interventions';
+    }
   }
 
   ngOnInit(): void {
@@ -168,11 +205,59 @@ export class InterventionComponent implements OnInit {
       this.showPopupMessage(state.message, state.type || 'success');
     }
 
+    // Configurer les colonnes à afficher selon le rôle
+    this.setupDisplayedColumns();
+
     this.searchSubject.pipe(debounceTime(300)).subscribe(() => {
       this.filterItems();
     });
 
     this.loadReferenceData();
+  }
+
+  // Méthode pour configurer les colonnes visibles selon le rôle
+  private setupDisplayedColumns(): void {
+    // Colonnes de base visibles pour tous les rôles
+    const baseColumns = ['titre', 'dateCreation', 'machineArretee', 'file', 'chaineProduction'];
+    
+    // Colonnes supplémentaires selon le rôle
+    switch (this.currentUserRole) {
+      case 'Superviseur':
+        // Le superviseur voit tout
+        this.displayedColumns = [
+          ...baseColumns,
+          'etat',
+          'typeIntervention',
+          'urgence',
+          'panne',
+          'demandeur',
+          'destinataire',
+          'actions'
+        ];
+        break;
+        
+      case 'Utilisateur':
+      case 'Technicien':
+        // Le technicien voit presque tout sauf les actions et destinataire
+        this.displayedColumns = [
+          ...baseColumns,
+          'etat',
+          'typeIntervention',
+          'urgence',
+          'panne',
+          'demandeur'
+          // 'destinataire' est retiré car le technicien ne doit pas le voir
+        ];
+        break;
+        
+      case 'Demandeur':
+      default:
+        // Le demandeur voit uniquement les champs de base
+        this.displayedColumns = [
+          ...baseColumns
+          // 'demandeur' est retiré car le demandeur ne doit pas le voir
+        ];
+    }
   }
 
   loadReferenceData(): void {
@@ -262,9 +347,21 @@ export class InterventionComponent implements OnInit {
       chaineProduction: item.chaineProduction?.libelle || this.chaineProductionMap.get(item.idChaineProduction) || 'Unknown',
       panne: item.panne?.libelle || this.panneMap.get(item.idPanne) || 'Unknown',
       demandeur: item.demandeur ? `${item.demandeur.nom} ${item.demandeur.prenom}` : this.usersMap.get(item.demandeursID) || 'Unknown',
+      demandeursID: item.demandeur?.id || item.demandeursID || 0,
       destinataire: item.destinataire ? `${item.destinataire.nom} ${item.destinataire.prenom}` : this.usersMap.get(item.destinatairesID) || 'Unknown',
+      destinatairesID: item.destinataire?.id || item.destinatairesID || 0,
       fileName: item.fileName || ''
     }));
+  }
+
+  // Vérifier si une colonne doit être affichée
+  isColumnDisplayed(columnName: string): boolean {
+    return this.displayedColumns.includes(columnName);
+  }
+
+  // Obtenir le nombre de colonnes pour le colspan du message "No data"
+  getColspan(): number {
+    return this.displayedColumns.length + (this.canDeleteIntervention() ? 1 : 0);
   }
 
   changePageSize(): void {
@@ -334,6 +431,21 @@ export class InterventionComponent implements OnInit {
       }
     }
     return pages;
+  }
+
+  // Vérifier si l'utilisateur peut modifier une intervention
+  canEditIntervention(item: InterventionListItem): boolean {
+    // Seul le superviseur peut modifier n'importe quelle intervention
+    if (this.currentUserRole === 'Superviseur') return true;
+    
+    // Les autres rôles ne peuvent pas modifier
+    return false;
+  }
+
+  // Vérifier si l'utilisateur peut supprimer une intervention
+  canDeleteIntervention(): boolean {
+    // Seul le superviseur peut supprimer des interventions
+    return this.currentUserRole === 'Superviseur';
   }
 
   navigateToCreate(): void {
@@ -434,6 +546,8 @@ interface InterventionListItem {
   chaineProduction: string;
   panne: string;
   demandeur: string;
+  demandeursID: number;
   destinataire: string;
+  destinatairesID: number;
   fileName?: string;
 }

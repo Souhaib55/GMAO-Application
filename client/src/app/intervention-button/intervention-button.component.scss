@@ -484,3 +484,40 @@ mat-checkbox {
   display: flex;
   align-items: center;
 }
+
+
+
+
+
+
+
+
+
+
+// Styles pour les instructions spécifiques au rôle
+.role-instructions {
+  margin-bottom: 20px;
+}
+
+.alert-info {
+  display: flex;
+  align-items: flex-start;
+  background-color: rgba(33, 150, 243, 0.1);
+  border-left: 4px solid #2196f3;
+  padding: 16px;
+  border-radius: 6px;
+  
+  mat-icon {
+    color: #2196f3;
+    margin-right: 12px;
+    font-size: 24px;
+    height: 24px;
+    width: 24px;
+  }
+  
+  strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #1976d2;
+  }
+}

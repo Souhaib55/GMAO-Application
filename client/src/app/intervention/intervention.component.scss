@@ -464,3 +464,25 @@
     margin-bottom: 4px;
   }
 }
+
+
+
+
+
+
+
+/* Ajoutez ceci dans intervention.component.scss */
+.role-info-box {
+  display: flex;
+  align-items: center;
+  background-color: #e3f2fd;
+  border-radius: 4px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border-left: 4px solid #2196f3;
+}
+
+.info-icon {
+  color: #2196f3;
+  margin-right: 12px;
+}

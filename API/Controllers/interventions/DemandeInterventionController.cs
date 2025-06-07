@@ -31,7 +31,33 @@ namespace API.Controllers
         [HttpGet]
         public async Task<ActionResult<PagedResult<object>>> GetDemandeInterventions(int page = 1, int pageSize = 5, string search = null)
         {
+            // Obtenir l'utilisateur actuel et son rôle
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null) return Unauthorized("User not found");
+
+            var roles = await _userManager.GetRolesAsync(currentUser);
+            var role = roles.FirstOrDefault();
+            if (role == null) return BadRequest("User has no role");
+
+            var userEntity = await _context.Users.FirstOrDefaultAsync(u => u.AppUserId == currentUser.Id);
+            if (userEntity == null) return BadRequest("User entity not found");
+
             var query = _context.DemandeInterventions.Where(d => d.IsActif);
+
+            // Filtrer selon le rôle de l'utilisateur
+            if (role == "Demandeur")
+            {
+                // Le demandeur ne voit que les interventions qu'il a créées
+                query = query.Where(d => d.DemandeursID == userEntity.ID);
+                _logger.LogInformation($"Filtering interventions for Demandeur ID: {userEntity.ID}");
+            }
+            else if (role == "Utilisateur" || role == "Technicien")
+            {
+                // L'utilisateur/technicien voit les interventions qu'il a créées ou qui lui sont assignées
+                query = query.Where(d => d.DemandeursID == userEntity.ID || d.DestinatairesID == userEntity.ID);
+                _logger.LogInformation($"Filtering interventions for Utilisateur/Technicien ID: {userEntity.ID}");
+            }
+            // Le Superviseur voit tout, donc pas de filtre supplémentaire nécessaire
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -80,10 +106,11 @@ namespace API.Controllers
                 })
                 .ToListAsync();
 
-            _logger.LogInformation($"Retrieved {items.Count} interventions (page {page}, size {pageSize})");
+            _logger.LogInformation($"Retrieved {items.Count} interventions for role {role} (page {page}, size {pageSize})");
             return Ok(new PagedResult<object> { Data = items.Cast<object>().ToList(), TotalCount = totalCount, Page = page, PageSize = pageSize });
         }
 
+        // Le reste du contrôleur reste inchangé...
         [HttpGet("today-count")]
         public async Task<ActionResult<int>> GetTodayInterventionCount()
         {
@@ -102,9 +129,13 @@ namespace API.Controllers
             IQueryable<DemandeIntervention> query = _context.DemandeInterventions
                 .Where(d => d.IsActif && d.DateCreation >= today && d.DateCreation < tomorrow);
 
-            if (role == "Utilisateur" || role == "Technicien")
+            if (role == "Demandeur")
             {
-                query = query.Where(d => d.DestinatairesID == userEntity.ID);
+                query = query.Where(d => d.DemandeursID == userEntity.ID);
+            }
+            else if (role == "Utilisateur" || role == "Technicien")
+            {
+                query = query.Where(d => d.DemandeursID == userEntity.ID || d.DestinatairesID == userEntity.ID);
             }
 
             var count = await query.CountAsync();
@@ -112,9 +143,19 @@ namespace API.Controllers
             return Ok(count);
         }
 
+        // Le reste des méthodes du contrôleur reste inchangé...
         [HttpGet("{id}")]
         public async Task<ActionResult<DemandeIntervention>> GetDemandeIntervention(int id)
         {
+            // Obtenir l'utilisateur actuel et son rôle
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null) return Unauthorized("User not found");
+
+            var roles = await _userManager.GetRolesAsync(currentUser);
+            var role = roles.FirstOrDefault();
+            var userEntity = await _context.Users.FirstOrDefaultAsync(u => u.AppUserId == currentUser.Id);
+            if (userEntity == null) return BadRequest("User entity not found");
+
             var demande = await _context.DemandeInterventions
                 .Include(d => d.Etat)
                 .Include(d => d.Status)
@@ -131,9 +172,24 @@ namespace API.Controllers
                 _logger.LogWarning($"Intervention ID {id} not found or inactive");
                 return NotFound("Intervention not found or inactive");
             }
+
+            // Vérifier les autorisations basées sur le rôle
+            if (role == "Demandeur" && demande.DemandeursID != userEntity.ID)
+            {
+                _logger.LogWarning($"Unauthorized access: Demandeur {userEntity.ID} tried to access intervention {id}");
+                return Forbid("Not authorized to view this intervention");
+            }
+            else if ((role == "Utilisateur" || role == "Technicien") && 
+                    (demande.DemandeursID != userEntity.ID && demande.DestinatairesID != userEntity.ID))
+            {
+                _logger.LogWarning($"Unauthorized access: {role} {userEntity.ID} tried to access intervention {id}");
+                return Forbid("Not authorized to view this intervention");
+            }
+
             return Ok(demande);
         }
 
+        // Le reste des méthodes...
         [HttpPost]
         public async Task<ActionResult<DemandeIntervention>> CreateDemandeIntervention()
         {
@@ -354,6 +410,17 @@ namespace API.Controllers
             var userEntity = await _context.Users.FirstOrDefaultAsync(u => u.AppUserId == currentUser.Id);
             if (userEntity == null) return BadRequest("User entity not found");
 
+            // Vérification des permissions basées sur le rôle
+            if (role == "Demandeur" && existingDemande.DemandeursID != userEntity.ID)
+            {
+                return Forbid("Not authorized to update this intervention");
+            }
+            else if ((role == "Utilisateur" || role == "Technicien") && 
+                   (existingDemande.DemandeursID != userEntity.ID && existingDemande.DestinatairesID != userEntity.ID))
+            {
+                return Forbid("Not authorized to update this intervention");
+            }
+
             if (!string.IsNullOrEmpty(demandeDto.WorkflowAction))
             {
                 var result = await HandleWorkflowAction(existingDemande, demandeDto.WorkflowAction, role, userEntity.ID, demandeDto.RaisonAnnulation);
@@ -503,8 +570,28 @@ namespace API.Controllers
         [HttpGet("{id}/file")]
         public async Task<IActionResult> GetFile(int id)
         {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null) return Unauthorized("User not found");
+
+            var roles = await _userManager.GetRolesAsync(currentUser);
+            var role = roles.FirstOrDefault();
+            var userEntity = await _context.Users.FirstOrDefaultAsync(u => u.AppUserId == currentUser.Id);
+            if (userEntity == null) return BadRequest("User entity not found");
+
             var demande = await _context.DemandeInterventions.FirstOrDefaultAsync(d => d.IdDemandeIntervention == id && d.IsActif);
             if (demande == null || demande.FileData == null) return NotFound("File not found");
+            
+            // Vérifier les autorisations basées sur le rôle
+            if (role == "Demandeur" && demande.DemandeursID != userEntity.ID)
+            {
+                return Forbid("Not authorized to download this file");
+            }
+            else if ((role == "Utilisateur" || role == "Technicien") && 
+                   (demande.DemandeursID != userEntity.ID && demande.DestinatairesID != userEntity.ID))
+            {
+                return Forbid("Not authorized to download this file");
+            }
+            
             return File(demande.FileData, demande.ContentType, demande.FileName);
         }
 
@@ -524,16 +611,51 @@ namespace API.Controllers
         {
             try
             {
+                // Obtenir l'utilisateur actuel et son rôle
+                var currentUser = await _userManager.GetUserAsync(User);
+                if (currentUser == null) return Unauthorized("User not found");
+
+                var roles = await _userManager.GetRolesAsync(currentUser);
+                var role = roles.FirstOrDefault();
+                var userEntity = await _context.Users.FirstOrDefaultAsync(u => u.AppUserId == currentUser.Id);
+                if (userEntity == null) return BadRequest("User entity not found");
+
+                // Base query for active interventions
+                IQueryable<DemandeIntervention> baseQuery = _context.DemandeInterventions.Where(d => d.IsActif);
+                
+                // Filter by role
+                if (role == "Demandeur")
+                {
+                    baseQuery = baseQuery.Where(d => d.DemandeursID == userEntity.ID);
+                }
+                else if (role == "Utilisateur" || role == "Technicien")
+                {
+                    baseQuery = baseQuery.Where(d => d.DemandeursID == userEntity.ID || d.DestinatairesID == userEntity.ID);
+                }
+                
                 var interventionStats = new
                 {
-                    enAttente = await _context.DemandeInterventions.CountAsync(d => d.IsActif && d.StatusId == 1),
-                    enCours = await _context.DemandeInterventions.CountAsync(d => d.IsActif && d.StatusId == 2),
-                    terminee = await _context.DemandeInterventions.CountAsync(d => d.IsActif && (d.StatusId == 3 || d.StatusId == 4)),
-                    annulee = await _context.DemandeInterventions.CountAsync(d => d.IsActif && d.StatusId == 5)
+                    enAttente = await baseQuery.CountAsync(d => d.StatusId == 1),
+                    enCours = await baseQuery.CountAsync(d => d.StatusId == 2),
+                    terminee = await baseQuery.CountAsync(d => d.StatusId == 3 || d.StatusId == 4),
+                    annulee = await baseQuery.CountAsync(d => d.StatusId == 5)
                 };
 
+                // For machine stats, if not Superviseur, filter based on user's interventions
+                IQueryable<DemandeIntervention> machineQuery = _context.DemandeInterventions.Where(d => d.IsActif && d.MachineArretee && (d.StatusId == 1 || d.StatusId == 2));
+                
+                if (role == "Demandeur")
+                {
+                    machineQuery = machineQuery.Where(d => d.DemandeursID == userEntity.ID);
+                }
+                else if (role == "Utilisateur" || role == "Technicien")
+                {
+                    machineQuery = machineQuery.Where(d => d.DemandeursID == userEntity.ID || d.DestinatairesID == userEntity.ID);
+                }
+                
                 var machineCount = await _context.ChaineProductions.CountAsync(c => c.IsActif);
-                var machinesArretees = await _context.DemandeInterventions.CountAsync(d => d.IsActif && d.MachineArretee && (d.StatusId == 1 || d.StatusId == 2));
+                var machinesArretees = await machineQuery.CountAsync();
+                
                 var machineStats = new
                 {
                     arretees = machinesArretees,
@@ -542,24 +664,57 @@ namespace API.Controllers
                     pourcentageArretees = machineCount > 0 ? Math.Round((double)machinesArretees / machineCount * 100, 1) : 0
                 };
 
-                var recentInterventions = await _context.DemandeInterventions
-                    .Where(d => d.IsActif)
+                // Recent interventions
+                var recentQuery = _context.DemandeInterventions.Where(d => d.IsActif);
+                
+                if (role == "Demandeur")
+                {
+                    recentQuery = recentQuery.Where(d => d.DemandeursID == userEntity.ID);
+                }
+                else if (role == "Utilisateur" || role == "Technicien")
+                {
+                    recentQuery = recentQuery.Where(d => d.DemandeursID == userEntity.ID || d.DestinatairesID == userEntity.ID);
+                }
+                
+                var recentInterventions = await recentQuery
                     .Include(d => d.Status)
                     .OrderByDescending(d => d.DateCreation)
                     .Take(5)
                     .Select(d => new { idDemandeIntervention = d.IdDemandeIntervention, titre = d.Titre, dateCreation = d.DateCreation, status = new { id = d.Status.Id, statut = d.Status.Statut } })
                     .ToListAsync();
 
+                // Monthly data
                 var sixMonthsAgo = DateTime.Now.AddMonths(-6);
-                var monthlyData = await _context.DemandeInterventions
-                    .Where(d => d.IsActif && d.DateCreation >= sixMonthsAgo)
+                var monthlyQuery = _context.DemandeInterventions.Where(d => d.IsActif && d.DateCreation >= sixMonthsAgo);
+                
+                if (role == "Demandeur")
+                {
+                    monthlyQuery = monthlyQuery.Where(d => d.DemandeursID == userEntity.ID);
+                }
+                else if (role == "Utilisateur" || role == "Technicien")
+                {
+                    monthlyQuery = monthlyQuery.Where(d => d.DemandeursID == userEntity.ID || d.DestinatairesID == userEntity.ID);
+                }
+                
+                var monthlyData = await monthlyQuery
                     .GroupBy(d => new { Year = d.DateCreation.Year, Month = d.DateCreation.Month })
                     .Select(g => new { year = g.Key.Year, month = g.Key.Month, count = g.Count() })
                     .OrderBy(d => d.year).ThenBy(d => d.month)
                     .ToListAsync();
 
-                var urgenceData = await _context.DemandeInterventions
-                    .Where(d => d.IsActif)
+                // Urgence data
+                var urgenceQuery = _context.DemandeInterventions.Where(d => d.IsActif);
+                
+                if (role == "Demandeur")
+                {
+                    urgenceQuery = urgenceQuery.Where(d => d.DemandeursID == userEntity.ID);
+                }
+                else if (role == "Utilisateur" || role == "Technicien")
+                {
+                    urgenceQuery = urgenceQuery.Where(d => d.DemandeursID == userEntity.ID || d.DestinatairesID == userEntity.ID);
+                }
+                
+                var urgenceData = await urgenceQuery
                     .GroupBy(d => d.IDUrgence)
                     .Select(g => new { urgenceId = g.Key, count = g.Count() })
                     .Join(_context.Urgences, ud => ud.urgenceId, u => u.IDUrgence, (ud, u) => new { id = ud.urgenceId, libelle = u.Libelle, count = ud.count })
