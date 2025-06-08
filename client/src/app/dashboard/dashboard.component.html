@@ -34,7 +34,7 @@
         </div>
       </div>
 
-      <!-- Cartes des compteurs d'interventions -->
+      <!-- Cartes des compteurs d'interventions (communes à tous les rôles) -->
       <div class="row">
         <div class="col-lg-3 col-md-6">
           <div class="card card-stats intervention-card waiting">
@@ -121,133 +121,413 @@
         </div>
       </div>
 
-      <!-- SECTION 1: Tableau de Performance Opérationnelle -->
-      <div class="row">
-        <div class="col-12">
-          <div class="card industrial-card">
-            <div class="card-header industrial-header">
-              <h4 class="card-title">Performance Opérationnelle</h4>
-              <div class="header-controls">
-                <div class="time-selector">
-                  <button class="btn btn-sm btn-outline-light active">6 mois</button>
-                  <button class="btn btn-sm btn-outline-light">1 an</button>
+      <!-- DASHBOARD POUR SUPERVISEUR -->
+      <ng-container *ngIf="userRole === 'Superviseur'">
+        <!-- SECTION 1: Tableau de Performance Opérationnelle -->
+        <div class="row">
+          <div class="col-12">
+            <div class="card industrial-card">
+              <div class="card-header industrial-header">
+                <h4 class="card-title">Performance Opérationnelle</h4>
+                <div class="header-controls">
+                  <div class="time-selector">
+                    <button class="btn btn-sm btn-outline-light active">6 mois</button>
+                    <button class="btn btn-sm btn-outline-light">1 an</button>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="card-body">
-              <div class="operations-dashboard">
-                <!-- Indicateurs industriels -->
-                <div class="industrial-indicators">
-                  <div class="machine-status-indicator">
-                    <div class="gauge-container">
-                      <!-- Remplacement de la div par un canvas pour Chart.js -->
-                      <div class="gauge">
-                        <canvas id="machineGauge"></canvas>
+              <div class="card-body">
+                <div class="operations-dashboard">
+                  <!-- Indicateurs industriels -->
+                  <div class="industrial-indicators">
+                    <div class="machine-status-indicator">
+                      <div class="gauge-container">
+                        <!-- Remplacement de la div par un canvas pour Chart.js -->
+                        <div class="gauge">
+                          <canvas id="machineGauge"></canvas>
+                        </div>
+                        <div class="gauge-value" [class.highlight-change]="statValueChanged.pourcentage">
+                          {{ machineStats.pourcentageArretees }}%
+                        </div>
+                        <div class="gauge-label">Machines arrêtées</div>
                       </div>
-                      <div class="gauge-value" [class.highlight-change]="statValueChanged.pourcentage">
-                        {{ machineStats.pourcentageArretees }}%
+                      <div class="machine-stats-modern">
+                        <div class="stat-row">
+                          <div class="stat-block" [class.highlight-change]="statValueChanged.arretees">
+                            <div class="stat-value">{{ machineStats.arretees }}</div>
+                            <div class="stat-label">Arrêtées</div>
+                          </div>
+                          <div class="stat-block" [class.highlight-change]="statValueChanged.enFonctionnement">
+                            <div class="stat-value">{{ machineStats.enFonctionnement }}</div>
+                            <div class="stat-label">En fonction</div>
+                          </div>
+                          <div class="stat-block" [class.highlight-change]="statValueChanged.total">
+                            <div class="stat-value">{{ machineStats.total }}</div>
+                            <div class="stat-label">Total</div>
+                          </div>
+                        </div>
                       </div>
-                      <div class="gauge-label">Machines arrêtées</div>
                     </div>
-                    <div class="machine-stats-modern">
-                      <div class="stat-row">
-                        <div class="stat-block" [class.highlight-change]="statValueChanged.arretees">
-                          <div class="stat-value">{{ machineStats.arretees }}</div>
-                          <div class="stat-label">Arrêtées</div>
-                        </div>
-                        <div class="stat-block" [class.highlight-change]="statValueChanged.enFonctionnement">
-                          <div class="stat-value">{{ machineStats.enFonctionnement }}</div>
-                          <div class="stat-label">En fonction</div>
-                        </div>
-                        <div class="stat-block" [class.highlight-change]="statValueChanged.total">
-                          <div class="stat-value">{{ machineStats.total }}</div>
-                          <div class="stat-label">Total</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
 
-                  <!-- Indicateurs d'efficacité -->
-                  <div class="efficiency-indicators">
+                    <!-- Indicateurs d'efficacité -->
                     <div class="efficiency-metric">
                       <div class="metric-title">Temps moyen d'intervention</div>
-                      <div class="metric-value">3.2h</div>
+                      <div class="metric-value">{{ averageInterventionTime }}h</div>
                       <div class="metric-chart">
-                        <!-- Canvas pour le mini-graphique -->
                         <canvas id="avgTimeChart"></canvas>
                       </div>
                     </div>
                     <div class="efficiency-metric">
                       <div class="metric-title">Taux de résolution</div>
-                      <div class="metric-value">92%</div>
+                      <div class="metric-value">{{ resolutionRate }}%</div>
                       <div class="metric-chart">
-                        <!-- Canvas pour le mini-graphique -->
                         <canvas id="resolutionRateChart"></canvas>
                       </div>
                     </div>
                   </div>
                 </div>
-
-                <!-- Suppression du graphique des interventions -->
               </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- SECTION 2: Analyse de Maintenance -->
-      <div class="row">
-        <div class="col-12">
-          <div class="card industrial-card">
-            <div class="card-header industrial-header">
-              <h4 class="card-title">Analyse de Maintenance</h4>
-              <div class="header-controls">
-                <span class="last-update">Mis à jour à {{ lastRefreshTime | date:'HH:mm:ss' }}</span>
+        <!-- SECTION 2: Analyse de Maintenance -->
+        <div class="row">
+          <div class="col-12">
+            <div class="card industrial-card">
+              <div class="card-header industrial-header">
+                <h4 class="card-title">Analyse de Maintenance</h4>
+                <div class="header-controls">
+                  <span class="last-update">Mis à jour à {{ lastRefreshTime | date:'HH:mm:ss' }}</span>
+                </div>
               </div>
-            </div>
-            <div class="card-body">
-              <div class="maintenance-analysis">
-                <!-- Distribution par niveau d'urgence -->
-                <div class="urgency-distribution">
-                  <h5 class="section-title">Répartition par niveau d'urgence</h5>
-                  <div class="distribution-chart">
-                    <!-- Remplacement de la div par un canvas pour Chart.js -->
-                    <canvas id="urgencyDistributionChart"></canvas>
+              <div class="card-body">
+                <div class="maintenance-analysis">
+                  <!-- Distribution par niveau d'urgence -->
+                  <div class="urgency-distribution">
+                    <h5 class="section-title">Répartition par niveau d'urgence</h5>
+                    <div class="distribution-chart">
+                      <!-- Remplacement de la div par un canvas pour Chart.js -->
+                      <canvas id="urgencyDistributionChart"></canvas>
+                    </div>
+                    <div class="urgency-legend">
+                      <div *ngFor="let item of urgenceData; let i = index" class="legend-item">
+                        <span class="legend-color" [ngStyle]="{'background-color': getUrgencyColor(i)}"></span>
+                        <span class="legend-label">{{ item.libelle }}: {{ item.count }}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div class="urgency-legend">
-                    <div *ngFor="let item of urgenceData; let i = index" class="legend-item">
-                      <span class="legend-color" [ngStyle]="{'background-color': getUrgencyColor(i)}"></span>
-                      <span class="legend-label">{{ item.libelle }}: {{ item.count }}</span>
+
+                  <!-- Dernières interventions -->
+                  <div class="recent-interventions-modern">
+                    <h5 class="section-title">Interventions récentes</h5>
+                    <div class="timeline-container">
+                      <div *ngFor="let intervention of recentInterventions" 
+                          class="timeline-item" 
+                          [class.highlight-new]="isNewIntervention(intervention)"
+                          [class.highlight-changed]="hasStatusChanged(intervention)">
+                        <div class="timeline-badge" [ngClass]="getStatusClass(intervention.status?.id)">
+                          <i class="material-icons">{{ getStatusIcon(intervention.status?.id) }}</i>
+                        </div>
+                        <div class="timeline-content">
+                          <div class="timeline-header">
+                            <span class="intervention-id">#{{ intervention.idDemandeIntervention }}</span>
+                            <span class="intervention-date">{{ formatDate(intervention.dateCreation) }}</span>
+                          </div>
+                          <div class="intervention-title">{{ intervention.titre }}</div>
+                          <div class="intervention-status">
+                            <span class="status-badge" [ngClass]="getStatusClass(intervention.status?.id)">
+                              {{ getStatusLabel(intervention.status?.id) }}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div *ngIf="recentInterventions.length === 0" class="no-data">
+                        Aucune intervention récente
+                      </div>
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
 
-                <!-- Dernières interventions -->
-                <div class="recent-interventions-modern">
-                  <h5 class="section-title">Interventions récentes</h5>
-                  <div class="timeline-container">
-                    <div *ngFor="let intervention of recentInterventions.slice(0, 5)" 
-                        class="timeline-item" 
-                        [class.highlight-new]="isNewIntervention(intervention)"
-                        [class.highlight-changed]="hasStatusChanged(intervention)">
-                      <div class="timeline-badge" [ngClass]="getStatusClass(intervention.status?.id)">
-                        <i class="material-icons">{{ getStatusIcon(intervention.status?.id) }}</i>
-                      </div>
-                      <div class="timeline-content">
-                        <div class="timeline-header">
-                          <span class="intervention-id">#{{ intervention.idDemandeIntervention }}</span>
-                          <span class="intervention-date">{{ formatDate(intervention.dateCreation) }}</span>
+      <!-- DASHBOARD POUR DEMANDEUR -->
+      <ng-container *ngIf="userRole === 'Demandeur'">
+        <!-- Section Suivi de mes demandes -->
+        <div class="row">
+          <div class="col-12">
+            <div class="card industrial-card">
+              <div class="card-header industrial-header">
+                <h4 class="card-title">Suivi de mes demandes d'intervention</h4>
+                <div class="header-controls">
+                  <span class="last-update">Mis à jour à {{ lastRefreshTime | date:'HH:mm:ss' }}</span>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <!-- Mes interventions récentes (en pleine largeur maintenant) -->
+                  <div class="col-md-12">
+                    <div class="requester-interventions">
+                      <h5 class="section-title">
+                        Mes interventions récentes
+                        <button class="btn btn-sm btn-outline-primary float-right" (click)="toggleHistoryView()">
+                          {{ showAllInterventions ? 'Voir récentes' : 'Voir historique complet' }}
+                        </button>
+                      </h5>
+                      
+                      <!-- Interventions récentes -->
+                      <div class="timeline-container requester-timeline" *ngIf="!showAllInterventions">
+                        <div *ngFor="let intervention of recentInterventions" 
+                            class="timeline-item" 
+                            [class.highlight-new]="isNewIntervention(intervention)"
+                            [class.highlight-changed]="hasStatusChanged(intervention)">
+                          <div class="timeline-badge" [ngClass]="getStatusClass(intervention.status?.id)">
+                            <i class="material-icons">{{ getStatusIcon(intervention.status?.id) }}</i>
+                          </div>
+                          <div class="timeline-content">
+                            <div class="timeline-header">
+                              <span class="intervention-id">#{{ intervention.idDemandeIntervention }}</span>
+                              <span class="intervention-date">{{ formatDate(intervention.dateCreation) }}</span>
+                            </div>
+                            <div class="intervention-title">{{ intervention.titre }}</div>
+                            <div class="intervention-progress">
+                              <div class="progress">
+                                <div class="progress-bar" role="progressbar" 
+                                    [ngClass]="getProgressBarClass(intervention.status?.id)"
+                                    [ngStyle]="{'width': getInterventionProgress(intervention.status?.id) + '%'}" 
+                                    aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+                              </div>
+                              <div class="progress-text">
+                                {{ getProgressText(intervention.status?.id) }} ({{ getInterventionProgress(intervention.status?.id) }}%)
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <div class="intervention-title">{{ intervention.titre }}</div>
-                        <div class="intervention-status">
-                          <span class="status-badge" [ngClass]="getStatusClass(intervention.status?.id)">
+                        <div *ngIf="recentInterventions.length === 0" class="no-data">
+                          Aucune intervention récente
+                        </div>
+                      </div>
+
+                      <!-- Historique complet des interventions -->
+                      <div class="interventions-history" *ngIf="showAllInterventions">
+                        <div class="search-filter mb-3">
+                          <input type="text" class="form-control" placeholder="Rechercher une intervention..." 
+                                [(ngModel)]="interventionSearchQuery" (keyup)="filterInterventions()">
+                        </div>
+                        
+                        <div class="table-responsive">
+                          <table class="table table-hover">
+                            <thead>
+                              <tr>
+                                <th>ID</th>
+                                <th>Titre</th>
+                                <th>Date de création</th>
+                                <th>Statut</th>
+                                <th>Progression</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr *ngFor="let intervention of filteredAllInterventions">
+                                <td>#{{ intervention.idDemandeIntervention }}</td>
+                                <td>{{ intervention.titre }}</td>
+                                <td>{{ formatDate(intervention.dateCreation) }}</td>
+                                <td>
+                                  <span class="status-badge" [ngClass]="getStatusClass(intervention.status?.id)">
+                                    {{ getStatusLabel(intervention.status?.id) }}
+                                  </span>
+                                </td>
+                                <td style="width: 30%">
+                                  <div class="progress">
+                                    <div class="progress-bar" role="progressbar" 
+                                        [ngClass]="getProgressBarClass(intervention.status?.id)"
+                                        [ngStyle]="{'width': getInterventionProgress(intervention.status?.id) + '%'}" 
+                                        aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+                                  </div>
+                                  <small>{{ getProgressText(intervention.status?.id) }}</small>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        
+                        <div class="pagination-controls mt-3" *ngIf="allInterventions.length > itemsPerPage">
+                          <button class="btn btn-sm btn-outline-secondary" 
+                                  [disabled]="currentPage === 1"
+                                  (click)="changePage(currentPage - 1)">
+                            Précédent
+                          </button>
+                          <span class="mx-3">Page {{ currentPage }} / {{ totalPages }}</span>
+                          <button class="btn btn-sm btn-outline-secondary" 
+                                  [disabled]="currentPage === totalPages"
+                                  (click)="changePage(currentPage + 1)">
+                            Suivant
+                          </button>
+                        </div>
+                        
+                        <div *ngIf="allInterventions.length === 0" class="no-data">
+                          Aucune intervention trouvée
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Étatistiques et métriques -->
+                <div class="row mt-4">
+                  <div class="col-md-6">
+                    <div class="card">
+                      <div class="card-header">
+                        <h5 class="section-title">Répartition par type de panne</h5>
+                      </div>
+                      <div class="card-body">
+                        <canvas id="demanderBreakdownChart"></canvas>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="card">
+                      <div class="card-header">
+                        <h5 class="section-title">État des machines</h5>
+                      </div>
+                      <div class="card-body">
+                        <div class="machine-status-list">
+                          <div *ngFor="let machine of getMachineStatusData()" class="machine-status-item">
+                            <div class="machine-status-name">{{ machine.name }}</div>
+                            <div class="machine-status-indicator">
+                              <span class="status-dot" [ngClass]="machine.statusClass"></span>
+                              <span class="status-text">{{ machine.status }}</span>
+                            </div>
+                            <div class="machine-status-date">
+                              <small>Dernière mise à jour: {{ formatDate(machine.lastUpdate) }}</small>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- DASHBOARD POUR UTILISATEUR/TECHNICIEN -->
+      <ng-container *ngIf="userRole === 'Utilisateur' || userRole === 'Technicien'">
+        <!-- Section Tableau de bord interventions -->
+        <div class="row">
+          <div class="col-12">
+            <div class="card industrial-card">
+              <div class="card-header industrial-header">
+                <h4 class="card-title">Interventions assignées</h4>
+                <div class="header-controls">
+                  <span class="last-update">Mis à jour à {{ lastRefreshTime | date:'HH:mm:ss' }}</span>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="technician-dashboard">
+                  <!-- KPIs Technicien -->
+                  <div class="technician-kpis">
+                    <div class="kpi-card">
+                      <div class="kpi-icon">
+                        <i class="material-icons">assignment_turned_in</i>
+                      </div>
+                      <div class="kpi-content">
+                        <div class="kpi-title">Taux de résolution</div>
+                        <div class="kpi-value">{{ calculateTechnicianCompletionRate() }}%</div>
+                        <div class="kpi-progress">
+                          <div class="progress">
+                            <div class="progress-bar bg-success" role="progressbar"
+                                 [ngStyle]="{'width': calculateTechnicianCompletionRate() + '%'}"
+                                 aria-valuemin="0" aria-valuemax="100"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="kpi-card">
+                      <div class="kpi-icon">
+                        <i class="material-icons">speed</i>
+                      </div>
+                      <div class="kpi-content">
+                        <div class="kpi-title">Efficacité</div>
+                        <div class="kpi-value">{{ calculateTechnicianEfficiency() }}%</div>
+                        <div class="kpi-progress">
+                          <div class="progress">
+                            <div class="progress-bar bg-info" role="progressbar"
+                                 [ngStyle]="{'width': calculateTechnicianEfficiency() + '%'}"
+                                 aria-valuemin="0" aria-valuemax="100"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="kpi-card">
+                      <div class="kpi-icon">
+                        <i class="material-icons">alarm</i>
+                      </div>
+                      <div class="kpi-content">
+                        <div class="kpi-title">Temps moyen</div>
+                        <div class="kpi-value">{{ getTechnicianAvgTime() }}h</div>
+                        <div class="kpi-progress">
+                          <div class="progress">
+                            <div class="progress-bar bg-warning" role="progressbar"
+                                 [ngStyle]="{'width': getTechnicianTimeEfficiency() + '%'}"
+                                 aria-valuemin="0" aria-valuemax="100"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Liste des interventions assignées -->
+                  <div class="assigned-interventions">
+                    <h5 class="section-title">Interventions à traiter</h5>
+                    <div class="intervention-workload">
+                      <div class="workload-item" *ngFor="let intervention of recentInterventions">
+                        <div class="workload-header">
+                          <div class="workload-title">
+                            <span class="workload-id">#{{ intervention.idDemandeIntervention }}</span>
+                            {{ intervention.titre }}
+                          </div>
+                          <div class="workload-status" [ngClass]="getStatusClass(intervention.status?.id)">
                             {{ getStatusLabel(intervention.status?.id) }}
-                          </span>
+                          </div>
+                        </div>
+                        <div class="workload-details">
+                          <div class="workload-dates">
+                            <div class="date-item">
+                              <span class="date-label">Création:</span>
+                              <span class="date-value">{{ formatDate(intervention.dateCreation) }}</span>
+                            </div>
+                            <div class="date-item" *ngIf="intervention.dateAssignation">
+                              <span class="date-label">Prise en charge:</span>
+                              <span class="date-value">{{ formatDate(intervention.dateAssignation) }}</span>
+                            </div>
+                          </div>
+                          <div class="workload-actions">
+                            <button class="action-btn" *ngIf="canAcceptIntervention(intervention)">
+                              <i class="material-icons">check</i> Accepter
+                            </button>
+                            <button class="action-btn" *ngIf="canCompleteIntervention(intervention)">
+                              <i class="material-icons">done_all</i> Terminer
+                            </button>
+                          </div>
+                        </div>
+                        <div class="workload-progress">
+                          <div class="progress">
+                            <div class="progress-bar" [ngClass]="getProgressBarClass(intervention.status?.id)"
+                                 [ngStyle]="{'width': getTechnicianInterventionProgress(intervention) + '%'}"
+                                 role="progressbar" aria-valuemin="0" aria-valuemax="100"></div>
+                          </div>
+                          <div class="workload-progress-text">
+                            {{ getTechnicianProgressText(intervention) }}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div *ngIf="recentInterventions.length === 0" class="no-data">
-                      Aucune intervention récente
+                      <div *ngIf="recentInterventions.length === 0" class="no-data">
+                        Aucune intervention assignée
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -255,7 +535,41 @@
             </div>
           </div>
         </div>
-      </div>
+        
+        <!-- Section Performance et Tendances (sans les interventions prioritaires) -->
+        <div class="row">
+          <div class="col-12">
+            <div class="card industrial-card">
+              <div class="card-header industrial-header">
+                <h4 class="card-title">Performance et analyse</h4>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <!-- Évolution de la charge de travail -->
+                  <div class="col-md-8">
+                    <div class="technician-chart-card">
+                      <h5 class="section-title">Évolution de ma charge de travail</h5>
+                      <div class="chart-container">
+                        <canvas id="technicianWorkloadChart"></canvas>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Types de pannes traitées -->
+                  <div class="col-md-4">
+                    <div class="technician-chart-card">
+                      <h5 class="section-title">Types d'interventions</h5>
+                      <div class="chart-container">
+                        <canvas id="technicianInterventionTypesChart"></canvas>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
     </div>
   </div>
 </div>
