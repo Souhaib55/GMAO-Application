@@ -374,40 +374,7 @@
                   </div>
                 </div>
                 
-                <!-- Étatistiques et métriques -->
-                <div class="row mt-4">
-                  <div class="col-md-6">
-                    <div class="card">
-                      <div class="card-header">
-                        <h5 class="section-title">Répartition par type de panne</h5>
-                      </div>
-                      <div class="card-body">
-                        <canvas id="demanderBreakdownChart"></canvas>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="card">
-                      <div class="card-header">
-                        <h5 class="section-title">État des machines</h5>
-                      </div>
-                      <div class="card-body">
-                        <div class="machine-status-list">
-                          <div *ngFor="let machine of getMachineStatusData()" class="machine-status-item">
-                            <div class="machine-status-name">{{ machine.name }}</div>
-                            <div class="machine-status-indicator">
-                              <span class="status-dot" [ngClass]="machine.statusClass"></span>
-                              <span class="status-text">{{ machine.status }}</span>
-                            </div>
-                            <div class="machine-status-date">
-                              <small>Dernière mise à jour: {{ formatDate(machine.lastUpdate) }}</small>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <!-- J'ai supprimé ici la section "Étatistiques et métriques" contenant "Répartition par type de panne" et "État des machines" -->
               </div>
             </div>
           </div>
