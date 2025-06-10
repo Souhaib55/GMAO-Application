@@ -1,4 +1,3 @@
-// 7. Create a StatusController
 using API.DTOs;
 using Core.Entities;
 using Infrastructure.Data;
@@ -56,6 +55,94 @@ namespace API.Controllers
             };
 
             return Ok(statusDto);
+        }
+        
+        [HttpPost]
+        public async Task<ActionResult<StatusDto>> CreateStatus([FromBody] StatusDto statusDto)
+        {
+            if (statusDto == null)
+                return BadRequest("Les données de statut ne peuvent pas être nulles");
+
+            if (string.IsNullOrWhiteSpace(statusDto.Statut))
+                return BadRequest("Le statut est requis");
+
+            // Vérifier si un statut similaire existe déjà
+            if (await _context.Statuses.AnyAsync(s => s.Statut == statusDto.Statut && s.IsActif))
+                return BadRequest("Un statut avec ce nom existe déjà");
+
+            // Création de l'entité
+            var status = new Status
+            {
+                Statut = statusDto.Statut,
+                Description = statusDto.Description,
+                IsActif = true
+            };
+
+            _context.Statuses.Add(status);
+            await _context.SaveChangesAsync();
+
+            // Retourner le DTO avec l'ID généré
+            statusDto.Id = status.Id;
+            statusDto.IsActif = status.IsActif;
+
+            return CreatedAtAction(nameof(GetStatus), new { id = status.Id }, statusDto);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult<StatusDto>> UpdateStatus(int id, [FromBody] StatusDto statusDto)
+        {
+            if (statusDto == null)
+                return BadRequest("Les données de statut ne peuvent pas être nulles");
+
+            if (string.IsNullOrWhiteSpace(statusDto.Statut))
+                return BadRequest("Le statut est requis");
+
+            if (id != statusDto.Id)
+                return BadRequest("L'ID ne correspond pas");
+
+            var status = await _context.Statuses
+                .FirstOrDefaultAsync(s => s.Id == id && s.IsActif);
+
+            if (status == null)
+                return NotFound("Statut introuvable ou inactif");
+
+            // Vérifier si la mise à jour créerait un doublon
+            if (status.Statut != statusDto.Statut &&
+                await _context.Statuses.AnyAsync(s => s.Statut == statusDto.Statut && s.IsActif && s.Id != id))
+                return BadRequest("Un statut avec ce nom existe déjà");
+
+            // Mise à jour des propriétés
+            status.Statut = statusDto.Statut;
+            status.Description = statusDto.Description;
+
+            await _context.SaveChangesAsync();
+
+            // Retourner le DTO mis à jour
+            var updatedStatusDto = new StatusDto
+            {
+                Id = status.Id,
+                Statut = status.Statut,
+                Description = status.Description,
+                IsActif = status.IsActif
+            };
+
+            return Ok(updatedStatusDto);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteStatus(int id)
+        {
+            var status = await _context.Statuses
+                .FirstOrDefaultAsync(s => s.Id == id && s.IsActif);
+
+            if (status == null)
+                return NotFound("Statut introuvable ou déjà inactif");
+
+            // Suppression logique
+            status.IsActif = false;
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 }

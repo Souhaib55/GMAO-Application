@@ -46,6 +46,7 @@ import { InterventionFormDialogComponent } from './intervention-form-dialog/inte
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { DeleteEquipmentConfirmationDialogComponent } from './equipment/equipment.component';
 import { SafePipe } from './pipe/safe-url.pipe';
+import { MatTabsModule } from '@angular/material/tabs'; // Add this import
 
 @NgModule({
   imports: [
@@ -75,8 +76,8 @@ import { SafePipe } from './pipe/safe-url.pipe';
     MatMenuModule,
     MatDividerModule,
     MatDialogModule,
+    MatTabsModule, // Add this module
     
-
     MatButtonModule,
     MatCardModule,
     MatDialogModule,

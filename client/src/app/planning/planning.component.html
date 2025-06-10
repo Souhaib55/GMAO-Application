@@ -23,6 +23,13 @@
         <button mat-icon-button class="nav-button" (click)="next()" matTooltip="Suivant">
           <mat-icon>chevron_right</mat-icon>
         </button>
+        <!-- Bouton pour réafficher les interventions masquées -->
+        <button mat-icon-button class="nav-button" 
+                *ngIf="isSuperviseur && hiddenInterventions.length > 0"
+                (click)="showAllHiddenInterventions()" 
+                matTooltip="Afficher les interventions masquées ({{ hiddenInterventions.length }})">
+          <mat-icon>visibility</mat-icon>
+        </button>
         <span class="current-date">{{ currentDate }}</span>
         <mat-form-field appearance="outline" class="view-selector">
           <mat-select [(value)]="currentView" (selectionChange)="changeView()">

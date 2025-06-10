@@ -35,6 +35,8 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
   calendarElement: HTMLElement | null = null;
   isLoading = false;
   interventions: any[] = [];
+  // Liste des interventions cachées (uniquement de l'affichage)
+  hiddenInterventions: number[] = [];
   reference = {
     etats: [],
     types: [],
@@ -74,6 +76,12 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly STATUS_CLOTUREE = 4;
   readonly STATUS_ANNULEE = 5;
 
+  // Clé pour le localStorage (spécifique à l'utilisateur)
+  private get localStorageKey(): string {
+    const userId = this.currentUser?.internalId || 'unknown';
+    return `gmao_hidden_interventions_${userId}`;
+  }
+
   constructor(
     private http: HttpClient,
     private router: Router,
@@ -97,7 +105,6 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.userRole === 'Demandeur';
   }
   
-  // Getter pour déterminer si l'utilisateur est technicien ou utilisateur (les deux peuvent recevoir des interventions)
   get isTechnicienOrUtilisateur(): boolean {
     return this.isTechnicien || this.isUtilisateur;
   }
@@ -111,6 +118,10 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
     if (user) {
       this.userRole = user.role;
     }
+    
+    // Charger les interventions masquées depuis le localStorage
+    this.loadHiddenInterventionsFromStorage();
+    
     this.loadReferenceData();
     this.loadInterventions();
   }
@@ -128,6 +139,30 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.calendar) {
       this.calendar.destroy();
       this.calendar = null;
+    }
+  }
+
+  // Méthode pour charger les interventions cachées depuis le localStorage
+  loadHiddenInterventionsFromStorage(): void {
+    try {
+      const storedData = localStorage.getItem(this.localStorageKey);
+      if (storedData) {
+        this.hiddenInterventions = JSON.parse(storedData);
+        console.log(`Chargement de ${this.hiddenInterventions.length} intervention(s) masquée(s) depuis le stockage local`);
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des interventions masquées:', error);
+      // En cas d'erreur, on réinitialise
+      this.hiddenInterventions = [];
+    }
+  }
+
+  // Méthode pour sauvegarder les interventions cachées dans le localStorage
+  saveHiddenInterventionsToStorage(): void {
+    try {
+      localStorage.setItem(this.localStorageKey, JSON.stringify(this.hiddenInterventions));
+    } catch (error) {
+      console.error('Erreur lors de l\'enregistrement des interventions masquées:', error);
     }
   }
 
@@ -149,7 +184,7 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
         this.reference.chaines = res.chaines;
         this.reference.pannes = res.pannes;
         this.reference.demandeurs = res.users.filter(user => user.idRole === 2);
-        this.reference.destinataires = res.users.filter(user => user.idRole === 3 || user.idRole === 4); // Ajout du rôle Utilisateur (idRole=4)
+        this.reference.destinataires = res.users.filter(user => user.idRole === 3 || user.idRole === 4);
         this.reference.statuses = res.statuses;
         this.isLoading = false;
       },
@@ -168,16 +203,13 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
         const currentUserId = this.currentUser?.internalId;
         
         if (this.isSuperviseur) {
-          // Superviseur sees all interventions
           this.interventions = res.data;
         } else if (this.isTechnicien || this.isUtilisateur) {
-          // Technicien et Utilisateur voient les interventions qui leur sont assignées
           this.interventions = res.data.filter((intervention: any) => 
             intervention.destinataire && 
             intervention.destinataire.id === currentUserId
           );
         } else if (this.isDemandeur) {
-          // Demandeur sees their own interventions
           this.interventions = res.data.filter((intervention: any) => 
             intervention.demandeur && 
             intervention.demandeur.id === currentUserId
@@ -191,7 +223,6 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
           this.updateCalendarEvents();
         }
         
-        // Si une intervention est sélectionnée, mettre à jour ses informations
         if (this.selectedIntervention) {
           const updatedIntervention = this.interventions.find(
             i => i.idDemandeIntervention === this.selectedIntervention.idDemandeIntervention
@@ -231,6 +262,10 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
       dayHeaders: true,
       allDaySlot: false,
       eventClick: (info: EventClickArg) => {
+        if ((info.jsEvent.target as HTMLElement).classList.contains('event-close-icon')) {
+          return;
+        }
+        
         info.jsEvent.preventDefault();
         
         const eventId = parseInt(info.event.id);
@@ -242,20 +277,39 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
         const wrapper = document.createElement('div');
         wrapper.className = 'fc-event-content-wrapper';
         
+        const headerContainer = document.createElement('div');
+        headerContainer.className = 'event-header-container';
+        
+        if (this.isSuperviseur) {
+          const closeIcon = document.createElement('span');
+          closeIcon.className = 'event-close-icon';
+          closeIcon.innerHTML = '&times;';
+          closeIcon.title = 'Masquer cette intervention du calendrier';
+          
+          closeIcon.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const interventionId = parseInt(arg.event.id);
+            this.hideInterventionFromCalendar(interventionId);
+          });
+          
+          headerContainer.appendChild(closeIcon);
+        }
+        
         const titleEl = document.createElement('div');
         titleEl.className = 'fc-event-title';
         titleEl.innerHTML = arg.event.title;
         
+        headerContainer.appendChild(titleEl);
+        wrapper.appendChild(headerContainer);
+        
         const infoEl = document.createElement('div');
         infoEl.className = 'fc-event-info';
         
-        // Add status to event display
         const statusInfo = arg.event.extendedProps.status ? 
           `<span class="status-badge status-${arg.event.extendedProps.statusId}">${arg.event.extendedProps.status}</span>` : '';
         
         infoEl.innerHTML = `${statusInfo} ${arg.event.extendedProps.typeIntervention || 'N/A'}`;
         
-        wrapper.appendChild(titleEl);
         wrapper.appendChild(infoEl);
         
         return { domNodes: [wrapper] };
@@ -283,6 +337,82 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
     this.updateCurrentDateDisplay();
   }
 
+  hideInterventionFromCalendar(interventionId: number): void {
+    const confirmHide = confirm('Voulez-vous masquer cette intervention du calendrier ? (Elle restera accessible dans la base de données)');
+    if (!confirmHide) return;
+    
+    if (!this.hiddenInterventions.includes(interventionId)) {
+      this.hiddenInterventions.push(interventionId);
+      
+      // Sauvegarder les changements dans le localStorage
+      this.saveHiddenInterventionsToStorage();
+    }
+    
+    this.updateCalendarEvents();
+    this.showPopupMessage('Intervention masquée du calendrier', 'success');
+  }
+
+  showAllHiddenInterventions(): void {
+    if (this.hiddenInterventions.length === 0) return;
+    
+    const count = this.hiddenInterventions.length;
+    this.hiddenInterventions = [];
+    
+    // Sauvegarder les changements dans le localStorage
+    this.saveHiddenInterventionsToStorage();
+    
+    this.updateCalendarEvents();
+    this.showPopupMessage(`${count} intervention(s) réaffichée(s)`, 'success');
+  }
+
+  removeIntervention(interventionId: number): void {
+    const confirmDelete = confirm('Êtes-vous sûr de vouloir supprimer cette intervention ?');
+    if (!confirmDelete) return;
+    
+    const intervention = this.interventions.find(i => i.idDemandeIntervention === interventionId);
+    if (!intervention) return;
+    
+    this.selectedIntervention = intervention;
+    
+    const raisonAnnulation = prompt("Veuillez fournir une raison d'annulation:", "");
+    if (raisonAnnulation === null) return;
+    
+    this.isLoading = true;
+    
+    const payload = {
+      idDemandeIntervention: interventionId,
+      workflowAction: 'cancel',
+      raisonAnnulation: raisonAnnulation
+    };
+    
+    this.http.put(`${this.baseUrl}/${interventionId}`, payload, {
+      withCredentials: true
+    }).subscribe({
+      next: (response: any) => {
+        this.isLoading = false;
+        
+        if (response) {
+          const index = this.interventions.findIndex(i => i.idDemandeIntervention === interventionId);
+          if (index !== -1) {
+            this.interventions[index] = response;
+          }
+          
+          this.updateCalendarEvents();
+        }
+        
+        this.showPopupMessage('Intervention annulée avec succès', 'success');
+        this.selectedIntervention = null;
+      },
+      error: (error) => {
+        this.isLoading = false;
+        console.error('Erreur lors de la suppression de l\'intervention:', error);
+        
+        const errorMessage = error.error?.message || error.message || 'Échec de l\'annulation';
+        this.showPopupMessage(`Erreur: ${errorMessage}`, 'error');
+      }
+    });
+  }
+
   updateCalendarEvents(): void {
     if (!this.calendar) return;
     const events = this.calendar.getEvents();
@@ -294,59 +424,63 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
   getCalendarEvents(): any[] {
     if (!this.interventions || this.interventions.length === 0) return [];
 
-    return this.interventions.map(intervention => {
-      let backgroundColor = '#3788d8'; // Default color
-      
-      // Set color based on status
-      if (intervention.status) {
-        switch (intervention.status.id) {
-          case this.STATUS_A_TRAITER: // A traiter
-            backgroundColor = '#ffc107'; // Yellow
-            break;
-          case this.STATUS_EN_COURS: // En cours
-            backgroundColor = '#ff9800'; // Orange
-            break;
-          case this.STATUS_REALISEE: // Réalisée
-            backgroundColor = '#28a745'; // Green
-            break;
-          case this.STATUS_CLOTUREE: // Cloturée
-            backgroundColor = '#2196f3'; // Blue
-            break;
-          case this.STATUS_ANNULEE: // Annulée
-            backgroundColor = '#dc3545'; // Red
-            break;
+    return this.interventions
+      .filter(intervention => !this.hiddenInterventions.includes(intervention.idDemandeIntervention))
+      .map(intervention => {
+        let backgroundColor = '#3788d8'; // Default color
+        
+        if (intervention.status) {
+          switch (intervention.status.id) {
+            case this.STATUS_A_TRAITER:
+              backgroundColor = '#ffc107'; // Yellow
+              break;
+            case this.STATUS_EN_COURS:
+              backgroundColor = '#ff9800'; // Orange
+              break;
+            case this.STATUS_REALISEE:
+              backgroundColor = '#28a745'; // Green
+              break;
+            case this.STATUS_CLOTUREE:
+              backgroundColor = '#2196f3'; // Blue
+              break;
+            case this.STATUS_ANNULEE:
+              backgroundColor = '#dc3545'; // Red
+              break;
+          }
         }
-      }
 
-      const title = `${intervention.machineArretee ? '⚠️ ' : ''}${intervention.titre}`;
+        const title = `${intervention.machineArretee ? '⚠️ ' : ''}${intervention.titre}`;
 
-      return {
-        id: intervention.idDemandeIntervention.toString(),
-        title: title,
-        start: new Date(intervention.dateCreation),
-        allDay: false,
-        backgroundColor: backgroundColor,
-        borderColor: backgroundColor,
-        textColor: '#fff',
-        extendedProps: {
-          machineArretee: intervention.machineArretee,
-          etat: intervention.etat?.libelle,
-          status: intervention.status?.statut,
-          statusId: intervention.status?.id,
-          typeIntervention: intervention.typeIntervention?.libelle,
-          urgence: intervention.urgence?.libelle,
-          chaineProduction: intervention.chaineProduction?.libelle,
-          panne: intervention.panne?.libelle,
-          demandeur: intervention.demandeur ? `${intervention.demandeur.nom} ${intervention.demandeur.prenom}` : 'Unknown',
-          destinataire: intervention.destinataire ? `${intervention.destinataire.nom} ${intervention.destinataire.prenom}` : 'Non assignée',
-          description: intervention.description || 'Aucune description disponible',
-          dateAssignation: intervention.dateAssignation,
-          dateRealisation: intervention.dateRealisation,
-          dateCloture: intervention.dateCloture
-        }
-      };
-    });
+        return {
+          id: intervention.idDemandeIntervention.toString(),
+          title: title,
+          start: new Date(intervention.dateCreation),
+          allDay: false,
+          backgroundColor: backgroundColor,
+          borderColor: backgroundColor,
+          textColor: '#fff',
+          extendedProps: {
+            machineArretee: intervention.machineArretee,
+            etat: intervention.etat?.libelle,
+            status: intervention.status?.statut,
+            statusId: intervention.status?.id,
+            typeIntervention: intervention.typeIntervention?.libelle,
+            urgence: intervention.urgence?.libelle,
+            chaineProduction: intervention.chaineProduction?.libelle,
+            panne: intervention.panne?.libelle,
+            demandeur: intervention.demandeur ? `${intervention.demandeur.nom} ${intervention.demandeur.prenom}` : 'Unknown',
+            destinataire: intervention.destinataire ? `${intervention.destinataire.nom} ${intervention.destinataire.prenom}` : 'Non assignée',
+            description: intervention.description || 'Aucune description disponible',
+            dateAssignation: intervention.dateAssignation,
+            dateRealisation: intervention.dateRealisation,
+            dateCloture: intervention.dateCloture
+          }
+        };
+      });
   }
+
+  // Le reste du code reste inchangé
+  // ...
 
   showInterventionDetail(id: number): void {
     this.closeInterventionDetails();
@@ -359,7 +493,6 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-    // Cette méthode détermine quels boutons d'action doivent être affichés
   determineAvailableActions(intervention: any): void {
     if (!intervention || !this.currentUser) {
       console.log('No intervention or user data available');
@@ -455,8 +588,7 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // Perform workflow actions directly from the sidebar
-    performAction(action: string): void {
+  performAction(action: string): void {
     if (!this.selectedIntervention) return;
     
     this.isLoading = true;
@@ -592,7 +724,6 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // Navigate to intervention edit page for assigning technician
   editIntervention(): void {
     if (!this.selectedIntervention) return;
     this.router.navigate(['/intervention/edit', this.selectedIntervention.idDemandeIntervention]);
@@ -628,7 +759,6 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
     return status ? status.statut : 'Inconnu';
   }
 
-  // Option pour ouvrir l'intervention dans un dialogue
   openInterventionDialog(intervention: any): void {
     const dialogRef = this.dialog.open(InterventionFormDialogComponent, {
       width: '600px',
@@ -637,11 +767,9 @@ export class PlanningComponent implements OnInit, AfterViewInit, OnDestroy {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result && result.success) {
-        // Si une action a été effectuée avec succès dans le dialogue
         this.showPopupMessage(result.message || 'Action effectuée avec succès', 'success');
         this.loadInterventions();
       } else if (result && !result.success) {
-        // Si une erreur s'est produite dans le dialogue
         this.showPopupMessage(result.error || 'Une erreur est survenue', 'error');
       }
     });

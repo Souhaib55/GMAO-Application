@@ -449,8 +449,15 @@
                   
                   <!-- Liste des interventions assignées -->
                   <div class="assigned-interventions">
-                    <h5 class="section-title">Interventions à traiter</h5>
-                    <div class="intervention-workload">
+                    <h5 class="section-title">
+                      Interventions à traiter
+                      <button class="btn btn-sm btn-outline-primary float-right" (click)="toggleHistoryView()">
+                        {{ showAllInterventions ? 'Voir récentes' : 'Voir historique complet' }}
+                      </button>
+                    </h5>
+                    
+                    <!-- Interventions récentes -->
+                    <div class="intervention-workload" *ngIf="!showAllInterventions">
                       <div class="workload-item" *ngFor="let intervention of recentInterventions">
                         <div class="workload-header">
                           <div class="workload-title">
@@ -484,8 +491,8 @@
                         <div class="workload-progress">
                           <div class="progress">
                             <div class="progress-bar" [ngClass]="getProgressBarClass(intervention.status?.id)"
-                                 [ngStyle]="{'width': getTechnicianInterventionProgress(intervention) + '%'}"
-                                 role="progressbar" aria-valuemin="0" aria-valuemax="100"></div>
+                                [ngStyle]="{'width': getTechnicianInterventionProgress(intervention) + '%'}"
+                                role="progressbar" aria-valuemin="0" aria-valuemax="100"></div>
                           </div>
                           <div class="workload-progress-text">
                             {{ getTechnicianProgressText(intervention) }}
@@ -494,6 +501,67 @@
                       </div>
                       <div *ngIf="recentInterventions.length === 0" class="no-data">
                         Aucune intervention assignée
+                      </div>
+                    </div>
+
+                    <!-- Historique complet des interventions -->
+                    <div class="interventions-history" *ngIf="showAllInterventions">
+                      <div class="search-filter mb-3">
+                        <input type="text" class="form-control" placeholder="Rechercher une intervention..." 
+                              [(ngModel)]="interventionSearchQuery" (keyup)="filterInterventions()">
+                      </div>
+                      
+                      <div class="table-responsive">
+                        <table class="table table-hover">
+                          <thead>
+                            <tr>
+                              <th>ID</th>
+                              <th>Titre</th>
+                              <th>Date de création</th>
+                              <th>Statut</th>
+                              <th>Progression</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr *ngFor="let intervention of filteredAllInterventions">
+                              <td>#{{ intervention.idDemandeIntervention }}</td>
+                              <td>{{ intervention.titre }}</td>
+                              <td>{{ formatDate(intervention.dateCreation) }}</td>
+                              <td>
+                                <span class="status-badge" [ngClass]="getStatusClass(intervention.status?.id)">
+                                  {{ getStatusLabel(intervention.status?.id) }}
+                                </span>
+                              </td>
+                              <td style="width: 30%">
+                                <div class="progress">
+                                  <div class="progress-bar" role="progressbar" 
+                                      [ngClass]="getProgressBarClass(intervention.status?.id)"
+                                      [ngStyle]="{'width': getTechnicianInterventionProgress(intervention) + '%'}" 
+                                      aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <small>{{ getTechnicianProgressText(intervention) }}</small>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      
+                      <div class="pagination-controls mt-3" *ngIf="allInterventions.length > itemsPerPage">
+                        <button class="btn btn-sm btn-outline-secondary" 
+                                [disabled]="currentPage === 1"
+                                (click)="changePage(currentPage - 1)">
+                          Précédent
+                        </button>
+                        <span class="mx-3">Page {{ currentPage }} / {{ totalPages }}</span>
+                        <button class="btn btn-sm btn-outline-secondary" 
+                                [disabled]="currentPage === totalPages"
+                                (click)="changePage(currentPage + 1)">
+                          Suivant
+                        </button>
+                      </div>
+                      
+                      <div *ngIf="allInterventions.length === 0" class="no-data">
+                        Aucune intervention trouvée
                       </div>
                     </div>
                   </div>
@@ -522,15 +590,7 @@
                     </div>
                   </div>
                   
-                  <!-- Types de pannes traitées -->
-                  <div class="col-md-4">
-                    <div class="technician-chart-card">
-                      <h5 class="section-title">Types d'interventions</h5>
-                      <div class="chart-container">
-                        <canvas id="technicianInterventionTypesChart"></canvas>
-                      </div>
-                    </div>
-                  </div>
+        
                 </div>
               </div>
             </div>

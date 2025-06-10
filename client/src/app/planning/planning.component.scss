@@ -1049,3 +1049,87 @@ $shadow-medium: 0 4px 20px rgba(0, 0, 0, 0.12);
     border-top: none;
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// À ajouter au fichier planning.component.scss
+
+:host ::ng-deep {
+  .event-header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    
+    .fc-event-title {
+      flex: 1;
+    }
+    
+    .event-close-icon {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      width: 16px;
+      height: 16px;
+      background-color: rgba(0, 0, 0, 0.3);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      line-height: 1;
+      cursor: pointer;
+      visibility: hidden;
+      opacity: 0;
+      transition: all 0.2s ease;
+      z-index: 10;
+      
+      &:hover {
+        background-color: rgba(220, 53, 69, 0.9);
+        transform: scale(1.2);
+      }
+    }
+  }
+  
+  .fc-event:hover {
+    .event-close-icon {
+      visibility: visible;
+      opacity: 1;
+    }
+  }
+  
+  // Style pour le bouton de réaffichage des interventions masquées
+  button[matTooltip*="masquées"] {
+    position: relative;
+    
+    &::after {
+      content: attr(matTooltip);
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background-color: #f44336;
+      color: white;
+      border-radius: 50%;
+      min-width: 18px;
+      height: 18px;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 2px;
+    }
+  }
+}
