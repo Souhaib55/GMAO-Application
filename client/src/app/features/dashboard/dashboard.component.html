@@ -1,0 +1,211 @@
+<div class="dashboard">
+  <!-- Welcome Header -->
+  <div class="dashboard-header">
+    <div>
+      <h1 class="dashboard-title">{{ getGreeting() }}, {{ currentUser?.firstName }} 👋</h1>
+      <p class="dashboard-subtitle">Voici un aperçu de votre activité GMAO - <span class="role-badge">{{ userRole }}</span></p>
+    </div>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="stats-grid">
+    <div *ngFor="let stat of stats" class="stat-card" [attr.data-color]="stat.color">
+      <div class="stat-icon" [attr.data-icon]="stat.icon">
+        <span *ngIf="stat.loading" class="spinner"></span>
+      </div>
+      <div class="stat-content">
+        <div class="stat-label">{{ stat.label }}</div>
+        <div class="stat-value" *ngIf="!stat.loading">{{ stat.value }}</div>
+        <div class="stat-value" *ngIf="stat.loading">--</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Section -->
+  <div class="charts-section" *ngIf="!loading && dashboardData">
+    <div class="charts-grid">
+      <!-- Status Distribution Chart -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">Distribution des Interventions</h3>
+          <span class="chart-subtitle">Total: {{ getTotalInterventions() }}</span>
+        </div>
+        <div class="chart-body">
+          <div class="bar-chart" *ngIf="statusChartData">
+            <div *ngFor="let label of statusChartData.labels; let i = index" class="bar-item">
+              <div class="bar-wrapper">
+                <div class="bar" 
+                     [style.height.%]="getChartHeight(statusChartData.values[i], getMaxValue(statusChartData.values))"
+                     [style.background-color]="statusChartData.colors[i]">
+                  <span class="bar-value">{{ statusChartData.values[i] }}</span>
+                </div>
+              </div>
+              <div class="bar-label">{{ label }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monthly Trend Chart -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">Tendance Mensuelle</h3>
+          <span class="chart-subtitle">6 derniers mois</span>
+        </div>
+        <div class="chart-body">
+          <div class="line-chart" *ngIf="monthlyChartData">
+            <div *ngFor="let label of monthlyChartData.labels; let i = index" class="line-item">
+              <div class="line-wrapper">
+                <div class="line-bar" 
+                     [style.height.%]="getChartHeight(monthlyChartData.values[i], getMaxValue(monthlyChartData.values))"
+                     [style.background-color]="monthlyChartData.colors[i]">
+                  <span class="line-value">{{ monthlyChartData.values[i] }}</span>
+                </div>
+              </div>
+              <div class="line-label">{{ label }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Urgence Distribution Chart -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">Niveaux d'Urgence</h3>
+          <span class="chart-subtitle">Répartition actuelle</span>
+        </div>
+        <div class="chart-body">
+          <div class="donut-chart" *ngIf="urgenceChartData">
+            <div class="donut-legend">
+              <div *ngFor="let label of urgenceChartData.labels; let i = index" class="legend-item">
+                <span class="legend-color" [style.background-color]="urgenceChartData.colors[i]"></span>
+                <span class="legend-label">{{ label }}</span>
+                <span class="legend-value">{{ urgenceChartData.values[i] }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Superviseur Only Section -->
+  <div class="section" *ngIf="isSuperviseur() && dashboardData">
+    <h2 class="section-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+      </svg>
+      Vue d'ensemble Superviseur
+    </h2>
+    <div class="supervisor-grid">
+      <div class="info-card">
+        <div class="info-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 6v6l4 2"></path>
+          </svg>
+        </div>
+        <div class="info-content">
+          <div class="info-label">État des Machines</div>
+          <div class="info-value">{{ dashboardData.machineStats.arretees }} / {{ dashboardData.machineStats.total }}</div>
+          <div class="info-subtitle">Machines arrêtées</div>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+          </svg>
+        </div>
+        <div class="info-content">
+          <div class="info-label">Taux d'Arrêt</div>
+          <div class="info-value">{{ dashboardData.machineStats.pourcentageArretees }}%</div>
+          <div class="info-subtitle">Production impactée</div>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+        </div>
+        <div class="info-content">
+          <div class="info-label">Machines Actives</div>
+          <div class="info-value">{{ dashboardData.machineStats.enFonctionnement }}</div>
+          <div class="info-subtitle">En fonctionnement</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Technicien Section -->
+  <div class="section" *ngIf="isTechnicien() && dashboardData">
+    <h2 class="section-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+      </svg>
+      Mes Interventions Assignées
+    </h2>
+    <div class="tech-stats">
+      <div class="tech-stat-item">
+        <div class="tech-stat-value">{{ dashboardData.interventionStats.enCours }}</div>
+        <div class="tech-stat-label">À traiter</div>
+      </div>
+      <div class="tech-stat-item">
+        <div class="tech-stat-value">{{ dashboardData.interventionStats.terminee }}</div>
+        <div class="tech-stat-label">Complétées</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="section">
+    <h2 class="section-title">Actions Rapides</h2>
+    <div class="quick-actions-grid">
+      <a *ngFor="let action of quickActions" [routerLink]="action.route" class="quick-action-card" [attr.data-color]="action.color">
+        <div class="quick-action-icon" [attr.data-icon]="action.icon"></div>
+        <div class="quick-action-label">{{ action.label }}</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="section">
+    <div class="section-header">
+      <h2 class="section-title">Interventions Récentes</h2>
+      <a routerLink="/interventions" class="btn btn-secondary btn-sm">Voir tout</a>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div *ngIf="recentInterventions.length === 0" class="empty-state">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p>Aucune intervention récente</p>
+          <a routerLink="/interventions/new" class="btn btn-primary btn-sm">Créer une intervention</a>
+        </div>
+
+        <div *ngIf="recentInterventions.length > 0" class="recent-list">
+          <div *ngFor="let intervention of recentInterventions" class="recent-item">
+            <div class="recent-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+              </svg>
+            </div>
+            <div class="recent-content">
+              <div class="recent-title">{{ intervention.titre }}</div>
+              <div class="recent-date">{{ formatDate(intervention.dateCreation) }}</div>
+            </div>
+            <div class="recent-status">
+              <span class="status-badge" [ngClass]="getStatusClass(intervention.status.statut)">
+                {{ intervention.status.statut }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

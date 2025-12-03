@@ -47,6 +47,9 @@ public class StoreContext : IdentityDbContext<AppUser, IdentityRole, string>
     public DbSet<Panne> Pannes { get; set; }
     public DbSet<Status> Statuses { get; set; } // Add the Status entity
 
+    // Notifications
+    public DbSet<Notification> Notifications { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -77,5 +80,8 @@ public class StoreContext : IdentityDbContext<AppUser, IdentityRole, string>
         modelBuilder.ApplyConfiguration(new DemandeInterventionConfiguration());
         modelBuilder.ApplyConfiguration(new PanneConfiguration());
         modelBuilder.ApplyConfiguration(new StatusConfiguration()); // Add the Status configuration
+
+        // Notifications
+        modelBuilder.ApplyConfiguration(new NotificationConfiguration());
     }
 }

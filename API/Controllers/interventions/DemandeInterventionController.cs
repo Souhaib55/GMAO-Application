@@ -29,7 +29,7 @@ namespace API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<PagedResult<object>>> GetDemandeInterventions(int page = 1, int pageSize = 5, string search = null)
+        public async Task<ActionResult<PagedResult<object>>> GetDemandeInterventions(int page = 1, int pageSize = 5, string? search = null)
         {
             // Obtenir l'utilisateur actuel et son rôle
             var currentUser = await _userManager.GetUserAsync(User);
@@ -196,39 +196,54 @@ namespace API.Controllers
             InterventionDto demandeDto;
             IFormFile? file = null;
 
-            // Handle form data similar to the PUT method
-            if (Request.ContentType.StartsWith("multipart/form-data"))
+            // Handle both JSON and form data
+            if (Request.ContentType != null && Request.ContentType.StartsWith("multipart/form-data"))
             {
                 var form = await Request.ReadFormAsync();
-                var demandeDtoJson = form["demandeDto"];
+                var demandeDtoJson = form["interventionData"];
                 file = form.Files.GetFile("file");
                 
                 if (string.IsNullOrEmpty(demandeDtoJson))
                 {
-                    _logger.LogWarning("Missing 'demandeDto' field in form data");
-                    return BadRequest("Missing 'demandeDto' field");
+                    _logger.LogWarning("Missing 'interventionData' field in form data");
+                    return BadRequest("Missing 'interventionData' field");
                 }
                 
                 try
                 {
-                    demandeDto = JsonSerializer.Deserialize<InterventionDto>(demandeDtoJson);
+                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    demandeDto = JsonSerializer.Deserialize<InterventionDto>(demandeDtoJson.ToString(), options)!;
                     if (demandeDto == null)
                     {
                         _logger.LogWarning("Could not deserialize demandeDto");
-                        return BadRequest("Invalid demandeDto data");
+                        return BadRequest("Invalid interventionData data");
                     }
                     _logger.LogInformation($"Deserialized DTO: {JsonSerializer.Serialize(demandeDto)}");
                 }
                 catch (JsonException ex)
                 {
                     _logger.LogError($"Deserialization error: {ex.Message}");
-                    return BadRequest($"Failed to parse demandeDto JSON: {ex.Message}");
+                    return BadRequest($"Failed to parse interventionData JSON: {ex.Message}");
                 }
             }
             else
             {
-                _logger.LogWarning($"Unsupported content type: {Request.ContentType}");
-                return BadRequest("Expected multipart/form-data content type");
+                // Handle JSON request
+                try
+                {
+                    var tempDto = await Request.ReadFromJsonAsync<InterventionDto>();
+                    if (tempDto == null)
+                    {
+                        _logger.LogWarning("Could not deserialize JSON body");
+                        return BadRequest("Invalid JSON data");
+                    }
+                    demandeDto = tempDto;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"JSON deserialization error: {ex.Message}");
+                    return BadRequest($"Failed to parse JSON: {ex.Message}");
+                }
             }
 
             if (!ModelState.IsValid)
@@ -237,23 +252,8 @@ namespace API.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (string.IsNullOrEmpty(demandeDto.DateCreation))
-            {
-                _logger.LogWarning("DateCreation is empty");
-                return BadRequest("DateCreation is required");
-            }
-
-            DateTime dateCreation;
-            try
-            {
-                dateCreation = DateTime.Parse(demandeDto.DateCreation, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal);
-                _logger.LogInformation($"Parsed DateCreation: {dateCreation}");
-            }
-            catch (FormatException ex)
-            {
-                _logger.LogWarning($"Invalid DateCreation format: {demandeDto.DateCreation}, Error: {ex.Message}");
-                return BadRequest("Invalid DateCreation format. Use YYYY-MM-DDTHH:MM:SS");
-            }
+            DateTime dateCreation = demandeDto.DateCreation;
+            _logger.LogInformation($"Using DateCreation: {dateCreation}");
 
             var currentUser = await _userManager.GetUserAsync(User);
             if (currentUser == null) return Unauthorized("User not found");
@@ -311,7 +311,7 @@ namespace API.Controllers
 
             var demande = new DemandeIntervention
             {
-                Titre = demandeDto.Titre,
+                Titre = demandeDto.Titre ?? "Sans titre",
                 DateCreation = dateCreation,
                 MachineArretee = demandeDto.MachineArretee,
                 IDEtat = demandeDto.IDEtat,
@@ -344,6 +344,29 @@ namespace API.Controllers
             await _context.SaveChangesAsync();
             _logger.LogInformation($"Created intervention ID: {demande.IdDemandeIntervention}");
 
+            // Notify all superviseurs when a new intervention is created by Demandeur or Utilisateur
+            if (role == "Demandeur" || role == "Utilisateur")
+            {
+                var superviseurs = await _context.Users
+                    .Include(u => u.Role)
+                    .Where(u => u.Role.Libelle == "Superviseur" && u.IsActif)
+                    .ToListAsync();
+
+                foreach (var sup in superviseurs)
+                {
+                    await NotificationController.CreateNotificationAsync(
+                        _context,
+                        "Nouvelle intervention créée",
+                        $"Une nouvelle intervention \"{demande.Titre}\" a été créée.",
+                        "intervention_created",
+                        sup.ID,
+                        userEntity.ID,
+                        demande.IdDemandeIntervention
+                    );
+                }
+                _logger.LogInformation($"Notified {superviseurs.Count} superviseurs about new intervention");
+            }
+
             var createdDemande = await _context.DemandeInterventions
                 .Include(d => d.Etat)
                 .Include(d => d.Status)
@@ -367,24 +390,27 @@ namespace API.Controllers
 
             if (Request.ContentType == "application/json")
             {
-                demandeDto = await Request.ReadFromJsonAsync<InterventionDto>();
-                if (demandeDto == null) return BadRequest("Invalid JSON data");
+                var tempDto = await Request.ReadFromJsonAsync<InterventionDto>();
+                if (tempDto == null) return BadRequest("Invalid JSON data");
+                demandeDto = tempDto;
             }
-            else if (Request.ContentType.StartsWith("multipart/form-data"))
+            else if (Request.ContentType != null && Request.ContentType.StartsWith("multipart/form-data"))
             {
                 form = await Request.ReadFormAsync();
-                var demandeDtoJson = form["demandeDto"];
+                var demandeDtoJson = form["interventionData"];
                 file = form.Files.GetFile("file");
-                if (string.IsNullOrEmpty(demandeDtoJson)) return BadRequest("Missing 'demandeDto' field");
+                if (string.IsNullOrEmpty(demandeDtoJson)) return BadRequest("Missing 'interventionData' field");
                 try
                 {
-                    demandeDto = JsonSerializer.Deserialize<InterventionDto>(demandeDtoJson);
-                    if (demandeDto == null) return BadRequest("Invalid demandeDto data");
+                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    var tempDto = JsonSerializer.Deserialize<InterventionDto>(demandeDtoJson.ToString(), options);
+                    if (tempDto == null) return BadRequest("Invalid interventionData data");
+                    demandeDto = tempDto;
                 }
                 catch (JsonException ex)
                 {
                     _logger.LogError($"Deserialization error: {ex.Message}");
-                    return BadRequest("Failed to parse demandeDto JSON");
+                    return BadRequest("Failed to parse interventionData JSON");
                 }
             }
             else
@@ -423,7 +449,7 @@ namespace API.Controllers
 
             if (!string.IsNullOrEmpty(demandeDto.WorkflowAction))
             {
-                var result = await HandleWorkflowAction(existingDemande, demandeDto.WorkflowAction, role, userEntity.ID, demandeDto.RaisonAnnulation);
+                var result = await HandleWorkflowAction(existingDemande, demandeDto.WorkflowAction, role ?? "Unknown", userEntity.ID, demandeDto.RaisonAnnulation);
                 if (result != null) return result;
             }
             else if (role == "Superviseur")
@@ -440,16 +466,9 @@ namespace API.Controllers
                 }
 
                 if (demandeDto.Titre != null) existingDemande.Titre = demandeDto.Titre;
-                if (!string.IsNullOrEmpty(demandeDto.DateCreation))
+                if (demandeDto.DateCreation != default(DateTime))
                 {
-                    try
-                    {
-                        existingDemande.DateCreation = DateTime.Parse(demandeDto.DateCreation, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal);
-                    }
-                    catch (FormatException)
-                    {
-                        return BadRequest("Invalid DateCreation format. Use YYYY-MM-DDTHH:MM:SS");
-                    }
+                    existingDemande.DateCreation = demandeDto.DateCreation;
                 }
                 if (demandeDto.MachineArretee != existingDemande.MachineArretee) existingDemande.MachineArretee = demandeDto.MachineArretee;
                 if (demandeDto.IDEtat > 0 && existingDemande.IDEtat != demandeDto.IDEtat)
@@ -522,7 +541,7 @@ namespace API.Controllers
             return Ok(updatedDemande);
         }
 
-        private async Task<ActionResult> HandleWorkflowAction(DemandeIntervention demande, string action, string userRole, int? userId, string? raisonAnnulation)
+        private async Task<ActionResult?> HandleWorkflowAction(DemandeIntervention demande, string action, string userRole, int? userId, string? raisonAnnulation)
         {
             if (userId == null) return Unauthorized("User ID not found");
 
@@ -534,7 +553,7 @@ namespace API.Controllers
                     if (demande.StatusId != 2) return BadRequest("Not awaiting acceptance");
                     if (demande.DateAssignation != null) return BadRequest("Already accepted");
                     demande.DateAssignation = DateTime.Now;
-                    return null;
+                    break;
 
                 case "complete":
                     if (userRole != "Technicien" && userRole != "Utilisateur") return BadRequest("Only Technicien or Utilisateur can complete");
@@ -544,14 +563,14 @@ namespace API.Controllers
                     demande.StatusId = 3;
                     demande.DateRealisation = DateTime.Now;
                     demande.DateResolution = DateTime.Now;
-                    return null;
+                    break;
 
                 case "validate":
                     if (userRole != "Superviseur") return BadRequest("Only Superviseur can validate");
                     if (demande.StatusId != 3) return BadRequest("Only completed interventions can be validated");
                     demande.StatusId = 4;
                     demande.DateCloture = DateTime.Now;
-                    return null;
+                    break;
 
                 case "cancel":
                     bool canCancel = userRole == "Superviseur" ? (demande.StatusId != 4 && demande.StatusId != 5) :
@@ -560,11 +579,13 @@ namespace API.Controllers
                     if (!canCancel) return BadRequest("Not authorized to cancel at this state");
                     demande.StatusId = 5;
                     demande.RaisonAnnulation = raisonAnnulation;
-                    return null;
+                    break;
 
                 default:
                     return BadRequest($"Unknown action: {action}");
             }
+            
+            return null;
         }
 
         [HttpGet("{id}/file")]
@@ -576,21 +597,21 @@ namespace API.Controllers
             var roles = await _userManager.GetRolesAsync(currentUser);
             var role = roles.FirstOrDefault();
             var userEntity = await _context.Users.FirstOrDefaultAsync(u => u.AppUserId == currentUser.Id);
-            if (userEntity == null) return BadRequest("User entity not found");
-
             var demande = await _context.DemandeInterventions.FirstOrDefaultAsync(d => d.IdDemandeIntervention == id && d.IsActif);
-            if (demande == null || demande.FileData == null) return NotFound("File not found");
+            if (demande == null || demande.FileData == null || demande.ContentType == null) return NotFound("File not found");
             
             // Vérifier les autorisations basées sur le rôle
-            if (role == "Demandeur" && demande.DemandeursID != userEntity.ID)
+            if (role != null && role == "Demandeur" && demande.DemandeursID != userEntity?.ID)
             {
                 return Forbid("Not authorized to download this file");
             }
-            else if ((role == "Utilisateur" || role == "Technicien") && 
+            else if (role != null && (role == "Utilisateur" || role == "Technicien") && userEntity != null &&
                    (demande.DemandeursID != userEntity.ID && demande.DestinatairesID != userEntity.ID))
             {
                 return Forbid("Not authorized to download this file");
             }
+            
+            return File(demande.FileData, demande.ContentType, demande.FileName ?? "file");
             
             return File(demande.FileData, demande.ContentType, demande.FileName);
         }
@@ -728,30 +749,406 @@ namespace API.Controllers
                 return StatusCode(500, "Error retrieving dashboard stats");
             }
         }
+
+        [HttpPost("{id}/assign")]
+        public async Task<ActionResult> AssignTechnician(int id, [FromBody] AssignTechnicianDto dto)
+        {
+            try
+            {
+                var intervention = await _context.DemandeInterventions
+                    .Include(d => d.Demandeur)
+                    .FirstOrDefaultAsync(d => d.IdDemandeIntervention == id);
+                if (intervention == null) return NotFound("Intervention not found");
+
+                // Get current user for notification
+                var currentAppUser = await _userManager.GetUserAsync(User);
+                var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.AppUserId == currentAppUser.Id);
+
+                // Try to find the technician user entity by ID (integer) or AppUserId (string)
+                Users technicianUser = null;
+                
+                // First try to parse as integer (internal ID)
+                if (int.TryParse(dto.TechnicianId, out int technicianIntId))
+                {
+                    technicianUser = await _context.Users.FirstOrDefaultAsync(u => u.ID == technicianIntId);
+                }
+                
+                // If not found, try by AppUserId
+                if (technicianUser == null)
+                {
+                    technicianUser = await _context.Users.FirstOrDefaultAsync(u => u.AppUserId == dto.TechnicianId);
+                }
+                
+                if (technicianUser == null) return BadRequest("Technician not found");
+
+                intervention.DestinatairesID = technicianUser.ID;
+                intervention.DateAssignation = DateTime.Now;
+                
+                // Update status to "En cours" when assigned (as per workflow)
+                if (intervention.StatusId == 1)
+                {
+                    intervention.StatusId = 2; // En cours - assigned to technician
+                }
+
+                await _context.SaveChangesAsync();
+
+                // Create notification for the assigned technician
+                await NotificationController.CreateNotificationAsync(
+                    _context,
+                    "Nouvelle intervention assignée",
+                    $"L'intervention \"{intervention.Titre}\" vous a été assignée.",
+                    "intervention_assigned",
+                    technicianUser.ID,
+                    currentUser?.ID,
+                    intervention.IdDemandeIntervention
+                );
+
+                _logger.LogInformation($"Intervention {id} assigned to technician {dto.TechnicianId}");
+                
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error assigning technician: {ex.Message}");
+                return StatusCode(500, "Error assigning technician");
+            }
+        }
+
+        [HttpPatch("{id}/status")]
+        public async Task<ActionResult> UpdateStatus(int id, [FromBody] UpdateStatusDto dto)
+        {
+            try
+            {
+                var intervention = await _context.DemandeInterventions
+                    .Include(d => d.Demandeur)
+                    .Include(d => d.Destinataire)
+                    .FirstOrDefaultAsync(d => d.IdDemandeIntervention == id);
+                if (intervention == null) return NotFound("Intervention not found");
+
+                // Get current user for notification
+                var currentAppUser = await _userManager.GetUserAsync(User);
+                var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.AppUserId == currentAppUser.Id);
+
+                var oldStatusId = intervention.StatusId;
+                intervention.StatusId = dto.StatusId;
+
+                // Set appropriate timestamps
+                switch (dto.StatusId)
+                {
+                    case 2: // En cours
+                        intervention.DatePriseEnCharge = DateTime.Now;
+                        break;
+                    case 3: // Réalisée
+                        intervention.DateRealisation = DateTime.Now;
+                        break;
+                    case 4: // Cloturée
+                        intervention.DateCloture = DateTime.Now;
+                        break;
+                }
+
+                await _context.SaveChangesAsync();
+
+                // Send notifications based on status change
+                await SendStatusChangeNotifications(intervention, dto.StatusId, currentUser);
+
+                _logger.LogInformation($"Intervention {id} status updated to {dto.StatusId}");
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error updating status: {ex.Message}");
+                return StatusCode(500, "Error updating status");
+            }
+        }
+
+        [HttpPost("{id}/cancel")]
+        public async Task<ActionResult> CancelIntervention(int id, [FromBody] CancelInterventionDto dto)
+        {
+            try
+            {
+                var intervention = await _context.DemandeInterventions
+                    .Include(d => d.Demandeur)
+                    .Include(d => d.Destinataire)
+                    .FirstOrDefaultAsync(d => d.IdDemandeIntervention == id);
+                if (intervention == null) return NotFound("Intervention not found");
+
+                // Get current user
+                var currentAppUser = await _userManager.GetUserAsync(User);
+                var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.AppUserId == currentAppUser.Id);
+
+                intervention.StatusId = 5; // Annulée
+                intervention.RaisonAnnulation = dto.Reason;
+
+                await _context.SaveChangesAsync();
+
+                // Notify relevant parties
+                await SendCancellationNotifications(intervention, currentUser);
+
+                _logger.LogInformation($"Intervention {id} cancelled with reason: {dto.Reason}");
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error cancelling intervention: {ex.Message}");
+                return StatusCode(500, "Error cancelling intervention");
+            }
+        }
+
+        [HttpPost("{id}/accept")]
+        public async Task<ActionResult> AcceptIntervention(int id)
+        {
+            try
+            {
+                var intervention = await _context.DemandeInterventions
+                    .Include(d => d.Demandeur)
+                    .Include(d => d.Destinataire)
+                    .FirstOrDefaultAsync(d => d.IdDemandeIntervention == id);
+                if (intervention == null) return NotFound("Intervention not found");
+
+                // Get current user
+                var currentAppUser = await _userManager.GetUserAsync(User);
+                var currentUser = await _context.Users
+                    .Include(u => u.Role)
+                    .FirstOrDefaultAsync(u => u.AppUserId == currentAppUser.Id);
+                if (currentUser == null) return BadRequest("User not found");
+
+                // Check if user is the assigned technician
+                if (intervention.DestinatairesID != currentUser.ID)
+                {
+                    return BadRequest("Not the assigned technician");
+                }
+
+                // Check if already accepted
+                if (intervention.DatePriseEnCharge != null)
+                {
+                    return BadRequest("Already accepted");
+                }
+
+                // Accept the intervention
+                intervention.DatePriseEnCharge = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+
+                // Notify superviseurs that technician accepted
+                var superviseurs = await _context.Users
+                    .Where(u => u.Role.Libelle == "Superviseur" && u.IsActif)
+                    .ToListAsync();
+
+                foreach (var sup in superviseurs)
+                {
+                    await NotificationController.CreateNotificationAsync(
+                        _context,
+                        "Intervention acceptée",
+                        $"L'intervention \"{intervention.Titre}\" a été acceptée par {currentUser.Nom} {currentUser.Prenom}.",
+                        "intervention_accepted",
+                        sup.ID,
+                        currentUser.ID,
+                        intervention.IdDemandeIntervention
+                    );
+                }
+
+                _logger.LogInformation($"Intervention {id} accepted by user {currentUser.ID}");
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error accepting intervention: {ex.Message}");
+                return StatusCode(500, "Error accepting intervention");
+            }
+        }
+
+        [HttpPost("{id}/reject")]
+        public async Task<ActionResult> RejectIntervention(int id, [FromBody] RejectInterventionDto dto)
+        {
+            try
+            {
+                var intervention = await _context.DemandeInterventions
+                    .Include(d => d.Demandeur)
+                    .Include(d => d.Destinataire)
+                    .FirstOrDefaultAsync(d => d.IdDemandeIntervention == id);
+                if (intervention == null) return NotFound("Intervention not found");
+
+                // Get current user
+                var currentAppUser = await _userManager.GetUserAsync(User);
+                var currentUser = await _context.Users
+                    .Include(u => u.Role)
+                    .FirstOrDefaultAsync(u => u.AppUserId == currentAppUser.Id);
+                if (currentUser == null) return BadRequest("User not found");
+
+                // Check if user is the assigned technician
+                if (intervention.DestinatairesID != currentUser.ID)
+                {
+                    return BadRequest("Not the assigned technician");
+                }
+
+                // Check if already accepted
+                if (intervention.DatePriseEnCharge != null)
+                {
+                    return BadRequest("Cannot reject an already accepted intervention");
+                }
+
+                // Reject the intervention - unassign and add rejection reason
+                var previousAssigneeId = intervention.DestinatairesID;
+                intervention.DestinatairesID = null;
+                intervention.DateAssignation = null;
+                intervention.RaisonAnnulation = $"Refusée par {currentUser.Nom} {currentUser.Prenom}: {dto.Reason}";
+                intervention.StatusId = 1; // Reset to A traiter
+
+                await _context.SaveChangesAsync();
+
+                // Notify superviseurs that technician rejected
+                var superviseurs = await _context.Users
+                    .Where(u => u.Role.Libelle == "Superviseur" && u.IsActif)
+                    .ToListAsync();
+
+                foreach (var sup in superviseurs)
+                {
+                    await NotificationController.CreateNotificationAsync(
+                        _context,
+                        "Intervention refusée",
+                        $"L'intervention \"{intervention.Titre}\" a été refusée par {currentUser.Nom} {currentUser.Prenom}. Raison: {dto.Reason}",
+                        "intervention_rejected",
+                        sup.ID,
+                        currentUser.ID,
+                        intervention.IdDemandeIntervention
+                    );
+                }
+
+                _logger.LogInformation($"Intervention {id} rejected by user {currentUser.ID}: {dto.Reason}");
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error rejecting intervention: {ex.Message}");
+                return StatusCode(500, "Error rejecting intervention");
+            }
+        }
+
+        private async Task SendStatusChangeNotifications(DemandeIntervention intervention, int newStatusId, Users? triggeredBy)
+        {
+            var triggerUserId = triggeredBy?.ID;
+
+            switch (newStatusId)
+            {
+                case 2: // En cours - Notify superviseurs that technician started
+                    var superviseurs = await _context.Users
+                        .Where(u => u.Role.Libelle == "Superviseur" && u.IsActif)
+                        .ToListAsync();
+
+                    foreach (var sup in superviseurs)
+                    {
+                        if (sup.ID != triggerUserId)
+                        {
+                            await NotificationController.CreateNotificationAsync(
+                                _context,
+                                "Intervention démarrée",
+                                $"L'intervention \"{intervention.Titre}\" a été prise en charge.",
+                                "intervention_started",
+                                sup.ID,
+                                triggerUserId,
+                                intervention.IdDemandeIntervention
+                            );
+                        }
+                    }
+                    break;
+
+                case 3: // Réalisée - Notify superviseurs that technician completed
+                    var superviseurs2 = await _context.Users
+                        .Where(u => u.Role.Libelle == "Superviseur" && u.IsActif)
+                        .ToListAsync();
+
+                    foreach (var sup in superviseurs2)
+                    {
+                        if (sup.ID != triggerUserId)
+                        {
+                            await NotificationController.CreateNotificationAsync(
+                                _context,
+                                "Intervention réalisée",
+                                $"L'intervention \"{intervention.Titre}\" a été marquée comme réalisée et attend validation.",
+                                "intervention_completed",
+                                sup.ID,
+                                triggerUserId,
+                                intervention.IdDemandeIntervention
+                            );
+                        }
+                    }
+                    break;
+
+                case 4: // Cloturée - Notify technician that supervisor closed
+                    if (intervention.DestinatairesID.HasValue && intervention.DestinatairesID != triggerUserId)
+                    {
+                        await NotificationController.CreateNotificationAsync(
+                            _context,
+                            "Intervention clôturée",
+                            $"L'intervention \"{intervention.Titre}\" a été clôturée par le superviseur.",
+                            "intervention_closed",
+                            intervention.DestinatairesID.Value,
+                            triggerUserId,
+                            intervention.IdDemandeIntervention
+                        );
+                    }
+                    break;
+            }
+        }
+
+        private async Task SendCancellationNotifications(DemandeIntervention intervention, Users? triggeredBy)
+        {
+            var triggerUserId = triggeredBy?.ID;
+
+            // Notify the assigned technician if exists
+            if (intervention.DestinatairesID.HasValue && intervention.DestinatairesID != triggerUserId)
+            {
+                await NotificationController.CreateNotificationAsync(
+                    _context,
+                    "Intervention annulée",
+                    $"L'intervention \"{intervention.Titre}\" a été annulée.",
+                    "intervention_cancelled",
+                    intervention.DestinatairesID.Value,
+                    triggerUserId,
+                    intervention.IdDemandeIntervention
+                );
+            }
+
+            // Notify superviseurs if cancelled by technician
+            if (triggeredBy?.Role?.Libelle == "Utilisateur")
+            {
+                var superviseurs = await _context.Users
+                    .Where(u => u.Role.Libelle == "Superviseur" && u.IsActif)
+                    .ToListAsync();
+
+                foreach (var sup in superviseurs)
+                {
+                    await NotificationController.CreateNotificationAsync(
+                        _context,
+                        "Intervention annulée",
+                        $"L'intervention \"{intervention.Titre}\" a été annulée par le technicien.",
+                        "intervention_cancelled",
+                        sup.ID,
+                        triggerUserId,
+                        intervention.IdDemandeIntervention
+                    );
+                }
+            }
+        }
     }
 
-    public class PagedResulT<T>
+    public class AssignTechnicianDto
     {
-        public List<T> Data { get; set; } = new List<T>();
-        public int TotalCount { get; set; }
-        public int Page { get; set; }
-        public int PageSize { get; set; }
+        public string TechnicianId { get; set; } = string.Empty;
     }
 
-    public class InterventionDto
+    public class UpdateStatusDto
     {
-        public int IdDemandeIntervention { get; set; }
-        public string Titre { get; set; }
-        public bool MachineArretee { get; set; }
-        public int IDEtat { get; set; }
-        public int IDTypeIntervention { get; set; }
-        public int IDUrgence { get; set; }
-        public int IDChaineProduction { get; set; }
-        public int IDPanne { get; set; }
-        public int DemandeursID { get; set; }
-        public int? DestinatairesID { get; set; }
-        public string DateCreation { get; set; }
-        public string WorkflowAction { get; set; }
-        public string RaisonAnnulation { get; set; }
+        public int StatusId { get; set; }
+    }
+
+    public class CancelInterventionDto
+    {
+        public string Reason { get; set; } = string.Empty;
+    }
+
+    public class RejectInterventionDto
+    {
+        public string Reason { get; set; } = string.Empty;
     }
 }

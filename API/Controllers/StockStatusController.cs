@@ -1,3 +1,4 @@
+using API.DTOs;
 using Core.Entities;
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
@@ -20,45 +21,56 @@ namespace API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<StockStatus>>> GetStockStatuses()
+        public async Task<ActionResult<IEnumerable<object>>> GetStockStatuses()
         {
-            // Note: La classe StockStatus ne semble pas avoir de propriété IsActif dans sa définition
-            // Mais pour être cohérent avec les autres contrôleurs, on filtre si la propriété existe
-            return Ok(await _context.StockStatuses.ToListAsync());
+            var statuses = await _context.StockStatuses.ToListAsync();
+            // Map to DTO format expected by frontend (statusName instead of Status)
+            var result = statuses.Select(s => new { id = s.Id, statusName = s.Status }).ToList();
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<StockStatus>> GetStockStatus(int id)
+        public async Task<ActionResult<object>> GetStockStatus(int id)
         {
             var stockStatus = await _context.StockStatuses
                 .FirstOrDefaultAsync(s => s.Id == id);
                 
             if (stockStatus == null) return NotFound("Stock status not found.");
-            return Ok(stockStatus);
+            return Ok(new { id = stockStatus.Id, statusName = stockStatus.Status });
         }
 
         [HttpPost]
-        public async Task<ActionResult<StockStatus>> CreateStockStatus([FromBody] StockStatus stockStatus)
+        public async Task<ActionResult<object>> CreateStockStatus([FromBody] StockStatusDto dto)
         {
-            if (stockStatus == null) return BadRequest("Les données de statut de stock ne peuvent pas être nulles");
+            if (dto == null) return BadRequest("Les données de statut de stock ne peuvent pas être nulles");
+            
+            if (string.IsNullOrWhiteSpace(dto.StatusName))
+            {
+                return BadRequest("Le nom du statut est requis");
+            }
             
             // Vérifier si un statut avec ce nom existe déjà
-            if (await _context.StockStatuses.AnyAsync(s => s.Status == stockStatus.Status))
+            if (await _context.StockStatuses.AnyAsync(s => s.Status == dto.StatusName))
             {
                 return BadRequest("Un statut de stock avec ce nom existe déjà.");
             }
+
+            var stockStatus = new StockStatus
+            {
+                Status = dto.StatusName
+            };
             
             _context.StockStatuses.Add(stockStatus);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetStockStatus), new { id = stockStatus.Id }, stockStatus);
+            return CreatedAtAction(nameof(GetStockStatus), new { id = stockStatus.Id }, 
+                new { id = stockStatus.Id, statusName = stockStatus.Status });
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<StockStatus>> UpdateStockStatus(int id, [FromBody] StockStatus stockStatus)
+        public async Task<ActionResult<object>> UpdateStockStatus(int id, [FromBody] StockStatusDto dto)
         {
-            if (stockStatus == null) return BadRequest("Les données de statut de stock ne peuvent pas être nulles");
-            if (id != stockStatus.Id) return BadRequest("L'ID ne correspond pas");
+            if (dto == null) return BadRequest("Les données de statut de stock ne peuvent pas être nulles");
             
             var existingStatus = await _context.StockStatuses
                 .FirstOrDefaultAsync(s => s.Id == id);
@@ -66,18 +78,18 @@ namespace API.Controllers
             if (existingStatus == null) return NotFound("Statut de stock introuvable.");
             
             // Vérifier si la mise à jour créerait un doublon
-            if (existingStatus.Status != stockStatus.Status && 
-                await _context.StockStatuses.AnyAsync(s => s.Status == stockStatus.Status))
+            if (existingStatus.Status != dto.StatusName && 
+                await _context.StockStatuses.AnyAsync(s => s.Status == dto.StatusName))
             {
                 return BadRequest("Un statut de stock avec ce nom existe déjà.");
             }
             
             // Mettre à jour les propriétés
-            existingStatus.Status = stockStatus.Status;
+            existingStatus.Status = dto.StatusName;
             
             await _context.SaveChangesAsync();
             
-            return Ok(existingStatus);
+            return Ok(new { id = existingStatus.Id, statusName = existingStatus.Status });
         }
 
         [HttpDelete("{id}")]
@@ -87,8 +99,14 @@ namespace API.Controllers
                 .FirstOrDefaultAsync(s => s.Id == id);
                 
             if (stockStatus == null) return NotFound("Statut de stock introuvable.");
+
+            // Check if status is used by any stock
+            var isUsed = await _context.Stocks.AnyAsync(s => s.StockStatusId == id);
+            if (isUsed)
+            {
+                return BadRequest("Ce statut est utilisé par des stocks et ne peut pas être supprimé.");
+            }
             
-            // Suppression réelle (la classe StockStatus ne semble pas avoir IsActif)
             _context.StockStatuses.Remove(stockStatus);
             await _context.SaveChangesAsync();
             

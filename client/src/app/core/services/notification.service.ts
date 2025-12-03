@@ -1,194 +1,125 @@
-// gmao/client/src/app/core/services/notification.service.ts
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, of, BehaviorSubject } from 'rxjs';
-import { catchError, tap, map } from 'rxjs/operators';
-import { AccountService } from './account.service';
+import { BehaviorSubject, Observable } from 'rxjs';
 
-export interface NotificationItem {
-  idDemandeIntervention: number;
-  titre: string;
-  dateCreation: Date;
-  status: {
-    id: number;
-    statut: string;
-  };
-  isRead?: boolean;
+export interface Notification {
+  id: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+  title: string;
+  message: string;
+  timestamp: Date;
+  read: boolean;
+  autoClose?: boolean;
+  duration?: number; // milliseconds
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class NotificationService {
-  private baseUrl = 'https://localhost:5001/api/DemandeIntervention';
-  
-  // Track notifications with a BehaviorSubject
-  private notificationsSubject = new BehaviorSubject<NotificationItem[]>([]);
-  public notifications$ = this.notificationsSubject.asObservable();
-  
-  // Track notification count separately
-  private notificationCountSubject = new BehaviorSubject<number>(0);
-  public notificationCount$ = this.notificationCountSubject.asObservable();
-  
-  // LocalStorage key for read notifications
-  private readonly STORAGE_KEY = 'gmao_read_notifications';
+  private notifications$ = new BehaviorSubject<Notification[]>([]);
+  public notifications = this.notifications$.asObservable();
 
-  constructor(
-    private http: HttpClient,
-    private accountService: AccountService
-  ) {
-    // Initial load of notifications
-    this.loadTodayInterventions();
+  constructor() {
+    this.loadNotifications();
   }
 
-  // Get the set of read notification IDs from localStorage
-  private getReadNotificationsFromStorage(): Set<number> {
-    try {
-      const stored = localStorage.getItem(this.STORAGE_KEY);
-      if (stored) {
-        return new Set(JSON.parse(stored));
-      }
-    } catch (err) {
-      console.error('Error reading from localStorage:', err);
-    }
-    return new Set<number>();
-  }
+  show(notification: Omit<Notification, 'id' | 'timestamp' | 'read'>): void {
+    const newNotification: Notification = {
+      ...notification,
+      id: this.generateId(),
+      timestamp: new Date(),
+      read: false,
+      autoClose: notification.autoClose !== false,
+      duration: notification.duration || 5000
+    };
 
-  // Save read notification IDs to localStorage
-  private saveReadNotificationsToStorage(readSet: Set<number>): void {
-    try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify([...readSet]));
-    } catch (err) {
-      console.error('Error writing to localStorage:', err);
+    const current = this.notifications$.value;
+    this.notifications$.next([newNotification, ...current]);
+    this.saveNotifications();
+
+    if (newNotification.autoClose) {
+      setTimeout(() => {
+        this.remove(newNotification.id);
+      }, newNotification.duration);
     }
   }
 
-  // Get today's notification count 
-  getTodayInterventionCount(): Observable<number> {
-    const currentUser = this.accountService.currentUser();
-    if (!currentUser) {
-      return of(0);
-    }
-
-    return this.http.get<number>(`${this.baseUrl}/today-count`, { withCredentials: true })
-      .pipe(
-        map(count => {
-          // Filter out read notifications
-          const readNotifications = this.getReadNotificationsFromStorage();
-          // We don't know which specific notifications make up this count,
-          // so we'll have to rely on our full list filtering
-          return count;
-        }),
-        tap(count => this.notificationCountSubject.next(count)),
-        catchError(error => {
-          console.error('Error fetching notification count:', error);
-          return of(0);
-        })
-      );
+  success(title: string, message: string): void {
+    this.show({ type: 'success', title, message, duration: 4000 });
   }
 
-  // Get today's interventions (full details)
-  loadTodayInterventions(): void {
-    const currentUser = this.accountService.currentUser();
-    if (!currentUser) {
-      this.notificationsSubject.next([]);
-      this.notificationCountSubject.next(0);
-      return;
-    }
+  error(title: string, message: string, autoClose: boolean = true): void {
+    this.show({ type: 'error', title, message, autoClose, duration: 6000 });
+  }
 
-    // Get read notifications from localStorage
-    const readNotifications = this.getReadNotificationsFromStorage();
+  warning(title: string, message: string): void {
+    this.show({ type: 'warning', title, message, duration: 5000 });
+  }
 
-    // We'll use the existing endpoint with a date filter
-    this.http.get<any>(`${this.baseUrl}?page=1&pageSize=100`, { withCredentials: true })
-      .pipe(
-        map(response => {
-          // Filter to today's interventions
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          
-          return response.data
-            .filter((item: any) => {
-              // Include only today's interventions that are not closed/approved and not read
-              const creationDate = new Date(item.dateCreation);
-              creationDate.setHours(0, 0, 0, 0);
-              
-              const isToday = creationDate.getTime() === today.getTime();
-              const isNotClosed = item.status?.id !== 4; // Not "Cloturee"
-              const isNotRead = !readNotifications.has(item.idDemandeIntervention);
-              
-              // For a user or technicien, only show notifications assigned to them
-              const user = this.accountService.currentUser();
-              if (user?.role === 'Utilisateur' || user?.role === 'Technicien') {
-                return isToday && isNotClosed && isNotRead && 
-                       item.destinataire?.id === user.internalId;
-              }
-              
-              return isToday && isNotClosed && isNotRead;
-            })
-            .map((item: any) => ({
-              idDemandeIntervention: item.idDemandeIntervention,
-              titre: item.titre,
-              dateCreation: new Date(item.dateCreation),
-              status: item.status || { id: 0, statut: 'Inconnu' }
-            }));
-        }),
-        catchError(error => {
-          console.error('Error fetching notifications:', error);
-          return of([]);
-        })
-      )
-      .subscribe(notifications => {
-        this.notificationsSubject.next(notifications);
-        this.notificationCountSubject.next(notifications.length);
+  info(title: string, message: string): void {
+    this.show({ type: 'info', title, message, duration: 4000 });
+  }
+
+  remove(id: string): void {
+    const current = this.notifications$.value;
+    this.notifications$.next(current.filter(n => n.id !== id));
+    this.saveNotifications();
+  }
+
+  markAsRead(id: string): void {
+    const current = this.notifications$.value;
+    const updated = current.map(n => 
+      n.id === id ? { ...n, read: true } : n
+    );
+    this.notifications$.next(updated);
+    this.saveNotifications();
+  }
+
+  markAllAsRead(): void {
+    const current = this.notifications$.value;
+    const updated = current.map(n => ({ ...n, read: true }));
+    this.notifications$.next(updated);
+    this.saveNotifications();
+  }
+
+  clearAll(): void {
+    this.notifications$.next([]);
+    this.saveNotifications();
+  }
+
+  getUnreadCount(): Observable<number> {
+    return new Observable(observer => {
+      this.notifications.subscribe(notifications => {
+        const unreadCount = notifications.filter(n => !n.read).length;
+        observer.next(unreadCount);
       });
+    });
   }
 
-  // Mark a specific notification as read
-  markAsRead(interventionId: number): void {
-    // Get current read notifications
-    const readNotifications = this.getReadNotificationsFromStorage();
-    
-    // Add to read set
-    readNotifications.add(interventionId);
-    
-    // Save back to localStorage
-    this.saveReadNotificationsToStorage(readNotifications);
-    
-    // Update notifications list
-    const current = this.notificationsSubject.value;
-    const updated = current.filter(n => n.idDemandeIntervention !== interventionId);
-    
-    this.notificationsSubject.next(updated);
-    this.notificationCountSubject.next(updated.length);
+  private generateId(): string {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  // Clear all notifications
-  clearAllNotifications(): void {
-    // Get current read notifications 
-    const readNotifications = this.getReadNotificationsFromStorage();
-    
-    // Add all current notification IDs to read set
-    const current = this.notificationsSubject.value;
-    current.forEach(n => readNotifications.add(n.idDemandeIntervention));
-    
-    // Save back to localStorage
-    this.saveReadNotificationsToStorage(readNotifications);
-    
-    // Update UI
-    this.notificationsSubject.next([]);
-    this.notificationCountSubject.next(0);
+  private saveNotifications(): void {
+    try {
+      const notifications = this.notifications$.value;
+      // Keep only last 50 notifications
+      const trimmed = notifications.slice(0, 50);
+      localStorage.setItem('gmao_notifications', JSON.stringify(trimmed));
+    } catch (e) {
+      console.error('Error saving notifications', e);
+    }
   }
 
-  // Get notification status class
-  getStatusClass(statusId: number): string {
-    switch (statusId) {
-      case 1: return 'status-new';      // À traiter
-      case 2: return 'status-progress'; // En cours
-      case 3: return 'status-done';     // Réalisée
-      case 4: return 'status-closed';   // Clôturée
-      case 5: return 'status-canceled'; // Annulée
-      default: return 'status-unknown';
+  private loadNotifications(): void {
+    try {
+      const stored = localStorage.getItem('gmao_notifications');
+      if (stored) {
+        const notifications = JSON.parse(stored);
+        this.notifications$.next(notifications);
+      }
+    } catch (e) {
+      console.error('Error loading notifications', e);
     }
   }
 }

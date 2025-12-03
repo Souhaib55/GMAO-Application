@@ -1,0 +1,164 @@
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" [class.open]="sidebarOpen" [class.mobile-open]="mobileMenuOpen">
+    <div class="sidebar-header">
+      <div class="logo">
+        <svg width="42" height="42" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="48" height="48" rx="12" fill="#3B82F6"/>
+          <path d="M24 14L32 20V30L24 36L16 30V20L24 14Z" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M24 14V24M24 24L16 20M24 24L32 20M24 24V36" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="logo-text" *ngIf="sidebarOpen">GMAO</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <ng-container *ngFor="let item of menuItems">
+        <a
+          *ngIf="canShowMenuItem(item)"
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          class="nav-item"
+          (click)="closeMobileMenu()"
+        >
+          <span class="nav-icon" [attr.data-icon]="item.icon"></span>
+          <span class="nav-label" *ngIf="sidebarOpen">{{ item.label }}</span>
+        </a>
+      </ng-container>
+    </nav>
+
+    <div class="sidebar-footer" *ngIf="sidebarOpen && currentUser">
+      <div class="user-info">
+        <div class="user-avatar">
+          {{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}
+        </div>
+        <div class="user-details">
+          <div class="user-name">{{ currentUser.firstName }} {{ currentUser.lastName }}</div>
+          <div class="user-role">{{ currentUser.role }}</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Mobile Overlay -->
+  <div class="mobile-overlay" [class.active]="mobileMenuOpen" (click)="closeMobileMenu()"></div>
+
+  <!-- Main Content -->
+  <div class="main-content" [class.sidebar-collapsed]="!sidebarOpen">
+    <!-- Navbar -->
+    <header class="navbar">
+      <div class="navbar-left">
+        <button class="btn btn-icon hide-mobile" (click)="toggleSidebar()">
+          <span class="icon-menu"></span>
+        </button>
+        <button class="btn btn-icon show-mobile" (click)="toggleMobileMenu()">
+          <span class="icon-menu"></span>
+        </button>
+      </div>
+
+      <div class="navbar-right">
+        <!-- Notification Bell - Only for Superviseur and Utilisateur -->
+        <div class="notification-menu" 
+             *ngIf="currentUser && (currentUser.role === 'Superviseur' || currentUser.role === 'Utilisateur')"
+             [class.open]="notificationDropdownOpen">
+          <button class="notification-toggle" (click)="toggleNotificationDropdown($event)">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span class="notification-badge" *ngIf="unreadCount > 0">
+              {{ unreadCount > 99 ? '99+' : unreadCount }}
+            </span>
+          </button>
+          <div class="notification-dropdown" (click)="$event.stopPropagation()">
+            <div class="notification-header">
+              <span class="notification-title">Notifications</span>
+              <div class="notification-actions">
+                <button class="mark-all-read" *ngIf="unreadCount > 0" (click)="markAllNotificationsAsRead()">
+                  Tout marquer lu
+                </button>
+                <button class="clear-all" *ngIf="notifications.length > 0" (click)="clearAllNotifications($event)">
+                  Effacer tout
+                </button>
+              </div>
+            </div>
+            <div class="notification-list">
+              <ng-container *ngIf="notifications.length > 0; else noNotifications">
+                <div 
+                  *ngFor="let notification of notifications"
+                  class="notification-item"
+                  [class.unread]="!notification.isRead"
+                  (click)="markNotificationAsRead(notification, $event)"
+                >
+                  <div class="notification-icon-wrapper" [attr.data-type]="notification.type">
+                    <i class="bi" [ngClass]="getNotificationIcon(notification.type)"></i>
+                  </div>
+                  <div class="notification-content">
+                    <div class="notification-message">{{ notification.title }}</div>
+                    <div class="notification-details">{{ notification.message }}</div>
+                    <div class="notification-time">{{ getTimeAgo(notification.createdAt) }}</div>
+                  </div>
+                  <button class="notification-delete" (click)="deleteNotification(notification, $event)" title="Supprimer">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                  </button>
+                  <div class="notification-indicator" *ngIf="!notification.isRead"></div>
+                </div>
+              </ng-container>
+              <ng-template #noNotifications>
+                <div class="no-notifications">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                  </svg>
+                  <span>Aucune notification</span>
+                </div>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+
+        <div class="user-menu" *ngIf="currentUser" [class.open]="userDropdownOpen">
+          <button class="user-toggle" (click)="toggleUserDropdown($event)">
+            <div class="user-avatar-nav">
+              {{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}
+            </div>
+            <div class="user-info-nav">
+              <span class="user-name-nav">{{ currentUser.firstName }} {{ currentUser.lastName }}</span>
+              <span class="user-role-nav">{{ currentUser.role }}</span>
+            </div>
+            <svg class="dropdown-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+          <div class="user-dropdown">
+            <div class="dropdown-header">
+              <div class="user-avatar-dropdown">
+                {{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}
+              </div>
+              <div class="user-details-dropdown">
+                <span class="user-name-dropdown">{{ currentUser.firstName }} {{ currentUser.lastName }}</span>
+                <span class="user-email-dropdown">{{ currentUser.email }}</span>
+              </div>
+            </div>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item logout-item" (click)="logout()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+                <polyline points="16,17 21,12 16,7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              Déconnexion
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="page-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

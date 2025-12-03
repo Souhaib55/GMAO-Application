@@ -1,0 +1,355 @@
+<div class="chat-page">
+  <!-- Expand button when sidebar is collapsed -->
+  <button *ngIf="sidebarCollapsed" class="expand-sidebar-btn" (click)="sidebarCollapsed = false" title="Afficher la barre latérale">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M9 5l7 7-7 7"/>
+    </svg>
+  </button>
+
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" *ngIf="!sidebarCollapsed" (click)="sidebarCollapsed = true"></div>
+
+  <!-- Sidebar as Side Panel -->
+  <aside class="chat-sidebar" [class.collapsed]="sidebarCollapsed">
+    <!-- Panel Header -->
+    <div class="sidebar-header">
+      <div class="header-left">
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <div class="header-text">
+          <h2>Historique</h2>
+          <span class="header-subtitle">Conversations</span>
+        </div>
+      </div>
+      <button class="close-btn" (click)="sidebarCollapsed = true" title="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- New Chat Button -->
+    <div class="new-chat-section">
+      <button class="new-chat-btn" (click)="startNewChat()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        <span>Nouvelle conversation</span>
+      </button>
+    </div>
+    
+    <div class="sidebar-content">
+      <div class="conversation-list" *ngIf="conversations.length > 0">
+        <div class="conversation-section">
+          <span class="section-label">Conversations récentes</span>
+        </div>
+        
+        <div 
+          *ngFor="let conversation of conversations" 
+          class="conversation-item"
+          [class.active]="isActiveConversation(conversation.id)"
+          (click)="loadConversation(conversation)"
+          (contextmenu)="showContextMenu($event, conversation)"
+        >
+          <!-- Edit Mode -->
+          <div *ngIf="editingConversationId === conversation.id" class="edit-mode" (click)="$event.stopPropagation()">
+            <input 
+              type="text" 
+              [(ngModel)]="editingTitle"
+              (keydown)="handleRenameKeydown($event, conversation.id)"
+              (blur)="saveRename(conversation.id)"
+              class="rename-input"
+              autofocus
+            />
+          </div>
+          
+          <!-- Normal Mode -->
+          <ng-container *ngIf="editingConversationId !== conversation.id">
+            <div class="conversation-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+            </div>
+            <div class="conversation-info">
+              <span class="conversation-title">{{ conversation.title }}</span>
+              <span class="conversation-date">{{ formatDate(conversation.updatedAt) }}</span>
+            </div>
+            <div class="conversation-actions">
+              <button class="action-btn" (click)="startRenaming(conversation, $event)" title="Renommer">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+              <button class="action-btn delete-btn" (click)="deleteConversation(conversation.id, $event)" title="Supprimer">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+              </button>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+      
+      <!-- Empty State -->
+      <div *ngIf="conversations.length === 0" class="empty-sidebar">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </div>
+        <p>Aucune conversation</p>
+        <span>Démarrez une nouvelle conversation<br/>pour commencer à discuter</span>
+      </div>
+    </div>
+    
+    <div class="sidebar-footer">
+      <button class="clear-all-btn" (click)="clearAllHistory()" *ngIf="conversations.length > 0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          <line x1="10" y1="11" x2="10" y2="17"/>
+          <line x1="14" y1="11" x2="14" y2="17"/>
+        </svg>
+        <span>Supprimer tout l'historique</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Context Menu -->
+  <div 
+    class="context-menu" 
+    *ngIf="contextMenuVisible && contextMenuConversation"
+    [style.left.px]="contextMenuX"
+    [style.top.px]="contextMenuY"
+  >
+    <button class="context-menu-item" (click)="loadConversation(contextMenuConversation!)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+      Ouvrir
+    </button>
+    <button class="context-menu-item" (click)="startRenaming(contextMenuConversation!)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      </svg>
+      Renommer
+    </button>
+    <div class="context-menu-divider"></div>
+    <button class="context-menu-item danger" (click)="deleteConversation(contextMenuConversation!.id)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="3 6 5 6 21 6"/>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+      </svg>
+      Supprimer
+    </button>
+  </div>
+
+  <!-- Main Chat Area -->
+  <main class="chat-main">
+    <!-- Mobile Header -->
+    <header class="chat-header-mobile">
+      <button class="menu-btn" (click)="sidebarCollapsed = !sidebarCollapsed">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <h1>Assistant GMAO</h1>
+      <div class="header-actions">
+        <button class="new-chat-mobile-btn" (click)="startNewChat()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Messages Area -->
+    <div class="chat-messages" #messagesContainer>
+      <!-- Welcome State -->
+      <div *ngIf="messages.length === 0" class="welcome-state">
+        <div class="welcome-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"/>
+          </svg>
+        </div>
+        <h2>Comment puis-je vous aider ?</h2>
+        <p class="welcome-subtitle">Posez des questions sur vos données GMAO - interventions, équipements, stock, et plus.</p>
+        
+        <div class="suggestion-cards">
+          <button class="suggestion-card" (click)="userInput = 'Combien d\'interventions avons-nous ce mois-ci ?'; sendMessage()">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+              </svg>
+            </div>
+            <div class="card-content">
+              <span class="card-title">Interventions</span>
+              <span class="card-description">Combien d'interventions ce mois-ci ?</span>
+            </div>
+            <svg class="card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+
+          <button class="suggestion-card" (click)="userInput = 'Liste des équipements critiques'; sendMessage()">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+            </div>
+            <div class="card-content">
+              <span class="card-title">Équipements</span>
+              <span class="card-description">Liste des équipements critiques</span>
+            </div>
+            <svg class="card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+
+          <button class="suggestion-card" (click)="userInput = 'État du stock actuel'; sendMessage()">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5"/>
+                <path d="M2 12l10 5 10-5"/>
+              </svg>
+            </div>
+            <div class="card-content">
+              <span class="card-title">Stock</span>
+              <span class="card-description">État du stock actuel</span>
+            </div>
+            <svg class="card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+
+          <button class="suggestion-card" (click)="userInput = 'Quels techniciens sont disponibles ?'; sendMessage()">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <div class="card-content">
+              <span class="card-title">Ressources</span>
+              <span class="card-description">Techniciens disponibles</span>
+            </div>
+            <svg class="card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="messages-list" *ngIf="messages.length > 0">
+        <div *ngFor="let message of messages" class="message-wrapper" [class.user]="message.role === 'user'">
+          <div class="message-row">
+            <div class="avatar" [class.user-avatar]="message.role === 'user'" [class.assistant-avatar]="message.role === 'assistant'">
+              <svg *ngIf="message.role === 'user'" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+              </svg>
+              <svg *ngIf="message.role === 'assistant'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+              </svg>
+            </div>
+            <div class="message-content">
+              <div class="message-header">
+                <span class="sender-name">{{ message.role === 'user' ? 'Vous' : 'Assistant GMAO' }}</span>
+                <span class="message-time">{{ formatTime(message.timestamp) }}</span>
+              </div>
+              <div class="message-text" [innerHTML]="formatMessage(message.content)"></div>
+              
+              <!-- SQL Query Details -->
+              <div *ngIf="message.metadata?.sqlQuery" class="sql-details">
+                <button class="sql-toggle" (click)="message.showSql = !message.showSql">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="16 18 22 12 16 6"/>
+                    <polyline points="8 6 2 12 8 18"/>
+                  </svg>
+                  <span>{{ message.showSql ? 'Masquer' : 'Voir' }} la requête SQL</span>
+                  <svg class="chevron" [class.rotated]="message.showSql" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+                <div class="sql-code" *ngIf="message.showSql">
+                  <pre><code>{{ message.metadata?.sqlQuery }}</code></pre>
+                  <button class="copy-btn" (click)="copyToClipboard(message.metadata?.sqlQuery)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Follow-up Suggestions -->
+              <div *ngIf="message.suggestions && message.suggestions.length > 0" class="follow-up-suggestions">
+                <span class="suggestions-label">Questions suggérées :</span>
+                <div class="suggestions-list">
+                  <button *ngFor="let suggestion of message.suggestions" class="suggestion-pill" (click)="userInput = suggestion; sendMessage()">
+                    {{ suggestion }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Typing Indicator -->
+        <div *ngIf="loading" class="message-wrapper">
+          <div class="message-row">
+            <div class="avatar assistant-avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+              </svg>
+            </div>
+            <div class="message-content">
+              <div class="message-header">
+                <span class="sender-name">Assistant GMAO</span>
+              </div>
+              <div class="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="chat-input-area">
+      <div class="input-container">
+        <div class="input-wrapper">
+          <textarea
+            #inputField
+            [(ngModel)]="userInput"
+            (keydown)="handleEnter($event)"
+            placeholder="Posez votre question sur GMAO..."
+            [disabled]="loading"
+            rows="1"
+            (input)="autoResize($event)"
+          ></textarea>
+          <button class="send-btn" (click)="sendMessage()" [disabled]="!userInput.trim() || loading" [class.active]="userInput.trim()">
+            <svg *ngIf="!loading" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+            </svg>
+            <div *ngIf="loading" class="send-spinner"></div>
+          </button>
+        </div>
+        <p class="input-hint">Appuyez sur Entrée pour envoyer, Maj+Entrée pour un saut de ligne</p>
+      </div>
+    </div>
+  </main>
+</div>

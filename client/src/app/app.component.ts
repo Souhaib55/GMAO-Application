@@ -1,18 +1,19 @@
-import { Component, OnInit } from '@angular/core';
-import { InitService } from './core/services/init.service';
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { NotificationToastComponent } from './shared/components/notification-toast/notification-toast.component';
 
 @Component({
   selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+  standalone: true,
+  imports: [
+    RouterOutlet,
+    NotificationToastComponent
+  ],
+  template: `
+    <router-outlet></router-outlet>
+    <app-notification-toast></app-notification-toast>
+  `
 })
-export class AppComponent implements OnInit {
+export class AppComponent {
   title = 'GMAO Application';
-  
-  constructor(private initService: InitService) {}
-  
-  ngOnInit() {
-    // Initialize application and check authentication state
-    this.initService.init().subscribe();
-  }
 }

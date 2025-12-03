@@ -1,4 +1,5 @@
 export const environment = {
-  production: false,
-  
+  production: true,
+  apiUrl: 'https://your-production-domain.com/api',
+  chatServiceUrl: 'https://your-production-domain.com/chat'
 };

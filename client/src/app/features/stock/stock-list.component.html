@@ -1,0 +1,176 @@
+<div class="crud-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <div class="header-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="3" width="20" height="18" rx="2"/>
+          <path d="M2 9h20"/>
+          <path d="M7 3v6"/>
+          <path d="M12 3v6"/>
+          <path d="M17 3v6"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="page-title">Stock / Achat</h1>
+        <p class="page-subtitle">Gestion du stock et des achats</p>
+      </div>
+    </div>
+    <button class="btn-primary" routerLink="/stock/new">
+      <svg viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
+      </svg>
+      Nouveau Stock
+    </button>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-total">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="3" width="20" height="18" rx="2"/>
+          <path d="M2 9h20"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stats.total }}</div>
+        <div class="stat-label">Total Stock</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-success">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stats.actif }}</div>
+        <div class="stat-label">Actif</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-warning">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stats.low }}</div>
+        <div class="stat-label">Stock Bas</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-info">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stocks.length }}</div>
+        <div class="stat-label">En Commande</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search and Controls -->
+  <div class="table-controls">
+    <div class="search-box">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="m21 21-4.35-4.35"></path>
+      </svg>
+      <input 
+        type="text" 
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="search()"
+        placeholder="Rechercher un stock..."
+        class="search-input"
+      />
+    </div>
+
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Chargement des stocks...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && stocks.length === 0" class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    <p>Aucun stock trouvé</p>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading && stocks.length > 0" class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width: 40px;">
+            <input type="checkbox" class="table-checkbox">
+          </th>
+          <th>Code</th>
+          <th>Description</th>
+          <th>Entité</th>
+          <th>Statut</th>
+          <th>Fournisseur</th>
+          <th>Date création</th>
+          <th style="width: 80px; text-align: center;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let stock of stocks">
+          <td class="td-checkbox">
+            <input type="checkbox" class="table-checkbox">
+          </td>
+          <td data-label="Code">
+            <span class="code-badge">{{ stock.code }}</span>
+          </td>
+          <td data-label="Description">{{ stock.description || '-' }}</td>
+          <td data-label="Entité">{{ stock.stockEntities?.name || '-' }}</td>
+          <td data-label="Statut">
+            <span class="status-badge" [ngClass]="getStatusClass(stock)">
+              <span class="status-dot"></span>
+              {{ stock.stockStatus?.statusName || 'N/A' }}
+            </span>
+          </td>
+          <td data-label="Fournisseur">{{ stock.stockSupplier?.supplierName || '-' }}</td>
+          <td data-label="Date">{{ stock.createdOn | date:'dd/MM/yyyy' }}</td>
+          <td data-label="Actions" class="td-actions">
+            <div class="action-buttons">
+              <button class="btn-action btn-edit" [routerLink]="['/stock/edit', stock.id]" title="Modifier">
+                <i class="icon-edit">✎</i>
+              </button>
+              <button class="btn-action btn-action-danger" (click)="deleteStock(stock.id)" title="Supprimer">
+                <i class="icon-delete">✕</i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div *ngIf="totalCount > pageSize" class="pagination">
+      <button class="pagination-btn" (click)="previousPage()" [disabled]="currentPage === 1">
+        Précédent
+      </button>
+      <span class="pagination-info">Page {{ currentPage }} sur {{ totalPages }}</span>
+      <button class="pagination-btn" (click)="nextPage()" [disabled]="currentPage === totalPages">
+        Suivant
+      </button>
+    </div>
+  </div>
+</div>

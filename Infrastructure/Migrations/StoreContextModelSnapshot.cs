@@ -677,6 +677,64 @@ namespace Infrastructure.Migrations
                     b.ToTable("ModeleEquipements");
                 });
 
+            modelBuilder.Entity("Core.Entities.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("InterventionId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsRead")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int?>("TriggeredByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("InterventionId");
+
+                    b.HasIndex("IsRead");
+
+                    b.HasIndex("TriggeredByUserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("Core.Entities.Panne", b =>
                 {
                     b.Property<int>("IDPanne")
@@ -789,6 +847,23 @@ namespace Infrastructure.Migrations
                     b.HasKey("IDRole");
 
                     b.ToTable("Roles");
+
+                    b.HasData(
+                        new
+                        {
+                            IDRole = 1,
+                            Libelle = "Superviseur"
+                        },
+                        new
+                        {
+                            IDRole = 2,
+                            Libelle = "Demandeur"
+                        },
+                        new
+                        {
+                            IDRole = 3,
+                            Libelle = "Utilisateur"
+                        });
                 });
 
             modelBuilder.Entity("Core.Entities.Status", b =>
@@ -1327,6 +1402,31 @@ namespace Infrastructure.Migrations
                     b.Navigation("Famille");
 
                     b.Navigation("Marque");
+                });
+
+            modelBuilder.Entity("Core.Entities.Notification", b =>
+                {
+                    b.HasOne("Core.Entities.DemandeIntervention", "Intervention")
+                        .WithMany()
+                        .HasForeignKey("InterventionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Users", "TriggeredByUser")
+                        .WithMany()
+                        .HasForeignKey("TriggeredByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Users", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Intervention");
+
+                    b.Navigation("TriggeredByUser");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Core.Entities.Piece", b =>

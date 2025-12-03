@@ -1,0 +1,155 @@
+<div class="login-page">
+  <div class="login-container">
+    <!-- Left Panel - Branding -->
+    <div class="brand-panel">
+      <!-- Background decoration -->
+      <div class="bg-decoration">
+        <div class="circle circle-1"></div>
+        <div class="circle circle-2"></div>
+        <div class="circle circle-3"></div>
+      </div>
+
+      <div class="brand-content">
+        <!-- Logo -->
+        <div class="logo">
+          <img src="assets/login/alcodex_logo.png" alt="Alcodex Logo" />
+        </div>
+        
+        <!-- Title -->
+        <h1 class="main-title">VOTRE MAINTENANCE,<br><span>NOTRE PRIORITÉ.</span></h1>
+        <p class="tagline">Gérez vos interventions, équipements et équipes en toute simplicité.</p>
+
+        <!-- Features -->
+        <div class="features">
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <div class="feature-text">
+              <h4>Suivi en temps réel</h4>
+              <p>Surveillez vos équipements 24/7</p>
+            </div>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+            </div>
+            <div class="feature-text">
+              <h4>Performance optimale</h4>
+              <p>Réduisez les temps d'arrêt</p>
+            </div>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+              </svg>
+            </div>
+            <div class="feature-text">
+              <h4>Analyses avancées</h4>
+              <p>Tableaux de bord intelligents</p>
+            </div>
+
+          </div>
+        </div>
+        <p style="color: white;">Solution GMAO - Powred By Alcodex</p>
+
+
+        
+
+        <!-- Stats -->
+
+      </div>
+    </div>
+
+    <!-- Right Panel - Form -->
+    <div class="form-panel">
+      <div class="form-container">
+        <div class="form-header">
+          <h2>Connexion</h2>
+          <p>Bienvenue ! Veuillez vous connecter.</p>
+        </div>
+
+        <!-- Error Alert -->
+        <div *ngIf="error" class="alert-error">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>{{ error }}</span>
+        </div>
+
+        <!-- Login Form -->
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+          <!-- Email -->
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              formControlName="email"
+              placeholder="nom@exemple.com"
+              [class.error]="email?.invalid && email?.touched"
+            />
+            <span *ngIf="email?.invalid && email?.touched" class="error-text">
+              <ng-container *ngIf="email?.errors?.['required']">L'email est requis</ng-container>
+              <ng-container *ngIf="email?.errors?.['email']">Email invalide</ng-container>
+            </span>
+          </div>
+
+          <!-- Password -->
+          <div class="form-group">
+            <label for="password">Mot de passe</label>
+            <div class="password-input">
+              <input
+                id="password"
+                [type]="showPassword ? 'text' : 'password'"
+                formControlName="password"
+                placeholder="••••••••"
+                [class.error]="password?.invalid && password?.touched"
+              />
+              <button type="button" class="toggle-btn" (click)="showPassword = !showPassword">
+                <svg *ngIf="!showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <svg *ngIf="showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              </button>
+            </div>
+            <span *ngIf="password?.invalid && password?.touched" class="error-text">
+              <ng-container *ngIf="password?.errors?.['required']">Le mot de passe est requis</ng-container>
+              <ng-container *ngIf="password?.errors?.['minlength']">Minimum 6 caractères</ng-container>
+            </span>
+          </div>
+
+          <!-- Options -->
+          <div class="form-options">
+            <label class="checkbox">
+              <input type="checkbox" />
+              <span>Se souvenir de moi</span>
+            </label>
+            <a href="javascript:void(0)" class="forgot-link">Mot de passe oublié?</a>
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" class="submit-btn" [disabled]="loginForm.invalid || loading">
+            <span *ngIf="!loading">Se connecter</span>
+            <span *ngIf="loading" class="spinner"></span>
+          </button>
+        </form>
+
+        <p class="footer">© 2024 GMAO Pro. Tous droits réservés.</p>
+      </div>
+    </div>
+  </div>
+</div>
