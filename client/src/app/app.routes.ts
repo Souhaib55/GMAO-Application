@@ -63,6 +63,11 @@ export const routes: Routes = [
         component: InterventionFormComponent
       },
       {
+        path: 'interventions/view/:id',
+        component: InterventionFormComponent,
+        data: { viewMode: true }
+      },
+      {
         path: 'equipment',
         component: EquipmentComponent,
         canActivate: [roleGuard],
@@ -79,6 +84,11 @@ export const routes: Routes = [
         component: EquipmentFormComponent,
         canActivate: [roleGuard],
         data: { role: 'Superviseur' }
+      },
+      {
+        path: 'equipment/view/:id',
+        component: EquipmentFormComponent,
+        data: { viewMode: true }
       },
       {
         path: 'resources',
@@ -99,6 +109,11 @@ export const routes: Routes = [
         data: { role: 'Superviseur' }
       },
       {
+        path: 'resources/view/:id',
+        component: ResourceFormComponent,
+        data: { viewMode: true }
+      },
+      {
         path: 'stock',
         component: StockListComponent,
         canActivate: [roleGuard],
@@ -115,6 +130,11 @@ export const routes: Routes = [
         component: StockFormComponent,
         canActivate: [roleGuard],
         data: { role: 'Superviseur' }
+      },
+      {
+        path: 'stock/view/:id',
+        component: StockFormComponent,
+        data: { viewMode: true }
       },
       {
         path: 'settings',

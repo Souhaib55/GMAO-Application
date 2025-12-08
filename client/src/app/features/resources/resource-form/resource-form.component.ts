@@ -13,8 +13,8 @@ import { NotificationService } from '../../../core/services/notification.service
   template: `
     <div class="form-container">
       <div class="form-header">
-        <h1>{{ isEditMode ? 'Modifier' : 'Nouvelle' }} Pièce</h1>
-        <button class="btn btn-secondary" (click)="cancel()">Annuler</button>
+        <h1>{{ isViewMode ? 'Détails' : (isEditMode ? 'Modifier' : 'Nouvelle') }} Pièce</h1>
+        <button class="btn btn-secondary" (click)="cancel()">{{ isViewMode ? 'Retour' : 'Annuler' }}</button>
       </div>
 
       <form [formGroup]="pieceForm" (ngSubmit)="onSubmit()" class="card">
@@ -123,9 +123,9 @@ import { NotificationService } from '../../../core/services/notification.service
 
         <div class="card-footer">
           <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="loading">
-            Annuler
+            {{ isViewMode ? 'Retour' : 'Annuler' }}
           </button>
-          <button type="submit" class="btn btn-primary" [disabled]="pieceForm.invalid || loading">
+          <button type="submit" class="btn btn-primary" [disabled]="pieceForm.invalid || loading" *ngIf="!isViewMode">
             {{ isEditMode ? 'Mettre à jour' : 'Créer' }}
           </button>
         </div>
@@ -138,6 +138,7 @@ import { NotificationService } from '../../../core/services/notification.service
 export class ResourceFormComponent implements OnInit {
   pieceForm: FormGroup;
   isEditMode = false;
+  isViewMode = false;
   pieceId?: number;
   loading = false;
 
@@ -168,12 +169,20 @@ export class ResourceFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadReferenceData();
+    
+    // Check if view mode from route data
+    this.isViewMode = this.route.snapshot.data['viewMode'] === true;
 
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.isEditMode = true;
+      this.isEditMode = !this.isViewMode;
       this.pieceId = +id;
       this.loadPiece(this.pieceId);
+      
+      // Disable form in view mode
+      if (this.isViewMode) {
+        this.pieceForm.disable();
+      }
     }
   }
 

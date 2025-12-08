@@ -13,8 +13,8 @@ import { NotificationService } from '../../../core/services/notification.service
   template: `
     <div class="form-container">
       <div class="form-header">
-        <h1>{{ isEditMode ? 'Modifier' : 'Nouvel' }} Équipement</h1>
-        <button class="btn btn-secondary" (click)="cancel()">Annuler</button>
+        <h1>{{ isViewMode ? 'Détails' : (isEditMode ? 'Modifier' : 'Nouvel') }} Équipement</h1>
+        <button class="btn btn-secondary" (click)="cancel()">{{ isViewMode ? 'Retour' : 'Annuler' }}</button>
       </div>
 
       <form [formGroup]="equipmentForm" (ngSubmit)="onSubmit()" class="card">
@@ -156,9 +156,9 @@ import { NotificationService } from '../../../core/services/notification.service
 
         <div class="card-footer">
           <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="loading">
-            Annuler
+            {{ isViewMode ? 'Retour' : 'Annuler' }}
           </button>
-          <button type="submit" class="btn btn-primary" [disabled]="equipmentForm.invalid || loading">
+          <button type="submit" class="btn btn-primary" [disabled]="equipmentForm.invalid || loading" *ngIf="!isViewMode">
             {{ isEditMode ? 'Mettre à jour' : 'Créer' }}
           </button>
         </div>
@@ -171,6 +171,7 @@ import { NotificationService } from '../../../core/services/notification.service
 export class EquipmentFormComponent implements OnInit {
   equipmentForm: FormGroup;
   isEditMode = false;
+  isViewMode = false;
   equipmentId?: number;
   loading = false;
 
@@ -211,12 +212,20 @@ export class EquipmentFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadReferenceData();
+    
+    // Check if view mode from route data
+    this.isViewMode = this.route.snapshot.data['viewMode'] === true;
 
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.isEditMode = true;
+      this.isEditMode = !this.isViewMode;
       this.equipmentId = +id;
       this.loadEquipment(this.equipmentId);
+      
+      // Disable form in view mode
+      if (this.isViewMode) {
+        this.equipmentForm.disable();
+      }
     }
   }
 

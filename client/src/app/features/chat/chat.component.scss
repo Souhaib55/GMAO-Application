@@ -709,6 +709,8 @@ $active-glow: 0 0 20px rgba(59, 130, 246, 0.3);
   display: flex;
   flex-direction: column;
   min-width: 0;
+  height: 100vh;
+  overflow: hidden;
   background: $surface;
 }
 
@@ -755,9 +757,11 @@ $active-glow: 0 0 20px rgba(59, 130, 246, 0.3);
 
 /* ===== MESSAGES AREA ===== */
 .chat-messages {
-  flex: 1;
+  flex: 1 1 auto;
   overflow-y: auto;
   padding: 0;
+  min-height: 0;
+  height: 0;
   
   // Custom scrollbar
   &::-webkit-scrollbar {
@@ -783,21 +787,22 @@ $active-glow: 0 0 20px rgba(59, 130, 246, 0.3);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 100%;
-  padding: 40px 24px;
+  justify-content: flex-start;
+  padding: 40px 24px 20px;
   text-align: center;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .welcome-icon {
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, $primary 0%, $accent 100%);
-  border-radius: 24px;
-  margin-bottom: 24px;
+  border-radius: 20px;
+  margin-bottom: 20px;
   box-shadow: 0 8px 32px rgba(59, 130, 246, 0.25);
   animation: pulse 3s infinite;
 
@@ -814,37 +819,37 @@ $active-glow: 0 0 20px rgba(59, 130, 246, 0.3);
 }
 
 .welcome-state h2 {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   color: $text;
-  margin: 0 0 12px 0;
+  margin: 0 0 8px 0;
   letter-spacing: -0.5px;
 }
 
 .welcome-subtitle {
-  font-size: 16px;
+  font-size: 15px;
   color: $text-muted;
-  margin: 0 0 40px 0;
+  margin: 0 0 28px 0;
   max-width: 450px;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .suggestion-cards {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  max-width: 700px;
+  gap: 12px;
+  max-width: 650px;
   width: 100%;
 }
 
 .suggestion-card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 18px 20px;
+  gap: 12px;
+  padding: 14px 16px;
   background: white;
   border: 1px solid $border;
-  border-radius: 14px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   text-align: left;
@@ -870,19 +875,19 @@ $active-glow: 0 0 20px rgba(59, 130, 246, 0.3);
   }
 
   .card-icon {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: #f1f5f9;
-    border-radius: 12px;
+    border-radius: 10px;
     flex-shrink: 0;
     transition: all 0.2s;
 
     svg {
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
       color: $text-muted;
       transition: all 0.2s;
     }
@@ -894,10 +899,10 @@ $active-glow: 0 0 20px rgba(59, 130, 246, 0.3);
 
     .card-title {
       display: block;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       color: $text;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
 
     .card-description {
@@ -1186,12 +1191,15 @@ $active-glow: 0 0 20px rgba(59, 130, 246, 0.3);
 
 /* ===== INPUT AREA ===== */
 .chat-input-area {
-  padding: 20px 24px 24px;
-  background: linear-gradient(180deg, transparent 0%, white 20%);
+  flex: 0 0 auto;
+  padding: 16px 24px 24px;
+  background: white;
+  border-top: 1px solid $border;
+  z-index: 100;
 }
 
 .input-container {
-  max-width: 900px;
+  max-width: 800px;
   margin: 0 auto;
 }
 
@@ -1199,11 +1207,11 @@ $active-glow: 0 0 20px rgba(59, 130, 246, 0.3);
   display: flex;
   align-items: flex-end;
   gap: 12px;
-  padding: 12px 16px;
+  padding: 14px 18px;
   background: white;
   border: 2px solid $border;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  border-radius: 24px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
   transition: all 0.2s;
 
   &:focus-within {
@@ -1215,9 +1223,11 @@ $active-glow: 0 0 20px rgba(59, 130, 246, 0.3);
     flex: 1;
     min-height: 24px;
     max-height: 200px;
-    padding: 0;
-    background: transparent;
-    border: none;
+    padding: 0 !important;
+    margin: 0;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
     font-size: 15px;
     line-height: 1.5;
     color: $text;
@@ -1229,7 +1239,9 @@ $active-glow: 0 0 20px rgba(59, 130, 246, 0.3);
     }
 
     &:focus {
-      outline: none;
+      outline: none !important;
+      border: none !important;
+      box-shadow: none !important;
     }
 
     &:disabled {
@@ -1291,7 +1303,7 @@ $active-glow: 0 0 20px rgba(59, 130, 246, 0.3);
   text-align: center;
   font-size: 12px;
   color: $text-light;
-  margin: 10px 0 0 0;
+  margin: 8px 0 0 0;
 }
 
 /* ===== RESPONSIVE ===== */

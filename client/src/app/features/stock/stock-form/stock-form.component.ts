@@ -13,8 +13,8 @@ import { NotificationService } from '../../../core/services/notification.service
   template: `
     <div class="form-container">
       <div class="form-header">
-        <h1>{{ isEditMode ? 'Modifier' : 'Nouveau' }} Stock</h1>
-        <button class="btn btn-secondary" (click)="cancel()">Annuler</button>
+        <h1>{{ isViewMode ? 'Détails' : (isEditMode ? 'Modifier' : 'Nouveau') }} Stock</h1>
+        <button class="btn btn-secondary" (click)="cancel()">{{ isViewMode ? 'Retour' : 'Annuler' }}</button>
       </div>
 
       <form [formGroup]="stockForm" (ngSubmit)="onSubmit()" class="card">
@@ -106,9 +106,9 @@ import { NotificationService } from '../../../core/services/notification.service
 
         <div class="card-footer">
           <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="loading">
-            Annuler
+            {{ isViewMode ? 'Retour' : 'Annuler' }}
           </button>
-          <button type="submit" class="btn btn-primary" [disabled]="stockForm.invalid || loading">
+          <button type="submit" class="btn btn-primary" [disabled]="stockForm.invalid || loading" *ngIf="!isViewMode">
             {{ isEditMode ? 'Mettre à jour' : 'Créer' }}
           </button>
         </div>
@@ -121,6 +121,7 @@ import { NotificationService } from '../../../core/services/notification.service
 export class StockFormComponent implements OnInit {
   stockForm: FormGroup;
   isEditMode = false;
+  isViewMode = false;
   stockId?: number;
   loading = false;
 
@@ -148,12 +149,20 @@ export class StockFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadReferenceData();
+    
+    // Check if view mode from route data
+    this.isViewMode = this.route.snapshot.data['viewMode'] === true;
 
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.isEditMode = true;
+      this.isEditMode = !this.isViewMode;
       this.stockId = +id;
       this.loadStock(this.stockId);
+      
+      // Disable form in view mode
+      if (this.isViewMode) {
+        this.stockForm.disable();
+      }
     }
   }
 

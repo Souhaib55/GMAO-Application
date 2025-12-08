@@ -200,11 +200,23 @@ import { AuthService } from '../../core/services/auth.service';
               </td>
               <td class="td-actions" data-label="Actions" *ngIf="canShowActions()">
                 <div class="action-buttons">
+                  <button class="btn-action btn-view" [routerLink]="['/interventions/view', intervention.idDemandeIntervention]" title="Consulter">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
                   <button class="btn-action btn-edit" [routerLink]="['/interventions/edit', intervention.idDemandeIntervention]" title="Modifier">
-                    <i class="icon-edit">✎</i>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
                   </button>
                   <button class="btn-action btn-action-danger" (click)="deleteIntervention(intervention.idDemandeIntervention)" title="Supprimer" *ngIf="canDelete()">
-                    <i class="icon-delete">✕</i>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="3 6 5 6 21 6"/>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
                   </button>
                 </div>
               </td>
@@ -729,37 +741,51 @@ import { AuthService } from '../../core/services/auth.service';
     }
 
     .btn-action {
-      width: 32px;
-      height: 32px;
+      width: 38px;
+      height: 38px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 6px;
+      border: none;
+      border-radius: 10px;
       cursor: pointer;
-      color: #475569;
-      transition: all 0.2s;
+      transition: all 0.2s ease;
       text-decoration: none;
-      font-size: 16px;
     }
 
-    .btn-action i {
-      font-style: normal;
-      line-height: 1;
-      font-size: 14px;
+    .btn-action svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .btn-action.btn-view {
+      background: rgba(34, 197, 94, 0.1);
+      color: #22c55e;
+    }
+
+    .btn-action.btn-view:hover {
+      background: #22c55e;
+      color: white;
+    }
+
+    .btn-action.btn-edit {
+      background: rgba(14, 165, 233, 0.1);
+      color: #0ea5e9;
     }
 
     .btn-action.btn-edit:hover {
-      background: #e0f2fe;
-      border-color: #3b82f6;
-      color: #3b82f6;
+      background: #0ea5e9;
+      color: white;
     }
 
-    .btn-action-danger:hover {
-      background: #fef2f2;
-      border-color: #ef4444;
+    .btn-action.btn-action-danger {
+      background: rgba(239, 68, 68, 0.1);
       color: #ef4444;
+    }
+
+    .btn-action.btn-action-danger:hover {
+      background: #ef4444;
+      color: white;
     }
 
     .td-actions {

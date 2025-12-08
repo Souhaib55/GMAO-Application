@@ -128,6 +128,12 @@ import { NotificationService } from '../../../core/services/notification.service
               </td>
               <td>
                 <div class="actions">
+                  <button class="action-btn view" (click)="openViewModal(user)" title="Consulter">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
                   <button class="action-btn edit" (click)="openEditModal(user)" title="Modifier">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -161,11 +167,11 @@ import { NotificationService } from '../../../core/services/notification.service
         <span>Chargement...</span>
       </div>
 
-      <!-- Create/Edit Modal -->
+      <!-- Create/Edit/View Modal -->
       <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
         <div class="modal" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h2>{{ isEditMode ? 'Modifier Utilisateur' : 'Créer Utilisateur' }}</h2>
+            <h2>{{ isViewMode ? 'Détails Utilisateur' : (isEditMode ? 'Modifier Utilisateur' : 'Créer Utilisateur') }}</h2>
             <button class="close-btn" (click)="closeModal()">×</button>
           </div>
           <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
@@ -215,8 +221,8 @@ import { NotificationService } from '../../../core/services/notification.service
               </div>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn-secondary" (click)="closeModal()">Annuler</button>
-              <button type="submit" class="btn-primary" [disabled]="userForm.invalid || submitting">
+              <button type="button" class="btn-secondary" (click)="closeModal()">{{ isViewMode ? 'Fermer' : 'Annuler' }}</button>
+              <button type="submit" class="btn-primary" [disabled]="userForm.invalid || submitting" *ngIf="!isViewMode">
                 {{ submitting ? 'En cours...' : (isEditMode ? 'Enregistrer' : 'Créer') }}
               </button>
             </div>
@@ -638,6 +644,16 @@ import { NotificationService } from '../../../core/services/notification.service
       transition: all 0.2s ease;
     }
 
+    .action-btn.view {
+      background: rgba(34, 197, 94, 0.1);
+      color: #22c55e;
+    }
+
+    .action-btn.view:hover {
+      background: #22c55e;
+      color: white;
+    }
+
     .action-btn.edit {
       background: rgba(14, 165, 233, 0.1);
       color: var(--primary);
@@ -976,6 +992,7 @@ export class UserManagementComponent implements OnInit {
   showModal = false;
   showDeleteModal = false;
   isEditMode = false;
+  isViewMode = false;
   
   userForm: FormGroup;
   editingUser: User | null = null;
@@ -1070,6 +1087,7 @@ export class UserManagementComponent implements OnInit {
 
   openEditModal(user: User): void {
     this.isEditMode = true;
+    this.isViewMode = false;
     this.editingUser = user;
     this.userForm.patchValue({
       firstName: user.prenom,
@@ -1079,13 +1097,33 @@ export class UserManagementComponent implements OnInit {
     });
     this.userForm.get('password')?.clearValidators();
     this.userForm.get('password')?.updateValueAndValidity();
+    this.userForm.enable();
+    this.showModal = true;
+  }
+
+  openViewModal(user: User): void {
+    this.isViewMode = true;
+    this.isEditMode = false;
+    this.editingUser = user;
+    this.userForm.patchValue({
+      firstName: user.prenom,
+      lastName: user.nom,
+      email: user.email,
+      roleId: user.idRole
+    });
+    this.userForm.get('password')?.clearValidators();
+    this.userForm.get('password')?.updateValueAndValidity();
+    this.userForm.disable();
     this.showModal = true;
   }
 
   closeModal(): void {
     this.showModal = false;
     this.editingUser = null;
+    this.isViewMode = false;
+    this.isEditMode = false;
     this.userForm.reset();
+    this.userForm.enable();
   }
 
   onSubmit(): void {

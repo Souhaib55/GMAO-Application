@@ -90,8 +90,7 @@
                   [class.unread]="!notification.isRead"
                   (click)="markNotificationAsRead(notification, $event)"
                 >
-                  <div class="notification-icon-wrapper" [attr.data-type]="notification.type">
-                    <i class="bi" [ngClass]="getNotificationIcon(notification.type)"></i>
+                  <div class="notification-icon-wrapper" [attr.data-type]="notification.type" [innerHTML]="getNotificationSvgIcon(notification.type)">
                   </div>
                   <div class="notification-content">
                     <div class="notification-message">{{ notification.title }}</div>

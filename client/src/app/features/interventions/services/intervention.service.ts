@@ -114,4 +114,11 @@ export class InterventionService {
       withCredentials: true
     });
   }
+
+  downloadFile(id: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${id}/file`, {
+      withCredentials: true,
+      responseType: 'blob'
+    });
+  }
 }

@@ -1,69 +1,226 @@
+"""
+GMAO Chatbot Service - Intelligent AI Assistant for GMAO Database
+This chatbot answers supervisor questions based on the GMAO database.
+"""
+
 import os
 import time
 import logging
 import json
 import requests
-import uuid
-import sqlalchemy
+import re
+import traceback
+from datetime import datetime, timedelta
+from typing import List, Dict, Optional, Any, Tuple
+from contextlib import contextmanager, asynccontextmanager
+import pathlib
+import urllib.parse
+
+# Database imports
+import pyodbc
 from sqlalchemy import create_engine, text
-from contextlib import contextmanager
+
+# FastAPI imports
 from fastapi import FastAPI, Body, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Dict, Optional, Any, Union, Tuple
-import pathlib
-import numpy as np
-import faiss
-from sentence_transformers import SentenceTransformer
-import matplotlib.pyplot as plt
-import io
-import base64
-from matplotlib.figure import Figure
-import seaborn as sns
-import pandas as pd
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import FAISS
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from fastapi import FastAPI
-from contextlib import asynccontextmanager
-from datetime import datetime
-import pyodbc
-import urllib.parse
-import traceback
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler(), logging.FileHandler("gmao_chatbot.log")]
+    handlers=[logging.StreamHandler(), logging.FileHandler("gmao_chatbot.log", encoding='utf-8')]
 )
 logger = logging.getLogger("gmao_chatbot")
 
-# Create the FastAPI app
-app = FastAPI(title="GMAO Chatbot Service", description="AI-powered chatbot for GMAO system")
+# ============================================================================
+# DATABASE SCHEMA DEFINITION - This is crucial for the AI to generate correct SQL
+# ============================================================================
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+DATABASE_SCHEMA = """
+## GMAO Database Schema
 
-# Function to read settings from appsettings.Development.json
+### Core Tables:
+
+#### 1. Equipment (Equipments table)
+- IdEquipement (int, PK) - Equipment ID
+- CodeEquipement (nvarchar) - Equipment code
+- Designation (nvarchar) - Equipment name/designation
+- Description (nvarchar, nullable) - Description
+- IdCriticite (int, FK) - Criticality level ID
+- IdEtat (int, FK) - Equipment state ID
+- IdFamille (int, FK) - Equipment family ID
+- IdModele (int, FK) - Equipment model ID  
+- IdGroupe (int, FK) - Equipment group ID
+- DateInstallation (datetime, nullable) - Installation date
+- DateMiseEnService (datetime, nullable) - Commissioning date
+- NumeroSerie (nvarchar, nullable) - Serial number
+- SousGarantie (bit) - Under warranty flag
+- DateAchat (datetime, nullable) - Purchase date
+- DateFinGarantie (datetime, nullable) - Warranty end date
+- DateConstruction (datetime, nullable) - Manufacturing date
+- CoutAchat (decimal, nullable) - Purchase cost
+- DateCreation (datetime) - Record creation date
+- DateModification (datetime, nullable) - Record modification date
+- IsDeleted (bit) - Soft delete flag (0 = active, 1 = deleted)
+
+#### 2. Intervention Requests (DemandeInterventions table)
+- IdDemandeIntervention (int, PK) - Intervention request ID
+- Titre (nvarchar) - Title/subject of intervention
+- DateCreation (datetime) - Creation date
+- FileData (varbinary, nullable) - Attached file data
+- FileName (nvarchar, nullable) - Attached file name
+- ContentType (nvarchar, nullable) - File content type
+- MachineArretee (bit) - Machine stopped flag
+- IDEtat (int, FK) - State ID (legacy)
+- StatusId (int, FK) - Status ID (new)
+- IDTypeIntervention (int, FK) - Intervention type ID
+- IDUrgence (int, FK) - Urgency level ID
+- IDChaineProduction (int, FK) - Production chain ID
+- IDPanne (int, FK) - Fault/breakdown ID
+- DemandeursID (int, FK) - Requester user ID
+- DestinatairesID (int, FK, nullable) - Assignee user ID
+- IsActif (bit) - Active flag (1 = active, 0 = inactive)
+- DateAssignation (datetime, nullable) - Assignment date
+- DateRealisation (datetime, nullable) - Completion date
+- DateCloture (datetime, nullable) - Closure date
+- RaisonAnnulation (nvarchar, nullable) - Cancellation reason
+- DatePriseEnCharge (datetime, nullable) - Acceptance date
+- DateResolution (datetime, nullable) - Resolution date
+
+#### 3. Status (Status table)
+- Id (int, PK) - Status ID
+- Statut (nvarchar) - Status name (e.g., "En attente", "En cours", "Terminé")
+- Description (nvarchar) - Status description
+- IsActif (bit) - Active flag
+
+#### 4. Users (Users table)
+- ID (int, PK) - User ID
+- AppUserId (nvarchar, FK) - ASP.NET Identity user ID
+- Nom (nvarchar) - Last name
+- Prenom (nvarchar) - First name
+- Email (nvarchar) - Email address
+- DateCreation (datetime) - Creation date
+- DateModification (datetime) - Modification date
+- IsActif (bit) - Active flag
+- IDRole (int, FK) - Role ID
+
+#### 5. Equipment Criticality (EquipmentCriticites table)
+- IdCriticite (int, PK) - Criticality ID
+- NomCriticite (nvarchar) - Criticality name (e.g., "Haute", "Moyenne", "Basse")
+- Description (nvarchar, nullable) - Description
+- DateCreation (datetime) - Creation date
+- DateModification (datetime, nullable) - Modification date
+- IsActif (bit) - Active flag
+
+#### 6. Equipment State (EtatEquipements table)
+- IdEtat (int, PK) - State ID
+- NomEtat (nvarchar) - State name (e.g., "En service", "En panne", "En maintenance")
+- Description (nvarchar, nullable) - Description
+- IsActif (bit) - Active flag
+
+#### 7. Urgency Levels (Urgences table)
+- IDUrgence (int, PK) - Urgency ID
+- Libelle (nvarchar) - Urgency label (e.g., "Haute", "Moyenne", "Basse")
+- DateCreation (datetime) - Creation date
+- DateModification (datetime, nullable) - Modification date
+- IsActif (bit) - Active flag
+
+#### 8. Intervention Types (TypeInterventions table)
+- IDTypeIntervention (int, PK) - Type ID
+- Libelle (nvarchar) - Type label (e.g., "Corrective", "Préventive")
+- DateCreation (datetime) - Creation date
+- DateModification (datetime, nullable) - Modification date
+- IsActif (bit) - Active flag
+
+#### 9. Production Chains (ChaineProductions table)
+- IDChaineProduction (int, PK) - Production chain ID
+- Libelle (nvarchar) - Chain name
+- DateCreation (datetime) - Creation date
+- DateModification (datetime, nullable) - Modification date
+- IsActif (bit) - Active flag
+
+#### 10. Faults/Breakdowns (Pannes table)
+- IDPanne (int, PK) - Fault ID
+- Libelle (nvarchar) - Fault description
+- DateCreation (datetime) - Creation date
+- DateModification (datetime, nullable) - Modification date
+- IsActif (bit) - Active flag
+
+#### 11. Stock (Stocks table)
+- Id (int, PK) - Stock ID
+- Code (nvarchar) - Stock code
+- Description (nvarchar) - Description
+- StockEntitiesId (int, FK) - Stock entity ID
+- StockStatusId (int, FK) - Stock status ID
+- StockSupplierId (int, FK) - Supplier ID
+- CreatedOn (datetime) - Creation date
+- IsDeleted (bit) - Soft delete flag
+
+#### 12. Stock Entities (StockEntities table)
+- Id (int, PK) - Entity ID
+- Name (nvarchar) - Entity name
+
+#### 13. Stock Status (StockStatus table)
+- Id (int, PK) - Status ID
+- Name (nvarchar) - Status name
+
+#### 14. Stock Suppliers (StockSuppliers table)
+- Id (int, PK) - Supplier ID
+- Name (nvarchar) - Supplier name
+
+#### 15. Equipment Families (FamilleEquipements table)
+- IdFamille (int, PK) - Family ID
+- NomFamille (nvarchar) - Family name
+- Description (nvarchar, nullable) - Description
+- IsActif (bit) - Active flag
+
+#### 16. Equipment Groups (GroupeEquipements table)
+- IdGroupe (int, PK) - Group ID
+- NomGroupe (nvarchar) - Group name
+- Description (nvarchar, nullable) - Description
+- IsActif (bit) - Active flag
+
+#### 17. Equipment Models (ModeleEquipements table)
+- IdModele (int, PK) - Model ID
+- NomModele (nvarchar) - Model name
+- Description (nvarchar, nullable) - Description
+- IdMarque (int, FK) - Brand ID
+- IdCriticite (int, FK) - Criticality ID
+- IsActif (bit) - Active flag
+
+#### 18. Brands (Marques table)
+- IdMarque (int, PK) - Brand ID
+- NomMarque (nvarchar) - Brand name
+- Description (nvarchar, nullable) - Description
+- IsActif (bit) - Active flag
+
+#### 19. Roles (Roles table)
+- IDRole (int, PK) - Role ID
+- Libelle (nvarchar) - Role name (e.g., "Superviseur", "Technicien", "Admin")
+- IsActif (bit) - Active flag
+
+### Common Query Patterns:
+1. For interventions today: WHERE CAST(DateCreation AS DATE) = CAST(GETDATE() AS DATE)
+2. For active records: WHERE IsActif = 1 or WHERE IsDeleted = 0
+3. Always use proper JOINs to get related data (Status, Users, etc.)
+4. Use CAST(date AS DATE) for date comparisons
+5. Use French month names: janvier, février, mars, avril, mai, juin, juillet, août, septembre, octobre, novembre, décembre
+"""
+
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
+
 def read_app_settings():
+    """Read settings from appsettings.Development.json"""
     try:
         potential_paths = [
             pathlib.Path(__file__).parent.absolute().parent / 'API' / 'appsettings.Development.json',
-            pathlib.Path.cwd() / 'gmao' / 'API' / 'appsettings.Development.json',
             pathlib.Path.cwd().parent / 'API' / 'appsettings.Development.json',
             pathlib.Path.cwd() / 'API' / 'appsettings.Development.json',
-            # Ajout d'autres chemins potentiels
-            pathlib.Path.cwd() / 'appsettings.Development.json',
             pathlib.Path(__file__).parent.absolute() / 'appsettings.Development.json',
-            pathlib.Path.cwd() / '../API/appsettings.Development.json',
         ]
         
         appsettings_path = None
@@ -74,12 +231,10 @@ def read_app_settings():
                 break
         
         if not appsettings_path:
-            logger.error("appsettings.Development.json not found in any expected location")
-            for path in potential_paths:
-                logger.error(f"Tried path: {path}")
+            logger.error("appsettings.Development.json not found")
             return {}, ""
         
-        with open(appsettings_path, 'r') as f:
+        with open(appsettings_path, 'r', encoding='utf-8') as f:
             settings = json.load(f)
         
         conn_string = settings.get('ConnectionStrings', {}).get('DefaultConnection', '')
@@ -87,166 +242,121 @@ def read_app_settings():
             logger.error("No DefaultConnection found in appsettings")
             return settings, ""
         
-        # Masquer le mot de passe dans les logs
-        safe_conn = conn_string
-        if 'Password=' in conn_string:
-            pwd_part = conn_string.split('Password=')[1].split(';')[0] if 'Password=' in conn_string else ''
-            safe_conn = conn_string.replace(pwd_part, "***") if pwd_part else conn_string
-        
-        logger.info(f"Raw connection string from appsettings: {safe_conn}")
-        
-        # Analyse correcte de la chaîne de connexion
+        # Parse connection string
         params = {}
-        # Gérer correctement les instances nommées (avec \\ dans le nom du serveur)
-        server_part = ""
-        db_part = ""
-        other_parts = []
-        
         for part in conn_string.split(';'):
-            if part.strip():
-                if part.lower().startswith('server='):
-                    server_part = part
-                elif part.lower().startswith('database='):
-                    db_part = part
-                else:
-                    other_parts.append(part)
-        
-        # Reconstituer une chaîne propre
-        clean_conn_parts = [server_part, db_part] + other_parts
-        clean_conn_string = ';'.join([p for p in clean_conn_parts if p])
-        
-        # Extraire les paramètres individuels
-        for part in clean_conn_string.split(';'):
             if '=' in part:
                 key, value = part.split('=', 1)
                 params[key.strip()] = value.strip()
         
         server = params.get('Server', params.get('Data Source', ''))
         database = params.get('Database', params.get('Initial Catalog', ''))
-        user = params.get('User ID', '')
-        password = params.get('Password', '')
-        trusted = 'yes' if params.get('Trusted_Connection', 'False').lower() in ('true', 'yes') else 'no'
-        trust_cert = 'yes' if params.get('TrustServerCertificate', 'False').lower() in ('true', 'yes') else 'no'
+        trusted = params.get('Trusted_Connection', 'False').lower() in ('true', 'yes')
+        trust_cert = params.get('TrustServerCertificate', 'False').lower() in ('true', 'yes')
         
         if not server or not database:
             logger.error("Missing server or database in connection string")
             return settings, ""
         
-        # Liste des drivers à essayer par ordre de préférence
-        drivers = [
+        # Find available ODBC driver
+        available_drivers = []
+        try:
+            available_drivers = [d for d in pyodbc.drivers() if "SQL Server" in d]
+            logger.info(f"Available SQL Server ODBC drivers: {available_drivers}")
+        except Exception as e:
+            logger.warning(f"Could not list ODBC drivers: {e}")
+        
+        preferred_drivers = [
             "ODBC Driver 18 for SQL Server",
             "ODBC Driver 17 for SQL Server",
-            "ODBC Driver for SQL Server",  # Ajouté pour compatibilité
             "SQL Server Native Client 11.0",
             "SQL Server"
         ]
         
-        # Vérification des drivers disponibles
-        available_drivers = []
+        driver = next((d for d in preferred_drivers if d in available_drivers), 
+                      available_drivers[0] if available_drivers else preferred_drivers[0])
+        logger.info(f"Selected SQL Server driver: {driver}")
+        
+        # Build ODBC connection string
+        server_clean = server.replace('\\\\', '\\')
+        if trusted:
+            odbc_conn = f"DRIVER={{{driver}}};SERVER={server_clean};DATABASE={database};Trusted_Connection=yes;TrustServerCertificate={'yes' if trust_cert else 'no'}"
+        else:
+            user = params.get('User ID', '')
+            password = params.get('Password', '')
+            odbc_conn = f"DRIVER={{{driver}}};SERVER={server_clean};DATABASE={database};UID={user};PWD={password};TrustServerCertificate={'yes' if trust_cert else 'no'}"
+        
+        sqlalchemy_conn = f"mssql+pyodbc:///?odbc_connect={urllib.parse.quote_plus(odbc_conn)}"
+        
+        # Test connection
         try:
-            available_drivers = [driver for driver in pyodbc.drivers() if "SQL Server" in driver]
-            logger.info(f"Available SQL Server ODBC drivers: {available_drivers}")
-            # Choisir le premier driver disponible dans notre liste de préférence
-            driver = next((d for d in drivers if d in available_drivers), available_drivers[0] if available_drivers else drivers[0])
-            logger.info(f"Selected SQL Server driver: {driver}")
+            with pyodbc.connect(odbc_conn, timeout=10) as test_conn:
+                with test_conn.cursor() as cursor:
+                    cursor.execute("SELECT 1")
+                    logger.info("Database connection test successful")
+                    return settings, sqlalchemy_conn
         except Exception as e:
-            logger.warning(f"Could not list ODBC drivers: {e}")
-            driver = drivers[0]
-            logger.info(f"Defaulting to driver: {driver}")
-        
-        # Construction de la chaîne de connexion
-        connection_options = []
-        
-        # Méthode 1: Connexion directe avec les paramètres
-        if trusted == 'yes':
-            # Gérer correctement le backslash dans le nom du serveur
-            server_clean = server.replace('\\\\', '\\')
-            odbc_conn = f"DRIVER={{{driver}}};SERVER={server_clean};DATABASE={database};Trusted_Connection=yes;TrustServerCertificate={trust_cert}"
-            sqlalchemy_conn = f"mssql+pyodbc:///?odbc_connect={urllib.parse.quote_plus(odbc_conn)}"
-            connection_options.append(("direct_trusted", odbc_conn, sqlalchemy_conn))
-        else:
-            if user and password:
-                server_clean = server.replace('\\\\', '\\')
-                odbc_conn = f"DRIVER={{{driver}}};SERVER={server_clean};DATABASE={database};UID={user};PWD={password};TrustServerCertificate={trust_cert}"
-                sqlalchemy_conn = f"mssql+pyodbc:///?odbc_connect={urllib.parse.quote_plus(odbc_conn)}"
-                connection_options.append(("direct_sql", odbc_conn, sqlalchemy_conn))
-        
-        # Méthode 2: Utiliser le DSN que vous avez créé
-        odbc_dsn_conn = f"DSN=gmao_connection;DATABASE={database};Trusted_Connection=yes;TrustServerCertificate={trust_cert}"
-        sqlalchemy_dsn_conn = f"mssql+pyodbc:///?odbc_connect={urllib.parse.quote_plus(odbc_dsn_conn)}"
-        connection_options.append(("dsn", odbc_dsn_conn, sqlalchemy_dsn_conn))
-        
-        # Méthode 3: Alternative en cas d'échec des deux premières méthodes
-        server_alt = server.replace('localhost', '.')  # parfois '.' fonctionne mieux que 'localhost'
-        server_alt_clean = server_alt.replace('\\\\', '\\')
-        odbc_alt_conn = f"DRIVER={{{driver}}};SERVER={server_alt_clean};DATABASE={database};Trusted_Connection=yes;TrustServerCertificate={trust_cert}"
-        sqlalchemy_alt_conn = f"mssql+pyodbc:///?odbc_connect={urllib.parse.quote_plus(odbc_alt_conn)}"
-        connection_options.append(("alternative", odbc_alt_conn, sqlalchemy_alt_conn))
-        
-        # Tester les connexions et choisir la première qui fonctionne
-        working_sqlalchemy_conn = ""
-        success_method = ""
-        for method, odbc_conn, sqlalchemy_conn in connection_options:
-            # Masquer le mot de passe dans les logs
-            safe_odbc_conn = odbc_conn
-            if 'PWD=' in odbc_conn:
-                safe_odbc_conn = odbc_conn.replace(password, "***") if password else odbc_conn
-            
-            logger.info(f"Trying connection method: {method} with: {safe_odbc_conn}")
-            
-            try:
-                with pyodbc.connect(odbc_conn, timeout=5) as test_conn:
-                    with test_conn.cursor() as cursor:
-                        cursor.execute("SELECT 1")
-                        test_result = cursor.fetchone()
-                        logger.info(f"Connection successful with method {method}: {test_result}")
-                        working_sqlalchemy_conn = sqlalchemy_conn
-                        success_method = method
-                        break
-            except Exception as e:
-                logger.warning(f"Connection method {method} failed: {e}")
-        
-        if working_sqlalchemy_conn:
-            logger.info(f"Selected connection method: {success_method}")
-            return settings, working_sqlalchemy_conn
-        else:
-            logger.error("All connection methods failed")
-            return settings, ""
+            logger.error(f"Database connection test failed: {e}")
+            return settings, sqlalchemy_conn
             
     except Exception as e:
         logger.error(f"Error reading app settings: {e}")
         logger.error(traceback.format_exc())
         return {}, ""
 
-# Database retry parameters
-DB_CONNECT_RETRIES = 3
-DB_CONNECT_RETRY_DELAY = 2  # seconds
-
 # Load settings
 app_settings, conn_string = read_app_settings()
-if not conn_string:
-    logger.error("Failed to generate valid connection string")
 
 # Database configuration
-DB_CONNECTION_STRING = os.getenv("DB_CONNECTION_STRING", conn_string or "mssql+pyodbc:///?odbc_connect=Driver={ODBC Driver 17 for SQL Server};Server=localhost;Database=gmaoTrusted_Connection=yes")
+DB_CONNECTION_STRING = conn_string
 engine = None
 DB_AVAILABLE = False
 DB_CONNECTION_ERROR = ""
 
-# OpenRouter API configuration
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", app_settings.get('OpenRouter', {}).get('ApiKey', ''))
-OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", app_settings.get('OpenRouter', {}).get('Model', 'deepseek/deepseek-r1:free'))
-OPENROUTER_AVAILABLE = bool(OPENROUTER_API_KEY)
-OPENROUTER_ERROR_MESSAGE = "" if OPENROUTER_AVAILABLE else "OpenRouter API key not configured"
+# AI Provider configurations
+# Use the new OpenRouter API key directly for reliability
+OPENROUTER_API_KEY = "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"
 
-openrouter_headers = {
-    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-    "HTTP-Referer": "https://gmao.alcodex.cloud",
-    "Content-Type": "application/json"
+AI_PROVIDERS = {
+    "openrouter": {
+        "api_key": OPENROUTER_API_KEY,
+        "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+        "model": "google/gemma-3-27b-it:free"  # Fast free model
+    },
+    "openai": {
+        "api_key": app_settings.get('OpenAI', {}).get('ApiKey', ''),
+        "endpoint": "https://api.openai.com/v1/chat/completions",
+        "model": "gpt-4o-mini"
+    },
+    "deepseek": {
+        "api_key": app_settings.get('Deepseek', {}).get('ApiKey', ''),
+        "endpoint": app_settings.get('Deepseek', {}).get('Endpoint', 'https://api.deepseek.com/v1/chat/completions'),
+        "model": "deepseek-chat"
+    },
+    "gemini": {
+        "api_key": app_settings.get('Gemini', {}).get('ApiKey', ''),
+        "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+        "model": "gemini-1.5-flash"
+    }
 }
 
-# Define chat models
+# Select primary AI provider (OpenRouter first with new key, then others as fallback)
+PRIMARY_AI_PROVIDER = None
+FALLBACK_PROVIDERS = []
+for provider in ["openrouter", "gemini", "openai", "deepseek"]:
+    if AI_PROVIDERS[provider]["api_key"]:
+        if PRIMARY_AI_PROVIDER is None:
+            PRIMARY_AI_PROVIDER = provider
+        else:
+            FALLBACK_PROVIDERS.append(provider)
+
+logger.info(f"Primary AI provider: {PRIMARY_AI_PROVIDER}")
+logger.info(f"Fallback providers: {FALLBACK_PROVIDERS}")
+
+# ============================================================================
+# PYDANTIC MODELS
+# ============================================================================
+
 class Message(BaseModel):
     role: str
     content: str
@@ -261,66 +371,45 @@ class EnhancedChatResponse(BaseModel):
     visualizations: Optional[List[Dict[str, str]]] = None
     suggestions: Optional[List[str]] = None
 
-# System prompt
-def get_system_prompt():
-    current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S %Z")
-    return f"""Tu es un assistant IA spécialisé dans la GMAO (Gestion de Maintenance Assistée par Ordinateur). La date et l'heure actuelles sont {current_date}. Tu as accès à des enregistrements spécifiques de la base de données GMAO, fournis dans le contexte. Utilise ces informations pour répondre précisément aux questions des utilisateurs. Si les données du contexte suffisent, base-toi dessus. Sinon, pour des données agrégées ou complexes, tu peux proposer une requête SQL à exécuter. Lorsqu'un résultat SQL est fourni, base ta réponse EXCLUSIVEMENT sur ce résultat.
+# ============================================================================
+# DATABASE CONNECTION
+# ============================================================================
 
-- Réponds en langage naturel, sans mentionner les requêtes SQL dans les réponses.
-- Pour les questions ambiguës, demande des précisions.
-"""
-
-# Database connection
 def init_db_connection():
+    """Initialize database connection"""
     global engine, DB_AVAILABLE, DB_CONNECTION_ERROR
+    
     if engine is not None and DB_AVAILABLE:
         return engine
     
-    for attempt in range(DB_CONNECT_RETRIES):
+    if not DB_CONNECTION_STRING:
+        DB_CONNECTION_ERROR = "No connection string configured"
+        DB_AVAILABLE = False
+        return None
+    
+    for attempt in range(3):
         try:
-            logger.info(f"Attempting DB connection (attempt {attempt+1}/{DB_CONNECT_RETRIES})")
+            logger.info(f"Attempting DB connection (attempt {attempt+1}/3)")
             engine = create_engine(DB_CONNECTION_STRING, connect_args={"timeout": 30})
             with engine.connect() as conn:
-                result = conn.execute(text("SELECT 1 AS test_connection")).fetchone()
-                if result and result[0] == 1:
+                result = conn.execute(text("SELECT 1")).fetchone()
+                if result:
                     logger.info("Database connection successful")
                     DB_AVAILABLE = True
                     DB_CONNECTION_ERROR = ""
-                    
-                    # Vérification supplémentaire: tester l'accès aux tables principales
-                    try:
-                        tables_check = conn.execute(text("""
-                            SELECT TABLE_NAME 
-                            FROM INFORMATION_SCHEMA.TABLES 
-                            WHERE TABLE_TYPE = 'BASE TABLE' AND
-                            TABLE_NAME IN ('Equipments', 'DemandeInterventions', 'Pieces')
-                        """)).fetchall()
-                        
-                        table_names = [t[0] for t in tables_check]
-                        logger.info(f"Found critical tables: {table_names}")
-                        
-                        if 'Equipments' not in table_names:
-                            logger.warning("Table 'Equipments' not found in database")
-                        if 'DemandeInterventions' not in table_names:
-                            logger.warning("Table 'DemandeInterventions' not found in database")
-                        if 'Pieces' not in table_names:
-                            logger.warning("Table 'Pieces' not found in database")
-                    except Exception as e:
-                        logger.warning(f"Table verification failed: {e}")
-                        
                     return engine
         except Exception as e:
             DB_CONNECTION_ERROR = str(e)
             logger.error(f"DB connection error (attempt {attempt+1}): {e}")
-            logger.debug(traceback.format_exc())
-            if attempt < DB_CONNECT_RETRIES - 1:
-                time.sleep(DB_CONNECT_RETRY_DELAY)
+            if attempt < 2:
+                time.sleep(2)
     
     DB_AVAILABLE = False
     return None
 
 @contextmanager
 def db_connection():
+    """Context manager for database connections"""
     conn = None
     try:
         engine_instance = init_db_connection()
@@ -328,614 +417,1046 @@ def db_connection():
             conn = engine_instance.connect()
             yield conn
         else:
-            logger.error("Failed to get DB engine instance")
             yield None
     except Exception as e:
         logger.error(f"Error getting DB connection: {e}")
-        logger.debug(traceback.format_exc())
         yield None
     finally:
         if conn:
             try:
                 conn.close()
-            except Exception as e:
-                logger.error(f"Error closing DB connection: {e}")
+            except:
+                pass
 
-# Test database connection
-def test_db_connection():
-    try:
-        with db_connection() as connection:
-            if connection is None:
-                return {"status": "error", "message": f"DB connection failed: {DB_CONNECTION_ERROR}"}
-            
-            tables = connection.execute(text("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'")).fetchall()
-            tables = [row[0] for row in tables]
-            
-            test_results = {}
-            critical_tables = ["Equipments", "DemandeInterventions", "Pieces"]
-            for table in critical_tables:
-                try:
-                    if table in tables:
-                        count = connection.execute(text(f"SELECT COUNT(*) FROM {table}")).scalar()
-                        test_results[table] = {"status": "ok", "count": count}
-                    else:
-                        test_results[table] = {"status": "missing", "error": f"Table {table} not found"}
-                except Exception as e:
-                    test_results[table] = {"status": "error", "error": str(e)}
-            
-            # Test direct query
-            try:
-                current_date = connection.execute(text("SELECT GETDATE()")).scalar()
-                test_results["direct_query"] = {"status": "ok", "current_date": str(current_date)}
-            except Exception as e:
-                test_results["direct_query"] = {"status": "error", "error": str(e)}
-            
-            return {
-                "status": "ok",
-                "message": "DB connection successful",
-                "tables_count": len(tables),
-                "tables": tables[:20],
-                "critical_tables": test_results
-            }
-    except Exception as e:
-        logger.error(f"Error testing DB connection: {e}")
-        logger.error(traceback.format_exc())
-        return {"status": "error", "message": f"Error testing DB: {str(e)}"}
+# ============================================================================
+# AI PROVIDER FUNCTIONS
+# ============================================================================
 
-
-# Fetch GMAO data
-def fetch_gmao_data():
-    with db_connection() as connection:
-        if connection is None:
-            logger.error("No DB connection for fetching GMAO data")
-            return []
-        
-        data_texts = []
+def call_ai_provider(messages: List[Dict], provider: str = None, timeout: int = 30) -> Optional[str]:
+    """Call AI provider API with fallback support"""
+    providers_to_try = []
+    
+    if provider:
+        providers_to_try = [provider]
+    else:
+        providers_to_try = [PRIMARY_AI_PROVIDER] + FALLBACK_PROVIDERS if PRIMARY_AI_PROVIDER else []
+    
+    if not providers_to_try:
+        logger.error("No AI provider available")
+        return None
+    
+    for current_provider in providers_to_try:
+        config = AI_PROVIDERS.get(current_provider)
+        if not config or not config["api_key"]:
+            continue
         
         try:
-            logger.info("Fetching Equipments")
-            equipments = connection.execute(text("SELECT TOP 100 * FROM Equipments WHERE IsDeleted = 0")).fetchall()
-            logger.info(f"Retrieved {len(equipments)} equipment records")
-            for eq in equipments:
-                text_str = f"Equipment: Code={eq['CodeEquipement']}, Designation={eq['Designation']}, Criticite={eq['IdCriticite']}"
-                data_texts.append({"text": text_str, "metadata": {"table": "Equipments", "id": eq['IdEquipement']}})
-        except Exception as e:
-            logger.error(f"Error fetching Equipments: {e}")
-        
-        try:
-            logger.info("Fetching Interventions")
-            interventions = connection.execute(text("SELECT TOP 100 * FROM DemandeInterventions WHERE IsActif = 1")).fetchall()
-            logger.info(f"Retrieved {len(interventions)} intervention records")
-            for interv in interventions:
-                text_str = f"Intervention: ID={interv['IdDemandeIntervention']}, Title={interv['Titre']}, Status={interv['StatusId']}"
-                data_texts.append({"text": text_str, "metadata": {"table": "DemandeInterventions", "id": interv['IdDemandeIntervention']}})
-        except Exception as e:
-            logger.error(f"Error fetching Interventions: {e}")
-        
-        try:
-            logger.info("Fetching Pieces")
-            pieces = connection.execute(text("SELECT TOP 100 * FROM Pieces WHERE IsActif = 1")).fetchall()
-            logger.info(f"Retrieved {len(pieces)} piece records")
-            for piece in pieces:
-                text_str = f"Piece: Code={piece['CodePiece']}, Designation={piece['Designation']}, Stock={piece['Quantite_Stock']}"
-                data_texts.append({"text": text_str, "metadata": {"table": "Pieces", "id": piece['IdPiece']}})
-        except Exception as e:
-            logger.error(f"Error fetching Pieces: {e}")
-        
-        logger.info(f"Total GMAO data fetched: {len(data_texts)}")
-        return data_texts
-
-# RAG Enhancer
-class RAGEnhancer:
-    def __init__(self):
-        self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-        self.knowledge_base = []
-        self.index = None
-        self.dimension = 384
-        self.vectorstore = None
-        logger.info("RAG Enhancer initialized")
-    
-    def initialize_vectorstore(self, texts: List[str], metadata: List[Dict]):
-        try:
-            logger.info(f"Initializing vector store with {len(texts)} texts")
-            if not texts:
-                logger.warning("No texts for vector store init")
-                return
-            embeddings = OpenAIEmbeddings(openai_api_key=OPENROUTER_API_KEY, model="text-embedding-ada-002")
-            documents = [dict(content=text, metadata=meta) for text, meta in zip(texts, metadata)]
-            text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
-            docs = text_splitter.create_documents([d["content"] for d in documents])
-            self.vectorstore = FAISS.from_documents(docs, embeddings)
-            logger.info("Vector store initialized with OpenAI embeddings")
-        except Exception as e:
-            logger.error(f"OpenAI embeddings failed: {e}. Using SentenceTransformer.")
-            try:
-                embeddings = self.embedding_model.encode(texts, convert_to_numpy=True)
-                self.index = faiss.IndexFlatL2(self.dimension)
-                self.index.add(embeddings)
-                self.vectorstore = [{"text": text, "metadata": meta, "embedding": emb} for text, meta, emb in zip(texts, metadata, embeddings)]
-                logger.info("Vector store initialized with SentenceTransformer")
-            except Exception as inner_e:
-                logger.error(f"SentenceTransformer failed: {inner_e}")
-    
-    def add_to_knowledge_base(self, texts: List[str], metadata: List[Dict] = None):
-        if not texts:
-            logger.warning("No texts to add to knowledge base")
-            return
-        if metadata is None:
-            metadata = [{} for _ in texts]
-        logger.info(f"Adding {len(texts)} items to knowledge base")
-        self.initialize_vectorstore(texts, metadata)
-        self.knowledge_base.extend([{"text": text, "metadata": meta} for text, meta in zip(texts, metadata)])
-        logger.info(f"Knowledge base size: {len(self.knowledge_base)}")
-    
-    def search(self, query: str, k: int = 5) -> List[Dict]:
-        if self.vectorstore is None:
-            logger.warning("Vector store not initialized")
-            return []
-        
-        logger.info(f"Searching for: '{query}' (k={k})")
-        if isinstance(self.vectorstore, list):
-            try:
-                query_embedding = self.embedding_model.encode([query], convert_to_numpy=True)
-                distances, indices = self.index.search(query_embedding, k)
-                results = [{"text": self.vectorstore[idx]["text"], "metadata": self.vectorstore[idx]["metadata"]} for idx in indices[0] if idx < len(self.vectorstore)]
-                logger.info(f"Search returned {len(results)} results (SentenceTransformer)")
-                return results
-            except Exception as e:
-                logger.error(f"SentenceTransformer search error: {e}")
-                return []
-        else:
-            try:
-                docs = self.vectorstore.similarity_search(query, k=k)
-                results = [{"text": doc.page_content, "metadata": doc.metadata} for doc in docs]
-                logger.info(f"Search returned {len(results)} results (OpenAI)")
-                return results
-            except Exception as e:
-                logger.error(f"OpenAI embeddings search error: {e}")
-                return []
-
-# Visualization Generator
-class VisualizationGenerator:
-    def __init__(self):
-        self.supported_types = ["bar", "line", "pie", "scatter"]
-        logger.info("Visualization Generator initialized")
-    
-    def generate_chart(self, data: List[Dict], chart_type: str, title: str = "", x_column: str = None, y_column: str = None) -> str:
-        if chart_type not in self.supported_types or not data:
-            logger.warning(f"Unsupported chart type {chart_type} or no data")
-            return None
-        
-        try:
-            logger.info(f"Generating {chart_type} chart with {len(data)} points")
-            fig = Figure(figsize=(10, 6))
-            ax = fig.subplots()
-            df = pd.DataFrame(data)
+            logger.info(f"Trying AI provider: {current_provider}")
+            if current_provider == "gemini":
+                result = call_gemini(messages, config)
+            else:
+                result = call_openai_compatible(messages, config, current_provider)
             
-            if chart_type == "bar" and x_column and y_column:
-                sns.barplot(x=x_column, y=y_column, data=df, ax=ax)
-            elif chart_type == "pie" and x_column and y_column:
-                ax.pie(df[y_column], labels=df[x_column], autopct='%1.1f%%')
-            elif chart_type == "line" and x_column and y_column:
-                sns.lineplot(x=x_column, y=y_column, data=df, ax=ax)
-            elif chart_type == "scatter" and x_column and y_column:
-                sns.scatterplot(x=x_column, y=y_column, data=df, ax=ax)
-            
-            ax.set_title(title)
-            buf = io.BytesIO()
-            fig.savefig(buf, format="png")
-            buf.seek(0)
-            logger.info("Chart generated successfully")
-            return base64.b64encode(buf.read()).decode('utf-8')
+            if result:
+                return result
         except Exception as e:
-            logger.error(f"Error generating chart: {e}")
-            return None
-
-# Initialize global classes
-rag_enhancer = RAGEnhancer()
-visualization_generator = VisualizationGenerator()
-
-# Execute SQL query
-def execute_sql_query(query: str) -> str:
-    if not query.strip().upper().startswith("SELECT"):
-        logger.warning(f"Rejected non-SELECT query: {query}")
-        return "Erreur : Seules les requêtes SELECT sont autorisées."
+            logger.warning(f"Provider {current_provider} failed: {e}")
+            continue
     
-    try:
-        with db_connection() as connection:
-            if connection is None:
-                logger.error("DB connection failed during SQL execution")
-                return "Erreur : Connexion à la base de données échouée."
-            logger.info(f"Executing SQL query: {query}")
-            result = connection.execute(text(query))
-            rows = result.fetchall()
-            
-            if not rows:
-                logger.info("No results from SQL query")
-                return "Aucun résultat trouvé."
-            
-            logger.info(f"SQL query returned {len(rows)} rows")
-            output = [str(dict(row._mapping)) for row in rows[:100]]
-            if len(rows) > 100:
-                output.append("... (résultats tronqués à 100 lignes)")
-            return "\n".join(output)
-    except Exception as e:
-        logger.error(f"SQL execution error: {e}")
-        return f"Erreur SQL: {str(e)}"
+    logger.error("All AI providers failed")
+    return None
 
-# Query OpenRouter API
-def query_openrouter(messages, max_retries=3, timeout=60):
-    if not OPENROUTER_AVAILABLE:
-        logger.error("OpenRouter API key not configured")
-        return "Service AI indisponible."
-    
-    payload = {
-        "model": OPENROUTER_MODEL,
-        "messages": messages,
-        "temperature": 0.7,
-        "max_tokens": 1000
+def call_openai_compatible(messages: List[Dict], config: Dict, provider: str) -> Optional[str]:
+    """Call OpenAI-compatible API (OpenAI, DeepSeek, OpenRouter)"""
+    headers = {
+        "Authorization": f"Bearer {config['api_key']}",
+        "Content-Type": "application/json"
     }
     
-    for attempt in range(max_retries):
+    if provider == "openrouter":
+        headers["HTTP-Referer"] = "https://gmao.application"
+    
+    payload = {
+        "model": config["model"],
+        "messages": messages,
+        "temperature": 0.3,
+        "max_tokens": 2000
+    }
+    
+    for attempt in range(2):  # Reduced retries for faster failover
         try:
-            logger.info(f"OpenRouter request (attempt {attempt+1}/{max_retries})")
-            response = requests.post(OPENROUTER_URL, headers=openrouter_headers, json=payload, timeout=timeout)
+            logger.info(f"Calling {provider} API (attempt {attempt+1}/2)")
+            response = requests.post(
+                config["endpoint"],
+                headers=headers,
+                json=payload,
+                timeout=30  # Reduced timeout for faster failover
+            )
+            
             if response.status_code == 200:
                 result = response.json()
                 if "choices" in result and result["choices"]:
-                    logger.info("OpenRouter request successful")
-                    return result["choices"][0]["message"]["content"]
-            logger.warning(f"OpenRouter status {response.status_code}: {response.text}")
-            time.sleep(min(2 * (attempt + 1), 10))
+                    content = result["choices"][0]["message"]["content"]
+                    logger.info(f"{provider} API call successful")
+                    return content
+            else:
+                logger.warning(f"{provider} API error {response.status_code}: {response.text[:200]}")
         except Exception as e:
-            logger.warning(f"OpenRouter attempt {attempt+1} failed: {e}")
-            time.sleep(min(2 * (attempt + 1), 10))
+            logger.warning(f"{provider} attempt {attempt+1} failed: {e}")
+        
+        time.sleep(2 * (attempt + 1))
     
-    logger.error("All OpenRouter attempts failed")
-    return "Erreur de communication avec le service IA."
+    return None
 
-# Extract SQL query
-def extract_sql_query(response_text: str) -> Tuple[bool, Optional[str], str]:
-    import re
-    sql_pattern = r"\[EXECUTE_SQL:\s*(.*?)\]"
-    match = re.search(sql_pattern, response_text, re.DOTALL)
+def call_gemini(messages: List[Dict], config: Dict) -> Optional[str]:
+    """Call Google Gemini API"""
+    url = f"{config['endpoint']}?key={config['api_key']}"
+    
+    # Convert messages to Gemini format
+    contents = []
+    for msg in messages:
+        role = "user" if msg["role"] in ["user", "system"] else "model"
+        contents.append({
+            "role": role,
+            "parts": [{"text": msg["content"]}]
+        })
+    
+    payload = {
+        "contents": contents,
+        "generationConfig": {
+            "temperature": 0.3,
+            "maxOutputTokens": 2000
+        }
+    }
+    
+    try:
+        logger.info("Calling Gemini API")
+        response = requests.post(url, json=payload, timeout=30)
+        logger.info(f"Gemini API status: {response.status_code}")
+        if response.status_code == 200:
+            result = response.json()
+            if "candidates" in result and result["candidates"]:
+                content = result["candidates"][0]["content"]["parts"][0]["text"]
+                logger.info("Gemini API call successful")
+                return content
+        else:
+            logger.warning(f"Gemini API error: {response.text[:200]}")
+    except Exception as e:
+        logger.error(f"Gemini API error: {e}")
+    
+    return None
+
+# ============================================================================
+# DATE PARSING
+# ============================================================================
+
+FRENCH_MONTHS = {
+    "janvier": 1, "février": 2, "fevrier": 2, "mars": 3, "avril": 4,
+    "mai": 5, "juin": 6, "juillet": 7, "août": 8, "aout": 8,
+    "septembre": 9, "octobre": 10, "novembre": 11, "décembre": 12, "decembre": 12
+}
+
+def parse_french_date(text: str) -> Optional[str]:
+    """Parse French date expressions and return SQL date string"""
+    text_lower = text.lower()
+    today = datetime.now()
+    
+    # Handle relative dates
+    if "aujourd'hui" in text_lower or "aujourd hui" in text_lower:
+        return today.strftime("%Y-%m-%d")
+    
+    if "hier" in text_lower:
+        return (today - timedelta(days=1)).strftime("%Y-%m-%d")
+    
+    if "demain" in text_lower:
+        return (today + timedelta(days=1)).strftime("%Y-%m-%d")
+    
+    if "cette semaine" in text_lower:
+        start_of_week = today - timedelta(days=today.weekday())
+        return f"BETWEEN '{start_of_week.strftime('%Y-%m-%d')}' AND '{today.strftime('%Y-%m-%d')}'"
+    
+    if "ce mois" in text_lower or "ce mois-ci" in text_lower:
+        return f"MONTH = {today.month} AND YEAR = {today.year}"
+    
+    # Handle specific dates like "2 juin" or "15 décembre 2025"
+    date_patterns = [
+        r"(\d{1,2})\s+(janvier|février|fevrier|mars|avril|mai|juin|juillet|août|aout|septembre|octobre|novembre|décembre|decembre)\s*(\d{4})?",
+        r"(\d{1,2})/(\d{1,2})/(\d{4})",
+        r"(\d{4})-(\d{1,2})-(\d{1,2})"
+    ]
+    
+    # Pattern: "2 juin 2025" or "2 juin"
+    match = re.search(date_patterns[0], text_lower)
     if match:
-        sql_query = match.group(1).strip()
-        clean_response = re.sub(sql_pattern, "", response_text, re.DOTALL).strip()
-        logger.info(f"Extracted SQL query: {sql_query}")
-        return True, sql_query, clean_response
-    return False, None, response_text
+        day = int(match.group(1))
+        month = FRENCH_MONTHS.get(match.group(2))
+        year = int(match.group(3)) if match.group(3) else today.year
+        if month:
+            return f"{year}-{month:02d}-{day:02d}"
+    
+    # Handle month names alone
+    for month_name, month_num in FRENCH_MONTHS.items():
+        if month_name in text_lower:
+            year = today.year
+            # Check if year is mentioned
+            year_match = re.search(r"(\d{4})", text_lower)
+            if year_match:
+                year = int(year_match.group(1))
+            return f"MONTH_YEAR:{month_num}:{year}"
+    
+    return None
 
-# Test endpoint
+# ============================================================================
+# SQL QUERY GENERATION
+# ============================================================================
+
+def get_sql_generation_prompt() -> str:
+    """Get the system prompt for SQL generation"""
+    current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return f"""Tu es un expert SQL Server pour une application GMAO (Gestion de Maintenance Assistée par Ordinateur).
+La date actuelle est: {current_date}
+
+{DATABASE_SCHEMA}
+
+### RÈGLE PRINCIPALE - TRÈS IMPORTANTE:
+Tu dois TOUJOURS essayer de générer une requête SQL pour TOUTE question qui pourrait concerner les données GMAO.
+Les données GMAO incluent: utilisateurs, rôles, interventions, équipements, stocks, pannes, urgences, statuts, etc.
+Si l'utilisateur mentionne un nom de personne, une entité, un équipement, ou tout autre terme qui pourrait être dans la base, génère une requête SQL.
+
+### Instructions pour générer des requêtes SQL:
+1. Génère UNIQUEMENT des requêtes SELECT (pas de modification de données)
+2. Utilise TOUJOURS des alias clairs pour les colonnes
+3. Pour les dates:
+   - Aujourd'hui: CAST(GETDATE() AS DATE)
+   - Comparaison de dates: CAST(column AS DATE) = 'YYYY-MM-DD'
+   - Mois spécifique: MONTH(column) = X AND YEAR(column) = Y
+4. Pour les enregistrements actifs:
+   - Tables avec IsActif: WHERE IsActif = 1
+   - Tables avec IsDeleted: WHERE IsDeleted = 0
+5. Joins importants:
+   - DemandeInterventions -> Statuses ON StatusId = Id
+   - DemandeInterventions -> Users ON DemandeursID = ID (Demandeur)
+   - DemandeInterventions -> Users ON DestinatairesID = ID (Destinataire)
+   - DemandeInterventions -> Urgences ON IDUrgence = IDUrgence
+   - DemandeInterventions -> TypeInterventions ON IDTypeIntervention = IDTypeIntervention
+   - Equipments -> EquipmentCriticites ON IdCriticite = IdCriticite
+   - Equipments -> EtatEquipements ON IdEtat = IdEtat
+   - Users -> Roles ON IDRole = IDRole
+
+### Questions sur des personnes spécifiques (TRÈS IMPORTANT):
+Quand l'utilisateur mentionne un NOM de personne (ex: Loujain, Ahmed, Mohamed, etc.) et demande:
+- Son rôle -> SELECT u.ID, u.Nom, u.Prenom, u.Email, r.Libelle as Role FROM Users u LEFT JOIN Roles r ON u.IDRole = r.IDRole WHERE u.Nom LIKE '%NomPersonne%' OR u.Prenom LIKE '%NomPersonne%'
+- Ses informations -> SELECT u.* , r.Libelle as Role FROM Users u LEFT JOIN Roles r ON u.IDRole = r.IDRole WHERE u.Nom LIKE '%NomPersonne%' OR u.Prenom LIKE '%NomPersonne%'
+- Ses interventions créées -> SELECT d.*, s.Statut FROM DemandeInterventions d LEFT JOIN Statuses s ON d.StatusId = s.Id LEFT JOIN Users u ON d.DemandeursID = u.ID WHERE (u.Nom LIKE '%NomPersonne%' OR u.Prenom LIKE '%NomPersonne%') AND d.IsActif = 1
+- Ses interventions assignées -> SELECT d.*, s.Statut FROM DemandeInterventions d LEFT JOIN Statuses s ON d.StatusId = s.Id LEFT JOIN Users u ON d.DestinatairesID = u.ID WHERE (u.Nom LIKE '%NomPersonne%' OR u.Prenom LIKE '%NomPersonne%') AND d.IsActif = 1
+
+### Exemples de requêtes pour différentes questions:
+1. "Quel est le rôle de Loujain?" -> SELECT u.ID, u.Nom, u.Prenom, u.Email, r.Libelle as Role FROM Users u LEFT JOIN Roles r ON u.IDRole = r.IDRole WHERE u.Nom LIKE '%Loujain%' OR u.Prenom LIKE '%Loujain%'
+2. "Qui est Ahmed?" -> SELECT u.ID, u.Nom, u.Prenom, u.Email, u.DateCreation, r.Libelle as Role FROM Users u LEFT JOIN Roles r ON u.IDRole = r.IDRole WHERE u.Nom LIKE '%Ahmed%' OR u.Prenom LIKE '%Ahmed%'
+3. "Liste des demandeurs" -> SELECT u.ID, u.Nom, u.Prenom, u.Email, r.Libelle as Role FROM Users u LEFT JOIN Roles r ON u.IDRole = r.IDRole WHERE r.Libelle LIKE '%Demandeur%'
+4. "Quels sont les techniciens?" -> SELECT u.ID, u.Nom, u.Prenom, u.Email FROM Users u LEFT JOIN Roles r ON u.IDRole = r.IDRole WHERE r.Libelle LIKE '%Technicien%'
+5. "Combien d'utilisateurs par rôle?" -> SELECT r.Libelle as Role, COUNT(u.ID) as NombreUtilisateurs FROM Users u LEFT JOIN Roles r ON u.IDRole = r.IDRole WHERE u.IsActif = 1 GROUP BY r.Libelle
+6. "Liste tous les rôles" -> SELECT IDRole, Libelle FROM Roles
+
+### Format de réponse:
+Réponds UNIQUEMENT avec la requête SQL, sans explication ni markdown ni backticks.
+Réponds NO_SQL_NEEDED SEULEMENT si la question est CLAIREMENT hors sujet (météo, actualités, blagues, questions philosophiques).
+En cas de doute, génère TOUJOURS une requête SQL appropriée.
+"""
+
+# Predefined SQL queries for common questions (fallback when AI is unavailable)
+PREDEFINED_QUERIES = {
+    "interventions_today": """
+        SELECT TOP 20 
+            d.IdDemandeIntervention as ID,
+            d.Titre,
+            s.Statut as Status,
+            u.Nom + ' ' + u.Prenom as Demandeur,
+            d.DateCreation
+        FROM DemandeInterventions d
+        LEFT JOIN Statuses s ON d.StatusId = s.Id
+        LEFT JOIN Users u ON d.DemandeursID = u.ID
+        WHERE CAST(d.DateCreation AS DATE) = CAST(GETDATE() AS DATE)
+        AND d.IsActif = 1
+        ORDER BY d.DateCreation DESC
+    """,
+    "interventions_yesterday": """
+        SELECT TOP 20 
+            d.IdDemandeIntervention as ID,
+            d.Titre,
+            s.Statut as Status,
+            u.Nom + ' ' + u.Prenom as Demandeur,
+            d.DateCreation
+        FROM DemandeInterventions d
+        LEFT JOIN Statuses s ON d.StatusId = s.Id
+        LEFT JOIN Users u ON d.DemandeursID = u.ID
+        WHERE CAST(d.DateCreation AS DATE) = CAST(GETDATE() - 1 AS DATE)
+        AND d.IsActif = 1
+        ORDER BY d.DateCreation DESC
+    """,
+    "interventions_all": """
+        SELECT TOP 20 
+            d.IdDemandeIntervention as ID,
+            d.Titre,
+            s.Statut as Status,
+            u.Nom + ' ' + u.Prenom as Demandeur,
+            d.DateCreation
+        FROM DemandeInterventions d
+        LEFT JOIN Statuses s ON d.StatusId = s.Id
+        LEFT JOIN Users u ON d.DemandeursID = u.ID
+        WHERE d.IsActif = 1
+        ORDER BY d.DateCreation DESC
+    """,
+    "interventions_urgent": """
+        SELECT TOP 20 
+            d.IdDemandeIntervention as ID,
+            d.Titre,
+            s.Statut as Status,
+            ur.Libelle as Urgence,
+            u.Nom + ' ' + u.Prenom as Demandeur,
+            d.DateCreation
+        FROM DemandeInterventions d
+        LEFT JOIN Statuses s ON d.StatusId = s.Id
+        LEFT JOIN Urgences ur ON d.IDUrgence = ur.IDUrgence
+        LEFT JOIN Users u ON d.DemandeursID = u.ID
+        WHERE d.IsActif = 1 AND ur.Libelle LIKE '%urgent%'
+        ORDER BY d.DateCreation DESC
+    """,
+    "equipments_all": """
+        SELECT TOP 20 
+            e.IdEquipement as ID,
+            e.CodeEquipement as Code,
+            e.Designation,
+            ec.NomCriticite as Criticite,
+            ee.NomEtat as Etat
+        FROM Equipments e
+        LEFT JOIN EquipmentCriticites ec ON e.IdCriticite = ec.IdCriticite
+        LEFT JOIN EtatEquipements ee ON e.IdEtat = ee.IdEtat
+        WHERE e.IsDeleted = 0
+        ORDER BY e.Designation
+    """,
+    "equipments_breakdown": """
+        SELECT TOP 20 
+            e.IdEquipement as ID,
+            e.CodeEquipement as Code,
+            e.Designation,
+            ec.NomCriticite as Criticite,
+            ee.NomEtat as Etat
+        FROM Equipments e
+        LEFT JOIN EquipmentCriticites ec ON e.IdCriticite = ec.IdCriticite
+        LEFT JOIN EtatEquipements ee ON e.IdEtat = ee.IdEtat
+        WHERE e.IsDeleted = 0 AND ee.NomEtat LIKE '%panne%'
+        ORDER BY e.Designation
+    """,
+    "stocks_all": """
+        SELECT TOP 20 
+            s.Id,
+            s.Code,
+            s.Description,
+            se.Name as Entite,
+            ss.Name as Status
+        FROM Stocks s
+        LEFT JOIN StockEntities se ON s.StockEntitiesId = se.Id
+        LEFT JOIN StockStatus ss ON s.StockStatusId = ss.Id
+        WHERE s.IsDeleted = 0
+        ORDER BY s.Description
+    """,
+    "users_all": """
+        SELECT TOP 20 
+            u.ID,
+            u.Nom,
+            u.Prenom,
+            u.Email,
+            r.Libelle as Role
+        FROM Users u
+        LEFT JOIN Roles r ON u.IDRole = r.IDRole
+        WHERE u.IsActif = 1
+        ORDER BY u.Nom, u.Prenom
+    """,
+    "statistics": """
+        SELECT 
+            (SELECT COUNT(*) FROM DemandeInterventions WHERE IsActif = 1) as TotalInterventions,
+            (SELECT COUNT(*) FROM DemandeInterventions WHERE IsActif = 1 AND CAST(DateCreation AS DATE) = CAST(GETDATE() AS DATE)) as InterventionsAujourdhui,
+            (SELECT COUNT(*) FROM Equipments WHERE IsDeleted = 0) as TotalEquipements,
+            (SELECT COUNT(*) FROM Stocks WHERE IsDeleted = 0) as TotalStock,
+            (SELECT COUNT(*) FROM Users WHERE IsActif = 1) as TotalUtilisateurs
+    """
+}
+
+def extract_person_name(question: str) -> Optional[str]:
+    """Extract a person's name from the question for user-specific queries"""
+    
+    # Common patterns for asking about a person - ORDER MATTERS (more specific first)
+    # French patterns
+    patterns = [
+        # "nommé X", "appelé X", "s'appelle X" - MUST be first to catch names after these words
+        r"(?:nommé|appelé|s'appelle|s\'appelle|appelle)\s+([A-Za-zÀ-ÿ]+)",
+        # "utilisateur X" but NOT "utilisateur nommé" (handled above)
+        r"utilisateur\s+(?!nommé|appelé)([A-Za-zÀ-ÿ]+)",
+        # "user X"
+        r"user\s+([A-Za-zÀ-ÿ]+)",
+        # "rôle de X", "role de X"
+        r"(?:quel(?:le)?s?\s+(?:est|sont)\s+(?:le|la|les)\s+)?r[oô]le(?:s)?\s+(?:de|du|d'|pour)\s+([A-Za-zÀ-ÿ]+)",
+        # "qui est X", "c'est qui X"
+        r"(?:qui\s+est|c'est\s+qui)\s+([A-Za-zÀ-ÿ]+)",
+        # "infos sur X", "informations de X"
+        r"(?:info(?:rmation)?s?\s+(?:sur|de|du|d'))\s+([A-Za-zÀ-ÿ]+)",
+        # "X fait quoi", "X est quel"
+        r"([A-Za-zÀ-ÿ]+)\s+(?:est|fait)\s+(?:quoi|quel)",
+        # "le rôle de X", "le poste de X"
+        r"(?:le\s+)?(?:rôle|role|poste|fonction)\s+(?:de|du|d')\s+([A-Za-zÀ-ÿ]+)",
+        # "existe X", "y a X", "il y a X" (for checking if user exists)
+        r"(?:existe|y\s*a(?:-t-il)?|il\s+y\s+a)\s+(?:un\s+)?(?:utilisateur\s+)?(?:nommé\s+|appelé\s+)?([A-Za-zÀ-ÿ]+)(?:\s+dans)?",
+        # Last resort: capitalized word that looks like a name (at least 3 chars, starts with capital)
+        r"\b([A-Z][a-zÀ-ÿ]{2,})\b",
+    ]
+    
+    # Filter out common French words that aren't names
+    stop_words = {'le', 'la', 'les', 'de', 'du', 'des', 'un', 'une', 'ce', 'cette', 
+                 'qui', 'que', 'quoi', 'quel', 'quelle', 'est', 'sont', 'pour',
+                 'dans', 'avec', 'sur', 'utilisateur', 'user', 'role', 'rôle',
+                 'nommé', 'nomme', 'appelé', 'appele', 'notre', 'votre', 'leur',
+                 'application', 'intervention', 'interventions', 'equipement',
+                 'équipement', 'stock', 'maintenance', 'gmao', 'systeme', 'système',
+                 'bonjour', 'salut', 'merci', 'oui', 'non', 'comment', 'pourquoi',
+                 'quand', 'combien', 'affiche', 'montre', 'donne', 'liste', 'tous',
+                 'toutes', 'aucun', 'aucune', 'existe', 'assistant', 'aide',
+                 'introduisez', 'présentez', 'presentez', 'vous', 'toi', 'moi',
+                 'etes', 'êtes', 'suis', 'peux', 'peut', 'faire', 'fais', 'fait'}
+    
+    for pattern in patterns:
+        match = re.search(pattern, question, re.IGNORECASE)
+        if match:
+            name = match.group(1).strip()
+            # Check if it's not a stop word and has reasonable length
+            if name.lower() not in stop_words and len(name) >= 2:
+                # Additional check: if it's from the last-resort pattern, verify it looks like a name
+                if pattern == r"\b([A-Z][a-zÀ-ÿ]{2,})\b":
+                    # Must be capitalized in original question
+                    if name not in question:
+                        continue
+                return name
+    
+    return None
+
+def generate_user_query(name: str, query_type: str = "role") -> str:
+    """Generate SQL query for user-specific information"""
+    # Escape single quotes in name to prevent SQL injection
+    safe_name = name.replace("'", "''")
+    
+    if query_type == "role":
+        return f"""
+            SELECT 
+                u.ID,
+                u.Nom,
+                u.Prenom,
+                u.Email,
+                r.Libelle as Role,
+                u.DateCreation,
+                u.IsActif
+            FROM Users u
+            LEFT JOIN Roles r ON u.IDRole = r.IDRole
+            WHERE u.Nom LIKE '%{safe_name}%' OR u.Prenom LIKE '%{safe_name}%'
+        """
+    elif query_type == "interventions":
+        return f"""
+            SELECT TOP 20
+                d.IdDemandeIntervention as ID,
+                d.Titre,
+                s.Statut as Status,
+                d.DateCreation,
+                CASE 
+                    WHEN d.DemandeursID = u.ID THEN 'Demandeur'
+                    WHEN d.DestinatairesID = u.ID THEN 'Destinataire'
+                END as TypeParticipation
+            FROM DemandeInterventions d
+            LEFT JOIN Statuses s ON d.StatusId = s.Id
+            LEFT JOIN Users u ON d.DemandeursID = u.ID OR d.DestinatairesID = u.ID
+            WHERE (u.Nom LIKE '%{safe_name}%' OR u.Prenom LIKE '%{safe_name}%')
+            AND d.IsActif = 1
+            ORDER BY d.DateCreation DESC
+        """
+    elif query_type == "exists":
+        # Query to check if user exists and get their info
+        return f"""
+            SELECT 
+                u.ID,
+                u.Nom,
+                u.Prenom,
+                u.Email,
+                r.Libelle as Role,
+                u.DateCreation,
+                u.IsActif,
+                CASE WHEN u.ID IS NOT NULL THEN 'Oui' ELSE 'Non' END as Existe
+            FROM Users u
+            LEFT JOIN Roles r ON u.IDRole = r.IDRole
+            WHERE u.Nom LIKE '%{safe_name}%' OR u.Prenom LIKE '%{safe_name}%'
+        """
+    else:
+        return f"""
+            SELECT 
+                u.ID,
+                u.Nom,
+                u.Prenom,
+                u.Email,
+                r.Libelle as Role,
+                u.DateCreation,
+                u.DateModification,
+                u.IsActif
+            FROM Users u
+            LEFT JOIN Roles r ON u.IDRole = r.IDRole
+            WHERE u.Nom LIKE '%{safe_name}%' OR u.Prenom LIKE '%{safe_name}%'
+        """
+
+def get_predefined_query(user_question: str) -> Optional[str]:
+    """Match user question to predefined SQL query"""
+    q = user_question.lower()
+    
+    # Interventions
+    if "intervention" in q:
+        if "aujourd'hui" in q or "aujourd hui" in q or "du jour" in q:
+            return PREDEFINED_QUERIES["interventions_today"]
+        elif "hier" in q:
+            return PREDEFINED_QUERIES["interventions_yesterday"]
+        elif "urgent" in q:
+            return PREDEFINED_QUERIES["interventions_urgent"]
+        else:
+            return PREDEFINED_QUERIES["interventions_all"]
+    
+    # Also check for date-specific queries without "intervention" keyword
+    if "hier" in q and ("réalisé" in q or "realise" in q or "fait" in q or "effectué" in q or "effectue" in q):
+        return PREDEFINED_QUERIES["interventions_yesterday"]
+    
+    # Equipments
+    if "équipement" in q or "equipement" in q or "machine" in q:
+        if "panne" in q:
+            return PREDEFINED_QUERIES["equipments_breakdown"]
+        else:
+            return PREDEFINED_QUERIES["equipments_all"]
+    
+    # Stock
+    if "stock" in q or "pièce" in q or "piece" in q:
+        return PREDEFINED_QUERIES["stocks_all"]
+    
+    # Users - general list
+    if "utilisateur" in q or "technicien" in q or "superviseur" in q or ("nom" in q and ("user" in q or "application" in q or "système" in q or "systeme" in q)):
+        return PREDEFINED_QUERIES["users_all"]
+    
+    # Statistics
+    if "statistique" in q or "combien" in q or "nombre" in q or "total" in q:
+        return PREDEFINED_QUERIES["statistics"]
+    
+    return None
+
+def generate_sql_query(user_question: str) -> Optional[str]:
+    """Use AI to generate SQL query from user question"""
+    
+    # First, check if the question is about a specific person (by name)
+    person_name = extract_person_name(user_question)
+    if person_name:
+        logger.info(f"Detected person name in query: {person_name}")
+        q_lower = user_question.lower()
+        # Determine query type based on question context
+        if "intervention" in q_lower:
+            return generate_user_query(person_name, "interventions")
+        elif "rôle" in q_lower or "role" in q_lower or "qui est" in q_lower or "c'est qui" in q_lower or "fonction" in q_lower or "poste" in q_lower:
+            return generate_user_query(person_name, "role")
+        else:
+            # Default to checking if user exists with full info
+            return generate_user_query(person_name, "exists")
+    
+    # Then try predefined queries (instant, no AI needed)
+    predefined = get_predefined_query(user_question)
+    if predefined:
+        logger.info("Using predefined SQL query")
+        return predefined
+    
+    # Parse date from question
+    date_info = parse_french_date(user_question)
+    date_context = ""
+    if date_info:
+        if date_info.startswith("MONTH_YEAR:"):
+            parts = date_info.split(":")
+            date_context = f"\nNote: L'utilisateur demande les données du mois {parts[1]} de l'année {parts[2]}. Utilise: MONTH(DateCreation) = {parts[1]} AND YEAR(DateCreation) = {parts[2]}"
+        elif date_info.startswith("BETWEEN"):
+            date_context = f"\nNote: L'utilisateur demande les données de la semaine. Utilise: CAST(DateCreation AS DATE) {date_info}"
+        else:
+            date_context = f"\nNote: L'utilisateur demande les données du {date_info}. Utilise: CAST(DateCreation AS DATE) = '{date_info}'"
+    
+    messages = [
+        {"role": "system", "content": get_sql_generation_prompt()},
+        {"role": "user", "content": f"Question: {user_question}{date_context}\n\nGénère la requête SQL appropriée."}
+    ]
+    
+    sql = call_ai_provider(messages)
+    if sql:
+        sql = sql.strip()
+        # Clean up any markdown formatting
+        sql = re.sub(r'^```sql\s*', '', sql)
+        sql = re.sub(r'^```\s*', '', sql)
+        sql = re.sub(r'\s*```$', '', sql)
+        sql = sql.strip()
+        
+        if sql == "NO_SQL_NEEDED":
+            return None
+        
+        # Validate it's a SELECT query
+        if sql.upper().startswith("SELECT"):
+            return sql
+    
+    return None
+
+def execute_sql_query(query: str) -> Tuple[bool, str, List[Dict]]:
+    """Execute SQL query and return results"""
+    if not query.strip().upper().startswith("SELECT"):
+        return False, "Seules les requêtes SELECT sont autorisées.", []
+    
+    try:
+        with db_connection() as conn:
+            if conn is None:
+                return False, "Connexion à la base de données échouée.", []
+            
+            logger.info(f"Executing SQL: {query}")
+            result = conn.execute(text(query))
+            rows = result.fetchall()
+            columns = result.keys()
+            
+            if not rows:
+                return True, "Aucun résultat trouvé.", []
+            
+            # Convert to list of dicts
+            data = []
+            for row in rows[:100]:  # Limit to 100 rows
+                row_dict = {}
+                for i, col in enumerate(columns):
+                    value = row[i]
+                    # Handle datetime serialization
+                    if isinstance(value, datetime):
+                        value = value.strftime("%Y-%m-%d %H:%M:%S")
+                    row_dict[col] = value
+                data.append(row_dict)
+            
+            logger.info(f"Query returned {len(data)} rows")
+            return True, f"Trouvé {len(rows)} résultat(s).", data
+            
+    except Exception as e:
+        logger.error(f"SQL execution error: {e}")
+        return False, f"Erreur SQL: {str(e)}", []
+
+# ============================================================================
+# RESPONSE GENERATION
+# ============================================================================
+
+def generate_no_result_response(user_question: str, person_name: Optional[str] = None) -> str:
+    """Generate a contextual response when no results are found"""
+    q = user_question.lower()
+    
+    # If we searched for a specific person
+    if person_name:
+        if "rôle" in q or "role" in q:
+            return f"Je n'ai trouvé aucun utilisateur nommé **{person_name}** dans la base de données. Vérifiez l'orthographe du nom ou essayez avec un autre nom."
+        elif "intervention" in q:
+            return f"Aucune intervention trouvée pour l'utilisateur **{person_name}**. Soit cet utilisateur n'existe pas, soit il n'a pas d'interventions associées."
+        elif "existe" in q or "y a" in q or "il y a" in q:
+            return f"Non, l'utilisateur **{person_name}** n'existe pas dans notre base de données."
+        else:
+            return f"Je n'ai trouvé aucune information sur **{person_name}** dans la base de données. Cet utilisateur n'existe peut-être pas."
+    
+    # Contextual responses based on query type
+    if "intervention" in q or "réalisé" in q or "realise" in q:
+        if "aujourd'hui" in q or "aujourd hui" in q or "du jour" in q:
+            return "Il n'y a **aucune intervention** enregistrée pour aujourd'hui."
+        elif "hier" in q:
+            return "Il n'y a **aucune intervention** enregistrée pour hier."
+        elif "urgent" in q:
+            return "Bonne nouvelle ! Il n'y a **aucune intervention urgente** en cours."
+        else:
+            return "Aucune intervention trouvée correspondant à vos critères."
+    
+    if "équipement" in q or "equipement" in q or "machine" in q:
+        if "panne" in q:
+            return "Excellente nouvelle ! **Aucun équipement n'est actuellement en panne.**"
+        else:
+            return "Aucun équipement trouvé correspondant à vos critères."
+    
+    if "stock" in q or "pièce" in q:
+        return "Aucun article en stock ne correspond à vos critères de recherche."
+    
+    if "utilisateur" in q or "user" in q:
+        return "Aucun utilisateur trouvé correspondant à vos critères."
+    
+    # Default response
+    return "Aucun résultat trouvé pour votre requête. Essayez de reformuler votre question ou vérifiez les critères de recherche."
+
+def format_simple_response(user_question: str, sql_data: List[Dict]) -> str:
+    """Generate a simple formatted response without AI (fallback)"""
+    if not sql_data:
+        return generate_no_result_response(user_question)
+    
+    q = user_question.lower()
+    
+    # Format based on query type
+    if "statistique" in q or "combien" in q or "nombre" in q or "total" in q:
+        if len(sql_data) == 1:
+            stats = sql_data[0]
+            lines = ["**Statistiques GMAO:**", ""]
+            for key, value in stats.items():
+                # Make keys more readable
+                readable_key = key.replace("Total", "Total ").replace("Aujourdhui", "Aujourd'hui")
+                lines.append(f"- {readable_key}: **{value}**")
+            return "\n".join(lines)
+    
+    # Default table format
+    if len(sql_data) > 0:
+        # Get column names
+        columns = list(sql_data[0].keys())
+        
+        # Build response
+        lines = [f"**Résultats ({len(sql_data)} enregistrement(s)):**", ""]
+        
+        for i, row in enumerate(sql_data[:20], 1):  # Limit to 20 rows
+            row_parts = []
+            for col, val in row.items():
+                if val is not None:
+                    row_parts.append(f"{col}: {val}")
+            lines.append(f"{i}. " + " | ".join(row_parts))
+        
+        if len(sql_data) > 20:
+            lines.append(f"\n*...et {len(sql_data) - 20} autres résultats*")
+        
+        return "\n".join(lines)
+    
+    return "Aucun résultat trouvé."
+
+def get_response_prompt() -> str:
+    """Get system prompt for response generation"""
+    current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return f"""Tu es un assistant IA expert en GMAO (Gestion de Maintenance Assistée par Ordinateur).
+La date et l'heure actuelles sont: {current_date}
+
+Tu aides les superviseurs et techniciens à comprendre et gérer leur système de maintenance.
+
+### Règles de réponse:
+1. Réponds TOUJOURS en français
+2. Base tes réponses UNIQUEMENT sur les données fournies
+3. Si des données SQL sont fournies, utilise-les pour construire ta réponse
+4. Présente les informations de manière claire et structurée
+5. Utilise des listes à puces ou des tableaux si approprié
+6. N'invente JAMAIS de données qui ne sont pas dans le contexte
+7. Si tu n'as pas assez d'informations, dis-le clairement
+
+### Domaines d'expertise:
+- Interventions et demandes de maintenance
+- Équipements et leur état
+- Stocks et pièces de rechange
+- Statistiques et rapports de maintenance
+- Gestion des priorités et urgences
+"""
+
+def generate_response(user_question: str, sql_data: List[Dict], conversation_history: List[Dict] = None) -> str:
+    """Generate natural language response from SQL data"""
+    
+    messages = [{"role": "system", "content": get_response_prompt()}]
+    
+    # Add conversation history
+    if conversation_history:
+        for msg in conversation_history[-5:]:
+            if isinstance(msg, dict) and "role" in msg and "content" in msg:
+                messages.append({"role": msg["role"], "content": msg["content"]})
+    
+    # Format data context
+    if sql_data:
+        data_text = json.dumps(sql_data, ensure_ascii=False, indent=2, default=str)
+        context = f"""Question de l'utilisateur: {user_question}
+
+Données de la base GMAO:
+{data_text}
+
+Génère une réponse claire et utile basée UNIQUEMENT sur ces données."""
+    else:
+        context = f"""Question de l'utilisateur: {user_question}
+
+Aucune donnée spécifique n'a été trouvée dans la base. Réponds de manière générale ou demande des précisions."""
+    
+    messages.append({"role": "user", "content": context})
+    
+    response = call_ai_provider(messages)
+    return response or "Je suis désolé, je n'ai pas pu générer une réponse. Veuillez réessayer."
+
+def generate_general_response(user_question: str, conversation_history: List[Dict] = None) -> str:
+    """Generate response for non-database questions"""
+    
+    messages = [{"role": "system", "content": get_response_prompt()}]
+    
+    if conversation_history:
+        for msg in conversation_history[-5:]:
+            if isinstance(msg, dict) and "role" in msg and "content" in msg:
+                messages.append({"role": msg["role"], "content": msg["content"]})
+    
+    messages.append({"role": "user", "content": user_question})
+    
+    response = call_ai_provider(messages)
+    return response or "Je suis désolé, je n'ai pas pu générer une réponse. Veuillez réessayer."
+
+# ============================================================================
+# FASTAPI APPLICATION
+# ============================================================================
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan handler"""
+    logger.info("Starting GMAO Chatbot Service...")
+    
+    # Initialize database connection
+    init_db_connection()
+    if DB_AVAILABLE:
+        logger.info("Database connection initialized successfully")
+    else:
+        logger.warning(f"Database not available: {DB_CONNECTION_ERROR}")
+    
+    # Log AI provider status
+    if PRIMARY_AI_PROVIDER:
+        logger.info(f"AI provider ready: {PRIMARY_AI_PROVIDER}")
+    else:
+        logger.error("No AI provider configured!")
+    
+    yield
+    
+    logger.info("Shutting down GMAO Chatbot Service...")
+
+app = FastAPI(
+    title="GMAO Chatbot Service",
+    description="Intelligent AI assistant for GMAO database queries",
+    version="2.0.0",
+    lifespan=lifespan
+)
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return {"message": "GMAO Chatbot Service v2.0", "status": "running"}
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {
+        "status": "ok" if DB_AVAILABLE and PRIMARY_AI_PROVIDER else "degraded",
+        "database": {
+            "status": "ok" if DB_AVAILABLE else "error",
+            "error": DB_CONNECTION_ERROR if not DB_AVAILABLE else None
+        },
+        "ai_provider": {
+            "status": "ok" if PRIMARY_AI_PROVIDER else "error",
+            "provider": PRIMARY_AI_PROVIDER
+        },
+        "timestamp": datetime.now().isoformat()
+    }
+
 @app.get("/test")
 async def test_endpoint():
-    db_test_result = test_db_connection()
-    db_status = db_test_result.get("status", "unknown")
-    openrouter_status = "ok" if OPENROUTER_AVAILABLE else "error"
-    vector_store_status = "ok" if rag_enhancer.vectorstore is not None else "error"
+    """Test endpoint with detailed system status"""
+    # Test database
+    db_test = {"status": "error", "message": DB_CONNECTION_ERROR}
+    if DB_AVAILABLE:
+        try:
+            with db_connection() as conn:
+                if conn:
+                    tables = conn.execute(text(
+                        "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'"
+                    )).fetchall()
+                    db_test = {
+                        "status": "ok",
+                        "tables_count": len(tables),
+                        "tables": [t[0] for t in tables[:20]]
+                    }
+        except Exception as e:
+            db_test = {"status": "error", "message": str(e)}
+    
+    # Test AI providers
+    ai_test = {}
+    for provider, config in AI_PROVIDERS.items():
+        ai_test[provider] = {
+            "configured": bool(config["api_key"]),
+            "is_primary": provider == PRIMARY_AI_PROVIDER
+        }
     
     return {
-        "status": "ok" if db_status == "ok" and openrouter_status == "ok" else "error",
-        "message": "GMAO Chatbot running",
+        "status": "ok",
         "timestamp": datetime.now().isoformat(),
-        "components": {
-            "database": db_test_result,
-            "openrouter": {"status": openrouter_status, "message": OPENROUTER_ERROR_MESSAGE or "Configured"},
-            "vector_store": {"status": vector_store_status, "message": f"{len(rag_enhancer.knowledge_base)} records"}
-        }
+        "database": db_test,
+        "ai_providers": ai_test
     }
 
 @app.post("/query", response_model=EnhancedChatResponse)
 async def query_chatbot(request: ChatRequest = Body(...)):
+    """Main query endpoint"""
+    start_time = time.time()
+    
     try:
-        start_time = time.time()
+        logger.info(f"Processing query: {request.query}")
+        
+        # Check services availability
+        if not PRIMARY_AI_PROVIDER:
+            return EnhancedChatResponse(
+                response="Service IA non disponible. Veuillez vérifier la configuration.",
+                metadata={"error": "no_ai_provider"}
+            )
         
         if not DB_AVAILABLE:
+            # Try to reconnect
             init_db_connection()
             if not DB_AVAILABLE:
                 return EnhancedChatResponse(
-                    response="Impossible d'accéder à la base GMAO. Vérifiez la connexion.",
+                    response="Base de données non disponible. Veuillez vérifier la connexion.",
                     metadata={"error": "database_unavailable", "details": DB_CONNECTION_ERROR}
                 )
         
-        if not OPENROUTER_AVAILABLE:
-            return EnhancedChatResponse(
-                response="Service IA indisponible.",
-                metadata={"error": "openrouter_unavailable"}
-            )
+        # Detect if question needs database query
+        # Instead of restrictive keyword matching, we now default to trying SQL generation
+        # for any question that could potentially be about GMAO data
+        question_lower = request.query.lower()
         
-        logger.info(f"Processing query: {request.query}")
-        
-        # Vérifier si la requête concerne des données à une date spécifique
-        date_match = False
-        sql_query = None
-        
-        # Pré-processeur pour les requêtes fréquentes
-        query_lower = request.query.lower()
-        
-        # Détection des questions sur les interventions à une date spécifique
-        if "intervention" in query_lower and any(date_term in query_lower for date_term in ["aujourd'hui", "demain", "hier", "juin", "mai", "avril", "2 juin", "du jour"]):
-            date_match = True
-            
-            # Construire une requête SQL adaptée
-            if "aujourd'hui" in query_lower or "du jour" in query_lower:
-                sql_query = """
-                SELECT di.IdDemandeIntervention, di.Titre, s.Libelle as Status, 
-                       u.NomComplet as Demandeur, di.DateCreation
-                FROM DemandeInterventions di
-                LEFT JOIN Status s ON di.StatusId = s.Id
-                LEFT JOIN Users u ON di.DemandeursID = u.Id
-                WHERE CONVERT(date, di.DateCreation) = CONVERT(date, GETDATE())
-                  AND di.IsActif = 1
-                ORDER BY di.DateCreation DESC
-                """
-            elif "2 juin" in query_lower or "deux juin" in query_lower:
-                sql_query = """
-                SELECT di.IdDemandeIntervention, di.Titre, s.Libelle as Status, 
-                       u.NomComplet as Demandeur, di.DateCreation
-                FROM DemandeInterventions di
-                LEFT JOIN Status s ON di.StatusId = s.Id
-                LEFT JOIN Users u ON di.DemandeursID = u.Id
-                WHERE CONVERT(date, di.DateCreation) = '2025-06-02'
-                  AND di.IsActif = 1
-                ORDER BY di.DateCreation DESC
-                """
-            elif "juin" in query_lower:
-                sql_query = """
-                SELECT di.IdDemandeIntervention, di.Titre, s.Libelle as Status, 
-                       u.NomComplet as Demandeur, di.DateCreation
-                FROM DemandeInterventions di
-                LEFT JOIN Status s ON di.StatusId = s.Id
-                LEFT JOIN Users u ON di.DemandeursID = u.Id
-                WHERE MONTH(di.DateCreation) = 6 AND YEAR(di.DateCreation) = 2025
-                  AND di.IsActif = 1
-                ORDER BY di.DateCreation DESC
-                """
-        
-        # Détection des questions sur les équipements
-        elif "équipement" in query_lower or "equipement" in query_lower:
-            if "critique" in query_lower or "criticité" in query_lower:
-                sql_query = """
-                SELECT e.IdEquipement, e.CodeEquipement, e.Designation,
-                       ec.Libelle as Criticite
-                FROM Equipments e
-                LEFT JOIN EquipmentCriticites ec ON e.IdCriticite = ec.Id
-                WHERE e.IsDeleted = 0 AND ec.Id = 3
-                ORDER BY e.Designation
-                """
-            else:
-                sql_query = """
-                SELECT e.IdEquipement, e.CodeEquipement, e.Designation,
-                       ec.Libelle as Criticite, ee.Libelle as Etat
-                FROM Equipments e
-                LEFT JOIN EquipmentCriticites ec ON e.IdCriticite = ec.Id
-                LEFT JOIN EtatEquipements ee ON e.IdEtat = ee.Id
-                WHERE e.IsDeleted = 0
-                ORDER BY e.Designation
-                OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY
-                """
-        
-        # Détection des questions sur les pièces en stock
-        elif ("pièce" in query_lower or "piece" in query_lower) and ("stock" in query_lower):
-            if "faible" in query_lower or "critique" in query_lower:
-                sql_query = """
-                SELECT p.IDPiece, p.CodePiece, p.Designation, p.Quantite_Stock,
-                       cp.Libelle as Criticite
-                FROM Pieces p
-                LEFT JOIN CriticitePieces cp ON p.IDCriticitePiece = cp.Id
-                WHERE p.IsActif = 1 AND p.Quantite_Stock < 5
-                ORDER BY p.Quantite_Stock
-                """
-            else:
-                sql_query = """
-                SELECT p.IDPiece, p.CodePiece, p.Designation, p.Quantite_Stock,
-                       cp.Libelle as Criticite
-                FROM Pieces p
-                LEFT JOIN CriticitePieces cp ON p.IDCriticitePiece = cp.Id
-                WHERE p.IsActif = 1
-                ORDER BY p.Designation
-                OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY
-                """
-        
-        if sql_query:
-            # Exécuter directement la requête SQL
-            logger.info(f"Direct SQL execution for query: {request.query}")
-            sql_result = execute_sql_query(sql_query)
-            
-            if sql_result and not sql_result.startswith("Erreur"):
-                # Préparer un message pour l'IA avec les résultats
-                system_prompt = get_system_prompt()
-                messages = [{"role": "system", "content": system_prompt}]
-                
-                data_interpretation = f"""Utilise UNIQUEMENT ces données issues de la base GMAO pour répondre à la question: "{request.query}"
-
-Résultat SQL:
-{sql_result}
-
-Analyse ces données et réponds à l'utilisateur de façon claire et concise, comme si tu étais un expert en GMAO.
-N'invente pas de données qui ne figurent pas dans les résultats.
-"""
-                messages.append({"role": "user", "content": data_interpretation})
-                
-                # Générer une visualisation si possible
-                visualizations = []
-                try:
-                    result_data = [json.loads(row.replace("'", "\"")) for row in sql_result.split("\n") if row and not row.startswith("...")]
-                    if len(result_data) > 1 and len(result_data[0].keys()) > 1:
-                        chart_type = "bar"
-                        if "today" in request.query.lower():
-                            chart_type = "bar"
-                        elif "tendance" in request.query.lower():
-                            chart_type = "line"
-                        x_column = next(iter(result_data[0].keys()))
-                        y_column = list(result_data[0].keys())[1]
-                        img_b64 = visualization_generator.generate_chart(result_data, chart_type, f"Visualisation: {request.query[:30]}...", x_column, y_column)
-                        if img_b64:
-                            visualizations.append({"type": "image", "format": "base64", "data": img_b64, "title": f"Visualisation: {request.query[:30]}..."})
-                except Exception as e:
-                    logger.error(f"Visualization error: {e}")
-                
-                # Obtenir la réponse de l'IA
-                response_text = query_openrouter(messages)
-                
-                return EnhancedChatResponse(
-                    response=response_text,
-                    metadata={
-                        "db_available": DB_AVAILABLE,
-                        "model_used": OPENROUTER_MODEL,
-                        "sql_executed": True,
-                        "sql_query": sql_query,
-                        "direct_execution": True,
-                        "total_time_ms": round((time.time() - start_time) * 1000)
-                    },
-                    visualizations=visualizations or None,
-                    suggestions=[
-                        "Quelles sont les interventions prévues aujourd'hui ?",
-                        "Quels équipements ont une criticité élevée ?",
-                        "Quelles pièces sont en stock faible ?"
-                    ]
-                )
-        
-        # Traitement standard avec RAG si pas de requête directe
-        relevant_docs = rag_enhancer.search(request.query, k=5)
-        context_enrichment = "\n\nInformations pertinentes:\n" + "\n".join(f"{i+1}. {doc['text']}" for i, doc in enumerate(relevant_docs)) if relevant_docs else ""
-        
-        system_prompt = get_system_prompt()
-        messages = [{"role": "system", "content": system_prompt + f"\n\nLa base GMAO est {'accessible' if DB_AVAILABLE else 'inaccessible'}."}]
-        if relevant_docs:
-            messages.append({"role": "system", "content": context_enrichment})
-        
-        if request.conversation_history:
-            messages.extend({"role": msg["role"], "content": msg["content"]} for msg in request.conversation_history[-5:] if isinstance(msg, dict) and "role" in msg and "content" in msg)
-        
-        messages.append({"role": "user", "content": request.query})
-        
-        max_retries = 3
-        visualizations = []
-        retry_count = 0
-        sql_executed = False
-        sql_query_used = None
-        sql_result = None
-        
-        while retry_count < max_retries:
-            response_text = query_openrouter(messages)
-            has_sql, sql_query, clean_response = extract_sql_query(response_text)
-            
-            if has_sql:
-                logger.info(f"Executing SQL: {sql_query}")
-                sql_query_used = sql_query
-                sql_result = execute_sql_query(sql_query)
-                sql_executed = True
-                
-                if not sql_result.startswith("Erreur"):
-                    follow_up_messages = messages + [{"role": "assistant", "content": clean_response}]
-                    data_interpretation = f"Résultat SQL: \n{sql_result}\n\nUtilise UNIQUEMENT ces données pour répondre."
-                    try:
-                        result_data = [json.loads(row.replace("'", "\"")) for row in sql_result.split("\n") if row and not row.startswith("...")]
-                        if len(result_data) > 1 and len(result_data[0].keys()) > 1:
-                            chart_type = "bar"
-                            if "today" in request.query.lower():
-                                chart_type = "bar"
-                            elif "tendance" in request.query.lower():
-                                chart_type = "line"
-                            x_column = next(iter(result_data[0].keys()))
-                            y_column = list(result_data[0].keys())[1]
-                            img_b64 = visualization_generator.generate_chart(result_data, chart_type, f"Visualisation: {request.query[:30]}...", x_column, y_column)
-                            if img_b64:
-                                visualizations.append({"type": "image", "format": "base64", "data": img_b64, "title": f"Visualisation: {request.query[:30]}..."})
-                                data_interpretation += f" Un graphique {chart_type} est disponible."
-                    except Exception as e:
-                        logger.error(f"Visualization error: {e}")
-                    
-                    follow_up_messages.append({"role": "user", "content": data_interpretation})
-                    response_text = query_openrouter(follow_up_messages)
-                    break
-                else:
-                    messages.append({"role": "assistant", "content": clean_response})
-                    messages.append({"role": "user", "content": f"SQL échoué: {sql_result}. Corrige la requête."})
-                    retry_count += 1
-            else:
-                break
-        
-        if retry_count == max_retries:
-            response_text = "Échec après plusieurs tentatives. Reformulez votre question."
-        
-        suggestions = [
-            "Quelles sont les interventions prévues aujourd'hui ?",
-            "Quels équipements ont une criticité élevée ?",
-            "Quelles pièces sont en stock faible ?"
+        # Only skip DB query for purely conversational questions
+        skip_db_keywords = [
+            "bonjour", "bonsoir", "salut", "coucou", "hello", "hi", "hey",
+            "merci", "thanks", "au revoir", "bye", "à bientôt", "a bientot",
+            "comment vas-tu", "comment ça va", "comment ca va", "ça va", "ca va",
+            "qui es-tu", "qui êtes-vous", "qui etes-vous", "tu es qui", "vous êtes qui",
+            "que peux-tu faire", "que pouvez-vous faire", "tu fais quoi", "vous faites quoi",
+            "aide", "help", "aidez-moi", "aide-moi",
+            "introduisez", "présentez", "presentez", "présente-toi", "presente-toi",
+            "bonne journée", "bonne soirée", "bonne nuit"
         ]
         
-        metadata = {
-            "db_available": DB_AVAILABLE,
-            "model_used": OPENROUTER_MODEL,
-            "sql_executed": sql_executed,
-            "sql_query": sql_query_used,
-            "total_time_ms": round((time.time() - start_time) * 1000)
-        }
+        is_greeting = any(keyword in question_lower for keyword in skip_db_keywords) and len(question_lower) < 50
+        
+        # By default, try to generate SQL for any substantive question
+        needs_db = not is_greeting
+        
+        sql_query = None
+        sql_success = False
+        sql_data = []
+        sql_message = ""
+        used_predefined = False
+        used_person_query = False
+        person_name = None
+        
+        if needs_db:
+            # Check for person-specific query first
+            person_name = extract_person_name(request.query)
+            if person_name:
+                used_person_query = True
+                logger.info(f"Using person-specific query for: {person_name}")
+            
+            # Generate SQL query
+            sql_query = generate_sql_query(request.query)
+            
+            # Check if it's a predefined query (only if not a person query)
+            if not used_person_query:
+                predefined = get_predefined_query(request.query)
+                used_predefined = (sql_query == predefined) if predefined else False
+            
+            if sql_query:
+                logger.info(f"Generated SQL (predefined={used_predefined}, person_query={used_person_query}): {sql_query[:100]}...")
+                sql_success, sql_message, sql_data = execute_sql_query(sql_query)
+                
+                if sql_success and sql_data:
+                    # Try AI response first, fall back to simple format
+                    response_text = generate_response(
+                        request.query,
+                        sql_data,
+                        request.conversation_history
+                    )
+                    
+                    # If AI failed, use simple formatted response
+                    if not response_text or "Je suis désolé" in response_text:
+                        logger.info("AI unavailable, using simple response format")
+                        response_text = format_simple_response(request.query, sql_data)
+                elif sql_success:
+                    # Query succeeded but no data - generate contextual response
+                    response_text = generate_no_result_response(request.query, person_name if used_person_query else None)
+                else:
+                    # Query failed
+                    response_text = f"Erreur lors de l'exécution de la requête: {sql_message}"
+            else:
+                # Could not generate SQL, give general response
+                response_text = generate_general_response(
+                    request.query,
+                    request.conversation_history
+                )
+                if not response_text or "Je suis désolé" in response_text:
+                    response_text = "Je n'ai pas pu comprendre votre demande. Essayez de reformuler votre question ou utilisez une des suggestions ci-dessous."
+        else:
+            # General question, no database needed
+            response_text = generate_general_response(
+                request.query,
+                request.conversation_history
+            )
+            if not response_text or "Je suis désolé" in response_text:
+                response_text = "Je suis votre assistant GMAO. Posez-moi des questions sur les interventions, équipements, stocks ou statistiques de maintenance."
+        
+        # Generate suggestions
+        suggestions = [
+            "Quelles sont les interventions d'aujourd'hui ?",
+            "Combien d'équipements sont en panne ?",
+            "Quelles sont les interventions urgentes ?",
+            "Affiche les statistiques de maintenance"
+        ]
         
         return EnhancedChatResponse(
             response=response_text,
-            metadata=metadata,
-            visualizations=visualizations or None,
+            metadata={
+                "db_available": DB_AVAILABLE,
+                "ai_provider": PRIMARY_AI_PROVIDER,
+                "sql_executed": sql_query is not None,
+                "sql_query": sql_query[:200] if sql_query else None,  # Truncate for readability
+                "sql_success": sql_success,
+                "used_predefined": used_predefined,
+                "used_person_query": used_person_query if 'used_person_query' in dir() else False,
+                "results_count": len(sql_data),
+                "processing_time_ms": round((time.time() - start_time) * 1000)
+            },
             suggestions=suggestions
         )
+        
     except Exception as e:
         logger.error(f"Query error: {e}")
         logger.error(traceback.format_exc())
-        return EnhancedChatResponse(response=f"Erreur: {str(e)}", metadata={"error": str(e)})
+        return EnhancedChatResponse(
+            response=f"Une erreur s'est produite: {str(e)}",
+            metadata={"error": str(e)}
+        )
 
-# Health check
-@app.get("/health")
-async def health_check():
-    db_status = "ok" if DB_AVAILABLE else "error"
+@app.post("/refresh-data")
+async def refresh_data():
+    """Refresh database connection"""
+    global DB_AVAILABLE, DB_CONNECTION_ERROR, engine
+    
+    engine = None
+    DB_AVAILABLE = False
+    init_db_connection()
+    
     return {
-        "status": "ok" if DB_AVAILABLE and OPENROUTER_AVAILABLE else "degraded",
-        "database": {"status": db_status, "error": DB_CONNECTION_ERROR if not DB_AVAILABLE else None},
-        "ai_service": {"status": "ok" if OPENROUTER_AVAILABLE else "error", "error": OPENROUTER_ERROR_MESSAGE},
-        "rag": {"status": "ok" if rag_enhancer.vectorstore is not None else "error", "records": len(rag_enhancer.knowledge_base)}
+        "status": "ok" if DB_AVAILABLE else "error",
+        "message": "Connection refreshed" if DB_AVAILABLE else DB_CONNECTION_ERROR
     }
 
-# Refresh data
-@app.post("/refresh-data")
-async def refresh_gmao_data():
-    try:
-        logger.info("Refreshing GMAO data")
-        gmao_data = fetch_gmao_data()
-        if gmao_data:
-            texts = [item["text"] for item in gmao_data]
-            metadata = [item["metadata"] for item in gmao_data]
-            rag_enhancer.add_to_knowledge_base(texts, metadata)
-            logger.info(f"Refreshed RAG with {len(gmao_data)} records")
-            return {"status": "ok", "message": f"Refreshed {len(gmao_data)} records"}
-        return {"status": "warning", "message": "No GMAO data found"}
-    except Exception as e:
-        logger.error(f"Refresh error: {e}")
-        return {"status": "error", "message": f"Error: {str(e)}"}
-
-# Lifespan handler
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    logger.info("Starting GMAO Chatbot...")
-    engine_instance = init_db_connection()
-    if engine_instance:
-        logger.info("DB connection initialized")
-        gmao_data = fetch_gmao_data()
-        if gmao_data:
-            texts = [item["text"] for item in gmao_data]
-            metadata = [item["metadata"] for item in gmao_data]
-            rag_enhancer.add_to_knowledge_base(texts, metadata)
-            logger.info(f"Loaded {len(gmao_data)} records into RAG")
-    else:
-        logger.warning("Failed to initialize DB")
-    yield
-    logger.info("Shutting down GMAO Chatbot...")
-
-app.lifespan = lifespan
+# ============================================================================
+# MAIN
+# ============================================================================
 
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", "5002"))
     host = os.getenv("HOST", "0.0.0.0")
-    logger.info(f"Starting on {host}:{port}")
+    logger.info(f"Starting GMAO Chatbot on {host}:{port}")
     uvicorn.run(app, host=host, port=port)

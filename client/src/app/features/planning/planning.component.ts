@@ -895,17 +895,25 @@ export class PlanningComponent implements OnInit {
     return statusClass === 'annulee' || statusClass === 'cloturee';
   }
 
-  // Remove intervention from calendar view (soft delete / hide)
+  // Remove intervention from calendar view (permanent delete)
   removeFromCalendar(intervention: DemandeIntervention, event: Event): void {
     event.stopPropagation();
     
-    // Remove from local list
-    this.interventions = this.interventions.filter(
-      i => i.idDemandeIntervention !== intervention.idDemandeIntervention
-    );
-    
-    // Regenerate calendar
-    this.generateCalendar();
-    this.calculateMonthlyStats();
+    // Call API to delete the intervention
+    this.interventionService.deleteIntervention(intervention.idDemandeIntervention).subscribe({
+      next: () => {
+        // Remove from local list after successful delete
+        this.interventions = this.interventions.filter(
+          i => i.idDemandeIntervention !== intervention.idDemandeIntervention
+        );
+        
+        // Regenerate calendar
+        this.generateCalendar();
+        this.calculateMonthlyStats();
+      },
+      error: (err) => {
+        console.error('Error removing intervention:', err);
+      }
+    });
   }
 }

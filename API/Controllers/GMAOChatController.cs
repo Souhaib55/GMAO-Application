@@ -138,8 +138,21 @@ namespace API.Controllers
         [HttpPost("query")]
         public async Task<IActionResult> QueryAI([FromBody] ChatQueryDto query)
         {
+            _logger.LogInformation($"QueryAI called. Query object is null: {query == null}");
+            
+            if (query == null)
+            {
+                _logger.LogWarning("Query object is null");
+                return BadRequest(new { response = "Requête invalide. Le corps de la requête est vide." });
+            }
+            
+            _logger.LogInformation($"Query value: '{query.Query}'");
+            
             if (string.IsNullOrEmpty(query.Query))
+            {
+                _logger.LogWarning("Query string is null or empty");
                 return BadRequest(new { response = "Veuillez fournir une question valide." });
+            }
 
             try
             {

@@ -20,12 +20,62 @@ namespace API.Controllers
         private readonly StoreContext _context;
         private readonly UserManager<AppUser> _userManager;
         private readonly ILogger<DemandeInterventionController> _logger;
+        
+        // File upload constraints
+        private const long MaxFileSize = 10 * 1024 * 1024; // 10 MB
+        private static readonly string[] AllowedExtensions = { 
+            ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".txt", ".csv",
+            ".jpg", ".jpeg", ".png", ".gif", ".bmp", 
+            ".zip", ".rar", ".7z"
+        };
+        private static readonly string[] AllowedMimeTypes = { 
+            "application/pdf", 
+            "application/msword", 
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "text/plain",
+            "text/csv",
+            "image/jpeg",
+            "image/png",
+            "image/gif",
+            "image/bmp",
+            "application/zip",
+            "application/x-zip-compressed",
+            "application/x-rar-compressed",
+            "application/x-7z-compressed",
+            "application/octet-stream" // Allow generic binary for some file types
+        };
 
         public DemandeInterventionController(StoreContext context, UserManager<AppUser> userManager, ILogger<DemandeInterventionController> logger)
         {
             _context = context;
             _userManager = userManager;
             _logger = logger;
+        }
+        
+        private (bool isValid, string? errorMessage) ValidateFile(IFormFile file)
+        {
+            if (file.Length > MaxFileSize)
+            {
+                return (false, $"La taille du fichier dépasse la limite de {MaxFileSize / (1024 * 1024)} MB");
+            }
+
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!AllowedExtensions.Contains(extension))
+            {
+                return (false, $"Type de fichier non autorisé. Types acceptés: {string.Join(", ", AllowedExtensions)}");
+            }
+
+            // Check MIME type but be lenient - some browsers report different MIME types
+            // Only reject if the MIME type is clearly dangerous
+            var dangerousMimeTypes = new[] { "application/x-msdownload", "application/x-executable" };
+            if (dangerousMimeTypes.Contains(file.ContentType.ToLowerInvariant()))
+            {
+                return (false, $"Type MIME non autorisé: {file.ContentType}");
+            }
+
+            return (true, null);
         }
 
         [HttpGet]
@@ -263,46 +313,50 @@ namespace API.Controllers
             var userEntity = await _context.Users.FirstOrDefaultAsync(u => u.AppUserId == currentUser.Id);
             if (userEntity == null) return BadRequest("User entity not found");
 
-            // Validation with detailed logging
-            if (!await _context.Etats.AnyAsync(e => e.IDEtat == demandeDto.IDEtat && e.IsActif))
+            // Validation with detailed logging - only validate if value is provided
+            if (demandeDto.IDEtat.HasValue && !await _context.Etats.AnyAsync(e => e.IDEtat == demandeDto.IDEtat && e.IsActif))
             {
                 _logger.LogWarning($"Invalid Etat ID: {demandeDto.IDEtat}");
                 return BadRequest("Invalid or inactive Etat ID");
             }
-            if (!await _context.TypeInterventions.AnyAsync(t => t.IDTypeIntervention == demandeDto.IDTypeIntervention && t.IsActif))
+            if (demandeDto.IDTypeIntervention.HasValue && !await _context.TypeInterventions.AnyAsync(t => t.IDTypeIntervention == demandeDto.IDTypeIntervention && t.IsActif))
             {
                 _logger.LogWarning($"Invalid TypeIntervention ID: {demandeDto.IDTypeIntervention}");
                 return BadRequest("Invalid or inactive TypeIntervention ID");
             }
-            if (!await _context.Urgences.AnyAsync(u => u.IDUrgence == demandeDto.IDUrgence && u.IsActif))
+            if (demandeDto.IDUrgence.HasValue && !await _context.Urgences.AnyAsync(u => u.IDUrgence == demandeDto.IDUrgence && u.IsActif))
             {
                 _logger.LogWarning($"Invalid Urgence ID: {demandeDto.IDUrgence}");
                 return BadRequest("Invalid or inactive Urgence ID");
             }
-            if (!await _context.ChaineProductions.AnyAsync(c => c.IDChaineProduction == demandeDto.IDChaineProduction && c.IsActif))
+            if (demandeDto.IDChaineProduction.HasValue && !await _context.ChaineProductions.AnyAsync(c => c.IDChaineProduction == demandeDto.IDChaineProduction && c.IsActif))
             {
                 _logger.LogWarning($"Invalid ChaineProduction ID: {demandeDto.IDChaineProduction}");
                 return BadRequest("Invalid or inactive ChaineProduction ID");
             }
-            if (!await _context.Pannes.AnyAsync(p => p.IDPanne == demandeDto.IDPanne && p.IsActif))
+            if (demandeDto.IDPanne.HasValue && !await _context.Pannes.AnyAsync(p => p.IDPanne == demandeDto.IDPanne && p.IsActif))
             {
                 _logger.LogWarning($"Invalid Panne ID: {demandeDto.IDPanne}");
                 return BadRequest("Invalid or inactive Panne ID");
             }
-            if (!await _context.Users.AnyAsync(u => u.ID == demandeDto.DemandeursID && u.IsActif))
+            
+            // Use current user's ID if DemandeursID is not provided
+            int demandeursId = demandeDto.DemandeursID ?? userEntity.ID;
+            if (!await _context.Users.AnyAsync(u => u.ID == demandeursId && u.IsActif))
             {
-                _logger.LogWarning($"Invalid DemandeursID: {demandeDto.DemandeursID}");
+                _logger.LogWarning($"Invalid DemandeursID: {demandeursId}");
                 return BadRequest("Invalid or inactive DemandeursID");
             }
+            
             if (demandeDto.DestinatairesID.HasValue && !await _context.Users.AnyAsync(u => u.ID == demandeDto.DestinatairesID && u.IsActif))
             {
                 _logger.LogWarning($"Invalid DestinatairesID: {demandeDto.DestinatairesID}");
                 return BadRequest("Invalid or inactive DestinatairesID");
             }
 
-            if (role == "Demandeur" && demandeDto.DemandeursID != userEntity.ID)
+            if (role == "Demandeur" && demandeursId != userEntity.ID)
             {
-                _logger.LogWarning($"Demandeur {userEntity.ID} tried to create for {demandeDto.DemandeursID}");
+                _logger.LogWarning($"Demandeur {userEntity.ID} tried to create for {demandeursId}");
                 return BadRequest("Demandeur can only create for themselves");
             }
 
@@ -314,13 +368,13 @@ namespace API.Controllers
                 Titre = demandeDto.Titre ?? "Sans titre",
                 DateCreation = dateCreation,
                 MachineArretee = demandeDto.MachineArretee,
-                IDEtat = demandeDto.IDEtat,
+                IDEtat = demandeDto.IDEtat ?? await _context.Etats.Where(e => e.IsActif).Select(e => e.IDEtat).FirstOrDefaultAsync(),
                 StatusId = statusId,
-                IDTypeIntervention = demandeDto.IDTypeIntervention,
-                IDUrgence = demandeDto.IDUrgence,
-                IDChaineProduction = demandeDto.IDChaineProduction,
-                IDPanne = demandeDto.IDPanne,
-                DemandeursID = demandeDto.DemandeursID,
+                IDTypeIntervention = demandeDto.IDTypeIntervention ?? await _context.TypeInterventions.Where(t => t.IsActif).Select(t => t.IDTypeIntervention).FirstOrDefaultAsync(),
+                IDUrgence = demandeDto.IDUrgence ?? await _context.Urgences.Where(u => u.IsActif).Select(u => u.IDUrgence).FirstOrDefaultAsync(),
+                IDChaineProduction = demandeDto.IDChaineProduction ?? await _context.ChaineProductions.Where(c => c.IsActif).Select(c => c.IDChaineProduction).FirstOrDefaultAsync(),
+                IDPanne = demandeDto.IDPanne ?? await _context.Pannes.Where(p => p.IsActif).Select(p => p.IDPanne).FirstOrDefaultAsync(),
+                DemandeursID = demandeursId,
                 DestinatairesID = demandeDto.DestinatairesID,
                 DateAssignation = null,
                 IsActif = true
@@ -330,6 +384,14 @@ namespace API.Controllers
 
             if (file != null && file.Length > 0)
             {
+                // Validate file
+                var (isValid, errorMessage) = ValidateFile(file);
+                if (!isValid)
+                {
+                    _logger.LogWarning($"File validation failed: {errorMessage}");
+                    return BadRequest(errorMessage);
+                }
+                
                 _logger.LogInformation($"File uploaded: {file.FileName}, Size: {file.Length}");
                 using (var memoryStream = new MemoryStream())
                 {
@@ -471,39 +533,47 @@ namespace API.Controllers
                     existingDemande.DateCreation = demandeDto.DateCreation;
                 }
                 if (demandeDto.MachineArretee != existingDemande.MachineArretee) existingDemande.MachineArretee = demandeDto.MachineArretee;
-                if (demandeDto.IDEtat > 0 && existingDemande.IDEtat != demandeDto.IDEtat)
+                if (demandeDto.IDEtat.HasValue && demandeDto.IDEtat.Value > 0 && existingDemande.IDEtat != demandeDto.IDEtat.Value)
                 {
-                    if (!await _context.Etats.AnyAsync(e => e.IDEtat == demandeDto.IDEtat && e.IsActif)) return BadRequest("Invalid or inactive Etat ID");
-                    existingDemande.IDEtat = demandeDto.IDEtat;
+                    if (!await _context.Etats.AnyAsync(e => e.IDEtat == demandeDto.IDEtat.Value && e.IsActif)) return BadRequest("Invalid or inactive Etat ID");
+                    existingDemande.IDEtat = demandeDto.IDEtat.Value;
                 }
-                if (demandeDto.IDTypeIntervention > 0 && existingDemande.IDTypeIntervention != demandeDto.IDTypeIntervention)
+                if (demandeDto.IDTypeIntervention.HasValue && demandeDto.IDTypeIntervention.Value > 0 && existingDemande.IDTypeIntervention != demandeDto.IDTypeIntervention.Value)
                 {
-                    if (!await _context.TypeInterventions.AnyAsync(t => t.IDTypeIntervention == demandeDto.IDTypeIntervention && t.IsActif)) return BadRequest("Invalid or inactive TypeIntervention ID");
-                    existingDemande.IDTypeIntervention = demandeDto.IDTypeIntervention;
+                    if (!await _context.TypeInterventions.AnyAsync(t => t.IDTypeIntervention == demandeDto.IDTypeIntervention.Value && t.IsActif)) return BadRequest("Invalid or inactive TypeIntervention ID");
+                    existingDemande.IDTypeIntervention = demandeDto.IDTypeIntervention.Value;
                 }
-                if (demandeDto.IDUrgence > 0 && existingDemande.IDUrgence != demandeDto.IDUrgence)
+                if (demandeDto.IDUrgence.HasValue && demandeDto.IDUrgence.Value > 0 && existingDemande.IDUrgence != demandeDto.IDUrgence.Value)
                 {
-                    if (!await _context.Urgences.AnyAsync(u => u.IDUrgence == demandeDto.IDUrgence && u.IsActif)) return BadRequest("Invalid or inactive Urgence ID");
-                    existingDemande.IDUrgence = demandeDto.IDUrgence;
+                    if (!await _context.Urgences.AnyAsync(u => u.IDUrgence == demandeDto.IDUrgence.Value && u.IsActif)) return BadRequest("Invalid or inactive Urgence ID");
+                    existingDemande.IDUrgence = demandeDto.IDUrgence.Value;
                 }
-                if (demandeDto.IDChaineProduction > 0 && existingDemande.IDChaineProduction != demandeDto.IDChaineProduction)
+                if (demandeDto.IDChaineProduction.HasValue && demandeDto.IDChaineProduction.Value > 0 && existingDemande.IDChaineProduction != demandeDto.IDChaineProduction.Value)
                 {
-                    if (!await _context.ChaineProductions.AnyAsync(c => c.IDChaineProduction == demandeDto.IDChaineProduction && c.IsActif)) return BadRequest("Invalid or inactive ChaineProduction ID");
-                    existingDemande.IDChaineProduction = demandeDto.IDChaineProduction;
+                    if (!await _context.ChaineProductions.AnyAsync(c => c.IDChaineProduction == demandeDto.IDChaineProduction.Value && c.IsActif)) return BadRequest("Invalid or inactive ChaineProduction ID");
+                    existingDemande.IDChaineProduction = demandeDto.IDChaineProduction.Value;
                 }
-                if (demandeDto.IDPanne > 0 && existingDemande.IDPanne != demandeDto.IDPanne)
+                if (demandeDto.IDPanne.HasValue && demandeDto.IDPanne.Value > 0 && existingDemande.IDPanne != demandeDto.IDPanne.Value)
                 {
-                    if (!await _context.Pannes.AnyAsync(p => p.IDPanne == demandeDto.IDPanne && p.IsActif)) return BadRequest("Invalid or inactive Panne ID");
-                    existingDemande.IDPanne = demandeDto.IDPanne;
+                    if (!await _context.Pannes.AnyAsync(p => p.IDPanne == demandeDto.IDPanne.Value && p.IsActif)) return BadRequest("Invalid or inactive Panne ID");
+                    existingDemande.IDPanne = demandeDto.IDPanne.Value;
                 }
-                if (demandeDto.DemandeursID > 0 && existingDemande.DemandeursID != demandeDto.DemandeursID)
+                if (demandeDto.DemandeursID.HasValue && demandeDto.DemandeursID.Value > 0 && existingDemande.DemandeursID != demandeDto.DemandeursID.Value)
                 {
-                    if (!await _context.Users.AnyAsync(u => u.ID == demandeDto.DemandeursID && u.IsActif)) return BadRequest("Invalid or inactive DemandeursID");
-                    existingDemande.DemandeursID = demandeDto.DemandeursID;
+                    if (!await _context.Users.AnyAsync(u => u.ID == demandeDto.DemandeursID.Value && u.IsActif)) return BadRequest("Invalid or inactive DemandeursID");
+                    existingDemande.DemandeursID = demandeDto.DemandeursID.Value;
                 }
 
                 if (file != null && file.Length > 0)
                 {
+                    // Validate file
+                    var (isValid, errorMessage) = ValidateFile(file);
+                    if (!isValid)
+                    {
+                        _logger.LogWarning($"File validation failed: {errorMessage}");
+                        return BadRequest(errorMessage);
+                    }
+                    
                     using (var memoryStream = new MemoryStream())
                     {
                         await file.CopyToAsync(memoryStream);

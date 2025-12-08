@@ -16,22 +16,22 @@ namespace API.DTOs
     public bool MachineArretee { get; set; }
     
     [JsonPropertyName("idEtat")]
-    public int IDEtat { get; set; }
+    public int? IDEtat { get; set; }
     
     [JsonPropertyName("idTypeIntervention")]
-    public int IDTypeIntervention { get; set; }
+    public int? IDTypeIntervention { get; set; }
     
     [JsonPropertyName("idUrgence")]
-    public int IDUrgence { get; set; }
+    public int? IDUrgence { get; set; }
     
     [JsonPropertyName("idChaineProduction")]
-    public int IDChaineProduction { get; set; }
+    public int? IDChaineProduction { get; set; }
     
     [JsonPropertyName("idPanne")]
-    public int IDPanne { get; set; }
+    public int? IDPanne { get; set; }
     
     [JsonPropertyName("demandeursId")]
-    public int DemandeursID { get; set; }
+    public int? DemandeursID { get; set; }
     
     [JsonPropertyName("destinatairesId")]
     public int? DestinatairesID { get; set; }
