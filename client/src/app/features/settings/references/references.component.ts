@@ -861,10 +861,36 @@ import { NotificationService } from '../../../core/services/notification.service
       color: var(--steel-400);
     }
 
-    .form-group input:focus {
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
       outline: none;
       border-color: var(--primary);
       box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+    }
+
+    .form-group select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1.5 3.5h9L6 8z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 1rem center;
+      padding-right: 2.5rem;
+    }
+
+    .form-group select:disabled {
+      background-color: var(--steel-100);
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-group textarea::placeholder {
+      color: var(--steel-400);
     }
 
     .form-group .error {
@@ -872,6 +898,7 @@ import { NotificationService } from '../../../core/services/notification.service
       font-size: 0.75rem;
       font-weight: 500;
       margin-top: 0.375rem;
+      display: block;
     }
 
     .warning-text {
@@ -1105,7 +1132,7 @@ export class ReferencesComponent implements OnInit {
           this.submitting = false;
         },
         error: (err) => {
-          this.notificationService.error('Erreur', err.error?.message || 'Erreur lors de la mise à jour');
+          this.notificationService.error('Erreur', err.error?.message || err.error || 'Erreur lors de la mise à jour');
           this.submitting = false;
         }
       });
@@ -1119,7 +1146,7 @@ export class ReferencesComponent implements OnInit {
           this.submitting = false;
         },
         error: (err) => {
-          this.notificationService.error('Erreur', err.error?.message || 'Erreur lors de la création');
+          this.notificationService.error('Erreur', err.error?.message || err.error || 'Erreur lors de la création');
           this.submitting = false;
         }
       });

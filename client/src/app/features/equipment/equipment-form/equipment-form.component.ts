@@ -14,7 +14,17 @@ import { NotificationService } from '../../../core/services/notification.service
     <div class="form-container">
       <div class="form-header">
         <h1>{{ isViewMode ? 'Détails' : (isEditMode ? 'Modifier' : 'Nouvel') }} Équipement</h1>
-        <button class="btn btn-secondary" (click)="cancel()">{{ isViewMode ? 'Retour' : 'Annuler' }}</button>
+        <div class="header-actions">
+          <button class="btn btn-print" (click)="printForm()" *ngIf="isViewMode" title="Imprimer / Télécharger PDF">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 9V2h12v7"/>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+              <rect x="6" y="14" width="12" height="8"/>
+            </svg>
+            Imprimer
+          </button>
+          <button class="btn btn-secondary" (click)="cancel()">{{ isViewMode ? 'Retour' : 'Annuler' }}</button>
+        </div>
       </div>
 
       <form [formGroup]="equipmentForm" (ngSubmit)="onSubmit()" class="card">
@@ -331,6 +341,10 @@ export class EquipmentFormComponent implements OnInit {
 
   cancel(): void {
     this.router.navigate(['/equipment']);
+  }
+
+  printForm(): void {
+    window.print();
   }
 
   private formatDateForInput(date?: Date | string): string | null {

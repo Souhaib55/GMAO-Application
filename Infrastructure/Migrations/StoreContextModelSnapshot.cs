@@ -647,13 +647,13 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime?>("DateModification")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("IdCriticite")
+                    b.Property<int?>("IdCriticite")
                         .HasColumnType("int");
 
-                    b.Property<int>("IdFamille")
+                    b.Property<int?>("IdFamille")
                         .HasColumnType("int");
 
-                    b.Property<int>("IdMarque")
+                    b.Property<int?>("IdMarque")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsActif")
@@ -1382,20 +1382,17 @@ namespace Infrastructure.Migrations
                     b.HasOne("Core.Entities.EquipmentCriticite", "Criticite")
                         .WithMany("Modeles")
                         .HasForeignKey("IdCriticite")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Core.Entities.FamilleEquipment", "Famille")
                         .WithMany("Modeles")
                         .HasForeignKey("IdFamille")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Core.Entities.Marque", "Marque")
                         .WithMany("Modeles")
                         .HasForeignKey("IdMarque")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Criticite");
 
