@@ -1,0 +1,41 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+!README-DOCKER.md
+
+# IDE
+.vs
+.vscode
+.idea
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+**/bin/
+**/obj/
+**/dist/
+**/node_modules/
+**/.angular/
+
+# Database
+*.mdf
+*.ldf
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Test files
+**/test_*.py
+**/*.test.ts
+**/*.spec.ts

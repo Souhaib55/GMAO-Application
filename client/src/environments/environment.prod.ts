@@ -1,5 +1,5 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://your-production-domain.com/api',
-  chatServiceUrl: 'https://your-production-domain.com/chat'
+  apiUrl: '/api',  // Proxied through nginx
+  chatServiceUrl: 'http://localhost:5002'  // Direct connection for now
 };

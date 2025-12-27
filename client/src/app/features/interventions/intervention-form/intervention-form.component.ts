@@ -380,6 +380,8 @@ export class InterventionFormComponent implements OnInit {
   loading = false;
   selectedFile?: File;
   existingFileName?: string;
+  fileRemoved = false; // Track if user explicitly removed existing file
+  hadOriginalFile = false; // Track if intervention originally had a file
   removeExistingFileFlag = false;
 
   // Reference data
@@ -515,11 +517,18 @@ export class InterventionFormComponent implements OnInit {
       }
 
       this.selectedFile = file;
+      this.fileRemoved = false; // Reset flag when uploading new file
+      this.removeExistingFileFlag = false; // Also reset this flag
     }
   }
 
   removeFile(): void {
     this.selectedFile = undefined;
+    // Only mark for deletion if there was actually an existing file
+    if (this.hadOriginalFile && this.isEditMode) {
+      this.fileRemoved = true;
+    }
+    this.existingFileName = undefined;
     const fileInput = document.getElementById('file') as HTMLInputElement;
     if (fileInput) {
       fileInput.value = '';
@@ -562,22 +571,50 @@ export class InterventionFormComponent implements OnInit {
     };
 
     if (this.isEditMode && this.interventionId) {
-      this.interventionService.updateIntervention(this.interventionId, interventionData, this.selectedFile).subscribe({
-        next: () => {
-          this.notificationService.success(
-            'Succès',
-            'Intervention modifiée avec succès'
-          );
-          this.router.navigate(['/interventions']);
-        },
-        error: () => {
-          this.notificationService.error(
-            'Erreur',
-            'Impossible de modifier l\'intervention'
-          );
-          this.loading = false;
-        }
-      });
+      // If user removed existing file, we need to signal backend
+      if (this.removeExistingFileFlag && !this.selectedFile) {
+        // Send update with fileName="" to signal file removal
+        const formData = new FormData();
+        formData.append('interventionData', JSON.stringify({
+          ...interventionData,
+          idDemandeIntervention: this.interventionId
+        }));
+        formData.append('fileName', ''); // Signal to remove file
+        
+        this.interventionService.updateInterventionWithFormData(this.interventionId, formData).subscribe({
+          next: () => {
+            this.notificationService.success(
+              'Succès',
+              'Intervention modifiée avec succès'
+            );
+            this.router.navigate(['/interventions']);
+          },
+          error: () => {
+            this.notificationService.error(
+              'Erreur',
+              'Impossible de modifier l\'intervention'
+            );
+            this.loading = false;
+          }
+        });
+      } else {
+        this.interventionService.updateIntervention(this.interventionId, interventionData, this.selectedFile).subscribe({
+          next: () => {
+            this.notificationService.success(
+              'Succès',
+              'Intervention modifiée avec succès'
+            );
+            this.router.navigate(['/interventions']);
+          },
+          error: () => {
+            this.notificationService.error(
+              'Erreur',
+              'Impossible de modifier l\'intervention'
+            );
+            this.loading = false;
+          }
+        });
+      }
     } else {
       this.interventionService.createIntervention(interventionData, this.selectedFile).subscribe({
         next: () => {

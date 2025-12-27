@@ -56,7 +56,7 @@ export class InterventionService {
   }
 
   updateIntervention(id: number, intervention: Partial<InterventionDto>, file?: File): Observable<void> {
-    const interventionWithId = { ...intervention, idDemande: id };
+    const interventionWithId = { ...intervention, idDemandeIntervention: id };
     
     if (file) {
       const formData = new FormData();
@@ -69,6 +69,12 @@ export class InterventionService {
     }
 
     return this.http.put<void>(`${this.apiUrl}/${id}`, interventionWithId, {
+      withCredentials: true
+    });
+  }
+
+  updateInterventionWithFormData(id: number, formData: FormData): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/${id}`, formData, {
       withCredentials: true
     });
   }

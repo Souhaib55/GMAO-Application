@@ -30,7 +30,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AngularCorsPolicy", policy =>
     {
-        policy.WithOrigins("http://localhost:4200", "https://localhost:4200")
+        policy.WithOrigins(
+                "http://localhost:4200", 
+                "https://localhost:4200",
+                "http://frontend",
+                "http://frontend:80"
+              )
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -78,6 +83,35 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 var app = builder.Build();
 
+// Apply migrations and seed data on startup
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var context = scope.ServiceProvider.GetRequiredService<StoreContext>();
+        
+        // Apply any pending migrations
+        await context.Database.MigrateAsync();
+        
+        // Seed roles
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        var roles = new[] { "Superviseur", "Demandeur", "Utilisateur" };
+        foreach (var role in roles)
+        {
+            if (!await roleManager.RoleExistsAsync(role))
+            {
+                await roleManager.CreateAsync(new IdentityRole(role));
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred during database migration or seeding");
+        throw;
+    }
+}
+
 // Middleware pipeline
 //app.UseHttpsRedirection();
 
@@ -86,19 +120,6 @@ app.UseCors("AngularCorsPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();
-
-using (var scope = app.Services.CreateScope())
-{
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    var roles = new[] { "Superviseur", "Demandeur", "Utilisateur" };
-    foreach (var role in roles)
-    {
-        if (!await roleManager.RoleExistsAsync(role))
-        {
-            await roleManager.CreateAsync(new IdentityRole(role));
-        }
-    }
-}
 
 app.MapControllers();
 // Remove or comment out this line since we're not using Identity API endpoints anymore

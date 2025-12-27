@@ -1,0 +1,81 @@
+services:
+  # SQL Server Database
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: gmao-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "YourStrong!Password123"
+      MSSQL_PID: "Express"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+      - ./database:/docker-entrypoint-initdb.d
+    networks:
+      - gmao-network
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P YourStrong!Password123 -C -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # .NET Core Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: API/Dockerfile
+    container_name: gmao-backend
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=gmao;User Id=sa;Password=YourStrong!Password123;TrustServerCertificate=True;
+      - ChatbotService__Url=http://chatbot:5002
+    ports:
+      - "5000:80"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - gmao-network
+    restart: unless-stopped
+
+  # Python Chatbot Service
+  chatbot:
+    build:
+      context: ./gmaochat
+      dockerfile: Dockerfile
+    container_name: gmao-chatbot
+    environment:
+      - DATABASE_CONNECTION=Server=sqlserver;Database=gmao;User Id=sa;Password=YourStrong!Password123;TrustServerCertificate=True;
+    ports:
+      - "5002:5002"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - gmao-network
+    restart: unless-stopped
+
+  # Angular Frontend
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: gmao-frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+    networks:
+      - gmao-network
+    restart: unless-stopped
+
+networks:
+  gmao-network:
+    driver: bridge
+
+volumes:
+  sqlserver_data:
+    driver: local

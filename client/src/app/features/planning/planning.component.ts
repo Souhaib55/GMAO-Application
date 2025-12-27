@@ -713,6 +713,7 @@ export class PlanningComponent implements OnInit {
   interventions: DemandeIntervention[] = [];
   loading = false;
   selectedIntervention: DemandeIntervention | null = null;
+  private readonly REMOVED_KEY = 'calendar_removed_interventions';
 
   monthlyStats = {
     total: 0,
@@ -721,6 +722,21 @@ export class PlanningComponent implements OnInit {
     termine: 0,
     urgent: 0
   };
+
+  // Get removed intervention IDs from localStorage
+  private getRemovedInterventions(): number[] {
+    const stored = localStorage.getItem(this.REMOVED_KEY);
+    return stored ? JSON.parse(stored) : [];
+  }
+
+  // Add intervention ID to removed list in localStorage
+  private addRemovedIntervention(id: number): void {
+    const removed = this.getRemovedInterventions();
+    if (!removed.includes(id)) {
+      removed.push(id);
+      localStorage.setItem(this.REMOVED_KEY, JSON.stringify(removed));
+    }
+  }
 
   get currentMonthYear(): string {
     const months = [
@@ -760,7 +776,11 @@ export class PlanningComponent implements OnInit {
     // Load all interventions for the current month
     this.interventionService.getInterventions(1, 1000).subscribe({
       next: (result) => {
-        this.interventions = result.data;
+        // Filter out interventions that were removed from calendar
+        const removedIds = this.getRemovedInterventions();
+        this.interventions = result.data.filter(
+          i => !removedIds.includes(i.idDemandeIntervention)
+        );
         this.generateCalendar();
         this.calculateMonthlyStats();
         this.loading = false;
@@ -895,25 +915,20 @@ export class PlanningComponent implements OnInit {
     return statusClass === 'annulee' || statusClass === 'cloturee';
   }
 
-  // Remove intervention from calendar view (permanent delete)
+  // Remove intervention from calendar view only (does not delete from database)
   removeFromCalendar(intervention: DemandeIntervention, event: Event): void {
     event.stopPropagation();
     
-    // Call API to delete the intervention
-    this.interventionService.deleteIntervention(intervention.idDemandeIntervention).subscribe({
-      next: () => {
-        // Remove from local list after successful delete
-        this.interventions = this.interventions.filter(
-          i => i.idDemandeIntervention !== intervention.idDemandeIntervention
-        );
-        
-        // Regenerate calendar
-        this.generateCalendar();
-        this.calculateMonthlyStats();
-      },
-      error: (err) => {
-        console.error('Error removing intervention:', err);
-      }
-    });
+    // Save to localStorage for persistence
+    this.addRemovedIntervention(intervention.idDemandeIntervention);
+    
+    // Remove from local calendar view
+    this.interventions = this.interventions.filter(
+      i => i.idDemandeIntervention !== intervention.idDemandeIntervention
+    );
+    
+    // Regenerate calendar
+    this.generateCalendar();
+    this.calculateMonthlyStats();
   }
 }
