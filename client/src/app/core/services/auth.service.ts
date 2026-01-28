@@ -4,6 +4,26 @@ import { BehaviorSubject, Observable, tap, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { UserInfo, LoginDto, RegisterDto } from '../models';
 
+export interface ForgotPasswordResponse {
+  message: string;
+}
+
+export interface ResetPasswordDto {
+  email: string;
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+}
+
+export interface ValidateTokenResponse {
+  valid: boolean;
+  message?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -49,6 +69,18 @@ export class AuthService {
         return of(void 0);
       })
     );
+  }
+
+  forgotPassword(email: string): Observable<ForgotPasswordResponse> {
+    return this.http.post<ForgotPasswordResponse>(`${this.apiUrl}/forgot-password`, { email });
+  }
+
+  resetPassword(data: ResetPasswordDto): Observable<ResetPasswordResponse> {
+    return this.http.post<ResetPasswordResponse>(`${this.apiUrl}/reset-password`, data);
+  }
+
+  validateResetToken(email: string, token: string): Observable<ValidateTokenResponse> {
+    return this.http.post<ValidateTokenResponse>(`${this.apiUrl}/validate-reset-token`, { email, token });
   }
 
   checkAuthStatus(): void {

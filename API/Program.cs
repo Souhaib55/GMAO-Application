@@ -1,3 +1,4 @@
+using API.Services;
 using Core.Entities;
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
@@ -24,6 +25,9 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     });
+
+// Register Email Service
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 // Configure CORS properly
 builder.Services.AddCors(options =>

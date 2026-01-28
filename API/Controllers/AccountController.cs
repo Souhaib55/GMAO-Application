@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using API.DTOs;
+using API.Services;
 using Core.Entities;
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
@@ -17,15 +18,21 @@ namespace API.Controllers
         private readonly SignInManager<AppUser> _signInManager;
         private readonly UserManager<AppUser> _userManager;
         private readonly StoreContext _storeContext;
+        private readonly IEmailService _emailService;
+        private readonly IConfiguration _configuration;
 
         public AccountController(
             SignInManager<AppUser> signInManager,
             UserManager<AppUser> userManager,
-            StoreContext storeContext)
+            StoreContext storeContext,
+            IEmailService emailService,
+            IConfiguration configuration)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _storeContext = storeContext;
+            _emailService = emailService;
+            _configuration = configuration;
         }
 
         [HttpPost("register")]
@@ -91,9 +98,10 @@ namespace API.Controllers
         [HttpPost("login")]
         public async Task<ActionResult> Login(LoginDto loginDto)
         {
-            if (User.Identity.IsAuthenticated)
+            // If already authenticated, sign out first to allow fresh login
+            if (User.Identity?.IsAuthenticated == true)
             {
-                return BadRequest("Already logged in");
+                await _signInManager.SignOutAsync();
             }
 
             var user = await _userManager.FindByEmailAsync(loginDto.Email);
@@ -163,6 +171,88 @@ namespace API.Controllers
         public ActionResult GetAuthState()
         {
             return Ok(new { isAuthenticated = User.Identity?.IsAuthenticated ?? false });
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<ActionResult> ForgotPassword(ForgotPasswordDto dto)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            
+            // Always return success to prevent email enumeration attacks
+            if (user == null)
+            {
+                return Ok(new { message = "Si un compte avec cet email existe, un lien de réinitialisation a été envoyé." });
+            }
+
+            // Generate password reset token
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            
+            // Get the client URL for password reset
+            var clientUrl = _configuration["ClientUrl"] ?? "http://localhost:4200";
+            var resetUrl = $"{clientUrl}/reset-password";
+
+            try
+            {
+                await _emailService.SendPasswordResetEmailAsync(user.Email!, token, resetUrl);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to send email: {ex.Message}");
+                return StatusCode(500, new { message = "Erreur lors de l'envoi de l'email. Veuillez réessayer." });
+            }
+
+            return Ok(new { message = "Si un compte avec cet email existe, un lien de réinitialisation a été envoyé." });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<ActionResult> ResetPassword(ResetPasswordDto dto)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null)
+            {
+                return BadRequest(new { message = "Le lien de réinitialisation est invalide ou a expiré." });
+            }
+
+            var result = await _userManager.ResetPasswordAsync(user, dto.Token, dto.NewPassword);
+            
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                
+                // Check if it's a token error
+                if (errors.Any(e => e.Contains("token") || e.Contains("Token")))
+                {
+                    return BadRequest(new { message = "Le lien de réinitialisation est invalide ou a expiré." });
+                }
+                
+                return BadRequest(new { message = "Erreur lors de la réinitialisation du mot de passe.", errors });
+            }
+
+            return Ok(new { message = "Votre mot de passe a été réinitialisé avec succès." });
+        }
+
+        [HttpPost("validate-reset-token")]
+        public async Task<ActionResult> ValidateResetToken([FromBody] ValidateTokenDto dto)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null)
+            {
+                return BadRequest(new { valid = false, message = "Lien de réinitialisation invalide." });
+            }
+
+            // Try to verify the token by attempting a verification
+            var isValid = await _userManager.VerifyUserTokenAsync(
+                user, 
+                _userManager.Options.Tokens.PasswordResetTokenProvider, 
+                "ResetPassword", 
+                dto.Token);
+
+            if (!isValid)
+            {
+                return BadRequest(new { valid = false, message = "Le lien de réinitialisation est invalide ou a expiré." });
+            }
+
+            return Ok(new { valid = true });
         }
     }
 }

@@ -42,23 +42,58 @@ import { NotificationService } from '../../../core/services/notification.service
         </button>
       </div>
 
-      <!-- Stats -->
-      <div class="stats-bar">
-        <div class="stat-item">
-          <span class="stat-number">{{ users.length }}</span>
-          <span class="stat-label">Total Utilisateurs</span>
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <div class="stat-card total">
+          <div class="stat-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <span class="stat-number">{{ users.length }}</span>
+            <span class="stat-label">Total Utilisateurs</span>
+          </div>
         </div>
-        <div class="stat-item">
-          <span class="stat-number">{{ getUsersByRole('Superviseur').length }}</span>
-          <span class="stat-label">Superviseurs</span>
+        <div class="stat-card superviseur">
+          <div class="stat-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M22 11h-6"/>
+              <path d="M19 8v6"/>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <span class="stat-number">{{ getUsersByRole('Superviseur').length }}</span>
+            <span class="stat-label">Superviseurs</span>
+          </div>
         </div>
-        <div class="stat-item">
-          <span class="stat-number">{{ getUsersByRole('Demandeur').length }}</span>
-          <span class="stat-label">Demandeurs</span>
+        <div class="stat-card demandeur">
+          <div class="stat-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <span class="stat-number">{{ getUsersByRole('Demandeur').length }}</span>
+            <span class="stat-label">Demandeurs</span>
+          </div>
         </div>
-        <div class="stat-item">
-          <span class="stat-number">{{ getUsersByRole('Utilisateur').length }}</span>
-          <span class="stat-label">Utilisateurs</span>
+        <div class="stat-card utilisateur">
+          <div class="stat-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <span class="stat-number">{{ getUsersByRole('Utilisateur').length }}</span>
+            <span class="stat-label">Utilisateurs</span>
+          </div>
         </div>
       </div>
 
@@ -351,7 +386,7 @@ import { NotificationService } from '../../../core/services/notification.service
       align-items: center;
       gap: 0.5rem;
       padding: 0.75rem 1.25rem;
-      background: var(--industrial-dark);
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
       color: white;
       border: none;
       border-radius: 10px;
@@ -359,11 +394,13 @@ import { NotificationService } from '../../../core/services/notification.service
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
     }
 
     .btn-primary:hover:not(:disabled) {
-      background: var(--industrial-mid);
-      box-shadow: var(--shadow-md);
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
+      transform: translateY(-1px);
     }
 
     .btn-primary:disabled {
@@ -371,41 +408,144 @@ import { NotificationService } from '../../../core/services/notification.service
       cursor: not-allowed;
     }
 
-    /* Stats Bar */
-    .stats-bar {
-      display: flex;
-      gap: 1rem;
+    /* Stats Grid - Dashboard Style Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
       margin-bottom: 1.5rem;
-      padding: 1rem 1.5rem;
-      background: white;
-      border-radius: 12px;
-      border: 1px solid var(--steel-200);
-      box-shadow: var(--shadow-sm);
     }
 
-    .stat-item {
+    .stat-card {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.25rem 1.5rem;
+      background: white;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.02);
+      transition: all 0.3s ease;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      border-radius: 4px 0 0 4px;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Total Card - Blue */
+    .stat-card.total::before {
+      background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+    }
+    .stat-card.total .stat-icon {
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      color: #3b82f6;
+    }
+    .stat-card.total .stat-number {
+      color: #1e40af;
+    }
+    .stat-card.total .stat-trend {
+      color: #10b981;
+    }
+
+    /* Superviseur Card - Purple/Indigo */
+    .stat-card.superviseur::before {
+      background: linear-gradient(180deg, #8b5cf6 0%, #7c3aed 100%);
+    }
+    .stat-card.superviseur .stat-icon {
+      background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+      color: #8b5cf6;
+    }
+    .stat-card.superviseur .stat-number {
+      color: #6d28d9;
+    }
+    .stat-card.superviseur .stat-badge {
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    }
+
+    /* Demandeur Card - Emerald/Green */
+    .stat-card.demandeur::before {
+      background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+    }
+    .stat-card.demandeur .stat-icon {
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+      color: #10b981;
+    }
+    .stat-card.demandeur .stat-number {
+      color: #047857;
+    }
+    .stat-card.demandeur .stat-badge {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    /* Utilisateur Card - Amber/Orange */
+    .stat-card.utilisateur::before {
+      background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+    }
+    .stat-card.utilisateur .stat-icon {
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      color: #f59e0b;
+    }
+    .stat-card.utilisateur .stat-number {
+      color: #b45309;
+    }
+    .stat-card.utilisateur .stat-badge {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+
+    .stat-icon {
+      width: 52px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 14px;
+      flex-shrink: 0;
+    }
+
+    .stat-content {
+      flex: 1;
       display: flex;
       flex-direction: column;
-      padding-right: 1.5rem;
-      border-right: 1px solid var(--steel-200);
-    }
-
-    .stat-item:last-child {
-      border-right: none;
+      gap: 0.25rem;
     }
 
     .stat-number {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--text-primary);
+      font-size: 1.75rem;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.02em;
     }
 
     .stat-label {
-      font-size: 0.75rem;
-      color: var(--steel-500);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      font-size: 0.8125rem;
+      color: #64748b;
       font-weight: 500;
+      letter-spacing: 0.01em;
+    }
+
+    @media (max-width: 1024px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     /* Toolbar */
@@ -764,12 +904,12 @@ import { NotificationService } from '../../../core/services/notification.service
       justify-content: space-between;
       align-items: center;
       padding: 1.25rem 1.5rem;
-      background: #1e293b;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
       color: white;
     }
 
     .modal-header.delete {
-      background: #dc2626;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
     }
 
     .modal-header h2 {

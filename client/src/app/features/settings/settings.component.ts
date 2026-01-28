@@ -281,13 +281,14 @@ interface SettingsMenuItem {
       justify-content: center;
       gap: 0.5rem;
       padding: 0.875rem 1.25rem;
-      background: #f8fafc;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
       border-radius: 12px;
       font-size: 0.875rem;
       font-weight: 600;
-      color: #334155;
+      color: white;
       transition: all 0.3s ease;
       margin-top: auto;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
 
       svg {
         width: 18px;
@@ -297,8 +298,8 @@ interface SettingsMenuItem {
     }
 
     .menu-card:hover .card-action {
-      background: var(--accent-color);
-      color: white;
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
 
       svg {
         transform: translateX(4px);

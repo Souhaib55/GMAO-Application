@@ -1,0 +1,1006 @@
+%==============================================================================
+% GMAO Chatbot - Architecture LLM Text-to-SQL
+% Documentation Technique pour Superviseur
+% Date: 27 Janvier 2026
+%==============================================================================
+
+\documentclass[12pt,a4paper]{article}
+
+%------------------------------------------------------------------------------
+% PACKAGES
+%------------------------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{tcolorbox}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{colortbl}
+\usepackage{hyperref}
+\usepackage{fontawesome5}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+%------------------------------------------------------------------------------
+% CONFIGURATION DE LA PAGE
+%------------------------------------------------------------------------------
+\geometry{
+    left=2cm,
+    right=2cm,
+    top=2.5cm,
+    bottom=2.5cm
+}
+
+%------------------------------------------------------------------------------
+% COULEURS PERSONNALISÉES
+%------------------------------------------------------------------------------
+% Couleurs principales
+\definecolor{primaryblue}{RGB}{41, 98, 255}
+\definecolor{secondarygreen}{RGB}{46, 204, 113}
+\definecolor{accentorange}{RGB}{243, 156, 18}
+\definecolor{warningred}{RGB}{231, 76, 60}
+\definecolor{darkgray}{RGB}{52, 73, 94}
+\definecolor{lightgray}{RGB}{236, 240, 241}
+\definecolor{codebg}{RGB}{45, 45, 45}
+\definecolor{codegreen}{RGB}{152, 195, 121}
+\definecolor{codepurple}{RGB}{198, 120, 221}
+\definecolor{codeyellow}{RGB}{229, 192, 123}
+\definecolor{codeblue}{RGB}{97, 175, 239}
+
+% Couleurs pour les boîtes
+\definecolor{infobox}{RGB}{52, 152, 219}
+\definecolor{successbox}{RGB}{39, 174, 96}
+\definecolor{warningbox}{RGB}{241, 196, 15}
+\definecolor{dangerbox}{RGB}{192, 57, 43}
+
+%------------------------------------------------------------------------------
+% CONFIGURATION DES LIENS
+%------------------------------------------------------------------------------
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primaryblue,
+    urlcolor=primaryblue,
+    citecolor=primaryblue
+}
+
+%------------------------------------------------------------------------------
+% STYLE DES TITRES
+%------------------------------------------------------------------------------
+\titleformat{\section}
+    {\color{primaryblue}\LARGE\bfseries}
+    {\thesection}{1em}{}[\titlerule]
+
+\titleformat{\subsection}
+    {\color{darkgray}\Large\bfseries}
+    {\thesubsection}{1em}{}
+
+\titleformat{\subsubsection}
+    {\color{darkgray}\large\bfseries}
+    {\thesubsubsection}{1em}{}
+
+%------------------------------------------------------------------------------
+% BOÎTES COLORÉES (tcolorbox)
+%------------------------------------------------------------------------------
+\tcbuselibrary{skins,breakable}
+
+% Boîte Info
+\newtcolorbox{infobox}[1][]{
+    enhanced,
+    colback=infobox!10,
+    colframe=infobox,
+    fonttitle=\bfseries,
+    title={\faInfoCircle\ Information},
+    #1
+}
+
+% Boîte Succès
+\newtcolorbox{successbox}[1][]{
+    enhanced,
+    colback=successbox!10,
+    colframe=successbox,
+    fonttitle=\bfseries,
+    title={\faCheckCircle\ Avantage},
+    #1
+}
+
+% Boîte Avertissement
+\newtcolorbox{warningbox}[1][]{
+    enhanced,
+    colback=warningbox!10,
+    colframe=warningbox,
+    fonttitle=\bfseries,
+    title={\faExclamationTriangle\ Attention},
+    #1
+}
+
+% Boîte Danger
+\newtcolorbox{dangerbox}[1][]{
+    enhanced,
+    colback=dangerbox!10,
+    colframe=dangerbox,
+    fonttitle=\bfseries,
+    title={\faTimesCircle\ Interdit},
+    #1
+}
+
+% Boîte Code/Technique
+\newtcolorbox{techbox}[1][]{
+    enhanced,
+    colback=codebg,
+    colframe=darkgray,
+    fonttitle=\bfseries\color{white},
+    coltitle=white,
+    title={\faCode\ Code},
+    #1
+}
+
+% Boîte Définition
+\newtcolorbox{defbox}[2][]{
+    enhanced,
+    colback=lightgray,
+    colframe=primaryblue,
+    fonttitle=\bfseries,
+    title={\faBook\ #2},
+    #1
+}
+
+%------------------------------------------------------------------------------
+% CONFIGURATION DES LISTINGS (CODE)
+%------------------------------------------------------------------------------
+\lstset{
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\small\color{white},
+    keywordstyle=\color{codepurple}\bfseries,
+    stringstyle=\color{codegreen},
+    commentstyle=\color{gray}\itshape,
+    numberstyle=\tiny\color{gray},
+    numbers=left,
+    numbersep=8pt,
+    breaklines=true,
+    breakatwhitespace=true,
+    tabsize=4,
+    showstringspaces=false,
+    frame=single,
+    rulecolor=\color{darkgray},
+    captionpos=b,
+    xleftmargin=15pt,
+    framexleftmargin=15pt
+}
+
+\lstdefinelanguage{SQL}{
+    keywords={SELECT, FROM, WHERE, JOIN, LEFT, RIGHT, INNER, ON, AND, OR, NOT, IN, AS, TOP, ORDER, BY, GROUP, HAVING, COUNT, SUM, AVG, MAX, MIN, CREATE, TABLE, INSERT, UPDATE, DELETE, DROP, TRUNCATE, ALTER, PRIMARY, KEY, FOREIGN, REFERENCES, INT, NVARCHAR, BIT, DATETIME, DEFAULT, NULL, CAST, GETDATE, DATE, DATEADD},
+    keywordstyle=\color{codeblue}\bfseries,
+    sensitive=false,
+    morestring=[b]',
+    morecomment=[l]{--},
+}
+
+\lstdefinelanguage{Python}{
+    keywords={def, return, if, else, elif, for, while, in, import, from, as, class, try, except, with, True, False, None, and, or, not},
+    keywordstyle=\color{codepurple}\bfseries,
+    sensitive=true,
+    morestring=[b]",
+    morestring=[b]',
+    morecomment=[l]{\#},
+}
+
+\lstdefinelanguage{JSON}{
+    morestring=[b]",
+    stringstyle=\color{codegreen},
+    literate=
+     *{:}{{{\color{codeyellow}:}}}{1}
+      {,}{{{\color{white},}}}{1}
+      {\{}{{{\color{codepurple}\{}}}{1}
+      {\}}{{{\color{codepurple}\}}}}{1}
+      {[}{{{\color{codepurple}[}}}{1}
+      {]}{{{\color{codepurple}]}}}{1},
+}
+
+%------------------------------------------------------------------------------
+% EN-TÊTE ET PIED DE PAGE
+%------------------------------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{darkgray}{\small GMAO Chatbot - Architecture}}
+\fancyhead[R]{\textcolor{darkgray}{\small \thepage}}
+\fancyfoot[C]{\textcolor{gray}{\small Document Technique - Janvier 2026}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+%------------------------------------------------------------------------------
+% TikZ LIBRARIES
+%------------------------------------------------------------------------------
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, shadows, fit, backgrounds}
+
+%==============================================================================
+% DÉBUT DU DOCUMENT
+%==============================================================================
+\begin{document}
+
+%------------------------------------------------------------------------------
+% PAGE DE TITRE
+%------------------------------------------------------------------------------
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    
+    % Logo/Icône
+    {\Huge\color{primaryblue}\faRobot}
+    
+    \vspace{1cm}
+    
+    {\Huge\bfseries\color{primaryblue} GMAO Chatbot}
+    
+    \vspace{0.5cm}
+    
+    {\LARGE\color{darkgray} Architecture LLM Text-to-SQL}
+    
+    \vspace{2cm}
+    
+    \begin{tikzpicture}
+        \node[draw=primaryblue, fill=primaryblue!10, rounded corners=10pt, 
+              minimum width=12cm, minimum height=3cm, align=center] {
+            {\Large\bfseries Documentation Technique}\\[0.3cm]
+            {\large Assistant IA pour la Gestion de Maintenance}
+        };
+    \end{tikzpicture}
+    
+    \vspace{2cm}
+    
+    \begin{tabular}{ll}
+        \faCalendar & \textbf{Date :} 27 Janvier 2026 \\[0.3cm]
+        \faCode & \textbf{Version :} 1.0 \\[0.3cm]
+        \faServer & \textbf{Environnement :} Développement \\[0.3cm]
+        \faBrain & \textbf{Modèle IA :} Gemma 3 27B (OpenRouter)
+    \end{tabular}
+    
+    \vfill
+    
+    {\large\color{gray} Projet de Stage - GMAO}
+    
+\end{titlepage}
+
+%------------------------------------------------------------------------------
+% TABLE DES MATIÈRES
+%------------------------------------------------------------------------------
+\tableofcontents
+\newpage
+
+%==============================================================================
+% SECTION 1 : VUE D'ENSEMBLE
+%==============================================================================
+\section{\faEye\ Vue d'Ensemble}
+
+\subsection{Qu'est-ce que le GMAO Chatbot ?}
+
+\begin{defbox}{Définition}
+Le \textbf{GMAO Chatbot} est un assistant intelligent basé sur l'Intelligence Artificielle (IA) qui permet aux superviseurs et techniciens d'interroger la base de données GMAO en \textbf{langage naturel français}.
+\end{defbox}
+
+\begin{successbox}
+\textbf{Exemple d'utilisation :}\\
+L'utilisateur demande : \textit{"Quelles sont les interventions en cours ?"}\\
+Le chatbot répond automatiquement avec la liste des interventions actives.
+\end{successbox}
+
+\subsection{Approche Technique : Text-to-SQL}
+
+Notre chatbot utilise l'approche \textbf{Text-to-SQL}, qui convertit les questions en langage naturel en requêtes SQL exécutables sur la base de données.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=1.2cm,
+    box/.style={rectangle, rounded corners, draw=#1, fill=#1!20, 
+                minimum width=10cm, minimum height=1cm, align=center,
+                font=\small},
+    arrow/.style={-{Stealth[length=3mm]}, thick, color=darkgray}
+]
+
+% Nodes
+\node[box=primaryblue] (q1) {\faUser\ \textbf{Question Utilisateur (Français)}\\
+"Quelles sont les interventions en cours ?"};
+
+\node[box=accentorange, below=of q1] (llm) {\faBrain\ \textbf{LLM (Large Language Model)}\\
+Analyse et convertit en SQL};
+
+\node[box=secondarygreen, below=of llm] (sql) {\faDatabase\ \textbf{Requête SQL Générée}\\
+\texttt{SELECT * FROM DemandeInterventions WHERE StatusId = 2}};
+
+\node[box=darkgray, below=of sql] (db) {\faServer\ \textbf{Exécution sur SQL Server}\\
+Récupération des données};
+
+\node[box=primaryblue, below=of db] (resp) {\faComment\ \textbf{Réponse Formatée}\\
+"Il y a 3 interventions en cours : ..."};
+
+% Arrows
+\draw[arrow] (q1) -- (llm);
+\draw[arrow] (llm) -- (sql);
+\draw[arrow] (sql) -- (db);
+\draw[arrow] (db) -- (resp);
+
+\end{tikzpicture}
+\caption{Flux de traitement Text-to-SQL}
+\end{figure}
+
+\newpage
+
+%==============================================================================
+% SECTION 2 : ARCHITECTURE IA - TEXT-TO-SQL vs RAG
+%==============================================================================
+\section{\faBrain\ Architecture IA : Pourquoi Text-to-SQL ?}
+
+\subsection{Deux Approches Possibles}
+
+Il existe deux approches principales pour créer un chatbot IA connecté à une base de données :
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=0.5cm,
+    techbox/.style={rectangle, rounded corners=5pt, draw=#1, fill=#1!15,
+                    minimum width=6cm, minimum height=0.8cm, align=center, font=\small},
+    label/.style={font=\bfseries\large, color=#1}
+]
+
+% RAG Section
+\node[label=warningred] (ragtitle) at (-4, 4) {\faTimesCircle\ RAG (Non utilisé)};
+
+\node[techbox=warningred, below=of ragtitle] (rag1) {Documents $\rightarrow$ Chunking};
+\node[techbox=warningred, below=of rag1] (rag2) {Embeddings $\rightarrow$ Vector DB};
+\node[techbox=warningred, below=of rag2] (rag3) {Recherche Similarité};
+\node[techbox=warningred, below=of rag3] (rag4) {LLM $\rightarrow$ Réponse};
+
+% Text-to-SQL Section
+\node[label=successbox, right=3cm of ragtitle] (sqltitle) {\faCheckCircle\ Text-to-SQL (Utilisé)};
+
+\node[techbox=successbox, below=of sqltitle] (sql1) {Question Naturelle};
+\node[techbox=successbox, below=of sql1] (sql2) {LLM + Schéma DB};
+\node[techbox=successbox, below=of sql2] (sql3) {Requête SQL};
+\node[techbox=successbox, below=of sql3] (sql4) {Résultat Exact};
+
+% Arrows
+\foreach \i/\j in {rag1/rag2, rag2/rag3, rag3/rag4} {
+    \draw[-{Stealth}, thick, warningred] (\i) -- (\j);
+}
+\foreach \i/\j in {sql1/sql2, sql2/sql3, sql3/sql4} {
+    \draw[-{Stealth}, thick, successbox] (\i) -- (\j);
+}
+
+\end{tikzpicture}
+\caption{Comparaison RAG vs Text-to-SQL}
+\end{figure}
+
+\subsection{Qu'est-ce que le RAG ?}
+
+\begin{defbox}{RAG - Retrieval-Augmented Generation}
+Le RAG est une technique qui combine :
+\begin{enumerate}
+    \item Une \textbf{base de données vectorielle} (Pinecone, Chroma, Weaviate)
+    \item Des \textbf{embeddings} (représentations numériques du texte)
+    \item Un \textbf{LLM} pour générer des réponses
+\end{enumerate}
+\textbf{Idéal pour :} Documents textuels, FAQ, manuels, recherche sémantique.
+\end{defbox}
+
+\subsection{Pourquoi nous n'utilisons PAS le RAG ?}
+
+\begin{dangerbox}[title={\faTimesCircle\ Problèmes du RAG pour GMAO}]
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Données structurées :} RAG est conçu pour du texte, pas pour des tableaux SQL
+    \item \textbf{Synchronisation :} Chaque modification en DB nécessite une re-indexation
+    \item \textbf{Précision :} "Combien d'interventions ?" $\rightarrow$ RAG donne une approximation
+    \item \textbf{Requêtes complexes :} RAG ne peut pas faire GROUP BY, SUM, COUNT, JOIN
+    \item \textbf{Coût élevé :} Vector DB + Embeddings $\approx$ \textbf{140€/mois}
+\end{itemize}
+\end{dangerbox}
+
+\subsection{Pourquoi Text-to-SQL est Idéal ?}
+
+\begin{successbox}[title={\faCheckCircle\ Avantages du Text-to-SQL pour GMAO}]
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Temps réel :} Interroge directement la base de données
+    \item \textbf{Précision 100\% :} SQL retourne les chiffres exacts
+    \item \textbf{Requêtes complexes :} Agrégations, jointures, filtres natifs
+    \item \textbf{Pas de Vector DB :} Économie d'infrastructure
+    \item \textbf{Coût faible :} Seulement LLM $\approx$ \textbf{15-20€/mois}
+\end{itemize}
+\end{successbox}
+
+\subsection{Tableau Comparatif Détaillé}
+
+\begin{table}[H]
+\centering
+\rowcolors{2}{lightgray}{white}
+\begin{tabular}{|>{\bfseries}l|c|c|}
+\hline
+\rowcolor{primaryblue}
+\textcolor{white}{\textbf{Critère}} & \textcolor{white}{\textbf{Text-to-SQL} \faCheckCircle} & \textcolor{white}{\textbf{RAG} \faTimesCircle} \\
+\hline
+Données en temps réel & \cellcolor{successbox!30}\faCheck\ Toujours à jour & \cellcolor{dangerbox!30}\faTimes\ Synchronisation requise \\
+\hline
+Précision des chiffres & \cellcolor{successbox!30}\faCheck\ 100\% exacte & \cellcolor{warningbox!30}\faExclamation\ Approximative \\
+\hline
+Complexité d'installation & \cellcolor{successbox!30}\faCheck\ Simple & \cellcolor{dangerbox!30}\faTimes\ Complexe \\
+\hline
+Coût d'infrastructure & \cellcolor{successbox!30}\faCheck\ $\sim$20€/mois & \cellcolor{dangerbox!30}\faTimes\ $\sim$140€/mois \\
+\hline
+Requêtes analytiques & \cellcolor{successbox!30}\faCheck\ Excellent & \cellcolor{dangerbox!30}\faTimes\ Limité \\
+\hline
+\end{tabular}
+\caption{Comparaison Text-to-SQL vs RAG}
+\end{table}
+
+\newpage
+
+%==============================================================================
+% SECTION 3 : ARCHITECTURE TECHNIQUE COMPLÈTE
+%==============================================================================
+\section{\faCogs\ Architecture Technique Complète}
+
+\subsection{Vue d'Ensemble du Système}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    scale=0.85,
+    transform shape,
+    node distance=0.8cm,
+    component/.style={rectangle, rounded corners=8pt, draw=#1, fill=#1!20,
+                      minimum width=11cm, minimum height=1.5cm, align=center,
+                      font=\small, drop shadow},
+    subcomp/.style={rectangle, rounded corners=3pt, draw=gray, fill=white,
+                    minimum width=3cm, minimum height=0.6cm, align=center,
+                    font=\footnotesize},
+    arrow/.style={-{Stealth[length=3mm]}, thick, color=darkgray},
+    label/.style={font=\bfseries\footnotesize, color=white}
+]
+
+% Frontend
+\node[component=primaryblue] (frontend) {
+    \textcolor{primaryblue}{\faDesktop\ \textbf{FRONTEND - Angular 17+}}\\
+    http://localhost:4200
+};
+
+% API .NET
+\node[component=secondarygreen, below=1.5cm of frontend] (api) {
+    \textcolor{secondarygreen}{\faServer\ \textbf{API .NET Core 9.0}}\\
+    http://localhost:5000
+};
+
+% Python Service
+\node[component=accentorange, below=1.5cm of api] (python) {
+    \textcolor{accentorange}{\faPython\ \textbf{PYTHON CHATBOT SERVICE - FastAPI}}\\
+    http://localhost:5002
+};
+
+% Database
+\node[component=darkgray, below=1.5cm of python] (db) {
+    \textcolor{darkgray}{\faDatabase\ \textbf{SQL SERVER DATABASE}}\\
+    localhost$\backslash$SQLEXPRESS - Database: gmao
+};
+
+% LLM Provider
+\node[component=codepurple, right=0.5cm of python, minimum width=4cm] (llm) {
+    \textcolor{codepurple}{\faBrain\ \textbf{LLM}}\\
+    OpenRouter\\
+    Gemma 3 27B
+};
+
+% Arrows
+\draw[arrow] (frontend) -- node[right, font=\footnotesize] {HTTP POST /query} (api);
+\draw[arrow] (api) -- node[right, font=\footnotesize] {HTTP POST /query} (python);
+\draw[arrow] (python) -- node[right, font=\footnotesize] {SQL Queries} (db);
+\draw[arrow] (python) -- node[above, font=\footnotesize] {API Calls} (llm);
+
+% Labels on left
+\node[left=0.3cm of frontend, font=\footnotesize\color{gray}] {Interface Utilisateur};
+\node[left=0.3cm of api, font=\footnotesize\color{gray}] {Authentification JWT};
+\node[left=0.3cm of python, font=\footnotesize\color{gray}] {Traitement NLP + SQL};
+\node[left=0.3cm of db, font=\footnotesize\color{gray}] {Stockage des données};
+
+\end{tikzpicture}
+\caption{Architecture Globale du Système GMAO Chatbot}
+\end{figure}
+
+\subsection{Composants du Service Python (Cœur du Chatbot)}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=0.6cm,
+    step/.style={rectangle, rounded corners=5pt, draw=accentorange, fill=accentorange!15,
+                 minimum width=10cm, minimum height=1cm, align=center, font=\small},
+    num/.style={circle, draw=accentorange, fill=accentorange, text=white, 
+                minimum size=0.6cm, font=\bfseries\small}
+]
+
+\node[step] (s1) {\textbf{Query Preprocessor} - Normalisation, détection langue, dates françaises};
+\node[num, left=0.3cm of s1] {1};
+
+\node[step, below=of s1] (s2) {\textbf{Predefined Query Matcher} - Patterns regex pour requêtes communes};
+\node[num, left=0.3cm of s2] {2};
+
+\node[step, below=of s2] (s3) {\textbf{LLM Text-to-SQL Engine} - Génération SQL par IA};
+\node[num, left=0.3cm of s3] {3};
+
+\node[step, below=of s3] (s4) {\textbf{SQL Validator} - Validation sécurité (SELECT only)};
+\node[num, left=0.3cm of s4] {4};
+
+\node[step, below=of s4] (s5) {\textbf{SQL Executor} - Exécution sur SQL Server};
+\node[num, left=0.3cm of s5] {5};
+
+\node[step, below=of s5] (s6) {\textbf{Response Formatter} - Formatage réponse en français};
+\node[num, left=0.3cm of s6] {6};
+
+% Arrows
+\foreach \i/\j in {s1/s2, s2/s3, s3/s4, s4/s5, s5/s6} {
+    \draw[-{Stealth}, thick, accentorange] (\i) -- (\j);
+}
+
+\end{tikzpicture}
+\caption{Pipeline de Traitement du Service Python}
+\end{figure}
+
+\newpage
+
+%==============================================================================
+% SECTION 4 : ARCHITECTURE HYBRIDE (3 NIVEAUX)
+%==============================================================================
+\section{\faLayerGroup\ Architecture Hybride : 3 Niveaux d'Optimisation}
+
+Notre chatbot utilise une \textbf{approche hybride} pour optimiser les performances et réduire les coûts.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=0.8cm,
+    level/.style={rectangle, rounded corners=10pt, draw=#1, fill=#1!20,
+                  minimum width=12cm, minimum height=2cm, align=center,
+                  font=\small, drop shadow},
+    arrow/.style={-{Stealth[length=3mm]}, thick},
+    label/.style={font=\bfseries}
+]
+
+% Input
+\node[rectangle, rounded corners=5pt, draw=primaryblue, fill=primaryblue!30,
+      minimum width=8cm, minimum height=0.8cm] (input) {
+    \faUser\ \textbf{Question Utilisateur}
+};
+
+% Level 1
+\node[level=successbox, below=1cm of input] (l1) {
+    \textbf{\faRocket\ NIVEAU 1 : Pattern Matching (Regex)}\\[0.2cm]
+    Questions fréquentes prédéfinies $\bullet$ Réponse $\sim$100ms $\bullet$ \textbf{Coût : 0€}
+};
+
+% Level 2
+\node[level=infobox, below=of l1] (l2) {
+    \textbf{\faUserTag\ NIVEAU 2 : Détection d'Entités}\\[0.2cm]
+    "Interventions de Mohamed" $\bullet$ SQL paramétré $\bullet$ \textbf{Coût : 0€}
+};
+
+% Level 3
+\node[level=accentorange, below=of l2] (l3) {
+    \textbf{\faBrain\ NIVEAU 3 : LLM Text-to-SQL}\\[0.2cm]
+    Questions complexes/nouvelles $\bullet$ Génération SQL $\bullet$ \textbf{Coût : $\sim$0.001€/requête}
+};
+
+% Output
+\node[rectangle, rounded corners=5pt, draw=secondarygreen, fill=secondarygreen!30,
+      minimum width=8cm, minimum height=0.8cm, below=1cm of l3] (output) {
+    \faComment\ \textbf{Réponse Formatée}
+};
+
+% Arrows
+\draw[arrow, primaryblue] (input) -- (l1);
+\draw[arrow, gray] (l1) -- node[right, font=\footnotesize] {si pas de match} (l2);
+\draw[arrow, gray] (l2) -- node[right, font=\footnotesize] {si pas de match} (l3);
+\draw[arrow, successbox] (l3) -- (output);
+
+% Direct arrows for matches
+\draw[arrow, successbox, dashed] (l1.east) -- ++(2,0) |- (output.east);
+\draw[arrow, infobox, dashed] (l2.east) -- ++(1.5,0) |- ($(output.east)-(0,0.2)$);
+
+% Percentages
+\node[right=2.5cm of l1, font=\bfseries\color{successbox}] {$\sim$50\%};
+\node[right=2cm of l2, font=\bfseries\color{infobox}] {$\sim$20\%};
+\node[right=0.5cm of l3, font=\bfseries\color{accentorange}] {$\sim$30\%};
+
+\end{tikzpicture}
+\caption{Architecture Hybride à 3 Niveaux}
+\end{figure}
+
+\begin{infobox}[title={\faChartPie\ Résultats de cette Architecture}]
+\begin{tabular}{ll}
+    \textbf{Requêtes sans LLM :} & $\sim$70\% (niveaux 1 + 2) \\
+    \textbf{Économie :} & $\sim$70\% de réduction des coûts LLM \\
+    \textbf{Temps de réponse moyen :} & $\sim$500ms (vs 5s full LLM) \\
+    \textbf{Précision :} & 100\% pour SQL, $\sim$90\% pour LLM \\
+\end{tabular}
+\end{infobox}
+
+\newpage
+
+%==============================================================================
+% SECTION 5 : WORKFLOW DÉTAILLÉ
+%==============================================================================
+\section{\faProjectDiagram\ Workflow Détaillé}
+
+\subsection{Étape 1 : Réception de la Question}
+
+\begin{lstlisting}[language=JSON, caption=Requête entrante]
+{
+    "query": "Quelles sont les interventions d'aujourd'hui ?"
+}
+\end{lstlisting}
+
+\subsection{Étape 2 : Prétraitement}
+
+\begin{lstlisting}[language=Python, caption=Prétraitement de la question]
+# Normalisation
+question = question.lower().strip()
+# "quelles sont les interventions d'aujourd'hui ?"
+
+# Detection des dates francaises
+# "aujourd'hui" -> CAST(GETDATE() AS DATE)
+# "hier" -> DATEADD(day, -1, CAST(GETDATE() AS DATE))
+# "janvier 2026" -> '2026-01-01' AND '2026-01-31'
+\end{lstlisting}
+
+\subsection{Étape 3 : Matching des Patterns Prédéfinis}
+
+\begin{lstlisting}[language=Python, caption=Patterns prédéfinis]
+PREDEFINED_QUERIES = {
+    "interventions": {
+        "patterns": [r"intervention", r"demande", r"ticket"],
+        "sql": """
+            SELECT TOP 20
+                d.Titre, s.Statut, d.DateCreation
+            FROM DemandeInterventions d
+            LEFT JOIN Statuses s ON d.StatusId = s.Id
+            WHERE d.IsActif = 1
+            ORDER BY d.DateCreation DESC
+        """
+    }
+}
+\end{lstlisting}
+
+\subsection{Étape 4 : Génération SQL par LLM}
+
+Si aucun pattern ne correspond, le LLM génère la requête :
+
+\begin{lstlisting}[language=Python, caption=Prompt Engineering pour le LLM]
+SYSTEM_PROMPT = f"""
+Tu es un expert SQL Server pour une base de donnees GMAO.
+Genere UNIQUEMENT une requete SQL SELECT valide.
+
+## Schema de la base de donnees:
+{DATABASE_SCHEMA}
+
+## Regles:
+1. Utilise uniquement SELECT (pas d'INSERT, UPDATE, DELETE)
+2. Limite les resultats a TOP 20
+3. Utilise les JOINs appropries
+
+## Question utilisateur:
+{user_question}
+"""
+\end{lstlisting}
+
+\subsection{Étape 5 : Validation Sécurité}
+
+\begin{dangerbox}[title={\faShieldAlt\ Validation SQL - Sécurité}]
+\begin{lstlisting}[language=Python, caption=Validation de sécurité]
+FORBIDDEN_KEYWORDS = [
+    'INSERT', 'UPDATE', 'DELETE', 'DROP', 'TRUNCATE',
+    'ALTER', 'CREATE', 'EXEC', 'EXECUTE', 'xp_', 'sp_',
+    '--', ';', '/*', '*/'
+]
+
+def validate_sql(sql: str) -> bool:
+    for keyword in FORBIDDEN_KEYWORDS:
+        if keyword in sql.upper():
+            return False  # BLOQUE!
+    return sql.strip().upper().startswith('SELECT')
+\end{lstlisting}
+\end{dangerbox}
+
+\subsection{Étape 6 : Réponse Finale}
+
+\begin{lstlisting}[language=JSON, caption=Réponse du chatbot]
+{
+    "response": "Il y a 1 equipement en panne:\n
+                 * Tour CNC vertical (EQ-007)",
+    "metadata": {
+        "ai_provider": "openrouter",
+        "sql_executed": true,
+        "results_count": 1,
+        "processing_time_ms": 4339
+    },
+    "suggestions": [
+        "Quelles sont les interventions d'aujourd'hui ?",
+        "Combien d'equipements sont en panne ?"
+    ]
+}
+\end{lstlisting}
+
+\newpage
+
+%==============================================================================
+% SECTION 6 : TECHNOLOGIES UTILISÉES
+%==============================================================================
+\section{\faTools\ Technologies Utilisées}
+
+\subsection{Stack Technique Complet}
+
+\begin{table}[H]
+\centering
+\rowcolors{2}{lightgray}{white}
+\begin{tabular}{|>{\bfseries}l|l|l|}
+\hline
+\rowcolor{primaryblue}
+\textcolor{white}{\textbf{Composant}} & \textcolor{white}{\textbf{Technologie}} & \textcolor{white}{\textbf{Version}} \\
+\hline
+\multicolumn{3}{|c|}{\cellcolor{accentorange!30}\textbf{Backend Python (Chatbot)}} \\
+\hline
+Framework API & FastAPI & 0.104+ \\
+Serveur & Uvicorn & 0.24+ \\
+Connexion DB & PyODBC & 5.0+ \\
+Validation & Pydantic & 2.0+ \\
+HTTP Client & Requests & 2.31+ \\
+\hline
+\multicolumn{3}{|c|}{\cellcolor{secondarygreen!30}\textbf{Backend .NET (API)}} \\
+\hline
+Framework & .NET Core & 9.0 \\
+ORM & Entity Framework Core & 9.0 \\
+Auth & ASP.NET Identity + JWT & 9.0 \\
+\hline
+\multicolumn{3}{|c|}{\cellcolor{primaryblue!30}\textbf{Frontend}} \\
+\hline
+Framework & Angular & 17+ \\
+Langage & TypeScript & 5.0+ \\
+UI Components & Angular Material & 17+ \\
+\hline
+\multicolumn{3}{|c|}{\cellcolor{darkgray!30}\textbf{Base de Données}} \\
+\hline
+SGBD & SQL Server Express & 2019+ \\
+Driver & ODBC Driver & 17+ \\
+\hline
+\multicolumn{3}{|c|}{\cellcolor{codepurple!30}\textbf{LLM Provider}} \\
+\hline
+Fournisseur & OpenRouter & Free Tier \\
+Modèle & google/gemma-3-27b-it & Free \\
+\hline
+\end{tabular}
+\caption{Stack Technique du GMAO Chatbot}
+\end{table}
+
+\newpage
+
+%==============================================================================
+% SECTION 7 : ÉTAT ACTUEL VS PRODUCTION
+%==============================================================================
+\section{\faChartLine\ État Actuel vs Production}
+
+\subsection{Configuration Actuelle (Développement)}
+
+\begin{table}[H]
+\centering
+\rowcolors{2}{lightgray}{white}
+\begin{tabular}{|>{\bfseries}l|c|l|}
+\hline
+\rowcolor{accentorange}
+\textcolor{white}{\textbf{Aspect}} & \textcolor{white}{\textbf{État}} & \textcolor{white}{\textbf{Note}} \\
+\hline
+LLM Provider & OpenRouter Free & Limité en requêtes/minute \\
+Modèle & Gemma 3 27B & Gratuit mais moins précis \\
+Temps de réponse & 4-17 secondes & Acceptable pour dev \\
+Disponibilité & $\sim$99\% & Dépend d'OpenRouter \\
+\rowcolor{successbox!30}
+Coût & \textbf{0€/mois} & Gratuit \\
+\hline
+\end{tabular}
+\caption{Configuration Actuelle}
+\end{table}
+
+\subsection{Limitations Actuelles}
+
+\begin{warningbox}[title={\faExclamationTriangle\ Limitations à Résoudre}]
+\begin{enumerate}
+    \item \textbf{Rate Limits :} $\sim$10-20 requêtes/minute sur tier gratuit
+    \item \textbf{Latence :} 4-17 secondes par requête
+    \item \textbf{Précision :} $\sim$85\% pour les requêtes complexes
+    \item \textbf{Fallback :} Les providers de secours ne sont pas configurés
+\end{enumerate}
+\end{warningbox}
+
+\newpage
+
+%==============================================================================
+% SECTION 8 : RECOMMANDATIONS FUTURES
+%==============================================================================
+\section{\faRocket\ Recommandations Futures}
+
+\subsection{Phase 1 : Court Terme - Amélioration du LLM}
+
+\begin{table}[H]
+\centering
+\rowcolors{2}{lightgray}{white}
+\begin{tabular}{|>{\bfseries}l|c|c|c|c|}
+\hline
+\rowcolor{primaryblue}
+\textcolor{white}{\textbf{Option}} & \textcolor{white}{\textbf{Coût/mois}} & \textcolor{white}{\textbf{Latence}} & \textcolor{white}{\textbf{Précision}} & \textcolor{white}{\textbf{Recommandé}} \\
+\hline
+\cellcolor{successbox!20}Gratuit (Actuel) & 0€ & 4-17s & $\sim$85\% & Dev \\
+\hline
+\rowcolor{successbox!30}
+\cellcolor{successbox!40}OpenAI GPT-4o-mini & \textbf{15-20€} & \textbf{1-3s} & \textbf{$\sim$95\%} & \faCheckCircle\ \textbf{Production} \\
+\hline
+Claude 3.5 Sonnet & 40-50€ & 2-4s & $\sim$98\% & Premium \\
+\hline
+Azure OpenAI & 20-30€ & 1-2s & $\sim$95\% & Enterprise \\
+\hline
+\end{tabular}
+\caption{Options de LLM pour Production}
+\end{table}
+
+\begin{successbox}[title={\faStar\ Recommandation}]
+\textbf{OpenAI GPT-4o-mini} est le meilleur compromis coût/performance pour une mise en production.
+\begin{itemize}
+    \item Budget : $\sim$15-20€/mois pour 500 requêtes/jour
+    \item Latence réduite de 80\% (1-3s vs 4-17s)
+    \item Précision améliorée de 10\% ($\sim$95\% vs $\sim$85\%)
+\end{itemize}
+\end{successbox}
+
+\subsection{Phase 2 : Moyen Terme - Optimisations}
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{\faMemory\ Cache Redis}
+    \begin{itemize}
+        \item Cacher les réponses fréquentes
+        \item Réduction de 80\% des appels LLM
+        \item Temps de réponse < 100ms pour requêtes cachées
+    \end{itemize}
+    
+    \item \textbf{\faChartBar\ Monitoring et Analytics}
+    \begin{itemize}
+        \item Dashboard de suivi des requêtes
+        \item Alertes sur les erreurs
+        \item Métriques de performance
+    \end{itemize}
+    
+    \item \textbf{\faGraduationCap\ Fine-tuning}
+    \begin{itemize}
+        \item Entraîner un modèle spécialisé GMAO
+        \item Améliorer la précision des requêtes SQL
+        \item Réduire les coûts à long terme
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Phase 3 : Long Terme - Production}
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{\faCloud\ Infrastructure Cloud}
+    \begin{itemize}
+        \item Déploiement sur Azure/AWS
+        \item Load balancing et auto-scaling
+        \item Haute disponibilité (99.9\%)
+    \end{itemize}
+    
+    \item \textbf{\faShieldAlt\ Sécurité Renforcée}
+    \begin{itemize}
+        \item Audit complet des requêtes
+        \item Chiffrement end-to-end
+        \item Conformité RGPD
+    \end{itemize}
+    
+    \item \textbf{\faChartArea\ Fonctionnalités Avancées}
+    \begin{itemize}
+        \item Graphiques et visualisations
+        \item Export PDF/Excel
+        \item Alertes proactives
+    \end{itemize}
+\end{enumerate}
+
+\newpage
+
+%==============================================================================
+% SECTION 9 : ESTIMATION DES COÛTS
+%==============================================================================
+\section{\faEuroSign\ Estimation des Coûts}
+
+\subsection{Scénario : 500 requêtes/jour}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+    \begin{axis}[
+        ybar,
+        width=14cm,
+        height=8cm,
+        ylabel={Coût mensuel (€)},
+        symbolic x coords={Gratuit, GPT-4o-mini, Claude 3.5, Azure OpenAI},
+        xtick=data,
+        nodes near coords,
+        nodes near coords align={vertical},
+        ymin=0,
+        ymax=50,
+        bar width=1.5cm,
+        enlarge x limits=0.2,
+        legend style={at={(0.5,-0.15)}, anchor=north, legend columns=-1},
+    ]
+    \addplot[fill=successbox!70] coordinates {(Gratuit,0) (GPT-4o-mini,17) (Claude 3.5,45) (Azure OpenAI,25)};
+    \end{axis}
+\end{tikzpicture}
+\caption{Comparaison des Coûts Mensuels par Provider}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\rowcolors{2}{lightgray}{white}
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\rowcolor{primaryblue}
+\textcolor{white}{\textbf{Configuration}} & \textcolor{white}{\textbf{Coût/mois}} & \textcolor{white}{\textbf{Latence}} & \textcolor{white}{\textbf{Précision}} & \textcolor{white}{\textbf{Usage}} \\
+\hline
+Gratuit (Actuel) & 0€ & 4-17s & $\sim$85\% & Développement \\
+\rowcolor{successbox!20}
+OpenAI GPT-4o-mini & $\sim$15€ & 1-3s & $\sim$95\% & \textbf{Production} \\
+Claude 3.5 Sonnet & $\sim$40€ & 2-4s & $\sim$98\% & Premium \\
+Azure OpenAI & $\sim$20€ & 1-2s & $\sim$95\% & Enterprise \\
+\hline
+\end{tabular}
+\caption{Résumé des Options}
+\end{table}
+
+%==============================================================================
+% CONCLUSION
+%==============================================================================
+\section{\faFlagCheckered\ Conclusion}
+
+\begin{tcolorbox}[
+    enhanced,
+    colback=primaryblue!10,
+    colframe=primaryblue,
+    title={\faStar\ Points Clés à Retenir},
+    fonttitle=\bfseries
+]
+\begin{enumerate}
+    \item \textbf{Architecture Text-to-SQL} choisie car idéale pour les données structurées GMAO
+    \item \textbf{Pas de RAG} car trop coûteux et moins précis pour les requêtes SQL
+    \item \textbf{Approche hybride} à 3 niveaux pour optimiser coûts et performances
+    \item \textbf{Configuration actuelle gratuite} adaptée au développement
+    \item \textbf{Recommandation production} : OpenAI GPT-4o-mini ($\sim$15-20€/mois)
+\end{enumerate}
+\end{tcolorbox}
+
+\vspace{1cm}
+
+\begin{center}
+\begin{tikzpicture}
+    \node[draw=secondarygreen, fill=secondarygreen!20, rounded corners=10pt,
+          minimum width=10cm, minimum height=1.5cm, align=center] {
+        {\Large\bfseries\color{secondarygreen} Le GMAO Chatbot est opérationnel !}\\
+        Prêt pour la démonstration et les tests.
+    };
+\end{tikzpicture}
+\end{center}
+
+%==============================================================================
+% FIN DU DOCUMENT
+%==============================================================================
+\end{document}

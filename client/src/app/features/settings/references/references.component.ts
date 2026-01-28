@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ReferenceManagementService, ReferenceCategory } from '../services/reference-management.service';
 import { NotificationService } from '../../../core/services/notification.service';
 
@@ -21,7 +22,14 @@ import { NotificationService } from '../../../core/services/notification.service
             Retour
           </button>
           <div class="header-title">
-            <h1>📊 Données de Référence</h1>
+            <h1>
+              <svg class="header-title-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                <line x1="12" y1="22.08" x2="12" y2="12"/>
+              </svg>
+              Données de Référence
+            </h1>
             <p>Gérer les tables de référence pour tous les modules</p>
           </div>
         </div>
@@ -35,7 +43,7 @@ import { NotificationService } from '../../../core/services/notification.service
           [class.active]="selectedModule === module.key"
           (click)="selectModule(module.key)"
         >
-          <span class="tab-icon">{{ module.icon }}</span>
+          <span class="tab-icon" [innerHTML]="getModuleIconSvg(module.icon)"></span>
           <span class="tab-label">{{ module.label }}</span>
           <span class="tab-count">{{ getCategoriesForModule(module.key).length }}</span>
         </button>
@@ -51,7 +59,7 @@ import { NotificationService } from '../../../core/services/notification.service
             [class.active]="selectedCategory?.key === category.key"
             (click)="selectCategory(category)"
           >
-            <div class="category-icon">{{ category.icon }}</div>
+            <div class="category-icon" [innerHTML]="getCategoryIconSvg(category.icon)"></div>
             <div class="category-info">
               <h4>{{ category.label }}</h4>
               <p>{{ category.description }}</p>
@@ -136,7 +144,14 @@ import { NotificationService } from '../../../core/services/notification.service
       <!-- No Category Selected -->
       <div class="no-selection" *ngIf="!selectedCategory">
         <div class="no-selection-content">
-          <span class="no-selection-icon">👆</span>
+          <div class="no-selection-icon">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M4 6h16M4 12h16M4 18h7"/>
+              <circle cx="18" cy="18" r="3"/>
+              <path d="M18 15v1.5"/>
+              <path d="M18 19.5v.5"/>
+            </svg>
+          </div>
           <h3>Sélectionnez une catégorie</h3>
           <p>Choisissez une catégorie ci-dessus pour voir et gérer ses éléments</p>
         </div>
@@ -270,10 +285,17 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .header-title h1 {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
       font-size: 1.5rem;
       font-weight: 700;
       color: var(--text-primary);
       margin: 0;
+    }
+
+    .header-title-icon {
+      color: #3b82f6;
     }
 
     .header-title p {
@@ -315,12 +337,23 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .module-tab.active {
-      background: var(--industrial-dark);
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
       color: white;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
     }
 
     .tab-icon {
-      font-size: 1.125rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+    }
+
+    .tab-icon svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
     }
 
     .tab-count {
@@ -396,14 +429,22 @@ import { NotificationService } from '../../../core/services/notification.service
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.25rem;
-      background: var(--steel-100);
-      border-radius: 10px;
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border-radius: 12px;
       transition: all 0.2s ease;
+      color: #3b82f6;
+    }
+
+    .category-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
     }
 
     .category-card.active .category-icon {
-      background: var(--industrial-dark);
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
     }
 
     .category-info {
@@ -518,29 +559,35 @@ import { NotificationService } from '../../../core/services/notification.service
     .btn-primary {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 0.5rem;
-      padding: 0.5rem 1rem;
-      background: #3b82f6;
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
       color: #ffffff;
       border: none;
-      border-radius: 8px;
-      font-size: 0.8125rem;
+      border-radius: 10px;
+      font-size: 0.875rem;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
     }
 
     .btn-primary:hover:not(:disabled) {
-      background: #2563eb;
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+      transform: translateY(-1px);
     }
 
     .btn-primary:disabled {
       opacity: 0.6;
       cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
 
     .btn-primary.small {
-      padding: 0.5rem 1rem;
+      padding: 0.625rem 1.25rem;
       font-size: 0.8125rem;
     }
 
@@ -606,12 +653,13 @@ import { NotificationService } from '../../../core/services/notification.service
       justify-content: center;
       min-width: 44px;
       padding: 0.375rem 0.75rem;
-      background: #0f172a;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
       border-radius: 6px;
       font-size: 0.75rem;
       font-weight: 600;
       color: #ffffff;
       font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+      box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
     }
 
     .item-name {
@@ -684,12 +732,18 @@ import { NotificationService } from '../../../core/services/notification.service
       font-size: 0.875rem;
     }
 
-    /* No Selection */
+    /* No Selection - Modern Empty State */
     .no-selection {
-      background: white;
-      border-radius: 12px;
-      border: 2px dashed var(--steel-300);
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border-radius: 16px;
+      border: 2px dashed var(--steel-200);
       padding: 4rem 2rem;
+      transition: all 0.3s ease;
+    }
+
+    .no-selection:hover {
+      border-color: var(--primary);
+      border-style: solid;
     }
 
     .no-selection-content {
@@ -700,22 +754,32 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .no-selection-icon {
-      font-size: 3.5rem;
-      margin-bottom: 1rem;
-      opacity: 0.6;
+      width: 80px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border-radius: 20px;
+      margin-bottom: 1.5rem;
+      color: #3b82f6;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
     }
 
     .no-selection-content h3 {
       margin: 0;
-      font-size: 1.125rem;
-      font-weight: 600;
+      font-size: 1.25rem;
+      font-weight: 700;
       color: var(--text-primary);
+      letter-spacing: -0.02em;
     }
 
     .no-selection-content p {
-      margin: 0.5rem 0 0 0;
+      margin: 0.75rem 0 0 0;
       color: var(--steel-500);
-      font-size: 0.875rem;
+      font-size: 0.9375rem;
+      max-width: 320px;
+      line-height: 1.5;
     }
 
     /* Loading */
@@ -784,45 +848,50 @@ import { NotificationService } from '../../../core/services/notification.service
       justify-content: space-between;
       align-items: center;
       padding: 1.25rem 1.5rem;
-      background: var(--industrial-dark);
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
       color: white;
     }
 
     .modal-header.delete {
-      background: var(--danger);
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
     }
 
     .modal-header h2 {
       margin: 0;
-      font-size: 1.0625rem;
+      font-size: 1.125rem;
       font-weight: 600;
+      color: white;
+      letter-spacing: -0.01em;
     }
 
     .close-btn {
-      width: 32px;
-      height: 32px;
+      width: 36px;
+      height: 36px;
       border: none;
       background: rgba(255, 255, 255, 0.15);
-      border-radius: 6px;
-      font-size: 1.25rem;
+      border-radius: 8px;
+      font-size: 1.5rem;
       color: white;
       cursor: pointer;
       transition: all 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: center;
+      line-height: 1;
     }
 
     .close-btn:hover {
-      background: rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.05);
     }
 
     .modal-body {
-      padding: 1.5rem;
+      padding: 1.75rem 1.5rem;
+      background: #ffffff;
     }
 
     .form-group {
-      margin-bottom: 1.25rem;
+      margin-bottom: 1.5rem;
     }
 
     .form-group:last-child {
@@ -833,40 +902,49 @@ import { NotificationService } from '../../../core/services/notification.service
       display: flex;
       align-items: center;
       gap: 0.25rem;
-      font-size: 0.8125rem;
+      font-size: 0.875rem;
       font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 0.5rem;
+      color: #1e293b;
+      margin-bottom: 0.625rem;
     }
 
     .form-group .required {
-      color: var(--danger);
+      color: #ef4444;
+      font-weight: 500;
     }
 
     .form-group input,
     .form-group textarea,
     .form-group select {
       width: 100%;
-      padding: 0.75rem 1rem;
-      border: 1px solid var(--steel-300);
-      border-radius: 8px;
+      padding: 0.875rem 1rem;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
       font-size: 0.9375rem;
       font-family: inherit;
       transition: all 0.2s ease;
-      background: white;
-      color: var(--text-primary);
+      background: #f8fafc;
+      color: #1e293b;
     }
 
     .form-group input::placeholder {
-      color: var(--steel-400);
+      color: #94a3b8;
+    }
+
+    .form-group input:hover,
+    .form-group select:hover,
+    .form-group textarea:hover {
+      border-color: #cbd5e1;
+      background: #ffffff;
     }
 
     .form-group input:focus,
     .form-group select:focus,
     .form-group textarea:focus {
       outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+      border-color: #3b82f6;
+      background: #ffffff;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
     }
 
     .form-group select {
@@ -890,56 +968,57 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .form-group textarea::placeholder {
-      color: var(--steel-400);
+      color: #94a3b8;
     }
 
     .form-group .error {
-      color: var(--danger);
-      font-size: 0.75rem;
+      color: #ef4444;
+      font-size: 0.8125rem;
       font-weight: 500;
-      margin-top: 0.375rem;
+      margin-top: 0.5rem;
       display: block;
     }
 
     .warning-text {
-      color: var(--danger);
+      color: #dc2626;
       font-size: 0.875rem;
-      margin-top: 0.5rem;
-      padding: 0.625rem 0.875rem;
-      background: rgba(239, 68, 68, 0.08);
-      border-radius: 6px;
-      border-left: 3px solid var(--danger);
+      margin-top: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: #fef2f2;
+      border-radius: 8px;
+      border-left: 3px solid #ef4444;
     }
 
     .modal-footer {
       display: flex;
       justify-content: flex-end;
       gap: 0.75rem;
-      padding: 1rem 1.5rem;
-      border-top: 1px solid var(--steel-200);
-      background: var(--steel-50);
+      padding: 1.25rem 1.5rem;
+      border-top: 1px solid #e2e8f0;
+      background: #f8fafc;
     }
 
     .btn-secondary {
-      padding: 0.625rem 1.25rem;
+      padding: 0.75rem 1.5rem;
       background: white;
-      border: 1px solid var(--steel-300);
-      border-radius: 8px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
       font-size: 0.875rem;
-      font-weight: 500;
-      color: var(--steel-600);
+      font-weight: 600;
+      color: #64748b;
       cursor: pointer;
       transition: all 0.2s ease;
     }
 
     .btn-secondary:hover {
-      border-color: var(--steel-400);
-      background: var(--steel-100);
+      border-color: #cbd5e1;
+      background: #f1f5f9;
+      color: #475569;
     }
 
     .btn-danger {
-      padding: 0.625rem 1.25rem;
-      background: var(--danger);
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
       color: white;
       border: none;
       border-radius: 8px;
@@ -981,10 +1060,10 @@ import { NotificationService } from '../../../core/services/notification.service
 })
 export class ReferencesComponent implements OnInit {
   modules = [
-    { key: 'equipment', label: 'Équipement', icon: '⚙️' },
-    { key: 'interventions', label: 'Interventions', icon: '🔧' },
-    { key: 'resources', label: 'Ressources', icon: '📦' },
-    { key: 'stock', label: 'Stock', icon: '🏭' }
+    { key: 'equipment', label: 'Équipement', icon: 'cog' },
+    { key: 'interventions', label: 'Interventions', icon: 'wrench' },
+    { key: 'resources', label: 'Ressources', icon: 'box' },
+    { key: 'stock', label: 'Stock', icon: 'warehouse' }
   ];
 
   selectedModule = 'equipment';
@@ -1009,7 +1088,8 @@ export class ReferencesComponent implements OnInit {
     private referenceService: ReferenceManagementService,
     private notificationService: NotificationService,
     private fb: FormBuilder,
-    private router: Router
+    private router: Router,
+    private sanitizer: DomSanitizer
   ) {
     this.itemForm = this.fb.group({
       name: ['', Validators.required]
@@ -1186,5 +1266,44 @@ export class ReferencesComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/settings']);
+  }
+
+  // Modern SVG Icons mapping for modules
+  private moduleIcons: { [key: string]: string } = {
+    'cog': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+    'wrench': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
+    'box': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+    'warehouse': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12"/><path d="M6 14h12"/><rect x="6" y="10" width="12" height="12"/></svg>'
+  };
+
+  // Modern SVG Icons mapping for categories
+  private categoryIcons: { [key: string]: string } = {
+    'alert-triangle': '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    'settings': '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+    'folder': '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
+    'layers': '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>',
+    'award': '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>',
+    'cpu': '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>',
+    'activity': '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+    'tool': '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
+    'zap': '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+    'git-branch': '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>',
+    'alert-circle': '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+    'archive': '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>',
+    'hard-hat': '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v2z"/><path d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5"/><path d="M4 15v-3a6 6 0 0 1 6-6h0"/><path d="M14 6h0a6 6 0 0 1 6 6v3"/></svg>',
+    'gauge': '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>',
+    'map-pin': '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+    'check-circle': '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+    'truck': '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>'
+  };
+
+  getModuleIconSvg(iconName: string): SafeHtml {
+    const svg = this.moduleIcons[iconName] || this.moduleIcons['box'];
+    return this.sanitizer.bypassSecurityTrustHtml(svg);
+  }
+
+  getCategoryIconSvg(iconName: string): SafeHtml {
+    const svg = this.categoryIcons[iconName] || this.categoryIcons['folder'];
+    return this.sanitizer.bypassSecurityTrustHtml(svg);
   }
 }

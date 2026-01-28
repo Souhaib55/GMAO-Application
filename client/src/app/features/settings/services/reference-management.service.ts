@@ -125,29 +125,29 @@ export class ReferenceManagementService {
   // Define all reference data categories
   private readonly _categories: ReferenceCategory[] = [
     // Equipment Module
-    { key: 'equipmentCriticite', label: 'Criticité Équipement', description: 'Niveaux de criticité des équipements', endpoint: 'equipmentcriticite', idField: 'idCriticite', nameField: 'nomCriticite', icon: '⚠️', module: 'equipment' },
-    { key: 'etatEquipement', label: 'État Équipement', description: 'États possibles des équipements', endpoint: 'etatequipement', idField: 'idEtat', nameField: 'nomEtat', icon: '🔧', module: 'equipment' },
-    { key: 'familleEquipement', label: 'Famille Équipement', description: 'Familles d\'équipements', endpoint: 'familleequipment', idField: 'idFamille', nameField: 'nomFamille', icon: '📁', module: 'equipment' },
-    { key: 'groupeEquipement', label: 'Groupe Équipement', description: 'Groupes d\'équipements', endpoint: 'groupeequipement', idField: 'idGroupe', nameField: 'nomGroupe', icon: '📦', module: 'equipment' },
-    { key: 'marque', label: 'Marques', description: 'Marques des équipements', endpoint: 'marque', idField: 'idMarque', nameField: 'nomMarque', icon: '🏭', module: 'equipment' },
-    { key: 'modeleEquipement', label: 'Modèles Équipement', description: 'Modèles d\'équipements', endpoint: 'modeleequipement', idField: 'idModele', nameField: 'nomModele', icon: '📋', module: 'equipment' },
+    { key: 'equipmentCriticite', label: 'Criticité Équipement', description: 'Niveaux de criticité des équipements', endpoint: 'equipmentcriticite', idField: 'idCriticite', nameField: 'nomCriticite', icon: 'alert-triangle', module: 'equipment' },
+    { key: 'etatEquipement', label: 'État Équipement', description: 'États possibles des équipements', endpoint: 'etatequipement', idField: 'idEtat', nameField: 'nomEtat', icon: 'settings', module: 'equipment' },
+    { key: 'familleEquipement', label: 'Famille Équipement', description: 'Familles d\'équipements', endpoint: 'familleequipment', idField: 'idFamille', nameField: 'nomFamille', icon: 'folder', module: 'equipment' },
+    { key: 'groupeEquipement', label: 'Groupe Équipement', description: 'Groupes d\'équipements', endpoint: 'groupeequipement', idField: 'idGroupe', nameField: 'nomGroupe', icon: 'layers', module: 'equipment' },
+    { key: 'marque', label: 'Marques', description: 'Marques des équipements', endpoint: 'marque', idField: 'idMarque', nameField: 'nomMarque', icon: 'award', module: 'equipment' },
+    { key: 'modeleEquipement', label: 'Modèles Équipement', description: 'Modèles d\'équipements', endpoint: 'modeleequipement', idField: 'idModele', nameField: 'nomModele', icon: 'cpu', module: 'equipment' },
     
     // Intervention Module
-    { key: 'etatIntervention', label: 'État Intervention', description: 'États des interventions', endpoint: 'etat', idField: 'idEtat', nameField: 'libelle', icon: '📊', module: 'interventions' },
-    { key: 'typeIntervention', label: 'Type Intervention', description: 'Types d\'interventions', endpoint: 'typeintervention', idField: 'idTypeIntervention', nameField: 'libelle', icon: '🔨', module: 'interventions' },
-    { key: 'urgence', label: 'Niveaux d\'Urgence', description: 'Niveaux d\'urgence', endpoint: 'urgence', idField: 'idUrgence', nameField: 'libelle', icon: '🚨', module: 'interventions' },
-    { key: 'chaineProduction', label: 'Chaînes de Production', description: 'Chaînes de production', endpoint: 'chaineproduction', idField: 'idChaineProduction', nameField: 'libelle', icon: '🏭', module: 'interventions' },
-    { key: 'panne', label: 'Types de Pannes', description: 'Types de pannes', endpoint: 'panne', idField: 'idPanne', nameField: 'libelle', icon: '❌', module: 'interventions' },
+    { key: 'etatIntervention', label: 'État Intervention', description: 'États des interventions', endpoint: 'etat', idField: 'idEtat', nameField: 'libelle', icon: 'activity', module: 'interventions' },
+    { key: 'typeIntervention', label: 'Type Intervention', description: 'Types d\'interventions', endpoint: 'typeintervention', idField: 'idTypeIntervention', nameField: 'libelle', icon: 'tool', module: 'interventions' },
+    { key: 'urgence', label: 'Niveaux d\'Urgence', description: 'Niveaux d\'urgence', endpoint: 'urgence', idField: 'idUrgence', nameField: 'libelle', icon: 'zap', module: 'interventions' },
+    { key: 'chaineProduction', label: 'Chaînes de Production', description: 'Chaînes de production', endpoint: 'chaineproduction', idField: 'idChaineProduction', nameField: 'libelle', icon: 'git-branch', module: 'interventions' },
+    { key: 'panne', label: 'Types de Pannes', description: 'Types de pannes', endpoint: 'panne', idField: 'idPanne', nameField: 'libelle', icon: 'alert-circle', module: 'interventions' },
     
     // Resource Module
-    { key: 'famillePiece', label: 'Famille Pièces', description: 'Familles de pièces', endpoint: 'famillepiece', idField: 'idFamillePiece', nameField: 'nomFamille', icon: '🗂️', module: 'resources' },
-    { key: 'constructeur', label: 'Constructeurs', description: 'Constructeurs', endpoint: 'constructeur', idField: 'idConstructeur', nameField: 'nomConstructeur', icon: '🏗️', module: 'resources' },
-    { key: 'criticitePiece', label: 'Criticité Pièces', description: 'Niveaux de criticité des pièces', endpoint: 'criticitepiece', idField: 'idCriticitePiece', nameField: 'niveauCriticitePiece', icon: '⚡', module: 'resources' },
+    { key: 'famillePiece', label: 'Famille Pièces', description: 'Familles de pièces', endpoint: 'famillepiece', idField: 'idFamillePiece', nameField: 'nomFamille', icon: 'archive', module: 'resources' },
+    { key: 'constructeur', label: 'Constructeurs', description: 'Constructeurs', endpoint: 'constructeur', idField: 'idConstructeur', nameField: 'nomConstructeur', icon: 'hard-hat', module: 'resources' },
+    { key: 'criticitePiece', label: 'Criticité Pièces', description: 'Niveaux de criticité des pièces', endpoint: 'criticitepiece', idField: 'idCriticitePiece', nameField: 'niveauCriticitePiece', icon: 'gauge', module: 'resources' },
     
     // Stock Module
-    { key: 'stockEntities', label: 'Entités Stock', description: 'Entités de stock', endpoint: 'stockentities', idField: 'id', nameField: 'name', icon: '📍', module: 'stock' },
-    { key: 'stockStatus', label: 'Statuts Stock', description: 'Statuts du stock', endpoint: 'stockstatus', idField: 'id', nameField: 'statusName', icon: '✅', module: 'stock' },
-    { key: 'stockSupplier', label: 'Fournisseurs', description: 'Fournisseurs', endpoint: 'stocksupplier', idField: 'id', nameField: 'supplierName', icon: '🚚', module: 'stock' },
+    { key: 'stockEntities', label: 'Entités Stock', description: 'Entités de stock', endpoint: 'stockentities', idField: 'id', nameField: 'name', icon: 'map-pin', module: 'stock' },
+    { key: 'stockStatus', label: 'Statuts Stock', description: 'Statuts du stock', endpoint: 'stockstatus', idField: 'id', nameField: 'statusName', icon: 'check-circle', module: 'stock' },
+    { key: 'stockSupplier', label: 'Fournisseurs', description: 'Fournisseurs', endpoint: 'stocksupplier', idField: 'id', nameField: 'supplierName', icon: 'truck', module: 'stock' },
   ];
 
   constructor(private http: HttpClient) {}
