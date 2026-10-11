@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { GmaoChatService, ChatConversation } from './services/gmao-chat.service';
 import { ChatMessage } from '../../core/models';
 import { Subscription } from 'rxjs';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PageHeaderComponent],
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.scss']
 })

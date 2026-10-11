@@ -10,4 +10,7 @@ public class LoginDto
 
     [Required]
     public string Password { get; set; } = string.Empty;
+
+    // Keeps the session cookie after the browser is closed
+    public bool RememberMe { get; set; }
 }

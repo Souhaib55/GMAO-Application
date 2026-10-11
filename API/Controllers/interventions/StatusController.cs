@@ -1,3 +1,4 @@
+using API.Security;
 using API.DTOs;
 using Core.Entities;
 using Infrastructure.Data;
@@ -8,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace API.Controllers
 {
     [Authorize]
+    [SupervisorWrites]
     [ApiController]
     [Route("api/[controller]")]
     public class StatusController : ControllerBase

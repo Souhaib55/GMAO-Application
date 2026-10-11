@@ -1,26 +1,14 @@
 <div class="crud-page">
   <!-- Header -->
-  <div class="page-header">
-    <div class="header-left">
-      <div class="header-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-          <path d="M2 17l10 5 10-5"/>
-          <path d="M2 12l10 5 10-5"/>
-        </svg>
-      </div>
-      <div>
-        <h1 class="page-title">Ressources / Pièces</h1>
-        <p class="page-subtitle">Gestion des pièces et ressources</p>
-      </div>
-    </div>
+  <app-page-header icon="resources" title="Pièces de rechange" subtitle="Références, quantités en stock et prix unitaires">
+
     <button class="btn-primary" routerLink="/resources/new">
       <svg viewBox="0 0 20 20" fill="currentColor">
         <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
       </svg>
-      Nouvelle Pièce
+      Nouvelle pièce
     </button>
-  </div>
+  </app-page-header>
 
   <!-- Stats Grid -->
   <div class="stats-grid">
@@ -151,12 +139,11 @@
             <span *ngIf="!piece.criticitePiece">-</span>
           </td>
           <td data-label="Quantité">
-            <span [style.color]="piece.quantite_Stock < 10 ? '#ef4444' : 'inherit'" 
-                  [style.font-weight]="piece.quantite_Stock < 10 ? '600' : 'normal'">
-              {{ piece.quantite_Stock }}
-            </span>
+            <span class="qty" [class.low]="piece.enAlerte">{{ piece.quantite_Stock }}</span>
+            <span class="qty-hint" *ngIf="piece.seuilMinimum">/ seuil {{ piece.seuilMinimum }}</span>
+            <span class="low-tag" *ngIf="piece.enAlerte">Stock bas</span>
           </td>
-          <td data-label="Prix">{{ piece.prixUnitaire | currency:'EUR' }}</td>
+          <td data-label="Prix">{{ piece.prixUnitaire | number:'1.3-3' }} DT</td>
           <td data-label="Actions" class="td-actions">
             <div class="action-buttons">
               <button class="btn-action btn-view" [routerLink]="['/resources/view', piece.idPiece]" title="Consulter">

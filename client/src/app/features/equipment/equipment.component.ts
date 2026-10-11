@@ -6,11 +6,12 @@ import { EquipmentService } from './services/equipment.service';
 import { Equipment, PagedResult, UserInfo } from '../../core/models';
 import { NotificationService } from '../../core/services/notification.service';
 import { AuthService } from '../../core/services/auth.service';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'app-equipment',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, PageHeaderComponent],
   templateUrl: './equipment.component.html',
   styleUrls: ['../../shared/styles/crud-table-design.scss']
 })

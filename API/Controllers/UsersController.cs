@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Core.Entities;
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace API.Controllers
 {
+    [Authorize(Roles = "Superviseur")]
     [ApiController]
     [Route("api/[controller]")]
     public class UsersController : ControllerBase
@@ -131,6 +133,11 @@ namespace API.Controllers
                 .FirstOrDefaultAsync(u => u.ID == id && u.IsActif);
                 
             if (existingUser == null) return NotFound("Utilisateur introuvable ou inactif.");
+
+            // A supervisor cannot change their own role: it could remove the last administrator
+            var currentAppUserId = _userManager.GetUserId(User);
+            if (existingUser.AppUserId == currentAppUserId && existingUser.IDRole != userDto.IdRole)
+                return BadRequest("Vous ne pouvez pas modifier votre propre rôle.");
             
             // Vérifier si la mise à jour créerait un doublon d'email
             if (!string.IsNullOrEmpty(userDto.Email) && existingUser.Email != userDto.Email && 
@@ -149,31 +156,41 @@ namespace API.Controllers
                 }
             }
             
-            // Check if role is being changed - also update ASP.NET Identity role
-            if (existingUser.IDRole != userDto.IdRole && !string.IsNullOrEmpty(existingUser.AppUserId))
+            // Update AppUser (Identity) table to keep in sync
+            var appUserId = existingUser.AppUserId;
+            if (!string.IsNullOrEmpty(appUserId))
             {
-                var appUser = await _userManager.FindByIdAsync(existingUser.AppUserId);
+                var appUser = await _userManager.FindByIdAsync(appUserId);
                 if (appUser != null)
                 {
-                    // Get current roles and remove them
-                    var currentRoles = await _userManager.GetRolesAsync(appUser);
-                    if (currentRoles.Any())
+                    // Update name and email in Identity table
+                    appUser.FirstName = userDto.Prenom;
+                    appUser.LastName = userDto.Nom;
+                    appUser.Email = userDto.Email;
+                    appUser.UserName = userDto.Email;
+                    await _userManager.UpdateAsync(appUser);
+
+                    // Check if role is being changed
+                    if (existingUser.IDRole != userDto.IdRole)
                     {
-                        await _userManager.RemoveFromRolesAsync(appUser, currentRoles);
+                        var currentRoles = await _userManager.GetRolesAsync(appUser);
+                        if (currentRoles.Any())
+                        {
+                            await _userManager.RemoveFromRolesAsync(appUser, currentRoles);
+                        }
+                        string newRoleName = GetRoleNameFromId(userDto.IdRole);
+                        await _userManager.AddToRoleAsync(appUser, newRoleName);
+                        // Existing sessions pick up the new role on their next validation
+                        await _userManager.UpdateSecurityStampAsync(appUser);
                     }
-                    
-                    // Add the new role
-                    string newRoleName = GetRoleNameFromId(userDto.IdRole);
-                    await _userManager.AddToRoleAsync(appUser, newRoleName);
                 }
             }
             
-            // Mettre à jour les propriétés
+            // Mettre à jour les propriétés dans la table Users
             existingUser.Nom = userDto.Nom;
             existingUser.Prenom = userDto.Prenom;
             existingUser.Email = userDto.Email;
             existingUser.IDRole = userDto.IdRole;
-            existingUser.AppUserId = userDto.AppUserId;
             existingUser.DateModification = DateTime.Now;
             
             await _context.SaveChangesAsync();
@@ -217,11 +234,26 @@ namespace API.Controllers
                 .FirstOrDefaultAsync(u => u.ID == id && u.IsActif);
                 
             if (user == null) return NotFound("Utilisateur introuvable ou déjà inactif.");
-            
+
+            if (user.AppUserId == _userManager.GetUserId(User))
+                return BadRequest("Vous ne pouvez pas désactiver votre propre compte.");
+
             // Suppression logique
             user.IsActif = false;
             user.DateModification = DateTime.Now;
             await _context.SaveChangesAsync();
+
+            // Block the login as well and end any open session
+            if (!string.IsNullOrEmpty(user.AppUserId))
+            {
+                var appUser = await _userManager.FindByIdAsync(user.AppUserId);
+                if (appUser != null)
+                {
+                    await _userManager.SetLockoutEnabledAsync(appUser, true);
+                    await _userManager.SetLockoutEndDateAsync(appUser, DateTimeOffset.MaxValue);
+                    await _userManager.UpdateSecurityStampAsync(appUser);
+                }
+            }
             
             return NoContent();
         }

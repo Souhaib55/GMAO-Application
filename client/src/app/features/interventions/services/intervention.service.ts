@@ -91,8 +91,9 @@ export class InterventionService {
     });
   }
 
-  updateStatus(interventionId: number, statusId: number): Observable<void> {
-    return this.http.patch<void>(`${this.apiUrl}/${interventionId}/status`, { statusId }, {
+  /** 2 = accept / reopen, 3 = complete (work report required), 4 = close. */
+  updateStatus(interventionId: number, statusId: number, compteRendu?: string): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/${interventionId}/status`, { statusId, compteRendu }, {
       withCredentials: true
     });
   }

@@ -1,19 +1,46 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { EquipmentService } from '../services/equipment.service';
-import { ReferenceDataService, EquipmentCriticite, EtatEquipement, FamilleEquipement, GroupeEquipement, ModeleEquipement } from '../../../core/services/reference-data.service';
+import { ReferenceDataService, EquipmentCriticite, EtatEquipement, FamilleEquipement, GroupeEquipement, ModeleEquipement, ChaineProduction } from '../../../core/services/reference-data.service';
+
+/** Local yyyy-MM-dd (toISOString would shift the day in UTC+1). */
+function toInputDate(date?: Date | string | null): string | null {
+  if (!date) return null;
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return null;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Build -> purchase -> installation -> commissioning, none in the future. */
+function chronologyValidator(group: AbstractControl): ValidationErrors | null {
+  const v = (name: string) => group.get(name)?.value as string | null;
+  const today = toInputDate(new Date())!;
+  const order: [string, string, string][] = [
+    ['dateConstruction', 'dateAchat', "La date de fabrication doit précéder la date d'achat."],
+    ['dateAchat', 'dateInstallation', "L'installation ne peut pas précéder l'achat."],
+    ['dateInstallation', 'dateMiseEnService', "La mise en service ne peut pas précéder l'installation."],
+    ['dateAchat', 'dateFinGarantie', "La fin de garantie doit être postérieure à l'achat."]
+  ];
+  for (const [before, after, message] of order) {
+    if (v(before) && v(after) && v(before)! > v(after)!) return { chronology: message };
+  }
+  for (const name of ['dateConstruction', 'dateAchat', 'dateInstallation', 'dateMiseEnService']) {
+    if (v(name) && v(name)! > today) return { chronology: 'Les dates de fabrication, achat, installation et mise en service ne peuvent pas être dans le futur.' };
+  }
+  return null;
+}
 import { NotificationService } from '../../../core/services/notification.service';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'app-equipment-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent],
   template: `
     <div class="form-container">
-      <div class="form-header">
-        <h1>{{ isViewMode ? 'Détails' : (isEditMode ? 'Modifier' : 'Nouvel') }} Équipement</h1>
+      <app-page-header icon="equipment" [title]="formTitle" subtitle="Identification, état et caractéristiques de l'équipement">
         <div class="header-actions">
           <button class="btn btn-print" (click)="printForm()" *ngIf="isViewMode" title="Imprimer / Télécharger PDF">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -25,7 +52,7 @@ import { NotificationService } from '../../../core/services/notification.service
           </button>
           <button class="btn btn-secondary" (click)="cancel()">{{ isViewMode ? 'Retour' : 'Annuler' }}</button>
         </div>
-      </div>
+      </app-page-header>
 
       <form [formGroup]="equipmentForm" (ngSubmit)="onSubmit()" class="card">
         <div class="card-body">
@@ -87,6 +114,15 @@ import { NotificationService } from '../../../core/services/notification.service
             </div>
 
             <div class="form-group">
+              <label for="idChaineProduction">Chaîne de production</label>
+              <select id="idChaineProduction" formControlName="idChaineProduction">
+                <option [ngValue]="null">Non affectée</option>
+                <option *ngFor="let chaine of chaines" [ngValue]="chaine.idChaineProduction">{{ chaine.libelle }}</option>
+              </select>
+              <small class="form-text">La chaîne où la machine est installée : les demandes d'intervention la reprennent automatiquement.</small>
+            </div>
+
+            <div class="form-group">
               <label for="idGroupe">Groupe</label>
               <select id="idGroupe" formControlName="idGroupe">
                 <option [value]="null">-- Sélectionner --</option>
@@ -112,41 +148,42 @@ import { NotificationService } from '../../../core/services/notification.service
             </div>
 
             <div class="form-group">
-              <label for="dateInstallation">Date d'installation</label>
-              <input id="dateInstallation" type="date" formControlName="dateInstallation" />
-            </div>
-
-            <div class="form-group">
-              <label for="dateMiseEnService">Date de mise en service</label>
-              <input id="dateMiseEnService" type="date" formControlName="dateMiseEnService" />
+              <label for="dateConstruction">Date de fabrication</label>
+              <input id="dateConstruction" type="date" formControlName="dateConstruction" [max]="dateValue('dateAchat') || today" />
             </div>
 
             <div class="form-group">
               <label for="dateAchat">Date d'achat</label>
-              <input id="dateAchat" type="date" formControlName="dateAchat" />
+              <input id="dateAchat" type="date" formControlName="dateAchat" [min]="dateValue('dateConstruction')" [max]="dateValue('dateInstallation') || today" />
             </div>
 
             <div class="form-group">
-              <label for="dateConstruction">Date de construction</label>
-              <input id="dateConstruction" type="date" formControlName="dateConstruction" />
+              <label for="dateInstallation">Date d'installation</label>
+              <input id="dateInstallation" type="date" formControlName="dateInstallation" [min]="dateValue('dateAchat')" [max]="dateValue('dateMiseEnService') || today" />
             </div>
 
             <div class="form-group">
-              <label for="coutAchat">Coût d'achat (€)</label>
-              <input id="coutAchat" type="number" step="0.01" formControlName="coutAchat" />
+              <label for="dateMiseEnService">Date de mise en service</label>
+              <input id="dateMiseEnService" type="date" formControlName="dateMiseEnService" [min]="dateValue('dateInstallation')" [max]="today" />
             </div>
 
-            <div class="form-group checkbox-group">
-              <label>
-                <input type="checkbox" formControlName="sousGarantie" />
-                Sous garantie
-              </label>
+            <div class="form-group">
+              <label for="coutAchat">Coût d'achat (DT)</label>
+              <input id="coutAchat" type="number" step="0.01" min="0" formControlName="coutAchat" />
+              <span class="error-message" *ngIf="equipmentForm.get('coutAchat')?.invalid">Le coût ne peut pas être négatif.</span>
             </div>
 
-            <div class="form-group" *ngIf="equipmentForm.get('sousGarantie')?.value">
-              <label for="dateFinGarantie">Date fin de garantie</label>
-              <input id="dateFinGarantie" type="date" formControlName="dateFinGarantie" />
+            <div class="form-group">
+              <label for="dateFinGarantie">Fin de garantie</label>
+              <input id="dateFinGarantie" type="date" formControlName="dateFinGarantie" [min]="dateValue('dateAchat')" />
+              <small class="warranty" *ngIf="dateValue('dateFinGarantie') as end" [class.expired]="end < today">
+                {{ end >= today ? 'Sous garantie jusqu\'au ' + (end | date:'dd/MM/yyyy') : 'Garantie expirée' }}
+              </small>
             </div>
+          </div>
+
+          <div class="form-error" *ngIf="equipmentForm.errors?.['chronology']">
+            {{ equipmentForm.errors?.['chronology'] }}
           </div>
 
           <div class="form-group">
@@ -179,6 +216,11 @@ import { NotificationService } from '../../../core/services/notification.service
 
 })
 export class EquipmentFormComponent implements OnInit {
+
+  get formTitle(): string {
+    if (this.isViewMode) return 'Fiche équipement';
+    return this.isEditMode ? "Modifier l'équipement" : 'Nouvel équipement';
+  }
   equipmentForm: FormGroup;
   isEditMode = false;
   isViewMode = false;
@@ -191,6 +233,13 @@ export class EquipmentFormComponent implements OnInit {
   familles: FamilleEquipement[] = [];
   groupes: GroupeEquipement[] = [];
   modeles: ModeleEquipement[] = [];
+  chaines: ChaineProduction[] = [];
+
+  readonly today = toInputDate(new Date())!;
+
+  dateValue(name: string): string | null {
+    return this.equipmentForm.get(name)?.value || null;
+  }
 
   constructor(
     private fb: FormBuilder,
@@ -209,15 +258,15 @@ export class EquipmentFormComponent implements OnInit {
       idFamille: [null],
       idGroupe: [null],
       idModele: [null],
+      idChaineProduction: [null],
       numeroSerie: [''],
       dateInstallation: [null],
       dateMiseEnService: [null],
       dateAchat: [null],
       dateConstruction: [null],
-      coutAchat: [null],
-      sousGarantie: [false],
+      coutAchat: [null, Validators.min(0)],
       dateFinGarantie: [null]
-    });
+    }, { validators: chronologyValidator });
   }
 
   ngOnInit(): void {
@@ -259,6 +308,10 @@ export class EquipmentFormComponent implements OnInit {
     this.referenceDataService.getModelesEquipement().subscribe({
       next: (data) => this.modeles = data
     });
+
+    this.referenceDataService.getChainesProduction().subscribe({
+      next: (data) => this.chaines = data
+    });
   }
 
   loadEquipment(id: number): void {
@@ -274,13 +327,13 @@ export class EquipmentFormComponent implements OnInit {
           idFamille: equipment.idFamille,
           idGroupe: equipment.idGroupe,
           idModele: equipment.idModele,
+          idChaineProduction: equipment.idChaineProduction ?? null,
           numeroSerie: equipment.numeroSerie,
           dateInstallation: this.formatDateForInput(equipment.dateInstallation),
           dateMiseEnService: this.formatDateForInput(equipment.dateMiseEnService),
           dateAchat: this.formatDateForInput(equipment.dateAchat),
           dateConstruction: this.formatDateForInput(equipment.dateConstruction),
           coutAchat: equipment.coutAchat,
-          sousGarantie: equipment.sousGarantie,
           dateFinGarantie: this.formatDateForInput(equipment.dateFinGarantie)
         });
         this.loading = false;
@@ -300,7 +353,9 @@ export class EquipmentFormComponent implements OnInit {
     }
 
     this.loading = true;
-    const formValue = this.equipmentForm.value;
+    const raw = this.equipmentForm.value;
+    // "Under warranty" is derived from the warranty end date (the server does the same)
+    const formValue = { ...raw, sousGarantie: !!raw.dateFinGarantie && raw.dateFinGarantie >= this.today };
 
     if (this.isEditMode && this.equipmentId) {
       this.equipmentService.updateEquipment(this.equipmentId, formValue).subscribe({
@@ -311,11 +366,8 @@ export class EquipmentFormComponent implements OnInit {
           );
           this.router.navigate(['/equipment']);
         },
-        error: () => {
-          this.notificationService.error(
-            'Erreur',
-            'Impossible de modifier l\'équipement'
-          );
+        error: (err) => {
+          this.notificationService.error('Enregistrement impossible', this.serverMessage(err, "Impossible de modifier l'équipement"));
           this.loading = false;
         }
       });
@@ -328,11 +380,8 @@ export class EquipmentFormComponent implements OnInit {
           );
           this.router.navigate(['/equipment']);
         },
-        error: () => {
-          this.notificationService.error(
-            'Erreur',
-            'Impossible de créer l\'équipement'
-          );
+        error: (err) => {
+          this.notificationService.error('Enregistrement impossible', this.serverMessage(err, "Impossible de créer l'équipement"));
           this.loading = false;
         }
       });
@@ -348,8 +397,12 @@ export class EquipmentFormComponent implements OnInit {
   }
 
   private formatDateForInput(date?: Date | string): string | null {
-    if (!date) return null;
-    const d = new Date(date);
-    return d.toISOString().split('T')[0];
+    return toInputDate(date);
+  }
+
+  private serverMessage(err: any, fallback: string): string {
+    const e = err?.error;
+    if (typeof e === 'string' && e.length < 300) return e;
+    return e?.message || fallback;
   }
 }

@@ -14,6 +14,7 @@ namespace Infrastructure.Config
             builder.Property(p => p.Designation).IsRequired().HasMaxLength(100);
             builder.Property(p => p.Description).HasMaxLength(255);
             builder.Property(p => p.Quantite_Stock).IsRequired();
+            builder.Property(p => p.SeuilMinimum).HasDefaultValue(0);
             builder.Property(p => p.PrixUnitaire).HasPrecision(10, 2);
             builder.Property(p => p.DateCreation).HasDefaultValueSql("GETDATE()");
             builder.Property(p => p.IsActif).HasDefaultValue(true);

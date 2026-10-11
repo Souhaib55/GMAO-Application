@@ -55,6 +55,12 @@ export class AuthService {
     return this.http.post(`${this.apiUrl}/register`, data);
   }
 
+  /** Forget the local session (the server session is already gone). */
+  clearSession(): void {
+    this.currentUserSubject.next(null);
+    localStorage.removeItem('currentUser');
+  }
+
   logout(): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/logout`, {}, {
       withCredentials: true

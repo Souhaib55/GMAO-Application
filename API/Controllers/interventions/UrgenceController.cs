@@ -1,3 +1,4 @@
+using API.Security;
 using Core.Entities;
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
@@ -8,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace API.Controllers
 {
+    [SupervisorWrites]
     [ApiController]
     [Route("api/[controller]")]
     public class UrgenceController : ControllerBase

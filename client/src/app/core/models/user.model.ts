@@ -45,6 +45,7 @@ export interface UserSummary {
 export interface LoginDto {
   email: string;
   password: string;
+  rememberMe?: boolean;
 }
 
 export interface RegisterDto {

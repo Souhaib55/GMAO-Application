@@ -6,31 +6,22 @@ import { InterventionService } from './services/intervention.service';
 import { DemandeIntervention, PagedResult, UserInfo } from '../../core/models';
 import { NotificationService } from '../../core/services/notification.service';
 import { AuthService } from '../../core/services/auth.service';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { DashboardService } from '../dashboard/dashboard.service';
 
 @Component({
   selector: 'app-interventions',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, PageHeaderComponent],
   template: `
     <div class="interventions-page">
       <!-- Header Section -->
-      <div class="page-header">
-        <div class="header-left">
-          <div class="header-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
-            </svg>
-          </div>
-          <div>
-            <h1 class="page-title">Interventions</h1>
-            <p class="page-subtitle">Gestion des demandes d'intervention</p>
-          </div>
-        </div>
+      <app-page-header icon="interventions" title="Interventions" subtitle="Demandes, affectations et suivi des travaux de maintenance">
         <button class="btn-new" routerLink="/interventions/new">
           <span class="btn-icon">+</span>
           Nouvelle intervention
         </button>
-      </div>
+      </app-page-header>
 
       <!-- Stats Cards -->
       <div class="stats-grid">
@@ -41,7 +32,7 @@ import { AuthService } from '../../core/services/auth.service';
             </svg>
           </div>
           <div class="stat-content">
-            <div class="stat-value">{{ totalCount }}</div>
+            <div class="stat-value">{{ stats.total }}</div>
             <div class="stat-label">Total</div>
           </div>
         </div>
@@ -55,7 +46,7 @@ import { AuthService } from '../../core/services/auth.service';
           </div>
           <div class="stat-content">
             <div class="stat-value">{{ stats.nouveau }}</div>
-            <div class="stat-label">Nouveau</div>
+            <div class="stat-label">À traiter</div>
           </div>
         </div>
 
@@ -81,7 +72,7 @@ import { AuthService } from '../../core/services/auth.service';
           </div>
           <div class="stat-content">
             <div class="stat-value">{{ stats.termine }}</div>
-            <div class="stat-label">Terminé</div>
+            <div class="stat-label">Réalisées / clôturées</div>
           </div>
         </div>
 
@@ -157,10 +148,11 @@ import { AuthService } from '../../core/services/auth.service';
                 </svg>
               </th>
               <th>Type</th>
+              <th>Localisation</th>
               <th>Urgence</th>
-              <th>État</th>
+              <th>Statut</th>
               <th>Demandeur</th>
-              <th *ngIf="canShowActions()">Actions</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -178,6 +170,12 @@ import { AuthService } from '../../core/services/auth.service';
               <td class="td-type" data-label="Type">
                 <span class="type-badge">{{ intervention.typeIntervention?.libelle || intervention.type?.libelle || '-' }}</span>
               </td>
+              <td class="td-location" data-label="Localisation">
+                <div class="location-cell">
+                  <strong *ngIf="intervention.equipement">{{ intervention.equipement.codeEquipement }}</strong>
+                  <span>{{ intervention.chaineProduction?.libelle || '-' }}</span>
+                </div>
+              </td>
               <td class="td-urgence" data-label="Urgence">
                 <span class="urgence-badge" [class.urgence-haute]="isUrgent(intervention)" [class.urgence-normale]="!isUrgent(intervention)">
                   <svg *ngIf="isUrgent(intervention)" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -189,7 +187,7 @@ import { AuthService } from '../../core/services/auth.service';
               <td class="td-etat" data-label="État">
                 <span class="etat-badge" [ngClass]="getEtatClass(intervention)">
                   <span class="badge-dot"></span>
-                  {{ intervention.etat?.libelle || intervention.status?.statut || 'Nouveau' }}
+                  {{ intervention.status?.statut || '-' }}
                 </span>
               </td>
               <td class="td-demandeur" data-label="Demandeur">
@@ -198,7 +196,7 @@ import { AuthService } from '../../core/services/auth.service';
                   <span>{{ getDemandeurName(intervention) }}</span>
                 </div>
               </td>
-              <td class="td-actions" data-label="Actions" *ngIf="canShowActions()">
+              <td class="td-actions" data-label="Actions">
                 <div class="action-buttons">
                   <button class="btn-action btn-view" [routerLink]="['/interventions/view', intervention.idDemandeIntervention]" title="Consulter">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -206,7 +204,7 @@ import { AuthService } from '../../core/services/auth.service';
                       <circle cx="12" cy="12" r="3"/>
                     </svg>
                   </button>
-                  <button class="btn-action btn-edit" [routerLink]="['/interventions/edit', intervention.idDemandeIntervention]" title="Modifier">
+                  <button class="btn-action btn-edit" [routerLink]="['/interventions/edit', intervention.idDemandeIntervention]" title="Modifier" *ngIf="canEdit(intervention)">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -239,81 +237,71 @@ import { AuthService } from '../../core/services/auth.service';
   `,
   styles: [`
     .interventions-page {
-      padding: 24px;
-      background: #f5f6fa;
-      min-height: 100vh;
+      width: 100%;
     }
 
-    /* Header - Blue Gradient Bar Style */
+    /* Page header: title on the page, primary action on the right */
     .page-header {
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       justify-content: space-between;
-      margin-bottom: 24px;
-      padding: 24px 32px;
-      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 50%, #2563eb 100%);
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+      gap: 16px;
+      margin-bottom: 20px;
     }
 
     .header-left {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
     }
 
     .header-icon {
-      width: 52px;
-      height: 52px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      backdrop-filter: blur(4px);
+      display: none;
     }
 
     .page-title {
-      font-size: 26px;
-      font-weight: 700;
-      color: white;
       margin: 0;
-      letter-spacing: -0.5px;
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+      color: var(--text);
     }
 
     .page-subtitle {
+      margin: 4px 0 0;
       font-size: 14px;
-      color: rgba(255, 255, 255, 0.85);
-      margin: 4px 0 0 0;
+      color: var(--text-secondary);
     }
 
     .btn-new {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 10px 20px;
-      background: white;
-      color: #3b82f6;
-      border: none;
-      border-radius: 10px;
-      font-size: 12px;
-      font-weight: 540;
+      height: 36px;
+      padding: 0 14px;
+      background: var(--primary-600);
+      color: #fff;
+      border: 1px solid var(--primary-600);
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: background-color 0.15s ease;
       text-decoration: none;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      white-space: nowrap;
     }
 
     .btn-new:hover {
-      background: #f8fafc;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      background: var(--primary-700);
+      border-color: var(--primary-700);
+      color: #fff;
     }
 
     .btn-icon {
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 400;
+      line-height: 1;
+      margin-top: -2px;
     }
 
     /* Stats Grid */
@@ -326,24 +314,24 @@ import { AuthService } from '../../core/services/auth.service';
 
     .stat-card {
       background: white;
-      border-radius: 12px;
+      border-radius: var(--radius-lg);
       padding: 20px;
       display: flex;
       align-items: center;
       gap: 16px;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--gray-200);
       transition: all 0.2s;
     }
 
     .stat-card:hover {
-      transform: translateY(-2px);
+      transform: none;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
 
     .stat-icon {
       width: 48px;
       height: 48px;
-      border-radius: 10px;
+      border-radius: var(--radius);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -351,28 +339,28 @@ import { AuthService } from '../../core/services/auth.service';
     }
 
     .stat-icon-total {
-      background: #f1f5f9;
-      color: #475569;
+      background: var(--gray-100);
+      color: var(--gray-600);
     }
 
     .stat-icon-nouveau {
-      background: #dbeafe;
-      color: #3b82f6;
+      background: var(--primary-100);
+      color: var(--primary-600);
     }
 
     .stat-icon-encours {
-      background: #fef3c7;
-      color: #f59e0b;
+      background: var(--warning-light);
+      color: var(--warning);
     }
 
     .stat-icon-termine {
-      background: #d1fae5;
-      color: #10b981;
+      background: var(--success-light);
+      color: var(--success);
     }
 
     .stat-icon-urgent {
-      background: #fee2e2;
-      color: #ef4444;
+      background: var(--error-light);
+      color: var(--error);
     }
 
     .stat-content {
@@ -381,14 +369,14 @@ import { AuthService } from '../../core/services/auth.service';
 
     .stat-value {
       font-size: 32px;
-      font-weight: 700;
-      color: #1e293b;
+      font-weight: 600;
+      color: var(--gray-800);
       line-height: 1;
     }
 
     .stat-label {
       font-size: 13px;
-      color: #64748b;
+      color: var(--gray-500);
       margin-top: 4px;
     }
 
@@ -412,14 +400,14 @@ import { AuthService } from '../../core/services/auth.service';
       left: 14px;
       top: 50%;
       transform: translateY(-50%);
-      color: #94a3b8;
+      color: var(--gray-400);
     }
 
     .search-input {
       width: 100%;
       padding: 10px 14px 10px 42px;
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
       font-size: 14px;
       background: white;
       transition: all 0.2s;
@@ -427,8 +415,8 @@ import { AuthService } from '../../core/services/auth.service';
 
     .search-input:focus {
       outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      border-color: var(--primary-600);
+      box-shadow: 0 0 0 3px rgba(61, 96, 220, 0.1);
     }
 
     .view-controls {
@@ -442,17 +430,17 @@ import { AuthService } from '../../core/services/auth.service';
       gap: 8px;
       padding: 10px 16px;
       background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
       font-size: 14px;
-      color: #475569;
+      color: var(--gray-600);
       cursor: pointer;
       transition: all 0.2s;
     }
 
     .btn-filter:hover {
-      border-color: #cbd5e1;
-      background: #f8fafc;
+      border-color: var(--gray-300);
+      background: var(--gray-50);
     }
 
     .btn-view {
@@ -462,40 +450,41 @@ import { AuthService } from '../../core/services/auth.service';
       align-items: center;
       justify-content: center;
       background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
       cursor: pointer;
-      color: #64748b;
+      color: var(--gray-500);
       transition: all 0.2s;
     }
 
     .btn-view:hover {
-      background: #f8fafc;
-      border-color: #cbd5e1;
+      background: var(--gray-50);
+      border-color: var(--gray-300);
     }
 
     .btn-view.active {
-      background: #3b82f6;
-      border-color: #3b82f6;
+      background: var(--primary-600);
+      border-color: var(--primary-600);
       color: white;
     }
 
     /* Loading State */
     .loading-state {
       background: white;
-      border-radius: 12px;
+      border-radius: var(--radius-lg);
       padding: 60px;
       text-align: center;
-      color: #64748b;
+      color: var(--gray-500);
     }
 
     .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid #e2e8f0;
-      border-top-color: #3b82f6;
+      width: 32px;
+      height: 32px;
+      border: 2.5px solid var(--primary-100);
+      border-top-color: var(--primary-600);
       border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+      animation: spin 0.75s linear infinite;
+      will-change: transform;
       margin: 0 auto 16px;
     }
 
@@ -506,33 +495,33 @@ import { AuthService } from '../../core/services/auth.service';
     /* Empty State */
     .empty-state {
       background: white;
-      border-radius: 12px;
+      border-radius: var(--radius-lg);
       padding: 60px;
       text-align: center;
     }
 
     .empty-state svg {
-      color: #cbd5e1;
+      color: var(--gray-300);
       margin-bottom: 16px;
     }
 
     .empty-state h3 {
       font-size: 18px;
       font-weight: 600;
-      color: #1e293b;
+      color: var(--gray-800);
       margin: 0 0 8px 0;
     }
 
     .empty-state p {
-      color: #64748b;
+      color: var(--gray-500);
       margin: 0;
     }
 
     /* Table */
     .table-wrapper {
       background: white;
-      border-radius: 12px;
-      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--gray-200);
       overflow: hidden;
     }
 
@@ -542,8 +531,8 @@ import { AuthService } from '../../core/services/auth.service';
     }
 
     .data-table thead {
-      background: #f8fafc;
-      border-bottom: 1px solid #e2e8f0;
+      background: var(--gray-50);
+      border-bottom: 1px solid var(--gray-200);
     }
 
     .data-table th {
@@ -551,7 +540,7 @@ import { AuthService } from '../../core/services/auth.service';
       text-align: left;
       font-size: 13px;
       font-weight: 600;
-      color: #475569;
+      color: var(--gray-600);
       white-space: nowrap;
     }
 
@@ -563,7 +552,7 @@ import { AuthService } from '../../core/services/auth.service';
       width: 16px;
       height: 16px;
       cursor: pointer;
-      accent-color: #3b82f6;
+      accent-color: var(--primary-600);
     }
 
     .th-sortable {
@@ -572,23 +561,23 @@ import { AuthService } from '../../core/services/auth.service';
     }
 
     .th-sortable:hover {
-      color: #3b82f6;
+      color: var(--primary-600);
     }
 
     .sort-icon {
       display: inline-block;
       vertical-align: middle;
       margin-left: 4px;
-      color: #cbd5e1;
+      color: var(--gray-300);
     }
 
     .data-table tbody tr {
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid var(--gray-100);
       transition: background 0.2s;
     }
 
     .data-table tbody tr:hover {
-      background: #f8fafc;
+      background: var(--gray-50);
     }
 
     .data-table tbody tr:last-child {
@@ -598,7 +587,7 @@ import { AuthService } from '../../core/services/auth.service';
     .data-table td {
       padding: 16px;
       font-size: 14px;
-      color: #334155;
+      color: var(--gray-700);
       vertical-align: middle;
     }
 
@@ -606,7 +595,7 @@ import { AuthService } from '../../core/services/auth.service';
       width: 16px;
       height: 16px;
       cursor: pointer;
-      accent-color: #3b82f6;
+      accent-color: var(--primary-600);
     }
 
     .title-cell {
@@ -616,26 +605,26 @@ import { AuthService } from '../../core/services/auth.service';
     }
 
     .title-cell strong {
-      color: #0f172a;
+      color: var(--gray-900);
       font-weight: 500;
     }
 
     .code {
       font-size: 12px;
-      color: #64748b;
-      font-family: 'Courier New', monospace;
+      color: var(--gray-500);
+      font-family: var(--font-mono);
     }
 
     .td-date {
-      color: #64748b;
+      color: var(--gray-500);
       font-size: 13px;
     }
 
     .type-badge {
       display: inline-block;
       padding: 4px 10px;
-      background: #f1f5f9;
-      color: #475569;
+      background: var(--gray-100);
+      color: var(--gray-600);
       border-radius: 6px;
       font-size: 13px;
       font-weight: 500;
@@ -652,13 +641,13 @@ import { AuthService } from '../../core/services/auth.service';
     }
 
     .urgence-haute {
-      background: #fee2e2;
-      color: #991b1b;
+      background: var(--error-light);
+      color: var(--error-text);
     }
 
     .urgence-normale {
-      background: #fef3c7;
-      color: #92400e;
+      background: var(--warning-light);
+      color: var(--warning-text);
     }
 
     .etat-badge {
@@ -666,7 +655,7 @@ import { AuthService } from '../../core/services/auth.service';
       align-items: center;
       gap: 8px;
       padding: 5px 12px;
-      border-radius: 20px;
+      border-radius: var(--radius-lg);
       font-size: 13px;
       font-weight: 500;
     }
@@ -678,39 +667,39 @@ import { AuthService } from '../../core/services/auth.service';
     }
 
     .etat-basse {
-      background: #d1fae5;
-      color: #065f46;
+      background: var(--success-light);
+      color: var(--success-text);
     }
 
     .etat-basse .badge-dot {
-      background: #10b981;
+      background: var(--success);
     }
 
     .etat-nouveau {
-      background: #dbeafe;
-      color: #1e40af;
+      background: var(--primary-100);
+      color: var(--primary-800);
     }
 
     .etat-nouveau .badge-dot {
-      background: #3b82f6;
+      background: var(--primary-600);
     }
 
     .etat-en-cours {
-      background: #fef3c7;
-      color: #92400e;
+      background: var(--warning-light);
+      color: var(--warning-text);
     }
 
     .etat-en-cours .badge-dot {
-      background: #f59e0b;
+      background: var(--warning);
     }
 
     .etat-termine {
-      background: #d1fae5;
-      color: #065f46;
+      background: var(--success-light);
+      color: var(--success-text);
     }
 
     .etat-termine .badge-dot {
-      background: #10b981;
+      background: var(--success);
     }
 
     .demandeur-cell {
@@ -722,8 +711,8 @@ import { AuthService } from '../../core/services/auth.service';
     .avatar {
       width: 32px;
       height: 32px;
-      border-radius: 8px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: var(--radius);
+      background: var(--primary-600);
       color: white;
       display: flex;
       align-items: center;
@@ -747,7 +736,7 @@ import { AuthService } from '../../core/services/auth.service';
       align-items: center;
       justify-content: center;
       border: none;
-      border-radius: 10px;
+      border-radius: var(--radius);
       cursor: pointer;
       transition: all 0.2s ease;
       text-decoration: none;
@@ -759,32 +748,32 @@ import { AuthService } from '../../core/services/auth.service';
     }
 
     .btn-action.btn-view {
-      background: rgba(34, 197, 94, 0.1);
-      color: #22c55e;
+      background: rgba(46, 125, 79, 0.1);
+      color: var(--success);
     }
 
     .btn-action.btn-view:hover {
-      background: #22c55e;
+      background: var(--success);
       color: white;
     }
 
     .btn-action.btn-edit {
-      background: rgba(14, 165, 233, 0.1);
-      color: #0ea5e9;
+      background: rgba(61, 96, 220, 0.1);
+      color: var(--primary-600);
     }
 
     .btn-action.btn-edit:hover {
-      background: #0ea5e9;
+      background: var(--primary-600);
       color: white;
     }
 
     .btn-action.btn-action-danger {
-      background: rgba(239, 68, 68, 0.1);
-      color: #ef4444;
+      background: rgba(194, 58, 43, 0.1);
+      color: var(--error);
     }
 
     .btn-action.btn-action-danger:hover {
-      background: #ef4444;
+      background: var(--error);
       color: white;
     }
 
@@ -802,7 +791,7 @@ import { AuthService } from '../../core/services/auth.service';
 
     @media (max-width: 768px) {
       .interventions-page {
-        padding: 16px;
+        padding: 0;
       }
 
       .page-header {
@@ -814,7 +803,7 @@ import { AuthService } from '../../core/services/auth.service';
       .header-icon {
         width: 40px;
         height: 40px;
-        border-radius: 10px;
+        border-radius: var(--radius);
       }
 
       .page-title {
@@ -897,14 +886,14 @@ import { AuthService } from '../../core/services/auth.service';
         display: flex;
         flex-direction: column;
         background: white;
-        border-radius: 12px;
-        border: 1px solid #e2e8f0;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--gray-200);
         padding: 16px;
         gap: 12px;
       }
 
       .data-table tbody tr:hover {
-        transform: translateY(-2px);
+        transform: none;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       }
 
@@ -921,7 +910,7 @@ import { AuthService } from '../../core/services/auth.service';
         content: attr(data-label);
         font-weight: 600;
         font-size: 12px;
-        color: #64748b;
+        color: var(--gray-500);
         text-transform: uppercase;
         letter-spacing: 0.5px;
         min-width: 100px;
@@ -944,21 +933,21 @@ import { AuthService } from '../../core/services/auth.service';
         justify-content: flex-end;
         width: 100%;
         padding-top: 12px;
-        border-top: 1px solid #f1f5f9;
+        border-top: 1px solid var(--gray-100);
         margin-top: 4px;
       }
 
       .btn-action {
         width: 36px;
         height: 36px;
-        background: #f8fafc;
-        border-radius: 8px;
+        background: var(--gray-50);
+        border-radius: var(--radius);
       }
     }
 
     @media (max-width: 480px) {
       .interventions-page {
-        padding: 12px;
+        padding: 0;
       }
 
       .page-title {
@@ -1017,6 +1006,194 @@ import { AuthService } from '../../core/services/auth.service';
         justify-content: center;
       }
     }
+
+    /* ---- Status-board KPI strip (replaces tinted icon cards) ---- */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0;
+      margin-bottom: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .stats-grid .stat-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 14px 18px 16px;
+      background: transparent;
+      border: 0;
+      border-left: 1px solid var(--border);
+      border-radius: 0;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .stats-grid .stat-card:first-child {
+      border-left: 0;
+    }
+
+    .stats-grid .stat-icon {
+      width: 8px;
+      height: 8px;
+      margin-top: 6px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+
+    .stats-grid .stat-content {
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 8px;
+    }
+
+    .stats-grid .stat-label {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .stats-grid .stat-value {
+      font-family: var(--font-mono);
+      font-size: 26px;
+      font-weight: 500;
+      line-height: 1;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ---- Row actions: neutral until hovered, red only for delete ---- */
+    .action-buttons .btn-action,
+    .action-buttons .btn-action.btn-view,
+    .action-buttons .btn-action.btn-edit,
+    .action-buttons .btn-action.btn-action-danger {
+      width: 32px;
+      height: 32px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+      color: var(--gray-500);
+    }
+
+    .action-buttons .btn-action svg {
+      width: 17px;
+      height: 17px;
+    }
+
+    .action-buttons .btn-action.btn-view:hover,
+    .action-buttons .btn-action.btn-edit:hover {
+      background: var(--gray-100);
+      color: var(--gray-900);
+    }
+
+    .action-buttons .btn-action.btn-action-danger:hover {
+      background: var(--error-light);
+      color: var(--error);
+    }
+
+    .status-badge {
+      white-space: nowrap;
+    }
+
+    .etat-badge {
+      white-space: nowrap;
+    }
+
+    /* ---- KPI cards: separate cards, label + figure, tinted icon chip ---- */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+      overflow: visible;
+    }
+
+    .stats-grid .stat-card,
+    .stats-grid .stat-card:first-child {
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
+      transform: none;
+      transition: box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+
+    .stats-grid .stat-card:hover {
+      border-color: var(--gray-300);
+      box-shadow: var(--card-shadow-hover);
+    }
+
+    .stats-grid .stat-icon,
+    .stats-grid .stat-icon-wrapper {
+      order: 2;
+      width: 40px;
+      height: 40px;
+      margin: 0;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+    }
+
+    .stats-grid .stat-icon svg,
+    .stats-grid .stat-icon-wrapper .stat-icon {
+      display: block;
+      width: 20px;
+      height: 20px;
+      background: transparent !important;
+    }
+
+    .stats-grid .stat-content {
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .stats-grid .stat-label {
+      margin: 0;
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .stats-grid .stat-value,
+    .stats-grid .stat-card .stat-number {
+      font-family: var(--font-mono);
+      font-size: 28px;
+      font-weight: 500;
+      line-height: 1;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .table-wrapper,
+    .table-container {
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
+    }
+
+    .location-cell { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+    .location-cell strong { font-family: var(--font-mono); font-size: 12.5px; color: var(--text); }
+    .location-cell span { color: var(--text-secondary); }
+    .etat-badge.etat-realisee { background: var(--accent-50); color: var(--accent-700); }
+    .etat-badge.etat-realisee .badge-dot { background: var(--accent-500); }
+    .etat-badge.etat-annulee { background: var(--gray-100); color: var(--gray-600); }
+    .etat-badge.etat-annulee .badge-dot { background: var(--gray-400); }
   `]
 })
 export class InterventionsComponent implements OnInit {
@@ -1030,6 +1207,7 @@ export class InterventionsComponent implements OnInit {
   currentUser: UserInfo | null = null;
 
   stats = {
+    total: 0,
     nouveau: 0,
     enCours: 0,
     termine: 0,
@@ -1038,6 +1216,7 @@ export class InterventionsComponent implements OnInit {
 
   constructor(
     private interventionService: InterventionService,
+    private dashboardService: DashboardService,
     private notificationService: NotificationService,
     private authService: AuthService
   ) {}
@@ -1047,11 +1226,15 @@ export class InterventionsComponent implements OnInit {
       this.currentUser = user;
     });
     this.loadInterventions();
+    this.loadStats();
   }
 
-  canShowActions(): boolean {
-    // Superviseur and Utilisateur can see actions, Demandeur cannot
-    return this.currentUser?.role === 'Superviseur' || this.currentUser?.role === 'Utilisateur';
+  /** Same rule as the server: supervisor until closed, requester until someone takes it on. */
+  canEdit(intervention: DemandeIntervention): boolean {
+    const status = intervention.statusId ?? intervention.status?.id ?? 1;
+    if (status === 4 || status === 5) return false;
+    if (this.currentUser?.role === 'Superviseur') return true;
+    return intervention.demandeursID === this.currentUser?.internalId && status === 1 && !intervention.datePriseEnCharge;
   }
 
   canDelete(): boolean {
@@ -1065,7 +1248,6 @@ export class InterventionsComponent implements OnInit {
       next: (result: PagedResult<DemandeIntervention>) => {
         this.interventions = result.data;
         this.totalCount = result.totalCount;
-        this.calculateStats();
         this.loading = false;
       },
       error: () => {
@@ -1074,13 +1256,22 @@ export class InterventionsComponent implements OnInit {
     });
   }
 
-  calculateStats(): void {
-    this.stats = {
-      nouveau: this.interventions.filter(i => this.getEtatClass(i) === 'etat-nouveau').length,
-      enCours: this.interventions.filter(i => this.getEtatClass(i) === 'etat-en-cours').length,
-      termine: this.interventions.filter(i => this.getEtatClass(i) === 'etat-termine').length,
-      urgent: this.interventions.filter(i => this.isUrgent(i)).length
-    };
+  /** Counts over every request visible to the user, not just the current page. */
+  loadStats(): void {
+    this.dashboardService.getDashboardStats().subscribe({
+      next: data => {
+        const s = data.interventionStats;
+        this.stats = {
+          total: s.enAttente + s.enCours + s.terminee + s.annulee,
+          nouveau: s.enAttente,
+          enCours: s.enCours,
+          termine: s.terminee,
+          urgent: data.urgenceData
+            .filter(u => /haut|urgent|crit/i.test(u.libelle))
+            .reduce((sum, u) => sum + u.count, 0)
+        };
+      }
+    });
   }
 
   search(): void {
@@ -1089,7 +1280,7 @@ export class InterventionsComponent implements OnInit {
   }
 
   getInterventionCode(intervention: DemandeIntervention): string {
-    return `INT-${String(intervention.idDemandeIntervention).padStart(3, '0')}`;
+    return `INT-${String(intervention.idDemandeIntervention).padStart(4, '0')}`;
   }
 
   formatDate(date: Date | string): string {
@@ -1107,15 +1298,15 @@ export class InterventionsComponent implements OnInit {
     return urgence.includes('haute') || urgence.includes('urgent');
   }
 
+  /** Badge colour from the workflow status. */
   getEtatClass(intervention: DemandeIntervention): string {
-    const etat = intervention.etat?.libelle?.toLowerCase() || intervention.status?.statut?.toLowerCase() || '';
-    
-    if (etat.includes('nouveau')) return 'etat-nouveau';
-    if (etat.includes('en cours') || etat.includes('encours')) return 'etat-en-cours';
-    if (etat.includes('terminé') || etat.includes('termine') || etat.includes('clos')) return 'etat-termine';
-    if (etat.includes('basse')) return 'etat-basse';
-    
-    return 'etat-nouveau';
+    switch (intervention.statusId ?? intervention.status?.id) {
+      case 2: return 'etat-en-cours';
+      case 3: return 'etat-realisee';
+      case 4: return 'etat-termine';
+      case 5: return 'etat-annulee';
+      default: return 'etat-nouveau';
+    }
   }
 
   getDemandeurName(intervention: DemandeIntervention): string {

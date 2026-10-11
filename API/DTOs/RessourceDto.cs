@@ -17,6 +17,8 @@ public class RessourceDto
         [Required]
         public int IDCriticitePiece { get; set; }
         public int Quantite_Stock { get; set; }
+        // Reorder point
+        public int SeuilMinimum { get; set; }
         public decimal PrixUnitaire { get; set; }
         public DateTime DateCreation { get; set; }
         public DateTime? DateModification { get; set; }

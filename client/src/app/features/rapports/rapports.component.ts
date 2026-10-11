@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 
 interface Report {
   id: string;
@@ -14,7 +15,7 @@ interface Report {
 @Component({
   selector: 'app-rapports',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PageHeaderComponent],
   templateUrl: './rapports.component.html',
   styleUrls: ['./rapports.component.scss']
 })

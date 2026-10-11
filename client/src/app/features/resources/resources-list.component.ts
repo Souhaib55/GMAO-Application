@@ -5,11 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { ResourceService } from './services/resource.service';
 import { Piece, PagedResult } from '../../core/models';
 import { NotificationService } from '../../core/services/notification.service';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'app-resources',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, PageHeaderComponent],
   templateUrl: './resources-list.component.html',
   styleUrls: ['../../shared/styles/crud-table-design.scss']
 })

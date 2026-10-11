@@ -10,6 +10,8 @@ namespace Infrastructure.Config
         {
             builder.HasKey(d => d.IdDemandeIntervention);
             builder.Property(d => d.Titre).IsRequired().HasMaxLength(100);
+            builder.Property(d => d.Description).HasMaxLength(2000);
+            builder.Property(d => d.CompteRendu).HasMaxLength(2000);
             builder.Property(d => d.DateCreation).HasDefaultValueSql("GETDATE()");
             builder.Property(d => d.FileData).HasColumnType("varbinary(max)");
             builder.Property(d => d.FileName).HasMaxLength(255);
@@ -46,6 +48,12 @@ namespace Infrastructure.Config
             builder.HasOne(d => d.ChaineProduction)
                    .WithMany()
                    .HasForeignKey(d => d.IDChaineProduction)
+                   .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(d => d.Equipement)
+                   .WithMany()
+                   .HasForeignKey(d => d.IDEquipement)
+                   .IsRequired(false)
                    .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(d => d.Panne)

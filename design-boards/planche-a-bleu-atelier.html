@@ -1,0 +1,183 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Planche A — Bleu atelier</title>
+<style>
+@font-face{font-family:'IBM Plex Sans';font-weight:400;font-style:normal;src:url('../client/node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff2') format('woff2');}
+@font-face{font-family:'IBM Plex Sans';font-weight:500;font-style:normal;src:url('../client/node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-500-normal.woff2') format('woff2');}
+@font-face{font-family:'IBM Plex Sans';font-weight:600;font-style:normal;src:url('../client/node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-600-normal.woff2') format('woff2');}
+@font-face{font-family:'IBM Plex Sans';font-weight:700;font-style:normal;src:url('../client/node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-700-normal.woff2') format('woff2');}
+@font-face{font-family:'IBM Plex Mono';font-weight:400;src:url('../client/node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2') format('woff2');}
+@font-face{font-family:'IBM Plex Mono';font-weight:500;src:url('../client/node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-500-normal.woff2') format('woff2');}
+:root{--bg:#f5f7fb;--sf:#ffffff;--bd:#e3e8f0;--bd2:#cfd6e2;--ink:#151a22;--ink2:#4a5466;--mu:#7a8496;
+--p50:#f0f4ff;--p100:#e0e8fe;--p200:#c6d4fc;--p500:#5577e8;--p600:#3d60dc;--p700:#3050c2;--grad:linear-gradient(150deg,#5379ea 0%,#3e61d8 45%,#3150b8 100%);
+--ok:#23784a;--okb:#e6f4ec;--wa:#b86e00;--wab:#fdf3e1;--ba:#c23a2b;--bab:#fbe9e7;
+--r:12px;--rs:8px;--sh:0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.06);}
+*{box-sizing:border-box;margin:0}
+body{font-family:'IBM Plex Sans',sans-serif;background:#e9ecf1;color:var(--ink);-webkit-font-smoothing:antialiased;padding:32px}
+.mono{font-family:'IBM Plex Mono',monospace}
+.i{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.board{max-width:1440px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+.intro{background:var(--sf);border-radius:var(--r);padding:28px 32px;box-shadow:var(--sh);display:grid;grid-template-columns:1.2fr 1fr;gap:32px}
+.intro h1{font-size:28px;font-weight:700;letter-spacing:-.02em}
+.intro p{margin-top:8px;color:var(--ink2);font-size:15px;line-height:1.55}
+.intro .note{margin-top:12px;padding:10px 14px;border-radius:var(--rs);background:var(--p50);color:var(--p700);font-size:13.5px}
+.sws{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.sw{display:grid;grid-template-columns:34px 1fr;grid-template-rows:auto auto;column-gap:10px;align-items:center;font-size:12.5px}
+.sw i{grid-row:span 2;width:34px;height:34px;border-radius:9px;border:1px solid rgba(0,0,0,.06)}
+.sw span{color:var(--mu);font-size:11.5px}
+.sys{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;background:var(--sf);border-radius:var(--r);padding:24px 28px;box-shadow:var(--sh)}
+.sys h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);margin-bottom:12px}
+.type .t1{font-size:28px;font-weight:700;letter-spacing:-.02em}
+.type .t2{font-size:20px;font-weight:600;margin-top:6px}
+.type .t3{font-size:15px;font-weight:600;margin-top:8px}
+.type .t4{font-size:14px;color:var(--ink2);margin-top:6px}
+.type .t5{font-size:26px;margin-top:8px;font-weight:600} .num{font-variant-numeric:tabular-nums}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.btn{height:38px;padding:0 16px;border-radius:var(--rs);font:600 14px 'IBM Plex Sans';display:inline-flex;align-items:center;gap:8px;border:1px solid transparent;cursor:pointer}
+.bp{background:var(--p600);color:#fff} .bs{background:var(--sf);border-color:var(--bd2);color:var(--ink)} .bg{background:transparent;color:var(--p700)} .bd{background:var(--bab);color:var(--ba)}
+.field{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;margin-bottom:10px}
+.input{height:40px;border:1px solid var(--bd2);border-radius:var(--rs);padding:0 12px;display:flex;align-items:center;font-weight:400;color:var(--mu);background:var(--sf)}
+.input.focus{border-color:var(--p500);box-shadow:0 0 0 3px var(--p100);color:var(--ink)}
+.tag{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:600}
+.t-ok{background:var(--okb);color:var(--ok)} .t-warn{background:var(--wab);color:var(--wa)} .t-bad{background:var(--bab);color:var(--ba)}
+.st{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
+.st::before{content:'';width:8px;height:8px;border-radius:50%}
+.s-ok::before{background:var(--ok)} .s-warn::before{background:var(--wa)} .s-info::before{background:var(--p600)} .s-bad::before{background:var(--ba)}
+/* app */
+.app{display:grid;grid-template-columns:248px 1fr;background:var(--bg);border-radius:var(--r);overflow:hidden;box-shadow:0 20px 50px rgba(16,24,40,.12);min-height:900px}
+.side{background:var(--sf);border-right:1px solid var(--bd);display:flex;flex-direction:column}
+.brand{height:60px;display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid var(--bd)}
+.brand .m{width:34px;height:34px;border-radius:9px;background:var(--grad);display:grid;place-items:center;color:#fff}
+.brand b{font-size:15px;letter-spacing:.08em;display:block} .brand span{font-size:11.5px;color:var(--mu)}
+.nav{padding:6px 12px;flex:1}
+.ng{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);padding:16px 10px 6px}
+.ni{display:flex;align-items:center;gap:12px;height:38px;padding:0 12px;border-radius:var(--rs);color:var(--ink2);font-size:14px;font-weight:500;margin-bottom:2px}
+.ni.on{background:#3d60dc;color:#ffffff;font-weight:600}
+.ucard{margin:12px;padding:8px 10px;border:1px solid var(--bd);border-radius:var(--r);display:flex;align-items:center;gap:10px;font-size:13px}
+.ucard .av{display:grid;width:34px;height:34px;border-radius:50%;background:var(--grad);color:#fff;display:grid;place-items:center;font-weight:700;font-size:12px}
+.ucard span{display:block;color:var(--mu);font-size:12px}
+.main{display:flex;flex-direction:column}
+.top{height:60px;background:var(--sf);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;padding:0 28px;font-size:14px}
+.crumb{color:var(--mu)} .crumb b{color:var(--ink)}
+.tr{display:flex;align-items:center;gap:16px;color:var(--ink2)}
+.search{width:360px;white-space:nowrap;height:36px;border-radius:var(--rs);background:var(--bg);border:1px solid var(--bd);display:flex;align-items:center;gap:8px;padding:0 12px;color:var(--mu);font-size:13.5px}
+.search kbd{margin-left:auto;font:500 11px 'IBM Plex Mono';border:1px solid var(--bd2);border-radius:5px;padding:1px 6px}
+.content{padding:24px 28px;display:flex;flex-direction:column;gap:18px}
+.ph{display:flex;align-items:flex-end;justify-content:space-between}
+.ph h2{font-size:24px;font-weight:700;letter-spacing:-.02em}
+.ph p{color:var(--ink2);font-size:14px;margin-top:4px}
+.filters{display:flex;gap:10px;align-items:center;background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:10px 12px;box-shadow:var(--sh)}
+.seg{display:inline-flex;background:var(--bg);border-radius:var(--rs);padding:3px}
+.seg span{padding:6px 12px;border-radius:7px;font-size:13px;font-weight:600;color:var(--ink2)}
+.seg .on{background:var(--sf);color:var(--p700);box-shadow:var(--sh)}
+.sel{height:34px;border:1px solid var(--bd2);border-radius:var(--rs);padding:0 12px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2)}
+.sel b{color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.kpi{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh)}
+.kpi-top{display:flex;justify-content:space-between;align-items:flex-start}
+.kpi-l{font-size:13.5px;font-weight:600;color:var(--ink2)}
+.chip-i{width:36px;height:36px;border-radius:10px;display:grid;place-items:center}
+.kpi-v{font:700 32px 'IBM Plex Sans';font-variant-numeric:tabular-nums;letter-spacing:-.02em;margin-top:6px}
+.kpi-v small{font:600 15px 'IBM Plex Sans';color:var(--mu);margin-left:4px}
+.kpi-f{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.delta{font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px}
+.spark{width:72px;height:24px} .spark polyline{fill:none;stroke:var(--p500);stroke-width:1.6}
+.grid{display:grid;grid-template-columns:1fr 1.3fr .9fr;gap:16px}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh)}
+.card h4{font-size:15px;font-weight:600} .card .cs{font-size:12.5px;color:var(--mu);margin:2px 0 14px}
+.hb{display:grid;grid-template-columns:84px 1fr 44px;gap:10px;align-items:center;font-size:13px;margin-bottom:10px;color:var(--ink2)}
+.hb i{height:10px;background:var(--bg);border-radius:5px;overflow:hidden} .hb b{display:block;height:100%;background:#3d60dc;border-radius:5px}
+.hb em{font:600 12.5px 'IBM Plex Sans';font-variant-numeric:tabular-nums;font-style:normal;text-align:right;color:var(--ink)}
+.line svg{width:100%;height:180px} .line text{font:11px 'IBM Plex Mono';fill:var(--mu)}
+.lg{display:flex;gap:14px;font-size:12px;color:var(--ink2);margin-bottom:6px} .lg i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.donut{display:flex;align-items:center;gap:16px} .donut svg{width:130px;height:130px}
+.leg div{display:flex;white-space:nowrap;align-items:center;gap:8px;font-size:13px;margin-bottom:8px;color:var(--ink2)} .leg i{width:10px;height:10px;border-radius:3px} .leg b{margin-left:auto;padding-left:12px;font:600 12.5px 'IBM Plex Sans';color:var(--ink)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-size:12px;font-weight:600;color:var(--mu);padding:10px 12px;border-bottom:1px solid var(--bd);background:var(--bg)}
+td{padding:12px;border-bottom:1px solid var(--bd);vertical-align:middle} td b{font-weight:600;display:block} td .sub{font-size:12px;color:var(--mu)}
+.r{text-align:right}
+.tablecard{padding:0;overflow:hidden} .tablecard .th{display:flex;justify-content:space-between;align-items:center;padding:14px 18px}
+</style></head><body><div class="board">
+
+<section class="intro">
+  <div><h1>Planche A — Bleu atelier</h1><p>L'identité bleue actuelle, montée en gamme : plus dense, plus calme, des chiffres alignés et faciles à comparer.</p><p class="note">Recommandée si l'on veut capitaliser sur ce qui a déjà été validé : barre latérale blanche, bleu réservé aux actions.</p></div>
+  <div class="sws"><div class="sw"><i style="background:#3d60dc"></i><b>Primaire</b><span class="mono">#3d60dc</span></div><div class="sw"><i style="background:#3050c2"></i><b>Primaire foncé</b><span class="mono">#3050c2</span></div><div class="sw"><i style="background:#e0e8fe"></i><b>Primaire clair</b><span class="mono">#e0e8fe</span></div><div class="sw"><i style="background:#151a22"></i><b>Encre</b><span class="mono">#151a22</span></div><div class="sw"><i style="background:#4a5466"></i><b>Texte secondaire</b><span class="mono">#4a5466</span></div><div class="sw"><i style="background:#f5f7fb"></i><b>Fond</b><span class="mono">#f5f7fb</span></div><div class="sw"><i style="background:#23784a"></i><b>Succès</b><span class="mono">#23784a</span></div><div class="sw"><i style="background:#b86e00"></i><b>Attention</b><span class="mono">#b86e00</span></div><div class="sw"><i style="background:#c23a2b"></i><b>Alerte</b><span class="mono">#c23a2b</span></div></div>
+</section>
+
+<section class="sys">
+  <div class="type"><h3>Typographie</h3>
+    <div class="t1">Tableau de bord</div><div class="t2">Ordres de travail en retard</div>
+    <div class="t3">Disponibilité par chaîne</div><div class="t4">Texte courant — lisible sur tablette, à 1 mètre de l'écran.</div>
+    <div class="t5 num">96,4 % · 48 320 DT</div></div>
+  <div><h3>Actions</h3>
+    <div class="row"><span class="btn bp"><svg class="i" width="16" height="16" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Déclarer une panne</span><span class="btn bs">Exporter</span></div>
+    <div class="row"><span class="btn bg">Voir le détail</span><span class="btn bd">Annuler l'OT</span></div>
+    <h3 style="margin-top:14px">Statuts</h3>
+    <div class="row"><span class="tag t-bad">Haute</span><span class="tag t-warn">Normale</span><span class="tag t-ok">Basse</span></div>
+    <div class="row"><span class="st s-info">Planifiée</span><span class="st s-warn">En cours</span><span class="st s-ok">Clôturée</span><span class="st s-bad">En retard</span></div></div>
+  <div><h3>Champs</h3>
+    <label class="field">Machine concernée<span class="input">JUKI DDL-9000 — Couture A</span></label>
+    <label class="field">Description de la panne<span class="input focus">Casse d'aiguille toutes les 5 minutes|</span></label></div>
+</section>
+
+<section class="app">
+  <aside class="side">
+    <div class="brand"><span class="m"><svg class="i" width="19" height="19" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4M12 16h4M8 11h.01M8 16h.01"/></svg></span><div><b>SIMOTEX</b><span>Gestion de maintenance</span></div></div>
+    <nav class="nav"><div class="ng">Pilotage</div><a class="ni on"><svg class="i" width="18" height="18" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Tableau de bord</span></a><a class="ni"><svg class="i" width="18" height="18" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16.5" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg><span>Planning</span></a><div class="ng">Maintenance</div><a class="ni"><svg class="i" width="18" height="18" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg><span>Préventif</span></a><a class="ni"><svg class="i" width="18" height="18" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L3.8 17a1.9 1.9 0 0 0 2.7 2.7l5.5-5.5a4 4 0 0 0 5.2-5.4l-2.4 2.4-2.1-.6-.6-2.1 2.5-2.2z"/></svg><span>Interventions</span></a><a class="ni"><svg class="i" width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg><span>Équipements</span></a><div class="ng">Magasin & achats</div><a class="ni"><svg class="i" width="18" height="18" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg><span>Magasin</span></a><a class="ni"><svg class="i" width="18" height="18" viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2 2h2l2.7 12.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L22 7H5.1"/></svg><span>Achats</span></a><a class="ni"><svg class="i" width="18" height="18" viewBox="0 0 24 24"><circle cx="8" cy="8" r="6"/><path d="M18.1 10.4A6 6 0 1 1 10.3 18"/><path d="M7 6h1v4M16.7 13.9l.7.7-2.8 2.8"/></svg><span>Budgets</span></a><a class="ni"><svg class="i" width="18" height="18" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.4 3.2-5.5 6.5-5.5s5.9 2.1 6.5 5.5"/><path d="M16 4.8a3.5 3.5 0 0 1 0 6.4M18.5 14.8c1.6.8 2.7 2.6 3 5.2"/></svg><span>Techniciens</span></a><div class="ng">Analyse</div><a class="ni"><svg class="i" width="18" height="18" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>Explorateur de données</span></a><a class="ni"><svg class="i" width="18" height="18" viewBox="0 0 24 24"><path d="M4 20V4M4 20h16"/><path d="M8 16v-4M12 16V8M16 16v-6M20 16V6"/></svg><span>Rapports</span></a><div class="ng">Système</div><a class="ni"><svg class="i" width="18" height="18" viewBox="0 0 24 24"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg><span>Paramètres</span></a></nav>
+    <div class="ucard"><span class="av">SA</span><div><b>Souhaib Ammani</b><span>Responsable maintenance</span></div></div>
+  </aside>
+  <div class="main">
+    <header class="top"><span class="crumb">Pilotage › <b>Tableau de bord</b></span>
+      <div class="tr"><span class="search"><svg class="i" width="16" height="16" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Rechercher une machine, un OT, un article…<kbd>Ctrl K</kbd></span><svg class="i" width="20" height="20" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></div></header>
+    <div class="content">
+      <div class="ph"><div><h2>Bonjour, Souhaib</h2><p>Atelier de Ksar Hellal · samedi 11 octobre 2026</p></div>
+        <span class="btn bp"><svg class="i" width="16" height="16" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Déclarer une panne</span></div>
+      <div class="filters"><svg class="i" width="16" height="16" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5z"/></svg><div class="seg"><span>7 j</span><span class="on">30 j</span><span>90 j</span><span>12 mois</span></div>
+        <span class="sel">Chaîne <b>Toutes</b></span><span class="sel">Équipement <b>Tous</b></span>
+        <span class="btn bs" style="margin-left:auto"><svg class="i" width="16" height="16" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Exporter</span></div>
+      <div class="kpis"><div class="kpi">
+          <div class="kpi-top"><span class="kpi-l">Disponibilité du parc</span><span class="chip-i t-ok"><svg class="i" width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></span></div>
+          <div class="kpi-v">96,4<small>%</small></div>
+          <div class="kpi-f"><span class="delta t-ok">+1,2 pt vs mois dernier</span>
+            <svg class="spark" viewBox="0 0 36 12"><polyline points="0,10 6,6 12,8 18,4 24,5 30,2 36,3"/></svg></div>
+        </div><div class="kpi">
+          <div class="kpi-top"><span class="kpi-l">OT en retard</span><span class="chip-i t-bad"><svg class="i" width="18" height="18" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></span></div>
+          <div class="kpi-v">7<small></small></div>
+          <div class="kpi-f"><span class="delta t-bad">3 depuis plus de 3 jours</span>
+            <svg class="spark" viewBox="0 0 36 12"><polyline points="0,3 6,4 12,2 18,6 24,5 30,8 36,9"/></svg></div>
+        </div><div class="kpi">
+          <div class="kpi-top"><span class="kpi-l">Respect du préventif</span><span class="chip-i t-warn"><svg class="i" width="18" height="18" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg></span></div>
+          <div class="kpi-v">82<small>%</small></div>
+          <div class="kpi-f"><span class="delta t-warn">objectif 90 %</span>
+            <svg class="spark" viewBox="0 0 36 12"><polyline points="0,6 6,5 12,7 18,6 24,4 30,5 36,4"/></svg></div>
+        </div><div class="kpi">
+          <div class="kpi-top"><span class="kpi-l">Coût maintenance / budget</span><span class="chip-i t-ok"><svg class="i" width="18" height="18" viewBox="0 0 24 24"><circle cx="8" cy="8" r="6"/><path d="M18.1 10.4A6 6 0 1 1 10.3 18"/><path d="M7 6h1v4M16.7 13.9l.7.7-2.8 2.8"/></svg></span></div>
+          <div class="kpi-v">61<small>%</small></div>
+          <div class="kpi-f"><span class="delta t-ok">48 320 DT sur 79 000 DT</span>
+            <svg class="spark" viewBox="0 0 36 12"><polyline points="0,10 6,9 12,8 18,7 24,6 30,5 36,4"/></svg></div>
+        </div></div>
+      <div class="grid">
+        <div class="card"><h4>Heures d'arrêt par chaîne</h4><p class="cs">30 derniers jours</p><div class="hb"><span>Coupe</span><i><b style="width:59%"></b></i><em>38 h</em></div><div class="hb"><span>Couture A</span><i><b style="width:100%"></b></i><em>64 h</em></div><div class="hb"><span>Couture B</span><i><b style="width:64%"></b></i><em>41 h</em></div><div class="hb"><span>Finition</span><i><b style="width:34%"></b></i><em>22 h</em></div><div class="hb"><span>Repassage</span><i><b style="width:19%"></b></i><em>12 h</em></div></div>
+        <div class="card line"><h4>Ordres de travail déclarés et clôturés</h4><p class="cs">Par semaine</p>
+          <div class="lg"><span><i style="background:#3d60dc"></i>Déclarés</span><span><i style="background:#23a07a"></i>Clôturés</span></div>
+          <svg viewBox="0 0 580 180"><g stroke="#e3e8f0" stroke-width="1"><line x1="0" x2="580" y1="30" y2="30"/><line x1="0" x2="580" y1="70" y2="70"/><line x1="0" x2="580" y1="110" y2="110"/><line x1="0" x2="580" y1="150" y2="150"/></g>
+          <polyline points="10,90 60,75 110,95 160,60 210,80 260,50 310,65 360,40 410,55 460,70 510,45 560,30" fill="none" stroke="#3d60dc" stroke-width="2.4" stroke-linejoin="round"/>
+          <polyline points="10,100 60,80 110,90 160,75 210,75 260,65 310,60 360,55 410,50 460,65 510,55 560,40" fill="none" stroke="#23a07a" stroke-width="2.4" stroke-linejoin="round"/><text x="10" y="172">S27</text><text x="110" y="172">S29</text><text x="210" y="172">S31</text><text x="310" y="172">S33</text><text x="410" y="172">S35</text><text x="510" y="172">S37</text></svg></div>
+        <div class="card"><h4>OT par type</h4><p class="cs">Répartition du mois</p>
+          <div class="donut"><svg viewBox="0 0 42 42"><circle cx="21" cy="21" r="15.9" fill="none" stroke="#3d60dc" stroke-width="6" stroke-dasharray="52 48" transform="rotate(-90 21 21)"/>
+          <circle cx="21" cy="21" r="15.9" fill="none" stroke="#23a07a" stroke-width="6" stroke-dasharray="30 70" stroke-dashoffset="-52" transform="rotate(-90 21 21)"/>
+          <circle cx="21" cy="21" r="15.9" fill="none" stroke="#e0981f" stroke-width="6" stroke-dasharray="18 82" stroke-dashoffset="-82" transform="rotate(-90 21 21)"/></svg>
+          <div class="leg"><div><i style="background:#3d60dc"></i>Correctif<b>52 %</b></div><div><i style="background:#23a07a"></i>Préventif<b>30 %</b></div><div><i style="background:#e0981f"></i>Amélioration<b>18 %</b></div></div></div></div>
+      </div>
+      <div class="card tablecard"><div class="th"><div><h4>Ordres de travail prioritaires</h4><p class="cs" style="margin:2px 0 0">À traiter aujourd'hui</p></div><span class="btn bg">Tout afficher</span></div>
+        <table><thead><tr><th>Référence</th><th>Intervention</th><th>Urgence</th><th>Statut</th><th>Technicien</th><th class="r">Temps passé</th></tr></thead><tbody><tr><td class="mono">OT-2491</td><td><b>Casse aiguille récurrente</b><span class="sub">JUKI DDL-9000 · Couture A</span></td>
+        <td><span class="tag t-bad">Haute</span></td><td><span class="st s-warn">En cours</span></td>
+        <td>M. Ben Salah</td><td class="num r">2 h 15</td></tr><tr><td class="mono">OT-2488</td><td><b>Courroie du convoyeur à remplacer</b><span class="sub">Convoyeur C3 · Coupe</span></td>
+        <td><span class="tag t-warn">Normale</span></td><td><span class="st s-info">Affectée</span></td>
+        <td>K. Jlassi</td><td class="num r">—</td></tr><tr><td class="mono">OT-2485</td><td><b>Préventif mensuel — graissage</b><span class="sub">Presse à repasser P-04</span></td>
+        <td><span class="tag t-ok">Basse</span></td><td><span class="st s-info">Planifiée</span></td>
+        <td>A. Trabelsi</td><td class="num r">—</td></tr><tr><td class="mono">OT-2479</td><td><b>Fuite vapeur sur générateur</b><span class="sub">Générateur G-01 · Repassage</span></td>
+        <td><span class="tag t-bad">Haute</span></td><td><span class="st s-ok">Réalisée</span></td>
+        <td>M. Ben Salah</td><td class="num r">3 h 40</td></tr></tbody></table></div>
+    </div>
+  </div>
+</section>
+</div></body></html>

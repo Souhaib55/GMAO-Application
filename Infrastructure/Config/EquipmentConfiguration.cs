@@ -34,6 +34,11 @@ namespace Infrastructure.Config
                    .WithMany(m => m.Equipments)
                    .HasForeignKey(e => e.IdModele)
                    .OnDelete(DeleteBehavior.Restrict);
+            builder.HasOne(e => e.ChaineProduction)
+                   .WithMany()
+                   .HasForeignKey(e => e.IdChaineProduction)
+                   .IsRequired(false)
+                   .OnDelete(DeleteBehavior.Restrict);
             builder.HasOne(e => e.Groupe)
                    .WithMany(g => g.Equipments)
                    .HasForeignKey(e => e.IdGroupe)

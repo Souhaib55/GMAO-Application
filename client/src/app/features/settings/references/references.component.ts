@@ -1,39 +1,27 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ReferenceManagementService, ReferenceCategory } from '../services/reference-management.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'app-references',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
   template: `
     <div class="references-container">
       <!-- Header -->
-      <div class="page-header">
-        <div class="header-left">
-          <button class="btn-back" (click)="goBack()">
+      <app-page-header icon="references" title="Données de référence" subtitle="Listes proposées dans les formulaires, par module">
+        <button class="btn-back" (click)="goBack()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>
             Retour
           </button>
-          <div class="header-title">
-            <h1>
-              <svg class="header-title-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                <line x1="12" y1="22.08" x2="12" y2="12"/>
-              </svg>
-              Données de Référence
-            </h1>
-            <p>Gérer les tables de référence pour tous les modules</p>
-          </div>
-        </div>
-      </div>
+      </app-page-header>
 
       <!-- Module Tabs -->
       <div class="module-tabs">
@@ -128,7 +116,6 @@ import { NotificationService } from '../../../core/services/notification.service
               <tr *ngIf="items.length === 0 && !loading">
                 <td colspan="3" class="empty-state">
                   <div class="empty-content">
-                    <span class="empty-icon">📭</span>
                     <p>Aucun élément dans cette catégorie</p>
                     <button class="btn-primary small" (click)="openCreateModal()">
                       Ajouter le premier
@@ -194,7 +181,7 @@ import { NotificationService } from '../../../core/services/notification.service
       <div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeDeleteModal()">
         <div class="modal delete-modal" (click)="$event.stopPropagation()">
           <div class="modal-header delete">
-            <h2>⚠️ Confirmer la suppression</h2>
+            <h2>Confirmer la suppression</h2>
           </div>
           <div class="modal-body">
             <p>Êtes-vous sûr de vouloir supprimer <strong>{{ getItemName(itemToDelete) }}</strong> ?</p>
@@ -213,39 +200,33 @@ import { NotificationService } from '../../../core/services/notification.service
   styles: [`
     /* ===== Variables & Base - Modern Industrial Theme ===== */
     :host {
-      --primary: #0ea5e9;
-      --primary-dark: #0284c7;
-      --primary-light: #38bdf8;
-      --accent: #06b6d4;
-      --success: #10b981;
-      --danger: #ef4444;
-      --warning: #f59e0b;
-      --industrial-dark: #0f172a;
-      --industrial-mid: #1e293b;
-      --industrial-light: #334155;
-      --steel-50: #f8fafc;
-      --steel-100: #f1f5f9;
-      --steel-200: #e2e8f0;
-      --steel-300: #cbd5e1;
-      --steel-400: #94a3b8;
-      --steel-500: #64748b;
-      --steel-600: #475569;
-      --steel-700: #334155;
-      --text-primary: #0f172a;
-      --text-secondary: #475569;
-      --text-muted: #94a3b8;
+      --primary: var(--primary-600);
+      --primary-dark: var(--primary-700);
+      --primary-light: var(--primary-400);
+      --accent: var(--primary-600);
+      --danger: var(--error);
+      --industrial-dark: var(--gray-900);
+      --industrial-mid: var(--gray-800);
+      --industrial-light: var(--gray-700);
+      --steel-50: var(--gray-50);
+      --steel-100: var(--gray-100);
+      --steel-200: var(--gray-200);
+      --steel-300: var(--gray-300);
+      --steel-400: var(--gray-400);
+      --steel-500: var(--gray-500);
+      --steel-600: var(--gray-600);
+      --steel-700: var(--gray-700);
+      --text-primary: var(--gray-900);
+      --text-secondary: var(--gray-600);
+      --text-muted: var(--gray-500);
       --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
       --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
       --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
 
     .references-container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 1.5rem;
+      width: 100%;
       position: relative;
-      min-height: 100vh;
-      background: #f1f5f9;
     }
 
     /* Header */
@@ -269,7 +250,7 @@ import { NotificationService } from '../../../core/services/notification.service
       padding: 0.5rem 1rem;
       background: white;
       border: 1px solid var(--steel-200);
-      border-radius: 8px;
+      border-radius: var(--radius);
       font-size: 0.875rem;
       font-weight: 500;
       color: var(--steel-600);
@@ -289,13 +270,13 @@ import { NotificationService } from '../../../core/services/notification.service
       align-items: center;
       gap: 0.75rem;
       font-size: 1.5rem;
-      font-weight: 700;
+      font-weight: 600;
       color: var(--text-primary);
       margin: 0;
     }
 
     .header-title-icon {
-      color: #3b82f6;
+      color: var(--primary-600);
     }
 
     .header-title p {
@@ -311,7 +292,7 @@ import { NotificationService } from '../../../core/services/notification.service
       margin-bottom: 1.5rem;
       padding: 0.5rem;
       background: white;
-      border-radius: 12px;
+      border-radius: var(--radius-lg);
       border: 1px solid var(--steel-200);
       box-shadow: var(--shadow-sm);
     }
@@ -323,7 +304,7 @@ import { NotificationService } from '../../../core/services/notification.service
       padding: 0.75rem 1.25rem;
       background: transparent;
       border: none;
-      border-radius: 8px;
+      border-radius: var(--radius);
       font-size: 0.875rem;
       font-weight: 500;
       color: var(--steel-500);
@@ -337,9 +318,9 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .module-tab.active {
-      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      background: var(--primary-600);
       color: white;
-      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+      box-shadow: none;
     }
 
     .tab-icon {
@@ -359,7 +340,7 @@ import { NotificationService } from '../../../core/services/notification.service
     .tab-count {
       padding: 0.125rem 0.5rem;
       background: rgba(0, 0, 0, 0.08);
-      border-radius: 12px;
+      border-radius: var(--radius-lg);
       font-size: 0.75rem;
       font-weight: 600;
     }
@@ -407,7 +388,7 @@ import { NotificationService } from '../../../core/services/notification.service
       padding: 1.25rem;
       background: white;
       border: 1px solid var(--steel-200);
-      border-radius: 12px;
+      border-radius: var(--radius-lg);
       cursor: pointer;
       transition: all 0.2s ease;
     }
@@ -419,8 +400,8 @@ import { NotificationService } from '../../../core/services/notification.service
 
     .category-card.active {
       border-color: var(--primary);
-      background: linear-gradient(135deg, rgba(14, 165, 233, 0.04) 0%, rgba(6, 182, 212, 0.04) 100%);
-      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+      background: rgba(61, 96, 220, 0.04);
+      box-shadow: 0 0 0 3px rgba(61, 96, 220, 0.1);
     }
 
     .category-icon {
@@ -429,10 +410,10 @@ import { NotificationService } from '../../../core/services/notification.service
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-      border-radius: 12px;
+      background: var(--primary-50);
+      border-radius: var(--radius-lg);
       transition: all 0.2s ease;
-      color: #3b82f6;
+      color: var(--primary-600);
     }
 
     .category-icon svg {
@@ -442,9 +423,9 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .category-card.active .category-icon {
-      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      background: var(--primary-600);
       color: white;
-      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+      box-shadow: none;
     }
 
     .category-info {
@@ -471,7 +452,7 @@ import { NotificationService } from '../../../core/services/notification.service
     .category-count {
       padding: 0.25rem 0.75rem;
       background: var(--steel-100);
-      border-radius: 16px;
+      border-radius: var(--radius-lg);
       font-size: 0.75rem;
       font-weight: 600;
       color: var(--steel-600);
@@ -485,7 +466,7 @@ import { NotificationService } from '../../../core/services/notification.service
     /* Items Section - Clean Modern Table */
     .items-section {
       background: #ffffff;
-      border-radius: 16px;
+      border-radius: var(--radius-lg);
       border: none;
       overflow: hidden;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -496,7 +477,7 @@ import { NotificationService } from '../../../core/services/notification.service
       align-items: center;
       justify-content: space-between;
       padding: 24px;
-      background: #f8fafc;
+      background: var(--gray-50);
     }
 
     .items-header .header-left {
@@ -508,8 +489,8 @@ import { NotificationService } from '../../../core/services/notification.service
     .items-header .header-icon {
       width: 48px;
       height: 48px;
-      background: #3b82f6;
-      border-radius: 12px;
+      background: var(--primary-600);
+      border-radius: var(--radius-lg);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -519,13 +500,13 @@ import { NotificationService } from '../../../core/services/notification.service
     .items-header .page-title {
       font-size: 28px;
       font-weight: 600;
-      color: #1e293b;
+      color: var(--gray-800);
       margin: 0;
     }
 
     .items-header .page-subtitle {
       font-size: 14px;
-      color: #64748b;
+      color: var(--gray-500);
       margin: 4px 0 0 0;
     }
 
@@ -534,10 +515,10 @@ import { NotificationService } from '../../../core/services/notification.service
       align-items: center;
       gap: 8px;
       padding: 12px 24px;
-      background: #3b82f6;
+      background: var(--primary-600);
       color: white;
       border: none;
-      border-radius: 10px;
+      border-radius: var(--radius);
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
@@ -546,9 +527,9 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .items-header .btn-new:hover {
-      background: #2563eb;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      background: var(--primary-700);
+      transform: none;
+      box-shadow: none;
     }
 
     .items-header .btn-icon {
@@ -562,21 +543,21 @@ import { NotificationService } from '../../../core/services/notification.service
       justify-content: center;
       gap: 0.5rem;
       padding: 0.75rem 1.5rem;
-      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      background: var(--primary-600);
       color: #ffffff;
       border: none;
-      border-radius: 10px;
+      border-radius: var(--radius);
       font-size: 0.875rem;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s ease;
-      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+      box-shadow: none;
     }
 
     .btn-primary:hover:not(:disabled) {
-      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
-      transform: translateY(-1px);
+      background: var(--primary-700);
+      box-shadow: none;
+      transform: none;
     }
 
     .btn-primary:disabled {
@@ -607,12 +588,12 @@ import { NotificationService } from '../../../core/services/notification.service
       padding: 1rem 1.5rem;
       text-align: left;
       font-size: 0.6875rem;
-      font-weight: 700;
+      font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.8px;
-      color: #64748b;
-      background: #f8fafc;
-      border-bottom: 1px solid #e2e8f0;
+      color: var(--gray-500);
+      background: var(--gray-50);
+      border-bottom: 1px solid var(--gray-200);
     }
 
     .items-table th:first-child {
@@ -626,7 +607,7 @@ import { NotificationService } from '../../../core/services/notification.service
 
     .items-table td {
       padding: 1rem 1.5rem;
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid var(--gray-100);
       vertical-align: middle;
       background: #ffffff;
     }
@@ -640,7 +621,7 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .item-row:hover td {
-      background: #f8fafc;
+      background: var(--gray-50);
     }
 
     .item-row:last-child td {
@@ -653,18 +634,18 @@ import { NotificationService } from '../../../core/services/notification.service
       justify-content: center;
       min-width: 44px;
       padding: 0.375rem 0.75rem;
-      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      background: var(--primary-600);
       border-radius: 6px;
       font-size: 0.75rem;
       font-weight: 600;
       color: #ffffff;
       font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-      box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
+      box-shadow: none;
     }
 
     .item-name {
       font-weight: 500;
-      color: #1e293b;
+      color: var(--gray-800);
       font-size: 0.9375rem;
     }
 
@@ -681,30 +662,30 @@ import { NotificationService } from '../../../core/services/notification.service
       align-items: center;
       justify-content: center;
       padding: 0;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
       cursor: pointer;
       transition: all 0.2s ease;
       background: #ffffff;
     }
 
     .action-btn.edit {
-      color: #0ea5e9;
+      color: var(--primary-600);
     }
 
     .action-btn.edit:hover {
-      background: #0ea5e9;
-      border-color: #0ea5e9;
+      background: var(--primary-600);
+      border-color: var(--primary-600);
       color: #ffffff;
     }
 
     .action-btn.delete {
-      color: #ef4444;
+      color: var(--error);
     }
 
     .action-btn.delete:hover {
-      background: #ef4444;
-      border-color: #ef4444;
+      background: var(--error);
+      border-color: var(--error);
       color: #ffffff;
     }
 
@@ -734,8 +715,8 @@ import { NotificationService } from '../../../core/services/notification.service
 
     /* No Selection - Modern Empty State */
     .no-selection {
-      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-      border-radius: 16px;
+      background: #ffffff;
+      border-radius: var(--radius-lg);
       border: 2px dashed var(--steel-200);
       padding: 4rem 2rem;
       transition: all 0.3s ease;
@@ -759,17 +740,17 @@ import { NotificationService } from '../../../core/services/notification.service
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-      border-radius: 20px;
+      background: var(--primary-50);
+      border-radius: var(--radius-lg);
       margin-bottom: 1.5rem;
-      color: #3b82f6;
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+      color: var(--primary-600);
+      box-shadow: none;
     }
 
     .no-selection-content h3 {
       margin: 0;
       font-size: 1.25rem;
-      font-weight: 700;
+      font-weight: 600;
       color: var(--text-primary);
       letter-spacing: -0.02em;
     }
@@ -793,16 +774,17 @@ import { NotificationService } from '../../../core/services/notification.service
       justify-content: center;
       gap: 1rem;
       z-index: 100;
-      border-radius: 12px;
+      border-radius: var(--radius-lg);
     }
 
     .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid var(--steel-200);
-      border-top-color: var(--primary);
+      width: 32px;
+      height: 32px;
+      border: 2.5px solid var(--primary-100);
+      border-top-color: var(--primary-600);
       border-radius: 50%;
-      animation: spin 0.7s linear infinite;
+      animation: spin 0.75s linear infinite;
+      will-change: transform;
     }
 
     @keyframes spin {
@@ -813,21 +795,21 @@ import { NotificationService } from '../../../core/services/notification.service
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(15, 23, 42, 0.6);
+      background: rgba(21, 26, 34, 0.6);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 1000;
-      backdrop-filter: blur(4px);
+      backdrop-filter: none;
       padding: 1rem;
     }
 
     .modal {
       background: white;
-      border-radius: 16px;
+      border-radius: var(--radius-lg);
       width: 100%;
       max-width: 480px;
-      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 25px 50px rgba(21, 26, 34, 0.12);
       animation: modalIn 0.25s ease-out;
       overflow: hidden;
     }
@@ -848,12 +830,12 @@ import { NotificationService } from '../../../core/services/notification.service
       justify-content: space-between;
       align-items: center;
       padding: 1.25rem 1.5rem;
-      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      background: var(--primary-600);
       color: white;
     }
 
     .modal-header.delete {
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      background: var(--error);
     }
 
     .modal-header h2 {
@@ -869,7 +851,7 @@ import { NotificationService } from '../../../core/services/notification.service
       height: 36px;
       border: none;
       background: rgba(255, 255, 255, 0.15);
-      border-radius: 8px;
+      border-radius: var(--radius);
       font-size: 1.5rem;
       color: white;
       cursor: pointer;
@@ -882,7 +864,7 @@ import { NotificationService } from '../../../core/services/notification.service
 
     .close-btn:hover {
       background: rgba(255, 255, 255, 0.3);
-      transform: scale(1.05);
+      transform: none;
     }
 
     .modal-body {
@@ -904,12 +886,12 @@ import { NotificationService } from '../../../core/services/notification.service
       gap: 0.25rem;
       font-size: 0.875rem;
       font-weight: 600;
-      color: #1e293b;
+      color: var(--gray-800);
       margin-bottom: 0.625rem;
     }
 
     .form-group .required {
-      color: #ef4444;
+      color: var(--error);
       font-weight: 500;
     }
 
@@ -918,23 +900,23 @@ import { NotificationService } from '../../../core/services/notification.service
     .form-group select {
       width: 100%;
       padding: 0.875rem 1rem;
-      border: 1.5px solid #e2e8f0;
-      border-radius: 10px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius);
       font-size: 0.9375rem;
       font-family: inherit;
       transition: all 0.2s ease;
-      background: #f8fafc;
-      color: #1e293b;
+      background: var(--gray-50);
+      color: var(--gray-800);
     }
 
     .form-group input::placeholder {
-      color: #94a3b8;
+      color: var(--gray-400);
     }
 
     .form-group input:hover,
     .form-group select:hover,
     .form-group textarea:hover {
-      border-color: #cbd5e1;
+      border-color: var(--gray-300);
       background: #ffffff;
     }
 
@@ -942,9 +924,9 @@ import { NotificationService } from '../../../core/services/notification.service
     .form-group select:focus,
     .form-group textarea:focus {
       outline: none;
-      border-color: #3b82f6;
+      border-color: var(--primary-600);
       background: #ffffff;
-      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+      box-shadow: 0 0 0 4px rgba(61, 96, 220, 0.1);
     }
 
     .form-group select {
@@ -968,11 +950,11 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .form-group textarea::placeholder {
-      color: #94a3b8;
+      color: var(--gray-400);
     }
 
     .form-group .error {
-      color: #ef4444;
+      color: var(--error);
       font-size: 0.8125rem;
       font-weight: 500;
       margin-top: 0.5rem;
@@ -980,13 +962,13 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .warning-text {
-      color: #dc2626;
+      color: var(--error-dark);
       font-size: 0.875rem;
       margin-top: 0.75rem;
       padding: 0.75rem 1rem;
-      background: #fef2f2;
-      border-radius: 8px;
-      border-left: 3px solid #ef4444;
+      background: var(--error-light);
+      border-radius: var(--radius);
+      border-left: 3px solid var(--error);
     }
 
     .modal-footer {
@@ -994,34 +976,34 @@ import { NotificationService } from '../../../core/services/notification.service
       justify-content: flex-end;
       gap: 0.75rem;
       padding: 1.25rem 1.5rem;
-      border-top: 1px solid #e2e8f0;
-      background: #f8fafc;
+      border-top: 1px solid var(--gray-200);
+      background: var(--gray-50);
     }
 
     .btn-secondary {
       padding: 0.75rem 1.5rem;
       background: white;
-      border: 1.5px solid #e2e8f0;
-      border-radius: 10px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius);
       font-size: 0.875rem;
       font-weight: 600;
-      color: #64748b;
+      color: var(--gray-500);
       cursor: pointer;
       transition: all 0.2s ease;
     }
 
     .btn-secondary:hover {
-      border-color: #cbd5e1;
-      background: #f1f5f9;
-      color: #475569;
+      border-color: var(--gray-300);
+      background: var(--gray-100);
+      color: var(--gray-600);
     }
 
     .btn-danger {
       padding: 0.75rem 1.5rem;
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      background: var(--error);
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: var(--radius);
       font-size: 0.875rem;
       font-weight: 600;
       cursor: pointer;
@@ -1029,7 +1011,7 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .btn-danger:hover:not(:disabled) {
-      background: #dc2626;
+      background: var(--error-dark);
     }
 
     .btn-danger:disabled {
@@ -1055,6 +1037,19 @@ import { NotificationService } from '../../../core/services/notification.service
         margin: 1rem;
         max-width: calc(100% - 2rem);
       }
+    }
+
+    /* Search field: the wrapper draws the border, the input stays bare */
+    .search-box input {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .search-box:focus-within {
+      border-color: var(--primary-500);
+      box-shadow: var(--focus-ring);
     }
   `]
 })
@@ -1089,7 +1084,8 @@ export class ReferencesComponent implements OnInit {
     private notificationService: NotificationService,
     private fb: FormBuilder,
     private router: Router,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private route: ActivatedRoute
   ) {
     this.itemForm = this.fb.group({
       name: ['', Validators.required]
@@ -1098,6 +1094,14 @@ export class ReferencesComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCategories();
+
+    // Deep link from the settings hub: /settings/references?category=<key>
+    const key = this.route.snapshot.queryParamMap.get('category');
+    const category = key ? this.categories.find(c => c.key === key) : undefined;
+    if (category) {
+      this.selectedModule = category.module;
+      this.selectCategory(category);
+    }
   }
 
   loadCategories(): void {

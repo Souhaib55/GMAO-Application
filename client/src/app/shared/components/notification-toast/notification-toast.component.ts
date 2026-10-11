@@ -65,9 +65,8 @@ import { Observable } from 'rxjs';
       max-width: 420px;
       padding: 16px 18px;
       background: #ffffff;
-      border-radius: 14px;
-      box-shadow: 
-        0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      border-radius: var(--radius-lg);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
         0 10px 20px -5px rgba(0, 0, 0, 0.12),
         0 0 0 1px rgba(0, 0, 0, 0.05);
       animation: toastSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -90,7 +89,7 @@ import { Observable } from 'rxjs';
     .toast-icon {
       width: 42px;
       height: 42px;
-      border-radius: 12px;
+      border-radius: var(--radius-lg);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -103,23 +102,23 @@ import { Observable } from 'rxjs';
     }
 
     .toast.success .toast-icon {
-      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-      color: #059669;
+      background: var(--success-light);
+      color: var(--success-dark);
     }
 
     .toast.error .toast-icon {
-      background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-      color: #dc2626;
+      background: var(--error-light);
+      color: var(--error-dark);
     }
 
     .toast.warning .toast-icon {
-      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-      color: #d97706;
+      background: var(--warning-light);
+      color: var(--warning-dark);
     }
 
     .toast.info .toast-icon {
-      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-      color: #2563eb;
+      background: var(--primary-100);
+      color: var(--primary-700);
     }
 
     .toast-body {
@@ -131,14 +130,14 @@ import { Observable } from 'rxjs';
     .toast-title {
       font-weight: 600;
       font-size: 0.9375rem;
-      color: #0f172a;
+      color: var(--gray-900);
       margin-bottom: 4px;
       line-height: 1.3;
     }
 
     .toast-message {
       font-size: 0.875rem;
-      color: #64748b;
+      color: var(--gray-500);
       line-height: 1.5;
       word-wrap: break-word;
     }
@@ -146,10 +145,10 @@ import { Observable } from 'rxjs';
     .toast-close {
       width: 28px;
       height: 28px;
-      border-radius: 8px;
+      border-radius: var(--radius);
       background: transparent;
       border: none;
-      color: #94a3b8;
+      color: var(--gray-400);
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -164,8 +163,8 @@ import { Observable } from 'rxjs';
       }
 
       &:hover {
-        background: #f1f5f9;
-        color: #475569;
+        background: var(--gray-100);
+        color: var(--gray-600);
       }
     }
 
@@ -189,19 +188,19 @@ import { Observable } from 'rxjs';
     }
 
     .toast.success .toast-progress {
-      background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+      background: var(--success);
     }
 
     .toast.error .toast-progress {
-      background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+      background: var(--error);
     }
 
     .toast.warning .toast-progress {
-      background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+      background: var(--warning);
     }
 
     .toast.info .toast-progress {
-      background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+      background: var(--primary-600);
     }
 
     /* Mobile Styles */
@@ -221,7 +220,7 @@ import { Observable } from 'rxjs';
       .toast-icon {
         width: 36px;
         height: 36px;
-        border-radius: 10px;
+        border-radius: var(--radius);
 
         svg {
           width: 18px;

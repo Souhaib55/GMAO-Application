@@ -1,3 +1,4 @@
+using API.Security;
 using Core.DTOs;
 using Core.Entities;
 using Infrastructure.Data;
@@ -9,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace API.Controllers
 {
+    [SupervisorWrites]
     [ApiController]
     [Route("api/[controller]")]
     public class StockController : ControllerBase

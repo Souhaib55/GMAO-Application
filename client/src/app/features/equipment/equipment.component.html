@@ -1,24 +1,12 @@
 <div class="crud-page">
   <!-- Header Section -->
-  <div class="page-header">
-    <div class="header-left">
-      <div class="header-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-          <line x1="8" y1="21" x2="16" y2="21"></line>
-          <line x1="12" y1="17" x2="12" y2="21"></line>
-        </svg>
-      </div>
-      <div>
-        <h1 class="page-title">Équipements</h1>
-        <p class="page-subtitle">Gestion des équipements</p>
-      </div>
-    </div>
+  <app-page-header icon="equipment" title="Équipements" subtitle="Parc machines, état et criticité">
+
     <button class="btn-new" routerLink="/equipment/new" *ngIf="canCreate()">
       <span class="btn-icon">+</span>
       Nouvel équipement
     </button>
-  </div>
+  </app-page-header>
 
   <!-- Stats Cards -->
   <div class="stats-grid">
@@ -135,6 +123,7 @@
             </svg>
           </th>
           <th>Modèle</th>
+          <th>Chaîne</th>
           <th>État</th>
           <th>Criticité</th>
           <th *ngIf="canShowActions()">Actions</th>
@@ -153,6 +142,9 @@
           <td data-label="Désignation">{{ equipment.designation }}</td>
           <td class="td-type" data-label="Modèle">
             <span class="type-badge">{{ equipment.modele?.nomModele || '-' }}</span>
+          </td>
+          <td data-label="Chaîne">
+            <span>{{ equipment.chaineProduction?.libelle || 'Non affectée' }}</span>
           </td>
           <td class="td-etat" data-label="État">
             <span class="status-badge" [ngClass]="getEtatClass(equipment)">

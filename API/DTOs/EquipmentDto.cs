@@ -20,6 +20,7 @@ namespace API.DTOs
         public int? IdFamille { get; set; }   // Nullable to support optional relationship
         public int? IdModele { get; set; }    // Nullable to support optional relationship
         public int? IdGroupe { get; set; }    // Nullable to support optional relationship
+        public int? IdChaineProduction { get; set; } // Production line the machine is installed on
 
         public DateTime? DateInstallation { get; set; }
         public DateTime? DateMiseEnService { get; set; }

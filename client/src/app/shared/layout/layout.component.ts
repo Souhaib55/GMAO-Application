@@ -1,16 +1,33 @@
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { CommonModule, registerLocaleData } from '@angular/common';
+import localeFr from '@angular/common/locales/fr';
+import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AuthService } from '../../core/services/auth.service';
 import { InterventionNotificationService } from '../../core/services/intervention-notification.service';
 import { UserInfo, Notification } from '../../core/models';
+import { AppIconComponent } from '../components/app-icon/app-icon.component';
 import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
+
+registerLocaleData(localeFr, 'fr');
+
+interface MenuItem {
+  label: string;
+  icon: string;
+  route: string;
+  roles: string[];
+}
+
+interface MenuGroup {
+  label: string;
+  items: MenuItem[];
+}
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, AppIconComponent],
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.scss']
 })
@@ -26,62 +43,51 @@ export class LayoutComponent implements OnInit, OnDestroy {
   unreadCount = 0;
   private subscriptions: Subscription[] = [];
 
-  menuItems = [
+  today = new Date();
+  currentYear = new Date().getFullYear();
+  pageSection = 'GMAO';
+  pageTitle = '';
+  visibleGroups: MenuGroup[] = [];
+
+  menuGroups: MenuGroup[] = [
     {
-      label: 'Dashboard',
-      icon: 'dashboard',
-      route: '/dashboard',
-      roles: ['Superviseur', 'Demandeur', 'Utilisateur']
+      label: 'Pilotage',
+      items: [
+        { label: 'Tableau de bord', icon: 'dashboard', route: '/dashboard', roles: ['Superviseur', 'Demandeur', 'Utilisateur'] },
+        { label: 'Planning', icon: 'calendar', route: '/planning', roles: ['Superviseur', 'Utilisateur'] },
+        { label: 'Rapports', icon: 'reports', route: '/rapports', roles: ['Superviseur'] }
+      ]
     },
     {
-      label: 'GMAO Chat',
-      icon: 'chat',
-      route: '/chat',
-      roles: ['Superviseur']
+      label: 'Maintenance',
+      items: [
+        { label: 'Interventions', icon: 'interventions', route: '/interventions', roles: ['Superviseur', 'Demandeur', 'Utilisateur'] },
+        { label: 'Équipements', icon: 'equipment', route: '/equipment', roles: ['Superviseur', 'Utilisateur'] }
+      ]
     },
     {
-      label: 'Planning',
-      icon: 'calendar',
-      route: '/planning',
-      roles: ['Superviseur', 'Utilisateur']
+      label: 'Magasin',
+      items: [
+        { label: 'Pièces de rechange', icon: 'resources', route: '/resources', roles: ['Superviseur'] },
+        { label: 'Stock & achats', icon: 'stock', route: '/stock', roles: ['Superviseur'] }
+      ]
     },
     {
-      label: 'Interventions',
-      icon: 'interventions',
-      route: '/interventions',
-      roles: ['Superviseur', 'Demandeur', 'Utilisateur']
-    },
-    {
-      label: 'Équipements',
-      icon: 'equipment',
-      route: '/equipment',
-      roles: ['Superviseur', 'Utilisateur']
-    },
-    {
-      label: 'Ressources',
-      icon: 'resources',
-      route: '/resources',
-      roles: ['Superviseur']
-    },
-    {
-      label: 'Stock/Achat',
-      icon: 'stock',
-      route: '/stock',
-      roles: ['Superviseur']
-    },
-    {
-      label: 'Rapports',
-      icon: 'reports',
-      route: '/rapports',
-      roles: ['Superviseur']
-    },
-    {
-      label: 'Paramètres',
-      icon: 'settings',
-      route: '/settings',
-      roles: ['Superviseur']
+      label: 'Système',
+      items: [
+        { label: 'Assistant GMAO', icon: 'chat', route: '/chat', roles: ['Superviseur'] },
+        { label: 'Paramètres', icon: 'settings', route: '/settings', roles: ['Superviseur'] }
+      ]
     }
   ];
+
+  private readonly subPageLabels: { [segment: string]: string } = {
+    new: 'Nouveau',
+    edit: 'Modification',
+    view: 'Fiche',
+    users: 'Utilisateurs',
+    references: 'Référentiels'
+  };
 
   constructor(
     private authService: AuthService,
@@ -91,8 +97,16 @@ export class LayoutComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.updatePageTitle(this.router.url);
+    this.subscriptions.push(
+      this.router.events
+        .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+        .subscribe(e => this.updatePageTitle(e.urlAfterRedirects))
+    );
+
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
+      this.visibleGroups = this.computeVisibleGroups();
       
       // Start notification polling only for Superviseur and Utilisateur
       if (user && (user.role === 'Superviseur' || user.role === 'Utilisateur')) {
@@ -126,6 +140,15 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   toggleSidebar(): void {
     this.sidebarOpen = !this.sidebarOpen;
+  }
+
+  /** Sidebar hamburger: collapses the rail on desktop, closes the drawer on mobile. */
+  onMenuToggle(): void {
+    if (window.matchMedia('(max-width: 992px)').matches) {
+      this.closeMobileMenu();
+    } else {
+      this.toggleSidebar();
+    }
   }
 
   toggleMobileMenu(): void {
@@ -241,9 +264,35 @@ export class LayoutComponent implements OnInit, OnDestroy {
     return this.sanitizer.bypassSecurityTrustHtml(svg);
   }
 
-  canShowMenuItem(item: any): boolean {
+  canShowMenuItem(item: MenuItem): boolean {
     if (!this.currentUser) return false;
     return item.roles.includes(this.currentUser.role);
+  }
+
+  private computeVisibleGroups(): MenuGroup[] {
+    return this.menuGroups
+      .map(group => ({ ...group, items: group.items.filter(item => this.canShowMenuItem(item)) }))
+      .filter(group => group.items.length > 0);
+  }
+
+  private updatePageTitle(url: string): void {
+    const segments = url.split('?')[0].split('/').filter(Boolean);
+    const root = '/' + (segments[0] || 'dashboard');
+    for (const group of this.menuGroups) {
+      const item = group.items.find(i => i.route === root);
+      if (item) {
+        this.pageSection = group.label;
+        this.pageTitle = item.label;
+        const sub = segments[1] && this.subPageLabels[segments[1]];
+        if (sub) {
+          this.pageSection = item.label;
+          this.pageTitle = sub;
+        }
+        return;
+      }
+    }
+    this.pageSection = 'GMAO';
+    this.pageTitle = '';
   }
 
   logout(): void {

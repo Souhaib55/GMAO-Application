@@ -29,6 +29,10 @@ namespace API.DTOs
     
     [JsonPropertyName("idPanne")]
     public int? IDPanne { get; set; }
+
+    // Machine concerned; 0 clears it on update
+    [JsonPropertyName("idEquipement")]
+    public int? IDEquipement { get; set; }
     
     [JsonPropertyName("demandeursId")]
     public int? DemandeursID { get; set; }

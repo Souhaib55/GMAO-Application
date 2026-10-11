@@ -32,6 +32,17 @@ export interface DemandeIntervention {
   datePriseEnCharge?: Date;
   dateResolution?: Date;
   description?: string;
+  compteRendu?: string;
+  statusId?: number;
+  idEquipement?: number | null;
+  equipement?: EquipementSummary | null;
+}
+
+export interface EquipementSummary {
+  idEquipement: number;
+  codeEquipement: string;
+  designation: string;
+  idChaineProduction?: number | null;
 }
 
 export interface InterventionEtat {
@@ -64,16 +75,17 @@ export interface Panne {
   libelle: string;
 }
 
+/**
+ * Payload sent when creating / editing a request. The creation date, the
+ * requester, the machine-stop flag and the status are set by the server.
+ */
 export interface InterventionDto {
   titre: string;
-  dateCreation: string | Date;
-  machineArretee: boolean;
-  idEtat: number | null;
   idTypeIntervention: number | null;
   idUrgence: number | null;
   idChaineProduction: number | null;
   idPanne: number | null;
-  demandeursId: number;
+  idEquipement?: number | null;
   destinatairesId?: number | null;
   description?: string;
 }

@@ -13,6 +13,8 @@ export interface Equipment {
   idModele?: number;
   modele?: ModeleEquipement;
   idGroupe?: number;
+  idChaineProduction?: number | null;
+  chaineProduction?: { idChaineProduction: number; libelle: string } | null;
   groupe?: GroupeEquipement;
   dateInstallation?: Date;
   dateMiseEnService?: Date;

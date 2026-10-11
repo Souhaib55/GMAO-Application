@@ -13,6 +13,8 @@ namespace Core.Entities
         public int IDCriticitePiece { get; set; }
         public CriticitePiece CriticitePiece { get; set; } = null!;
         public int Quantite_Stock { get; set; }
+        // Reorder point: an alert is raised when stock falls to or below it
+        public int SeuilMinimum { get; set; }
         public decimal PrixUnitaire { get; set; }
         public DateTime DateCreation { get; set; }
         public DateTime? DateModification { get; set; }

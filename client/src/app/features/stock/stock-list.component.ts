@@ -5,11 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { StockService } from './services/stock.service';
 import { Stock, PagedResult } from '../../core/models';
 import { NotificationService } from '../../core/services/notification.service';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'app-stock',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, PageHeaderComponent],
   templateUrl: './stock-list.component.html',
   styleUrls: ['../../shared/styles/crud-table-design.scss']
 })

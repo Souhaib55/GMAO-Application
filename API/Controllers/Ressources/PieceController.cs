@@ -1,3 +1,4 @@
+using API.Security;
 using API.DTOs;
 using Core.Entities;
 using Infrastructure.Data;
@@ -11,6 +12,7 @@ using System.Threading.Tasks;
 
 namespace API.Controllers
 {
+    [SupervisorWrites]
     [ApiController]
     [Route("api/[controller]")]
     public class PieceController : ControllerBase
@@ -61,6 +63,8 @@ namespace API.Controllers
                     p.IDCriticitePiece,
                     CriticitePiece = p.CriticitePiece != null ? new { p.CriticitePiece.IDCriticitePiece, p.CriticitePiece.NiveauCriticitePiece } : null,
                     p.Quantite_Stock,
+                    p.SeuilMinimum,
+                    EnAlerte = p.Quantite_Stock <= p.SeuilMinimum,
                     p.PrixUnitaire,
                     p.DateCreation,
                     p.DateModification,
@@ -104,7 +108,11 @@ namespace API.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (await _context.Pieces.AnyAsync(p => p.CodePiece == pieceDto.CodePiece && p.IsActif))
+            var ruleError = ValidateBusinessRules(pieceDto);
+            if (ruleError != null) return BadRequest(ruleError);
+
+            // The unique index covers inactive rows too
+            if (await _context.Pieces.AnyAsync(p => p.CodePiece == pieceDto.CodePiece))
             {
                 return BadRequest("A piece with this CodePiece already exists.");
             }
@@ -125,6 +133,7 @@ namespace API.Controllers
                 IDConstructeur = pieceDto.IDConstructeur,
                 IDCriticitePiece = pieceDto.IDCriticitePiece,
                 Quantite_Stock = pieceDto.Quantite_Stock,
+                SeuilMinimum = pieceDto.SeuilMinimum,
                 PrixUnitaire = pieceDto.PrixUnitaire,
                 DateCreation = DateTime.Now,
                 IsActif = true
@@ -163,8 +172,11 @@ namespace API.Controllers
                 return NotFound("Piece not found or inactive.");
             }
 
+            var ruleError = ValidateBusinessRules(pieceDto);
+            if (ruleError != null) return BadRequest(ruleError);
+
             if (existingPiece.CodePiece != pieceDto.CodePiece &&
-                await _context.Pieces.AnyAsync(p => p.CodePiece == pieceDto.CodePiece && p.IsActif))
+                await _context.Pieces.AnyAsync(p => p.CodePiece == pieceDto.CodePiece && p.IDPiece != id))
             {
                 return BadRequest("A piece with this CodePiece already exists.");
             }
@@ -183,6 +195,7 @@ namespace API.Controllers
             existingPiece.IDConstructeur = pieceDto.IDConstructeur;
             existingPiece.IDCriticitePiece = pieceDto.IDCriticitePiece;
             existingPiece.Quantite_Stock = pieceDto.Quantite_Stock;
+            existingPiece.SeuilMinimum = pieceDto.SeuilMinimum;
             existingPiece.PrixUnitaire = pieceDto.PrixUnitaire;
             existingPiece.DateModification = DateTime.Now;
 
@@ -213,6 +226,19 @@ namespace API.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        /// <summary>Stock quantities, prices and reorder points are never negative.</summary>
+        private static string? ValidateBusinessRules(RessourceDto dto)
+        {
+            dto.CodePiece = dto.CodePiece?.Trim() ?? string.Empty;
+            dto.Designation = dto.Designation?.Trim() ?? string.Empty;
+            if (dto.CodePiece.Length is 0 or > 50) return "La référence de la pièce est obligatoire (50 caractères maximum).";
+            if (dto.Designation.Length is 0 or > 100) return "La désignation est obligatoire (100 caractères maximum).";
+            if (dto.Quantite_Stock < 0) return "La quantité en stock ne peut pas être négative.";
+            if (dto.SeuilMinimum < 0) return "Le seuil de réapprovisionnement ne peut pas être négatif.";
+            if (dto.PrixUnitaire < 0) return "Le prix unitaire ne peut pas être négatif.";
+            return null;
         }
     }
 

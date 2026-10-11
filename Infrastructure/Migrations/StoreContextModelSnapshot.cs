@@ -202,6 +202,10 @@ namespace Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdDemandeIntervention"));
 
+                    b.Property<string>("CompteRendu")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
                     b.Property<string>("ContentType")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -229,6 +233,10 @@ namespace Infrastructure.Migrations
                     b.Property<int>("DemandeursID")
                         .HasColumnType("int");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
                     b.Property<int?>("DestinatairesID")
                         .HasColumnType("int");
 
@@ -240,6 +248,9 @@ namespace Infrastructure.Migrations
                         .HasColumnType("nvarchar(255)");
 
                     b.Property<int>("IDChaineProduction")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("IDEquipement")
                         .HasColumnType("int");
 
                     b.Property<int>("IDEtat")
@@ -282,6 +293,8 @@ namespace Infrastructure.Migrations
                     b.HasIndex("DestinatairesID");
 
                     b.HasIndex("IDChaineProduction");
+
+                    b.HasIndex("IDEquipement");
 
                     b.HasIndex("IDEtat");
 
@@ -345,6 +358,9 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int?>("IdChaineProduction")
+                        .HasColumnType("int");
+
                     b.Property<int?>("IdCriticite")
                         .HasColumnType("int");
 
@@ -376,6 +392,8 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("CodeEquipement")
                         .IsUnique();
+
+                    b.HasIndex("IdChaineProduction");
 
                     b.HasIndex("IdCriticite");
 
@@ -816,6 +834,11 @@ namespace Infrastructure.Migrations
 
                     b.Property<int>("Quantite_Stock")
                         .HasColumnType("int");
+
+                    b.Property<int>("SeuilMinimum")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
 
                     b.HasKey("IDPiece");
 
@@ -1292,6 +1315,11 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Core.Entities.Equipment", "Equipement")
+                        .WithMany()
+                        .HasForeignKey("IDEquipement")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Core.Entities.Etat", "Etat")
                         .WithMany()
                         .HasForeignKey("IDEtat")
@@ -1328,6 +1356,8 @@ namespace Infrastructure.Migrations
 
                     b.Navigation("Destinataire");
 
+                    b.Navigation("Equipement");
+
                     b.Navigation("Etat");
 
                     b.Navigation("Panne");
@@ -1341,6 +1371,11 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Core.Entities.Equipment", b =>
                 {
+                    b.HasOne("Core.Entities.ChaineProduction", "ChaineProduction")
+                        .WithMany()
+                        .HasForeignKey("IdChaineProduction")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Core.Entities.EquipmentCriticite", "Criticite")
                         .WithMany("Equipments")
                         .HasForeignKey("IdCriticite")
@@ -1365,6 +1400,8 @@ namespace Infrastructure.Migrations
                         .WithMany("Equipments")
                         .HasForeignKey("IdModele")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ChaineProduction");
 
                     b.Navigation("Criticite");
 

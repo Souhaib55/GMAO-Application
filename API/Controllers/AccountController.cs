@@ -4,8 +4,10 @@ using API.DTOs;
 using API.Services;
 using Core.Entities;
 using Infrastructure.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 
@@ -35,9 +37,17 @@ namespace API.Controllers
             _configuration = configuration;
         }
 
+        // Accounts are created by a supervisor from the user management screen;
+        // there is no public self-registration on the factory network.
         [HttpPost("register")]
+        [Authorize(Roles = "Superviseur")]
         public async Task<ActionResult> Register(RegisterDto registerDto)
         {
+            if (registerDto.RoleId is < 1 or > 3)
+                return BadRequest(new { message = "Rôle invalide." });
+            if (await _storeContext.Users.AnyAsync(u => u.Email == registerDto.Email && u.IsActif))
+                return BadRequest(new { message = "Un utilisateur avec cet email existe déjà." });
+
             var appUser = new AppUser
             {
                 FirstName = registerDto.FirstName,
@@ -95,7 +105,11 @@ namespace API.Controllers
             };
         }
 
+        private const string InvalidCredentials = "Email ou mot de passe incorrect.";
+
         [HttpPost("login")]
+        [AllowAnonymous]
+        [EnableRateLimiting("auth")]
         public async Task<ActionResult> Login(LoginDto loginDto)
         {
             // If already authenticated, sign out first to allow fresh login
@@ -104,20 +118,24 @@ namespace API.Controllers
                 await _signInManager.SignOutAsync();
             }
 
+            // Same message whether the email or the password is wrong,
+            // so the login form cannot be used to discover accounts.
             var user = await _userManager.FindByEmailAsync(loginDto.Email);
-            if (user == null) return Unauthorized("Email incorrect.");
-
-            var result = await _signInManager.PasswordSignInAsync(user.UserName, loginDto.Password, true, false);
-            if (!result.Succeeded) return Unauthorized("Mot de passe incorrect.");
-
-            var roles = await _userManager.GetRolesAsync(user);
-            var role = roles.FirstOrDefault();
+            if (user == null) return Unauthorized(new { message = InvalidCredentials });
 
             var userEntity = await _storeContext.Users
                 .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.AppUserId == user.Id);
-            
-            if (userEntity == null) return BadRequest("User entity not found");
+            if (userEntity == null || !userEntity.IsActif)
+                return Unauthorized(new { message = "Ce compte est désactivé. Contactez votre responsable maintenance." });
+
+            var result = await _signInManager.PasswordSignInAsync(user.UserName!, loginDto.Password, loginDto.RememberMe, lockoutOnFailure: true);
+            if (result.IsLockedOut)
+                return Unauthorized(new { message = "Compte temporairement verrouillé après plusieurs tentatives. Réessayez dans 15 minutes." });
+            if (!result.Succeeded) return Unauthorized(new { message = InvalidCredentials });
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var role = roles.FirstOrDefault();
 
             return Ok(new
             {
@@ -131,6 +149,7 @@ namespace API.Controllers
         }
 
         [HttpPost("logout")]
+        [AllowAnonymous]
         public async Task<ActionResult> Logout()
         {
             await _signInManager.SignOutAsync();
@@ -138,23 +157,24 @@ namespace API.Controllers
         }
 
         [HttpGet("user-info")]
+        [AllowAnonymous]
         public async Task<ActionResult> GetUserInfo()
         {
-            if (User.Identity?.IsAuthenticated != true) return NoContent();
+            if (User.Identity?.IsAuthenticated != true) return Unauthorized();
 
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                Console.WriteLine("No user found for the current session.");
-                return NoContent();
-            }
+            if (user == null) return Unauthorized();
 
             var roles = await _userManager.GetRolesAsync(user);
-            Console.WriteLine($"User {user.Email} (ID: {user.Id}) roles: {string.Join(", ", roles)}");
             var role = roles.FirstOrDefault();
 
+            // A deactivated account loses its session immediately
             var userEntity = await _storeContext.Users.FirstOrDefaultAsync(u => u.AppUserId == user.Id);
-            if (userEntity == null) return NotFound("User entity not found");
+            if (userEntity == null || !userEntity.IsActif)
+            {
+                await _signInManager.SignOutAsync();
+                return Unauthorized();
+            }
 
             return Ok(new
             {
@@ -168,20 +188,25 @@ namespace API.Controllers
         }
 
         [HttpGet("auth-status")]
+        [AllowAnonymous]
         public ActionResult GetAuthState()
         {
             return Ok(new { isAuthenticated = User.Identity?.IsAuthenticated ?? false });
         }
 
         [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        [EnableRateLimiting("auth")]
         public async Task<ActionResult> ForgotPassword(ForgotPasswordDto dto)
         {
+            const string genericAnswer = "Si un compte avec cet email existe, un lien de réinitialisation a été envoyé.";
             var user = await _userManager.FindByEmailAsync(dto.Email);
-            
-            // Always return success to prevent email enumeration attacks
-            if (user == null)
+            var userEntity = user == null ? null : await _storeContext.Users.FirstOrDefaultAsync(u => u.AppUserId == user.Id);
+
+            // Always the same answer, so the form cannot be used to discover accounts
+            if (user == null || userEntity == null || !userEntity.IsActif)
             {
-                return Ok(new { message = "Si un compte avec cet email existe, un lien de réinitialisation a été envoyé." });
+                return Ok(new { message = genericAnswer });
             }
 
             // Generate password reset token
@@ -197,14 +222,17 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to send email: {ex.Message}");
-                return StatusCode(500, new { message = "Erreur lors de l'envoi de l'email. Veuillez réessayer." });
+                // Logged for the administrator; the caller still gets the generic answer
+                HttpContext.RequestServices.GetRequiredService<ILogger<AccountController>>()
+                    .LogError(ex, "Password reset email could not be sent");
             }
 
-            return Ok(new { message = "Si un compte avec cet email existe, un lien de réinitialisation a été envoyé." });
+            return Ok(new { message = genericAnswer });
         }
 
         [HttpPost("reset-password")]
+        [AllowAnonymous]
+        [EnableRateLimiting("auth")]
         public async Task<ActionResult> ResetPassword(ResetPasswordDto dto)
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);
@@ -232,6 +260,8 @@ namespace API.Controllers
         }
 
         [HttpPost("validate-reset-token")]
+        [AllowAnonymous]
+        [EnableRateLimiting("auth")]
         public async Task<ActionResult> ValidateResetToken([FromBody] ValidateTokenDto dto)
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);

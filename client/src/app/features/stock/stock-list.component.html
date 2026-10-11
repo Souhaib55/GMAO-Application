@@ -1,28 +1,14 @@
 <div class="crud-page">
   <!-- Header -->
-  <div class="page-header">
-    <div class="header-left">
-      <div class="header-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="2" y="3" width="20" height="18" rx="2"/>
-          <path d="M2 9h20"/>
-          <path d="M7 3v6"/>
-          <path d="M12 3v6"/>
-          <path d="M17 3v6"/>
-        </svg>
-      </div>
-      <div>
-        <h1 class="page-title">Stock / Achat</h1>
-        <p class="page-subtitle">Gestion du stock et des achats</p>
-      </div>
-    </div>
+  <app-page-header icon="stock" title="Stock &amp; achats" subtitle="Mouvements de stock et commandes fournisseurs">
+
     <button class="btn-primary" routerLink="/stock/new">
       <svg viewBox="0 0 20 20" fill="currentColor">
         <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
       </svg>
-      Nouveau Stock
+      Nouvel article
     </button>
-  </div>
+  </app-page-header>
 
   <!-- Stats Grid -->
   <div class="stats-grid">

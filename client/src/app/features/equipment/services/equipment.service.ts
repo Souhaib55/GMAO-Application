@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { Equipment, PagedResult } from '../../../core/models';
+import { Equipment, EquipementSummary, PagedResult } from '../../../core/models';
 
 @Injectable({
   providedIn: 'root'
@@ -25,6 +25,15 @@ export class EquipmentService {
       params,
       withCredentials: true
     });
+  }
+
+  /** Every active machine (id, code, name, line), optionally for one production line. */
+  lookup(chaineId?: number | null): Observable<EquipementSummary[]> {
+    let params = new HttpParams();
+    if (chaineId) {
+      params = params.set('chaineId', String(chaineId));
+    }
+    return this.http.get<EquipementSummary[]>(`${this.apiUrl}/lookup`, { params, withCredentials: true });
   }
 
   getEquipment(id: number): Observable<Equipment> {

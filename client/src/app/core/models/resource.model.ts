@@ -11,6 +11,8 @@ export interface Piece {
   idCriticitePiece?: number;
   criticitePiece?: CriticitePiece;
   quantite_Stock: number;
+  seuilMinimum?: number;
+  enAlerte?: boolean;
   prixUnitaire: number;
   dateCreation: Date;
   dateModification: Date;

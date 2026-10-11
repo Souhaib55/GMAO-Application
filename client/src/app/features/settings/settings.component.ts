@@ -1,384 +1,531 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { AuthService } from '../../core/services/auth.service';
+import { UserInfo } from '../../core/models';
+import { ReferenceManagementService, ReferenceCategory } from './services/reference-management.service';
+import { UserManagementService } from './services/user-management.service';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { AppIconComponent } from '../../shared/components/app-icon/app-icon.component';
 
-interface SettingsMenuItem {
-  icon: string;
-  safeIcon?: SafeHtml;
-  title: string;
+interface ReferenceModule {
+  key: string;
+  label: string;
   description: string;
-  route: string;
-  color: string;
-  bgColor: string;
-  features: string[];
+  icon: string;
+  tone: 'blue' | 'amber' | 'violet' | 'green';
+  categories: ReferenceCategory[];
+}
+
+interface RoleCount {
+  role: string;
+  description: string;
+  tone: 'blue' | 'amber' | 'green';
+  count: number;
 }
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, PageHeaderComponent, AppIconComponent],
   template: `
     <div class="settings-page">
-      <div class="settings-container">
-        <!-- Header -->
-        <div class="settings-header">
-          <div class="header-icon-wrapper">
-            <div class="header-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
+      <app-page-header
+        icon="settings"
+        title="Paramètres"
+        subtitle="Comptes, droits d'accès et listes de référence utilisées dans l'application">
+      </app-page-header>
+
+      <div class="top-grid">
+        <!-- Users & access -->
+        <section class="panel users">
+          <div class="panel-head">
+            <span class="chip tone-blue"><app-icon name="users"></app-icon></span>
+            <div class="panel-titles">
+              <h2>Utilisateurs et accès</h2>
+              <p>Créez les comptes, attribuez les rôles et désactivez les accès.</p>
+            </div>
+            <a routerLink="/settings/users" class="btn btn-primary btn-sm">Gérer les utilisateurs</a>
+          </div>
+
+          <div class="role-grid">
+            <div class="role-tile total">
+              <span class="role-name">Comptes actifs</span>
+              <span class="role-count">{{ usersLoading ? '–' : totalUsers }}</span>
+              <span class="role-desc">Tous rôles confondus</span>
+            </div>
+            <div class="role-tile" *ngFor="let r of roleCounts" [ngClass]="'tone-' + r.tone">
+              <span class="role-name">{{ r.role }}</span>
+              <span class="role-count">{{ usersLoading ? '–' : r.count }}</span>
+              <span class="role-desc">{{ r.description }}</span>
             </div>
           </div>
-          <div class="header-text">
-            <h1>Paramètres</h1>
-            <p>Gérez et configurez votre application GMAO</p>
+        </section>
+
+        <!-- Signed-in account -->
+        <section class="panel account" *ngIf="currentUser">
+          <div class="account-banner"></div>
+          <div class="account-body">
+            <span class="account-avatar">{{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}</span>
+            <div class="account-name">{{ currentUser.firstName }} {{ currentUser.lastName }}</div>
+            <div class="account-email">{{ currentUser.email }}</div>
+            <span class="role-pill">{{ currentUser.role }}</span>
           </div>
+          <dl class="facts">
+            <div><dt>Application</dt><dd>SIMOTEX · GMAO</dd></div>
+            <div><dt>Version</dt><dd class="mono">v2.0</dd></div>
+          </dl>
+        </section>
+      </div>
+
+      <!-- Reference data -->
+      <section class="panel references">
+        <div class="panel-head">
+          <span class="chip tone-blue"><app-icon name="references"></app-icon></span>
+          <div class="panel-titles">
+            <h2>Données de référence</h2>
+            <p>Les listes proposées dans les formulaires. Choisissez une liste pour la modifier.</p>
+          </div>
+          <a routerLink="/settings/references" class="btn btn-secondary btn-sm">Tout afficher</a>
         </div>
 
-        <!-- Enhanced Menu Cards -->
-        <div class="menu-grid">
-          <a 
-            *ngFor="let item of menuItems" 
-            [routerLink]="item.route"
-            class="menu-card"
-            [style.--accent-color]="item.color"
-          >
-            <div class="card-header">
-              <div class="card-icon" [style.background]="item.bgColor">
-                <span [innerHTML]="item.safeIcon"></span>
+        <div class="module-grid">
+          <div class="module" *ngFor="let m of referenceModules" [ngClass]="'tone-' + m.tone">
+            <div class="module-head">
+              <span class="module-icon"><app-icon [name]="m.icon"></app-icon></span>
+              <div class="module-titles">
+                <span class="module-name">{{ m.label }}</span>
+                <span class="module-desc">{{ m.description }}</span>
               </div>
-              <div class="card-arrow">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M9 18l6-6-6-6"/>
-                </svg>
-              </div>
+              <span class="module-count">{{ m.categories.length }}</span>
             </div>
-            <div class="card-content">
-              <h3>{{ item.title }}</h3>
-              <p>{{ item.description }}</p>
-            </div>
-            <div class="card-features">
-              <div class="feature-tag" *ngFor="let feature of item.features">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M5 13l4 4L19 7"/>
-                </svg>
-                <span>{{ feature }}</span>
-              </div>
-            </div>
-            <div class="card-action">
-              <span>Accéder</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-              </svg>
-            </div>
-          </a>
+            <nav class="module-links">
+              <a *ngFor="let c of m.categories"
+                 [routerLink]="['/settings/references']"
+                 [queryParams]="{ category: c.key }"
+                 class="ref-link">
+                <span class="ref-dot"></span>
+                <span class="ref-label">{{ sentenceCase(c.label) }}</span>
+                <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+              </a>
+            </nav>
+          </div>
         </div>
-      </div>
+      </section>
     </div>
   `,
   styles: [`
     .settings-page {
-      min-height: 100vh;
-      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-      padding: 2rem;
-    }
-
-    .settings-container {
-      max-width: 900px;
-      margin: 0 auto;
-    }
-
-    /* Header */
-    .settings-header {
-      display: flex;
-      align-items: center;
-      gap: 1.25rem;
-      margin-bottom: 2rem;
-      padding: 1.5rem 2rem;
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.03);
-    }
-
-    .header-icon-wrapper {
-      position: relative;
-    }
-
-    .header-icon {
-      width: 56px;
-      height: 56px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-      border-radius: 14px;
-      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
-
-      svg {
-        width: 28px;
-        height: 28px;
-        color: white;
-      }
-    }
-
-    .header-text h1 {
-      margin: 0;
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #0f172a;
-      letter-spacing: -0.025em;
-    }
-
-    .header-text p {
-      margin: 0.375rem 0 0 0;
-      color: #64748b;
-      font-size: 0.9375rem;
-    }
-
-    /* Menu Grid - 2 large cards side by side */
-    .menu-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1.5rem;
-    }
-
-    .menu-card {
       display: flex;
       flex-direction: column;
-      padding: 1.75rem;
-      background: white;
-      border-radius: 20px;
-      border: 1px solid transparent;
-      text-decoration: none;
-      transition: all 0.3s ease;
-      cursor: pointer;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.02);
-      position: relative;
+      gap: 16px;
+    }
+
+    .settings-page > app-page-header {
+      margin-bottom: 0;
+    }
+
+    /* Colour identities */
+    .tone-blue   { --tone: var(--primary-600); --tone-bg: var(--primary-50);    --tone-line: var(--primary-100); }
+    .tone-amber  { --tone: #b86e00;            --tone-bg: #fdf4e3;              --tone-line: #f6dfb3; }
+    .tone-violet { --tone: #6a4fc9;            --tone-bg: #f3f0fd;              --tone-line: #e0d9fa; }
+    .tone-green  { --tone: #23784a;            --tone-bg: #e9f6ef;              --tone-line: #c9e8d6; }
+
+    .top-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: var(--card-shadow);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 15.5px;
+      font-weight: 600;
+    }
+
+    .panel-titles {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .panel-titles p {
+      margin: 2px 0 0;
+      font-size: 13.5px;
+      color: var(--text-secondary);
+    }
+
+    .chip {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: var(--tone-bg);
+      color: var(--tone);
+      font-size: 20px;
+    }
+
+    /* ---- Users ---- */
+    .role-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .role-tile {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      background: var(--tone-bg, var(--gray-50));
+      border: 1px solid var(--tone-line, var(--border));
+    }
+
+    .role-tile.total {
+      background: var(--brand-gradient);
+      border-color: transparent;
+      color: #fff;
+    }
+
+    .role-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--tone, var(--text));
+    }
+
+    .role-tile.total .role-name,
+    .role-tile.total .role-count {
+      color: #fff;
+    }
+
+    .role-count {
+      font-family: var(--font-mono);
+      font-size: 28px;
+      font-weight: 500;
+      line-height: 1;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .role-desc {
+      font-size: 12px;
+      line-height: 1.4;
+      color: var(--text-secondary);
+    }
+
+    .role-tile.total .role-desc {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* ---- Account ---- */
+    .account {
+      padding: 0;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
-    .menu-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: var(--accent-color);
-      opacity: 0;
-      transition: opacity 0.3s ease;
+    .account-banner {
+      height: 64px;
+      background: var(--brand-gradient);
     }
 
-    .menu-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
-      border-color: #e2e8f0;
+    .account-body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 0 20px 14px;
+      margin-top: -32px;
     }
 
-    .menu-card:hover::before {
+    .account-avatar {
+      width: 64px;
+      height: 64px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 4px solid var(--surface);
+      background: var(--primary-600);
+      color: #fff;
+      font-size: 20px;
+      font-weight: 600;
+      text-transform: uppercase;
+      box-shadow: var(--card-shadow);
+    }
+
+    .account-name {
+      margin-top: 10px;
+      font-size: 15.5px;
+      font-weight: 600;
+    }
+
+    .account-email {
+      font-size: 13px;
+      color: var(--text-muted);
+      word-break: break-all;
+    }
+
+    .role-pill {
+      margin-top: 8px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: var(--primary-50);
+      color: var(--primary-700);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .facts {
+      margin: auto 0 0;
+      padding: 4px 20px 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .facts > div {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--gray-100);
+      font-size: 13.5px;
+    }
+
+    .facts > div:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .facts dt {
+      color: var(--text-secondary);
+    }
+
+    .facts dd {
+      margin: 0;
+      font-weight: 500;
+    }
+
+    .facts dd.mono {
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+    }
+
+    /* ---- Reference data ---- */
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .module {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--tone-line);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--surface);
+    }
+
+    .module-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      background: var(--tone-bg);
+      border-bottom: 1px solid var(--tone-line);
+    }
+
+    .module-icon {
+      width: 38px;
+      height: 38px;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: var(--tone);
+      color: #fff;
+      font-size: 19px;
+    }
+
+    .module-titles {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .module-name {
+      font-size: 14.5px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .module-desc {
+      font-size: 12px;
+      line-height: 1.35;
+      color: var(--text-secondary);
+    }
+
+    .module-count {
+      min-width: 26px;
+      height: 24px;
+      padding: 0 8px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--tone);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .module-links {
+      display: flex;
+      flex-direction: column;
+      padding: 6px;
+    }
+
+    .ref-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      height: 36px;
+      padding: 0 10px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      color: var(--text);
+      transition: background-color 0.12s ease, color 0.12s ease;
+    }
+
+    .ref-dot {
+      width: 6px;
+      height: 6px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: var(--tone);
+      opacity: 0.55;
+    }
+
+    .ref-label {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .ref-link svg {
+      width: 15px;
+      height: 15px;
+      fill: none;
+      stroke: var(--gray-400);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .ref-link:hover {
+      background: var(--tone-bg);
+      color: var(--tone);
+    }
+
+    .ref-link:hover .ref-dot {
       opacity: 1;
     }
 
-    /* Card Header */
-    .card-header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 1.25rem;
+    .ref-link:hover svg {
+      stroke: var(--tone);
     }
 
-    .card-icon {
-      width: 64px;
-      height: 64px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 16px;
-      flex-shrink: 0;
-      transition: transform 0.3s ease;
-    }
+    @media (max-width: 1280px) {
+      .module-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
 
-    .menu-card:hover .card-icon {
-      transform: scale(1.08);
-    }
-
-    .card-arrow {
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f8fafc;
-      border-radius: 10px;
-      color: #94a3b8;
-      transition: all 0.3s ease;
-    }
-
-    .menu-card:hover .card-arrow {
-      background: var(--accent-color);
-      color: white;
-      transform: translateX(4px);
-    }
-
-    /* Card Content */
-    .card-content {
-      margin-bottom: 1.25rem;
-    }
-
-    .card-content h3 {
-      margin: 0;
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #0f172a;
-      letter-spacing: -0.02em;
-      margin-bottom: 0.5rem;
-    }
-
-    .card-content p {
-      margin: 0;
-      font-size: 0.9rem;
-      color: #64748b;
-      line-height: 1.6;
-    }
-
-    /* Card Features */
-    .card-features {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .feature-tag {
-      display: flex;
-      align-items: center;
-      gap: 0.375rem;
-      padding: 0.375rem 0.75rem;
-      background: #f1f5f9;
-      border-radius: 8px;
-      font-size: 0.75rem;
-      font-weight: 500;
-      color: #475569;
-      transition: all 0.2s ease;
-
-      svg {
-        width: 12px;
-        height: 12px;
-        color: #10b981;
+      .role-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
 
-    .menu-card:hover .feature-tag {
-      background: #e2e8f0;
-    }
-
-    /* Card Action Button */
-    .card-action {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      padding: 0.875rem 1.25rem;
-      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-      border-radius: 12px;
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: white;
-      transition: all 0.3s ease;
-      margin-top: auto;
-      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
-
-      svg {
-        width: 18px;
-        height: 18px;
-        transition: transform 0.3s ease;
-      }
-    }
-
-    .menu-card:hover .card-action {
-      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
-
-      svg {
-        transform: translateX(4px);
-      }
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .settings-page {
-        padding: 1rem;
-      }
-
-      .settings-header {
-        padding: 1.25rem;
-        gap: 1rem;
-      }
-
-      .header-icon {
-        width: 48px;
-        height: 48px;
-
-        svg {
-          width: 24px;
-          height: 24px;
-        }
-      }
-
-      .header-text h1 {
-        font-size: 1.25rem;
-      }
-
-      .menu-grid {
+    @media (max-width: 900px) {
+      .top-grid {
         grid-template-columns: 1fr;
-        gap: 1.25rem;
       }
 
-      .menu-card {
-        padding: 1.5rem;
+      .panel-head {
+        flex-wrap: wrap;
       }
+    }
 
-      .card-icon {
-        width: 56px;
-        height: 56px;
-      }
-
-      .card-content h3 {
-        font-size: 1.125rem;
+    @media (max-width: 600px) {
+      .module-grid,
+      .role-grid {
+        grid-template-columns: 1fr;
       }
     }
   `]
 })
 export class SettingsComponent implements OnInit {
-  menuItems: SettingsMenuItem[] = [
-    {
-      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.5" style="width:32px;height:32px"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
-      title: 'Gestion des Utilisateurs',
-      description: 'Créer, modifier et supprimer les utilisateurs. Gérer les rôles et les permissions de votre équipe.',
-      route: '/settings/users',
-      color: '#3b82f6',
-      bgColor: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
-      features: ['Création utilisateurs', 'Rôles & Permissions', 'Profils équipe']
-    },
-    {
-      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.5" style="width:32px;height:32px"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
-      title: 'Données de Référence',
-      description: 'Gérer tous les référentiels : équipements, interventions, ressources et stock de votre organisation.',
-      route: '/settings/references',
-      color: '#10b981',
-      bgColor: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
-      features: ['Équipements', 'Interventions', 'Ressources', 'Stock']
-    }
+  currentUser: UserInfo | null = null;
+  referenceModules: ReferenceModule[] = [];
+  roleCounts: RoleCount[] = [
+    { role: 'Superviseur', description: 'Planifie et administre', tone: 'blue', count: 0 },
+    { role: 'Utilisateur', description: 'Technicien, traite les interventions', tone: 'amber', count: 0 },
+    { role: 'Demandeur', description: 'Déclare les pannes', tone: 'green', count: 0 }
+  ];
+  totalUsers = 0;
+  usersLoading = true;
+
+  private readonly moduleInfo: Omit<ReferenceModule, 'categories'>[] = [
+    { key: 'equipment', label: 'Équipements', description: 'Criticité, état, familles, marques', icon: 'equipment', tone: 'blue' },
+    { key: 'interventions', label: 'Interventions', description: 'Types, urgences, pannes, lignes', icon: 'interventions', tone: 'amber' },
+    { key: 'resources', label: 'Pièces de rechange', description: 'Familles, constructeurs, criticité', icon: 'resources', tone: 'violet' },
+    { key: 'stock', label: 'Stock', description: 'Entités, statuts, fournisseurs', icon: 'stock', tone: 'green' }
   ];
 
-  constructor(private sanitizer: DomSanitizer) {}
+  constructor(
+    private authService: AuthService,
+    private referenceService: ReferenceManagementService,
+    private userService: UserManagementService
+  ) {}
 
   ngOnInit(): void {
-    // Sanitize SVG icons
-    this.menuItems.forEach(item => {
-      item.safeIcon = this.sanitizer.bypassSecurityTrustHtml(item.icon);
+    this.authService.currentUser$.subscribe(user => this.currentUser = user);
+
+    const categories = this.referenceService.getCategories();
+    this.referenceModules = this.moduleInfo.map(m => ({
+      ...m,
+      categories: categories.filter(c => c.module === m.key)
+    }));
+
+    this.userService.getUsers().subscribe({
+      next: users => {
+        this.totalUsers = users.length;
+        this.roleCounts = this.roleCounts.map(r => ({
+          ...r,
+          count: users.filter(u => u.role?.libelle === r.role).length
+        }));
+        this.usersLoading = false;
+      },
+      error: () => this.usersLoading = false
     });
+  }
+
+  sentenceCase(label: string): string {
+    return label.charAt(0) + label.slice(1).toLowerCase();
   }
 }

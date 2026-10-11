@@ -5,15 +5,15 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { ResourceService } from '../services/resource.service';
 import { ReferenceDataService, FamillePiece, Constructeur, CriticitePiece } from '../../../core/services/reference-data.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'app-resource-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent],
   template: `
     <div class="form-container">
-      <div class="form-header">
-        <h1>{{ isViewMode ? 'Détails' : (isEditMode ? 'Modifier' : 'Nouvelle') }} Pièce</h1>
+      <app-page-header icon="resources" [title]="formTitle" subtitle="Référence, famille, constructeur et quantité en stock">
         <div class="header-actions">
           <button class="btn btn-print" (click)="printForm()" *ngIf="isViewMode" title="Imprimer / Télécharger PDF">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -25,7 +25,7 @@ import { NotificationService } from '../../../core/services/notification.service
           </button>
           <button class="btn btn-secondary" (click)="cancel()">{{ isViewMode ? 'Retour' : 'Annuler' }}</button>
         </div>
-      </div>
+      </app-page-header>
 
       <form [formGroup]="pieceForm" (ngSubmit)="onSubmit()" class="card">
         <div class="card-body">
@@ -101,7 +101,14 @@ import { NotificationService } from '../../../core/services/notification.service
             </div>
 
             <div class="form-group">
-              <label for="prixUnitaire">Prix unitaire (€) <span class="required">*</span></label>
+              <label for="seuilMinimum">Seuil de réapprovisionnement</label>
+              <input id="seuilMinimum" type="number" min="0" step="1" formControlName="seuilMinimum" />
+              <small class="form-text">Une alerte « stock bas » s'affiche quand la quantité atteint ce seuil.</small>
+              <span class="error-message" *ngIf="pieceForm.get('seuilMinimum')?.invalid">Le seuil ne peut pas être négatif.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="prixUnitaire">Prix unitaire (DT) <span class="required">*</span></label>
               <input
                 id="prixUnitaire"
                 type="number"
@@ -146,6 +153,11 @@ import { NotificationService } from '../../../core/services/notification.service
 
 })
 export class ResourceFormComponent implements OnInit {
+
+  get formTitle(): string {
+    if (this.isViewMode) return 'Fiche pièce';
+    return this.isEditMode ? 'Modifier la pièce' : 'Nouvelle pièce';
+  }
   pieceForm: FormGroup;
   isEditMode = false;
   isViewMode = false;
@@ -173,6 +185,7 @@ export class ResourceFormComponent implements OnInit {
       idConstructeur: [null],
       idCriticitePiece: [null],
       quantite_Stock: [0, [Validators.required, Validators.min(0)]],
+      seuilMinimum: [0, [Validators.min(0)]],
       prixUnitaire: [0, [Validators.required, Validators.min(0)]]
     });
   }
@@ -222,6 +235,7 @@ export class ResourceFormComponent implements OnInit {
           idConstructeur: piece.idConstructeur,
           idCriticitePiece: piece.idCriticitePiece,
           quantite_Stock: piece.quantite_Stock,
+          seuilMinimum: piece.seuilMinimum ?? 0,
           prixUnitaire: piece.prixUnitaire
         });
         this.loading = false;
@@ -252,10 +266,10 @@ export class ResourceFormComponent implements OnInit {
           );
           this.router.navigate(['/resources']);
         },
-        error: () => {
+        error: (err: any) => {
           this.notificationService.error(
-            'Erreur',
-            'Impossible de modifier la pièce'
+            'Enregistrement impossible',
+            (typeof err?.error === 'string' ? err.error : err?.error?.message) || 'Impossible de modifier la pièce'
           );
           this.loading = false;
         }
@@ -269,10 +283,10 @@ export class ResourceFormComponent implements OnInit {
           );
           this.router.navigate(['/resources']);
         },
-        error: () => {
+        error: (err: any) => {
           this.notificationService.error(
-            'Erreur',
-            'Impossible de créer la pièce'
+            'Enregistrement impossible',
+            (typeof err?.error === 'string' ? err.error : err?.error?.message) || 'Impossible de créer la pièce'
           );
           this.loading = false;
         }

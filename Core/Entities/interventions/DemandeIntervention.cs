@@ -4,6 +4,15 @@ namespace Core.Entities
     {
         public int IdDemandeIntervention { get; set; }
         public string Titre { get; set; } = string.Empty;
+
+        // Description of the problem, written by the requester
+        public string? Description { get; set; }
+
+        // Work report written by the technician when the job is done
+        // (work performed, root cause, parts used). Required to complete.
+        public string? CompteRendu { get; set; }
+
+        // Set by the server at creation time, never by the client
         public DateTime DateCreation { get; set; }
         public byte[]? FileData { get; set; }
         public string? FileName { get; set; }
@@ -24,6 +33,10 @@ namespace Core.Entities
         public Urgence Urgence { get; set; } = null!;
         public int IDChaineProduction { get; set; }
         public ChaineProduction ChaineProduction { get; set; } = null!;
+
+        // Machine concerned by the request (optional for line-level issues)
+        public int? IDEquipement { get; set; }
+        public Equipment? Equipement { get; set; }
         public int IDPanne { get; set; }
         public Panne Panne { get; set; } = null!;
         public int DemandeursID { get; set; }

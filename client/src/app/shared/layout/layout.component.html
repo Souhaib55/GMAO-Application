@@ -2,40 +2,51 @@
   <!-- Sidebar -->
   <aside class="sidebar" [class.open]="sidebarOpen" [class.mobile-open]="mobileMenuOpen">
     <div class="sidebar-header">
-      <div class="logo">
-        <svg width="42" height="42" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="48" height="48" rx="12" fill="#3B82F6"/>
-          <path d="M24 14L32 20V30L24 36L16 30V20L24 14Z" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M24 14V24M24 24L16 20M24 24L32 20M24 24V36" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <a routerLink="/dashboard" class="brand" (click)="closeMobileMenu()">
+        <span class="brand-mark" aria-hidden="true"><app-icon name="app"></app-icon></span>
+        <span class="brand-text">
+          <span class="brand-name">SIMOTEX</span>
+          <span class="brand-sub">Gestion de maintenance</span>
+        </span>
+      </a>
+      <button class="menu-toggle" (click)="onMenuToggle()"
+              [attr.aria-label]="sidebarOpen ? 'Réduire le menu' : 'Déplier le menu'"
+              [attr.title]="sidebarOpen ? 'Réduire le menu' : 'Déplier le menu'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <path d="M4 7h16M4 12h16M4 17h16"/>
         </svg>
-        <span class="logo-text" *ngIf="sidebarOpen">GMAO</span>
-      </div>
+      </button>
     </div>
 
     <nav class="sidebar-nav">
-      <ng-container *ngFor="let item of menuItems">
+      <ng-container *ngFor="let group of visibleGroups">
+        <div class="nav-group-label">{{ group.label }}</div>
         <a
-          *ngIf="canShowMenuItem(item)"
+          *ngFor="let item of group.items"
           [routerLink]="item.route"
           routerLinkActive="active"
           class="nav-item"
+          [attr.title]="sidebarOpen ? null : item.label"
           (click)="closeMobileMenu()"
         >
-          <span class="nav-icon" [attr.data-icon]="item.icon"></span>
-          <span class="nav-label" *ngIf="sidebarOpen">{{ item.label }}</span>
+          <span class="nav-icon"><app-icon [name]="item.icon"></app-icon></span>
+          <span class="nav-label">{{ item.label }}</span>
         </a>
       </ng-container>
     </nav>
 
-    <div class="sidebar-footer" *ngIf="sidebarOpen && currentUser">
-      <div class="user-info">
-        <div class="user-avatar">
-          {{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}
-        </div>
-        <div class="user-details">
-          <div class="user-name">{{ currentUser.firstName }} {{ currentUser.lastName }}</div>
-          <div class="user-role">{{ currentUser.role }}</div>
-        </div>
+    <div class="sidebar-footer" *ngIf="currentUser">
+      <div class="user-card" [attr.title]="sidebarOpen ? null : currentUser.firstName + ' ' + currentUser.lastName">
+        <span class="user-card-avatar">{{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}</span>
+        <span class="user-card-text">
+          <span class="user-card-name">{{ currentUser.firstName }} {{ currentUser.lastName }}</span>
+          <span class="user-card-role">{{ currentUser.role }}</span>
+        </span>
+        <button class="user-card-logout" (click)="logout()" title="Se déconnecter" aria-label="Se déconnecter">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>
+          </svg>
+        </button>
       </div>
     </div>
   </aside>
@@ -45,24 +56,32 @@
 
   <!-- Main Content -->
   <div class="main-content" [class.sidebar-collapsed]="!sidebarOpen">
-    <!-- Navbar -->
+    <!-- Top bar -->
     <header class="navbar">
       <div class="navbar-left">
-        <button class="btn btn-icon hide-mobile" (click)="toggleSidebar()">
-          <span class="icon-menu"></span>
+        <button class="icon-btn show-mobile" (click)="toggleMobileMenu()" aria-label="Menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+            <path d="M4 7h16M4 12h16M4 17h16"/>
+          </svg>
         </button>
-        <button class="btn btn-icon show-mobile" (click)="toggleMobileMenu()">
-          <span class="icon-menu"></span>
-        </button>
+        <nav class="breadcrumb" aria-label="Fil d'Ariane">
+          <span class="crumb-root">{{ pageSection }}</span>
+          <ng-container *ngIf="pageTitle">
+            <svg class="crumb-sep" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+            <span class="crumb-current">{{ pageTitle }}</span>
+          </ng-container>
+        </nav>
       </div>
 
       <div class="navbar-right">
-        <!-- Notification Bell - Only for Superviseur and Utilisateur -->
-        <div class="notification-menu" 
+        <span class="today hide-mobile">{{ today | date:'EEEE d MMMM':'':'fr' }}</span>
+
+        <!-- Notifications - Superviseur and Utilisateur only -->
+        <div class="notification-menu"
              *ngIf="currentUser && (currentUser.role === 'Superviseur' || currentUser.role === 'Utilisateur')"
              [class.open]="notificationDropdownOpen">
-          <button class="notification-toggle" (click)="toggleNotificationDropdown($event)">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="icon-btn notification-toggle" (click)="toggleNotificationDropdown($event)" aria-label="Notifications">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
               <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
             </svg>
@@ -74,17 +93,17 @@
             <div class="notification-header">
               <span class="notification-title">Notifications</span>
               <div class="notification-actions">
-                <button class="mark-all-read" *ngIf="unreadCount > 0" (click)="markAllNotificationsAsRead()">
+                <button class="link-btn" *ngIf="unreadCount > 0" (click)="markAllNotificationsAsRead()">
                   Tout marquer lu
                 </button>
-                <button class="clear-all" *ngIf="notifications.length > 0" (click)="clearAllNotifications($event)">
-                  Effacer tout
+                <button class="link-btn muted" *ngIf="notifications.length > 0" (click)="clearAllNotifications($event)">
+                  Effacer
                 </button>
               </div>
             </div>
             <div class="notification-list">
               <ng-container *ngIf="notifications.length > 0; else noNotifications">
-                <div 
+                <div
                   *ngFor="let notification of notifications"
                   class="notification-item"
                   [class.unread]="!notification.isRead"
@@ -102,16 +121,12 @@
                       <path d="M18 6L6 18M6 6l12 12"/>
                     </svg>
                   </button>
-                  <div class="notification-indicator" *ngIf="!notification.isRead"></div>
                 </div>
               </ng-container>
               <ng-template #noNotifications>
                 <div class="no-notifications">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                  </svg>
                   <span>Aucune notification</span>
+                  <small>Les nouvelles affectations et mises à jour apparaîtront ici.</small>
                 </div>
               </ng-template>
             </div>
@@ -120,42 +135,30 @@
 
         <div class="user-menu" *ngIf="currentUser" [class.open]="userDropdownOpen">
           <button class="user-toggle" (click)="toggleUserDropdown($event)">
-            <div class="user-avatar-nav">
-              {{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}
-            </div>
-            <div class="user-info-nav">
-              <span class="user-name-nav">{{ currentUser.firstName }} {{ currentUser.lastName }}</span>
-              <span class="user-role-nav">{{ currentUser.role }}</span>
-            </div>
-            <svg class="dropdown-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <span class="avatar">{{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}</span>
+            <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M6 9l6 6 6-6"/>
             </svg>
           </button>
           <div class="user-dropdown">
             <div class="dropdown-header">
-              <div class="user-avatar-dropdown">
-                {{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}
-              </div>
-              <div class="user-details-dropdown">
-                <span class="user-name-dropdown">{{ currentUser.firstName }} {{ currentUser.lastName }}</span>
-                <span class="user-email-dropdown">{{ currentUser.email }}</span>
-              </div>
+              <span class="user-name-dropdown">{{ currentUser.firstName }} {{ currentUser.lastName }}</span>
+              <span class="user-email-dropdown">{{ currentUser.email }}</span>
+              <span class="role-tag">{{ currentUser.role }}</span>
             </div>
-            <div class="dropdown-divider"></div>
             <button class="dropdown-item logout-item" (click)="logout()">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
                 <polyline points="16,17 21,12 16,7"/>
                 <line x1="21" y1="12" x2="9" y2="12"/>
               </svg>
-              Déconnexion
+              Se déconnecter
             </button>
           </div>
         </div>
       </div>
     </header>
 
-    <!-- Page Content -->
     <main class="page-content">
       <router-outlet></router-outlet>
     </main>

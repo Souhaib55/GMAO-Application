@@ -7,8 +7,9 @@ services:
       ACCEPT_EULA: "Y"
       SA_PASSWORD: "YourStrong!Password123"
       MSSQL_PID: "Express"
+    # Reachable from the server itself (admin tools) but not from the factory network
     ports:
-      - "1433:1433"
+      - "127.0.0.1:1433:1433"
     volumes:
       - sqlserver_data:/var/opt/mssql
       - ./database:/docker-entrypoint-initdb.d
@@ -32,8 +33,9 @@ services:
       - ASPNETCORE_URLS=http://+:80
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=gmao;User Id=sa;Password=YourStrong!Password123;TrustServerCertificate=True;
       - ChatbotService__Url=http://chatbot:5002
+    # The browser reaches the API through nginx (/api); no direct LAN access
     ports:
-      - "5000:80"
+      - "127.0.0.1:5000:80"
     depends_on:
       sqlserver:
         condition: service_healthy

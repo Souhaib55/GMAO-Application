@@ -37,6 +37,36 @@ export interface DashboardStatsResponse {
   }>;
 }
 
+/** Maintenance KPIs computed by /api/kpi (hours unless stated). */
+export interface KpiResponse {
+  periodDays: number;
+  scope: 'usine' | 'personnel';
+  summary: {
+    created: number;
+    completed: number;
+    closed: number;
+    cancelled: number;
+    completionRate: number | null;
+    mttrHours: number | null;
+    responseHours: number | null;
+    mtbfHours: number | null;
+    downtimeHours: number;
+    availability: number;
+    preventiveShare: number | null;
+    breakdowns: number;
+    backlog: number;
+    backlogOverdue: number;
+    machines: number;
+  };
+  byLine: { label: string; interventions: number; stops: number; downtimeHours: number }[];
+  pareto: { label: string; count: number; share: number; cumulative: number }[];
+  byRequester: { label: string; requests: number; stops: number; stopRate: number }[];
+  byTechnician: { label: string; open: number; completed: number; mttrHours: number | null }[];
+  topEquipment: { code: string; label: string; interventions: number; downtimeHours: number }[];
+  backlogAging: { label: string; count: number }[];
+  trend: { label: string; created: number; closed: number }[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -44,6 +74,13 @@ export class DashboardService {
   private apiUrl = `${environment.apiUrl}/demandeintervention`;
 
   constructor(private http: HttpClient) {}
+
+  getKpis(days: number): Observable<KpiResponse> {
+    return this.http.get<KpiResponse>(`${environment.apiUrl}/kpi`, {
+      params: { days: String(days) },
+      withCredentials: true
+    });
+  }
 
   getDashboardStats(): Observable<DashboardStatsResponse> {
     return this.http.get<DashboardStatsResponse>(`${this.apiUrl}/dashboard-stats`, {

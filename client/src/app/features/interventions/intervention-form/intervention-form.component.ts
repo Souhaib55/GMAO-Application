@@ -1,20 +1,26 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { InterventionService } from '../services/intervention.service';
-import { ReferenceDataService, InterventionEtat, TypeIntervention, Urgence, ChaineProduction, Panne } from '../../../core/services/reference-data.service';
+import { ReferenceDataService, TypeIntervention, Urgence, ChaineProduction, Panne } from '../../../core/services/reference-data.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { EquipmentService } from '../../equipment/services/equipment.service';
+import { DemandeIntervention, EquipementSummary, InterventionDto } from '../../../core/models';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+
+/** Statuses of the maintenance workflow (server-side ids). */
+const STATUS = { A_TRAITER: 1, EN_COURS: 2, REALISEE: 3, CLOTUREE: 4, ANNULEE: 5 };
 
 @Component({
   selector: 'app-intervention-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent],
   template: `
     <div class="form-container" [class.view-mode]="isViewMode">
-      <div class="form-header">
-        <h1>{{ isViewMode ? 'Détails' : (isEditMode ? 'Modifier' : 'Nouvelle') }} Intervention</h1>
+      <app-page-header icon="interventions" [title]="formTitle" [subtitle]="formSubtitle">
         <div class="header-actions">
           <button class="btn btn-print" (click)="printForm()" *ngIf="isViewMode" title="Imprimer / Télécharger PDF">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -31,144 +37,161 @@ import { AuthService } from '../../../core/services/auth.service';
             {{ isViewMode ? 'Retour' : 'Annuler' }}
           </button>
         </div>
+      </app-page-header>
+
+      <!-- Read-only facts about an existing request -->
+      <section class="facts-card" *ngIf="intervention">
+        <div class="fact">
+          <span class="fact-label">Référence</span>
+          <span class="fact-value mono">{{ reference }}</span>
+        </div>
+        <div class="fact">
+          <span class="fact-label">Déclarée le</span>
+          <span class="fact-value">{{ intervention.dateCreation | date:'dd/MM/yyyy à HH:mm' }}</span>
+        </div>
+        <div class="fact">
+          <span class="fact-label">Demandeur</span>
+          <span class="fact-value">{{ intervention.demandeur?.prenom }} {{ intervention.demandeur?.nom }}</span>
+        </div>
+        <div class="fact">
+          <span class="fact-label">Statut</span>
+          <span class="status-tag" [attr.data-status]="intervention.statusId">{{ intervention.status?.statut }}</span>
+        </div>
+        <div class="fact">
+          <span class="fact-label">Technicien</span>
+          <span class="fact-value">{{ intervention.destinataire ? intervention.destinataire.prenom + ' ' + intervention.destinataire.nom : 'Non affecté' }}</span>
+        </div>
+        <div class="fact">
+          <span class="fact-label">Arrêt machine</span>
+          <span class="fact-value" [class.stop]="intervention.machineArretee">{{ intervention.machineArretee ? 'Oui' : 'Non' }}</span>
+        </div>
+      </section>
+
+      <div class="lock-banner" *ngIf="lockReason && !isViewModeFromRoute">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        {{ lockReason }}
       </div>
 
       <form [formGroup]="interventionForm" (ngSubmit)="onSubmit()" class="card" id="intervention-form-print">
         <div class="card-body">
-          <div class="form-grid">
+
+          <!-- 1. Where -->
+          <div class="form-section">
+            <h3 class="section-title"><span class="step">1</span> Localisation</h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="idChaineProduction">Chaîne de production <span class="required" *ngIf="!isViewMode">*</span></label>
+                <select id="idChaineProduction" formControlName="idChaineProduction" [class.error]="invalid('idChaineProduction')">
+                  <option [ngValue]="null">Sélectionner une chaîne</option>
+                  <option *ngFor="let chaine of chainesProduction" [ngValue]="chaine.idChaineProduction">{{ chaine.libelle }}</option>
+                </select>
+                <span class="error-message" *ngIf="invalid('idChaineProduction')">Indiquez la chaîne concernée.</span>
+              </div>
+
+              <div class="form-group">
+                <label for="idEquipement">Machine concernée</label>
+                <select id="idEquipement" formControlName="idEquipement">
+                  <option [ngValue]="null">{{ availableMachines.length ? 'Toute la chaîne / machine non identifiée' : 'Aucune machine enregistrée pour cette chaîne' }}</option>
+                  <option *ngFor="let m of availableMachines" [ngValue]="m.idEquipement">{{ m.codeEquipement }} — {{ m.designation }}</option>
+                </select>
+                <small class="form-text">Choisir la machine renseigne automatiquement sa chaîne.</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. What -->
+          <div class="form-section">
+            <h3 class="section-title"><span class="step">2</span> Nature de l'intervention</h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="idTypeIntervention">Type d'intervention <span class="required" *ngIf="!isViewMode">*</span></label>
+                <select id="idTypeIntervention" formControlName="idTypeIntervention" [class.error]="invalid('idTypeIntervention')">
+                  <option [ngValue]="null">Sélectionner un type</option>
+                  <option *ngFor="let type of typesIntervention" [ngValue]="type.idTypeIntervention">{{ type.libelle }}</option>
+                </select>
+                <small class="form-text impact" *ngIf="selectedType">
+                  <span class="impact-dot" [class.stop]="!isPreventive"></span>
+                  {{ isPreventive ? 'Maintenance planifiée : pas d\\'arrêt de production.' : 'Panne : la machine est considérée à l\\'arrêt jusqu\\'à la réparation.' }}
+                </small>
+              </div>
+
+              <div class="form-group" *ngIf="!isPreventive">
+                <label for="idPanne">Type de panne <span class="required" *ngIf="!isViewMode">*</span></label>
+                <select id="idPanne" formControlName="idPanne" [class.error]="invalid('idPanne')">
+                  <option [ngValue]="null">Sélectionner un type de panne</option>
+                  <option *ngFor="let panne of pannes" [ngValue]="panne.idPanne">{{ panne.libelle }}</option>
+                </select>
+                <span class="error-message" *ngIf="invalid('idPanne')">Le type de panne est obligatoire pour une panne.</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Urgence <span class="required" *ngIf="!isViewMode">*</span></label>
+              <div class="chip-group" role="radiogroup">
+                <label class="chip" *ngFor="let urgence of urgences" [attr.data-level]="urgenceLevel(urgence.libelle)"
+                       [class.selected]="interventionForm.get('idUrgence')?.value === urgence.idUrgence">
+                  <input type="radio" formControlName="idUrgence" [value]="urgence.idUrgence" />
+                  {{ urgence.libelle }}
+                </label>
+              </div>
+              <span class="error-message" *ngIf="invalid('idUrgence')">Indiquez le niveau d'urgence.</span>
+            </div>
+
             <div class="form-group">
               <label for="titre">Titre <span class="required" *ngIf="!isViewMode">*</span></label>
-              <input
-                id="titre"
-                type="text"
-                formControlName="titre"
-                [class.error]="interventionForm.get('titre')?.invalid && interventionForm.get('titre')?.touched"
-              />
-              <span class="error-message" *ngIf="interventionForm.get('titre')?.invalid && interventionForm.get('titre')?.touched">
-                Le titre est requis
-              </span>
+              <input id="titre" type="text" formControlName="titre" maxlength="100"
+                     placeholder="Ex. : Fuite d'huile sous le carter de la presse P-12"
+                     [class.error]="invalid('titre')" />
+              <span class="error-message" *ngIf="invalid('titre')">Un titre de 3 caractères minimum est requis.</span>
             </div>
 
             <div class="form-group">
-              <label for="dateCreation">Date de création <span class="required" *ngIf="!isViewMode">*</span></label>
-              <input
-                id="dateCreation"
-                type="datetime-local"
-                formControlName="dateCreation"
-                [class.error]="interventionForm.get('dateCreation')?.invalid && interventionForm.get('dateCreation')?.touched"
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="idTypeIntervention">Type d'intervention</label>
-              <select id="idTypeIntervention" formControlName="idTypeIntervention">
-                <option [value]="null">-- Sélectionner --</option>
-                <option *ngFor="let type of typesIntervention" [value]="type.idTypeIntervention">
-                  {{ type.libelle }}
-                </option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="idUrgence">Urgence</label>
-              <select id="idUrgence" formControlName="idUrgence">
-                <option [value]="null">-- Sélectionner --</option>
-                <option *ngFor="let urgence of urgences" [value]="urgence.idUrgence">
-                  {{ urgence.libelle }}
-                </option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="idChaineProduction">Chaîne de production</label>
-              <select id="idChaineProduction" formControlName="idChaineProduction">
-                <option [value]="null">-- Sélectionner --</option>
-                <option *ngFor="let chaine of chainesProduction" [value]="chaine.idChaineProduction">
-                  {{ chaine.libelle }}
-                </option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="idPanne">Type de panne</label>
-              <select id="idPanne" formControlName="idPanne">
-                <option [value]="null">-- Sélectionner --</option>
-                <option *ngFor="let panne of pannes" [value]="panne.idPanne">
-                  {{ panne.libelle }}
-                </option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="idEtat">État</label>
-              <select id="idEtat" formControlName="idEtat">
-                <option [value]="null">-- Sélectionner --</option>
-                <option *ngFor="let etat of etats" [value]="etat.idEtat">
-                  {{ etat.libelle }}
-                </option>
-              </select>
-            </div>
-
-            <div class="form-group checkbox-group">
-              <label class="checkbox-label">
-                <input type="checkbox" formControlName="machineArretee" />
-                <span class="checkbox-text">Machine arrêtée</span>
-              </label>
+              <label for="description">Description du problème</label>
+              <textarea id="description" formControlName="description" rows="4" maxlength="2000"
+                        placeholder="Symptômes observés, depuis quand, conditions d'apparition…"></textarea>
+              <small class="form-text counter" *ngIf="!isViewMode">{{ (interventionForm.value.description || '').length }} / 2000</small>
             </div>
           </div>
 
-          <div class="form-group">
-            <label for="description">Description</label>
-            <textarea
-              id="description"
-              formControlName="description"
-              rows="4"
-              placeholder="Décrivez le problème ou la demande..."
-            ></textarea>
+          <!-- Technician's report, once the job is done -->
+          <div class="form-section" *ngIf="intervention?.compteRendu">
+            <h3 class="section-title"><span class="step">✓</span> Compte rendu du technicien</h3>
+            <p class="report">{{ intervention?.compteRendu }}</p>
           </div>
 
-          <div class="form-group" *ngIf="!isViewMode">
-            <label for="file">Pièce jointe</label>
-            <input
-              id="file"
-              type="file"
-              (change)="onFileSelected($event)"
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.jpg,.jpeg,.png,.gif,.bmp,.zip,.rar"
-            />
-            <small class="form-text">Formats acceptés: PDF, Word, Excel, Text, Images, Archives (Max 10MB)</small>
-          </div>
-
-          <div *ngIf="existingFileName && !selectedFile" class="file-preview existing-file" [class.clickable]="isViewMode" (click)="isViewMode && downloadExistingFile()">
-            <div class="file-info">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/>
-                <line x1="16" y1="17" x2="8" y2="17"/>
-                <polyline points="10 9 9 9 8 9"/>
-              </svg>
-              <span>Fichier existant: {{ existingFileName }}</span>
+          <!-- 3. Attachment -->
+          <div class="form-section">
+            <h3 class="section-title"><span class="step">3</span> Pièce jointe</h3>
+            <div class="form-group" *ngIf="!isViewMode">
+              <input id="file" type="file" (change)="onFileSelected($event)" [accept]="allowedExtensions.join(',')" />
+              <small class="form-text">Photo de la panne, document… PDF, Office, images ou archives, 10 Mo maximum.</small>
             </div>
-            <button type="button" class="btn-download" (click)="downloadExistingFile(); $event.stopPropagation()" *ngIf="isViewMode" title="Télécharger le fichier">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-              Télécharger
-            </button>
-            <button type="button" class="btn-remove" (click)="removeExistingFile()" title="Supprimer le fichier existant" *ngIf="!isViewMode">✕</button>
-          </div>
 
-          <div *ngIf="selectedFile" class="file-preview">
-            <div class="file-info">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-              </svg>
-              <span>{{ selectedFile.name }}</span>
+            <div *ngIf="existingFileName && !selectedFile" class="file-preview existing-file" [class.clickable]="isViewMode" (click)="isViewMode && downloadExistingFile()">
+              <div class="file-info">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                </svg>
+                <span>{{ existingFileName }}</span>
+              </div>
+              <button type="button" class="btn-download" (click)="downloadExistingFile(); $event.stopPropagation()" *ngIf="isViewMode">Télécharger</button>
+              <button type="button" class="btn-remove" (click)="removeExistingFile()" title="Retirer la pièce jointe" *ngIf="!isViewMode">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
             </div>
-            <button type="button" class="btn-remove" (click)="removeFile()" *ngIf="!isViewMode">✕</button>
+            <p class="empty-note" *ngIf="isViewMode && !existingFileName">Aucune pièce jointe.</p>
+
+            <div *ngIf="selectedFile" class="file-preview">
+              <div class="file-info">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                </svg>
+                <span>{{ selectedFile.name }}</span>
+              </div>
+              <button type="button" class="btn-remove" (click)="removeFile()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
           </div>
 
           <div *ngIf="loading" class="loading-overlay">
@@ -177,285 +200,396 @@ import { AuthService } from '../../../core/services/auth.service';
         </div>
 
         <div class="card-footer" *ngIf="!isViewMode">
-          <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="loading">
-            Annuler
-          </button>
-          <button type="submit" class="btn btn-primary" [disabled]="interventionForm.invalid || loading">
-            {{ isEditMode ? 'Mettre à jour' : 'Créer' }}
+          <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="saving">Annuler</button>
+          <button type="submit" class="btn btn-primary" [disabled]="saving">
+            {{ saving ? 'Enregistrement…' : (isEditMode ? 'Enregistrer les modifications' : 'Déclarer l\\'intervention') }}
           </button>
         </div>
       </form>
     </div>
   `,
   styles: [`
-    .header-actions {
-      display: flex;
-      gap: 12px;
-      align-items: center;
+    .header-actions { display: flex; gap: 12px; align-items: center; }
+
+    .facts-card {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 0;
+      margin-bottom: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
     }
-    
-    .btn-print {
+
+    .fact {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 14px 18px;
+      border-left: 1px solid var(--border);
+      min-width: 0;
+    }
+
+    .fact:first-child { border-left: 0; }
+
+    .fact-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .fact-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .fact-value.mono { font-family: var(--font-mono); }
+    .fact-value.stop { color: var(--error); }
+
+    .status-tag {
+      align-self: flex-start;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 12.5px;
+      font-weight: 600;
+      background: var(--gray-100);
+      color: var(--gray-700);
+    }
+
+    .status-tag[data-status="1"] { background: var(--primary-50); color: var(--primary-700); }
+    .status-tag[data-status="2"] { background: var(--warning-light); color: var(--warning-text); }
+    .status-tag[data-status="3"] { background: var(--accent-50); color: var(--accent-700); }
+    .status-tag[data-status="4"] { background: var(--success-light); color: var(--success-text); }
+    .status-tag[data-status="5"] { background: var(--gray-100); color: var(--gray-600); }
+
+    .lock-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: var(--warning-light);
+      border: 1px solid rgba(184, 110, 0, 0.25);
+      color: var(--warning-text);
+      font-size: 14px;
+    }
+
+    .form-section + .form-section {
+      margin-top: 8px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 16px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .step {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--primary-50);
+      color: var(--primary-700);
+      font-size: 12.5px;
+      font-weight: 700;
+    }
+
+    .form-text.impact {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 10px 20px;
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: white;
-      border: none;
-      border-radius: 10px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
     }
-    
-    .btn-print:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
-    }
-    
-    .btn svg {
+
+    .impact-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
       flex-shrink: 0;
     }
-    
+
+    .impact-dot.stop { background: var(--error); }
+
+    .form-text.counter { align-self: flex-end; }
+
+    .chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      position: relative;
+      display: inline-flex !important;
+      align-items: center;
+      height: 38px;
+      padding: 0 16px !important;
+      margin: 0 !important;
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--gray-700) !important;
+      font-size: 14px !important;
+      font-weight: 500 !important;
+      cursor: pointer;
+      transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+    }
+
+    .chip input { position: absolute; opacity: 0; pointer-events: none; }
+    .chip:hover { border-color: var(--primary-400); }
+
+    .chip.selected { background: var(--primary-600); border-color: var(--primary-600); color: #fff !important; }
+    .chip.selected[data-level="high"] { background: var(--error); border-color: var(--error); }
+    .chip.selected[data-level="medium"] { background: var(--warning); border-color: var(--warning); }
+    .chip.selected[data-level="low"] { background: var(--success); border-color: var(--success); }
+
+    .view-mode .chip { cursor: default; }
+
+    .report {
+      margin: 0;
+      padding: 14px 16px;
+      border-radius: 10px;
+      background: var(--success-light);
+      color: var(--success-text);
+      white-space: pre-wrap;
+      line-height: 1.55;
+    }
+
+    .empty-note { margin: 0; color: var(--text-muted); font-size: 14px; }
+
     .file-preview {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px 20px;
-      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-      border: 2px solid #0ea5e9;
-      border-radius: 12px;
-      margin-top: 16px;
-    }
-    
-    .file-preview.clickable {
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    
-    .file-preview.clickable:hover {
-      background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);
-    }
-    
-    .file-info {
-      display: flex;
-      align-items: center;
       gap: 12px;
-      color: #0369a1;
-      font-weight: 600;
-      font-size: 15px;
-    }
-    
-    .file-info svg {
-      color: #0ea5e9;
-    }
-    
-    .btn-download {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      background: #0ea5e9;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    
-    .btn-download:hover {
-      background: #0284c7;
-    }
-    
-    .btn-remove {
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #fef2f2;
-      color: #ef4444;
-      border: 1px solid #fecaca;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    
-    .btn-remove:hover {
-      background: #ef4444;
-      color: white;
-    }
-    
-    .checkbox-group {
-      display: flex;
-      align-items: center;
-    }
-    
-    .checkbox-label {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      cursor: pointer;
+      margin-top: 12px;
       padding: 12px 16px;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--border);
       border-radius: 10px;
-      transition: all 0.2s;
+      background: var(--gray-50);
     }
-    
-    .checkbox-label:hover {
-      background: #f1f5f9;
-    }
-    
-    .checkbox-label input[type="checkbox"] {
-      width: 20px;
-      height: 20px;
+
+    .file-preview.clickable { cursor: pointer; }
+    .file-preview.clickable:hover { border-color: var(--primary-400); }
+
+    .file-info { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 14px; }
+    .file-info span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .btn-download, .btn-remove {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 32px;
+      padding: 0 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--gray-700);
+      font-size: 13px;
       cursor: pointer;
     }
-    
-    .checkbox-text {
-      font-size: 14px;
-      font-weight: 500;
-      color: #475569;
+
+    .btn-remove { width: 32px; padding: 0; justify-content: center; }
+    .btn-remove:hover { background: var(--error-light); color: var(--error); border-color: transparent; }
+
+    @media (max-width: 1100px) {
+      .facts-card { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .fact:nth-child(4) { border-left: 0; }
+      .fact:nth-child(n + 4) { border-top: 1px solid var(--border); }
     }
-    
-    /* View mode specific styles */
-    :host-context(.view-mode) .form-group input:disabled,
-    :host-context(.view-mode) .form-group select:disabled,
-    :host-context(.view-mode) .form-group textarea:disabled {
-      background: #ffffff !important;
-      color: #1e293b !important;
-      font-weight: 500 !important;
-      font-size: 15px !important;
-      border-color: #e2e8f0 !important;
-      opacity: 1 !important;
+
+    @media (max-width: 600px) {
+      .facts-card { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .fact { border-left: 0 !important; border-top: 1px solid var(--border); }
     }
-    
-    .view-mode .card-body {
-      background: #ffffff;
-    }
-    
+
     @media print {
-      .form-header,
-      .btn-print,
-      .btn-secondary,
-      .btn-download,
-      .btn-remove {
-        display: none !important;
-      }
-      
-      .form-container {
-        padding: 0;
-        background: white;
-      }
-      
-      .card {
-        box-shadow: none;
-        border: none;
-      }
-      
-      .form-group input:disabled,
-      .form-group select:disabled,
-      .form-group textarea:disabled {
-        border: 1px solid #ccc !important;
-        background: #f9f9f9 !important;
-      }
+      app-page-header, .btn-print, .btn-secondary, .btn-download, .btn-remove, .card-footer { display: none !important; }
+      .card, .facts-card { box-shadow: none !important; border: 1px solid #ccc !important; }
     }
   `],
   styleUrls: ['../../../shared/styles/modern-form-design.scss']
-
 })
-export class InterventionFormComponent implements OnInit {
+export class InterventionFormComponent implements OnInit, OnDestroy {
   interventionForm: FormGroup;
   isEditMode = false;
   isViewMode = false;
+  isViewModeFromRoute = false;
   interventionId?: number;
+  intervention?: DemandeIntervention;
+  lockReason: string | null = null;
   loading = false;
+  saving = false;
   selectedFile?: File;
   existingFileName?: string;
-  fileRemoved = false; // Track if user explicitly removed existing file
-  hadOriginalFile = false; // Track if intervention originally had a file
   removeExistingFileFlag = false;
 
-  // Reference data
-  etats: InterventionEtat[] = [];
+  readonly allowedExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.txt', '.csv', '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.zip', '.rar', '.7z'];
+
   typesIntervention: TypeIntervention[] = [];
   urgences: Urgence[] = [];
   chainesProduction: ChaineProduction[] = [];
   pannes: Panne[] = [];
+  machines: EquipementSummary[] = [];
+
+  private subscriptions: Subscription[] = [];
 
   constructor(
     private fb: FormBuilder,
     private interventionService: InterventionService,
     private referenceDataService: ReferenceDataService,
+    private equipmentService: EquipmentService,
     private notificationService: NotificationService,
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute
   ) {
     this.interventionForm = this.fb.group({
-      titre: ['', Validators.required],
-      dateCreation: [this.formatDateForInput(new Date()), Validators.required],
-      idTypeIntervention: [null],
-      idUrgence: [null],
-      idChaineProduction: [null],
-      idPanne: [null],
-      idEtat: [null],
-      machineArretee: [false],
-      description: ['']
+      idChaineProduction: [null, Validators.required],
+      idEquipement: [null],
+      idTypeIntervention: [null, Validators.required],
+      idPanne: [null, Validators.required],
+      idUrgence: [null, Validators.required],
+      titre: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
+      description: ['', Validators.maxLength(2000)]
     });
+  }
+
+  get formTitle(): string {
+    if (this.isViewMode) return 'Fiche intervention';
+    return this.isEditMode ? "Modifier l'intervention" : 'Déclarer une intervention';
+  }
+
+  get formSubtitle(): string {
+    return this.isEditMode || this.isViewMode
+      ? 'Localisation, nature et suivi de la demande'
+      : 'Signalez une panne ou demandez une maintenance : un superviseur l\'affectera à un technicien.';
+  }
+
+  get reference(): string {
+    return this.intervention ? `INT-${String(this.intervention.idDemandeIntervention).padStart(4, '0')}` : '';
+  }
+
+  get selectedType(): TypeIntervention | undefined {
+    const id = this.interventionForm.get('idTypeIntervention')?.value;
+    return this.typesIntervention.find(t => t.idTypeIntervention === id);
+  }
+
+  /** Planned (preventive) work does not stop production and has no breakdown type. */
+  get isPreventive(): boolean {
+    const label = this.selectedType?.libelle ?? '';
+    return label.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().includes('prevent');
+  }
+
+  /** Machines of the selected line, plus machines not attached to any line. */
+  get availableMachines(): EquipementSummary[] {
+    const chaine = this.interventionForm.get('idChaineProduction')?.value;
+    return chaine ? this.machines.filter(m => !m.idChaineProduction || m.idChaineProduction === chaine) : this.machines;
   }
 
   ngOnInit(): void {
     this.loadReferenceData();
-    
-    // Check if view mode from route data
-    this.isViewMode = this.route.snapshot.data['viewMode'] === true;
+    this.watchBusinessRules();
+
+    this.isViewModeFromRoute = this.route.snapshot.data['viewMode'] === true;
+    this.isViewMode = this.isViewModeFromRoute;
 
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.isEditMode = !this.isViewMode;
       this.interventionId = +id;
       this.loadIntervention(this.interventionId);
-      
-      // Disable form in view mode
-      if (this.isViewMode) {
-        this.interventionForm.disable();
-      }
     }
+    if (this.isViewMode) this.interventionForm.disable({ emitEvent: false });
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(s => s.unsubscribe());
+  }
+
+  invalid(control: string): boolean {
+    const c = this.interventionForm.get(control);
+    return !!c && c.invalid && (c.touched || c.dirty);
+  }
+
+  urgenceLevel(label: string): string {
+    const l = label.toLowerCase();
+    if (l.includes('haut') || l.includes('urgent') || l.includes('crit')) return 'high';
+    if (l.includes('moy') || l.includes('norm')) return 'medium';
+    return 'low';
+  }
+
+  private watchBusinessRules(): void {
+    const type = this.interventionForm.get('idTypeIntervention')!;
+    const panne = this.interventionForm.get('idPanne')!;
+    const chaine = this.interventionForm.get('idChaineProduction')!;
+    const machine = this.interventionForm.get('idEquipement')!;
+
+    // Breakdown type only applies to corrective work
+    this.subscriptions.push(type.valueChanges.subscribe(() => {
+      if (this.isPreventive) {
+        panne.clearValidators();
+        panne.setValue(null, { emitEvent: false });
+      } else {
+        panne.setValidators(Validators.required);
+      }
+      panne.updateValueAndValidity({ emitEvent: false });
+    }));
+
+    // A machine belongs to one line: selecting it fills the line
+    this.subscriptions.push(machine.valueChanges.subscribe(id => {
+      const selected = this.machines.find(m => m.idEquipement === id);
+      if (selected?.idChaineProduction && chaine.value !== selected.idChaineProduction) {
+        chaine.setValue(selected.idChaineProduction, { emitEvent: false });
+      }
+    }));
+
+    // Changing the line drops a machine that is not on it
+    this.subscriptions.push(chaine.valueChanges.subscribe(() => {
+      const selected = this.machines.find(m => m.idEquipement === machine.value);
+      if (selected && !this.availableMachines.includes(selected)) {
+        machine.setValue(null, { emitEvent: false });
+      }
+    }));
   }
 
   loadReferenceData(): void {
-    this.referenceDataService.getInterventionEtats().subscribe({
-      next: (data) => this.etats = data,
-      error: () => this.notificationService.error('Erreur', 'Impossible de charger les états')
-    });
-
     this.referenceDataService.getTypesIntervention().subscribe({
-      next: (data) => this.typesIntervention = data,
+      next: data => {
+        this.typesIntervention = data;
+        this.interventionForm.get('idTypeIntervention')?.updateValueAndValidity();
+      },
       error: () => this.notificationService.error('Erreur', 'Impossible de charger les types')
     });
-
     this.referenceDataService.getUrgences().subscribe({
-      next: (data) => this.urgences = data,
+      next: data => this.urgences = data,
       error: () => this.notificationService.error('Erreur', 'Impossible de charger les urgences')
     });
-
     this.referenceDataService.getChainesProduction().subscribe({
-      next: (data) => this.chainesProduction = data,
+      next: data => this.chainesProduction = data,
       error: () => this.notificationService.error('Erreur', 'Impossible de charger les chaînes')
     });
-
     this.referenceDataService.getPannes().subscribe({
-      next: (data) => this.pannes = data,
+      next: data => this.pannes = data,
       error: () => this.notificationService.error('Erreur', 'Impossible de charger les pannes')
+    });
+    this.equipmentService.lookup().subscribe({
+      next: data => this.machines = data,
+      error: () => this.machines = []
     });
   }
 
@@ -463,21 +597,18 @@ export class InterventionFormComponent implements OnInit {
     this.loading = true;
     this.interventionService.getIntervention(id).subscribe({
       next: (intervention) => {
+        this.intervention = intervention;
         this.interventionForm.patchValue({
+          idChaineProduction: intervention.chaineProduction?.idChaineProduction ?? null,
+          idEquipement: intervention.idEquipement ?? null,
+          idTypeIntervention: intervention.typeIntervention?.idTypeIntervention ?? null,
+          idPanne: intervention.panne?.idPanne ?? null,
+          idUrgence: intervention.urgence?.idUrgence ?? null,
           titre: intervention.titre,
-          dateCreation: this.formatDateForInput(new Date(intervention.dateCreation)),
-          idTypeIntervention: intervention.typeIntervention?.idTypeIntervention,
-          idUrgence: intervention.urgence?.idUrgence,
-          idChaineProduction: intervention.chaineProduction?.idChaineProduction,
-          idPanne: intervention.panne?.idPanne,
-          idEtat: intervention.etat?.idEtat,
-          machineArretee: intervention.machineArretee,
-          description: intervention.description
+          description: intervention.description ?? ''
         });
-        // Load existing file name if present
-        if (intervention.fileName) {
-          this.existingFileName = intervention.fileName;
-        }
+        this.existingFileName = intervention.fileName;
+        this.applyEditPermissions(intervention);
         this.loading = false;
       },
       error: () => {
@@ -488,6 +619,26 @@ export class InterventionFormComponent implements OnInit {
     });
   }
 
+  /** Mirrors the server rules so the user is told why a field cannot be changed. */
+  private applyEditPermissions(intervention: DemandeIntervention): void {
+    if (this.isViewMode) return;
+    const user = this.authService.currentUser;
+    const status = intervention.statusId ?? STATUS.A_TRAITER;
+    const isOwner = intervention.demandeursID === user?.internalId;
+
+    if (status === STATUS.CLOTUREE || status === STATUS.ANNULEE) {
+      this.lockReason = 'Cette intervention est clôturée ou annulée : elle ne peut plus être modifiée.';
+    } else if (user?.role !== 'Superviseur' && !(isOwner && status === STATUS.A_TRAITER && !intervention.datePriseEnCharge)) {
+      this.lockReason = 'Cette demande a été prise en charge par un technicien : elle ne peut plus être modifiée.';
+    }
+
+    if (this.lockReason) {
+      this.isViewMode = true;
+      this.isEditMode = false;
+      this.interventionForm.disable({ emitEvent: false });
+    }
+  }
+
   removeExistingFile(): void {
     this.existingFileName = undefined;
     this.removeExistingFileFlag = true;
@@ -495,143 +646,73 @@ export class InterventionFormComponent implements OnInit {
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      const file = input.files[0];
-      
-      // Validate file size (10MB)
-      const maxSize = 10 * 1024 * 1024;
-      if (file.size > maxSize) {
-        this.notificationService.warning('Fichier trop volumineux', 'La taille maximum est de 10MB');
-        input.value = '';
-        return;
-      }
+    const file = input.files?.[0];
+    if (!file) return;
 
-      // Validate file extension
-      const allowedExtensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'];
-      const fileName = file.name.toLowerCase();
-      const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
-      if (!allowedExtensions.includes(fileExtension)) {
-        this.notificationService.warning('Type de fichier non autorisé', `Types acceptés: ${allowedExtensions.join(', ')}`);
-        input.value = '';
-        return;
-      }
-
-      this.selectedFile = file;
-      this.fileRemoved = false; // Reset flag when uploading new file
-      this.removeExistingFileFlag = false; // Also reset this flag
+    if (file.size > 10 * 1024 * 1024) {
+      this.notificationService.warning('Fichier trop volumineux', 'La taille maximum est de 10 Mo.');
+      input.value = '';
+      return;
     }
+    const extension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    if (!this.allowedExtensions.includes(extension)) {
+      this.notificationService.warning('Type de fichier non autorisé', 'Formats acceptés : PDF, Office, images, archives.');
+      input.value = '';
+      return;
+    }
+    this.selectedFile = file;
+    this.removeExistingFileFlag = false;
   }
 
   removeFile(): void {
     this.selectedFile = undefined;
-    // Only mark for deletion if there was actually an existing file
-    if (this.hadOriginalFile && this.isEditMode) {
-      this.fileRemoved = true;
-    }
-    this.existingFileName = undefined;
     const fileInput = document.getElementById('file') as HTMLInputElement;
-    if (fileInput) {
-      fileInput.value = '';
-    }
+    if (fileInput) fileInput.value = '';
   }
 
   onSubmit(): void {
     if (this.interventionForm.invalid) {
       this.interventionForm.markAllAsTouched();
+      this.notificationService.warning('Formulaire incomplet', 'Complétez les champs obligatoires signalés en rouge.');
       return;
     }
 
-    this.loading = true;
-    const formValue = this.interventionForm.value;
-    
-    // Get current user ID for demandeursId
-    const currentUser = this.authService.currentUser;
-    
-    // Helper function to convert form value to integer or null
-    const toIntOrNull = (value: any): number | null => {
-      if (value === null || value === undefined || value === '' || value === 'null') {
-        return null;
-      }
-      const parsed = parseInt(value, 10);
-      return isNaN(parsed) ? null : parsed;
+    this.saving = true;
+    const v = this.interventionForm.getRawValue();
+    const payload: InterventionDto = {
+      titre: (v.titre || '').trim(),
+      idChaineProduction: v.idChaineProduction,
+      // 0 tells the server to detach the machine on update
+      idEquipement: v.idEquipement ?? (this.isEditMode ? 0 : null),
+      idTypeIntervention: v.idTypeIntervention,
+      idPanne: this.isPreventive ? null : v.idPanne,
+      idUrgence: v.idUrgence,
+      description: (v.description || '').trim()
     };
-    
-    const interventionData = {
-      titre: formValue.titre,
-      dateCreation: new Date(formValue.dateCreation).toISOString(),
-      machineArretee: formValue.machineArretee || false,
-      idEtat: toIntOrNull(formValue.idEtat),
-      idTypeIntervention: toIntOrNull(formValue.idTypeIntervention),
-      idUrgence: toIntOrNull(formValue.idUrgence),
-      idChaineProduction: toIntOrNull(formValue.idChaineProduction),
-      idPanne: toIntOrNull(formValue.idPanne),
-      demandeursId: currentUser?.internalId,
-      destinatairesId: toIntOrNull(formValue.destinatairesId),
-      description: formValue.description || ''
+
+    const onError = (err: any) => {
+      this.notificationService.error('Enregistrement impossible', err?.error?.message || 'Vérifiez les informations saisies.');
+      this.saving = false;
+    };
+    const onSuccess = (message: string) => {
+      this.notificationService.success('Succès', message);
+      this.router.navigate(['/interventions']);
     };
 
     if (this.isEditMode && this.interventionId) {
-      // If user removed existing file, we need to signal backend
       if (this.removeExistingFileFlag && !this.selectedFile) {
-        // Send update with fileName="" to signal file removal
         const formData = new FormData();
-        formData.append('interventionData', JSON.stringify({
-          ...interventionData,
-          idDemandeIntervention: this.interventionId
-        }));
-        formData.append('fileName', ''); // Signal to remove file
-        
-        this.interventionService.updateInterventionWithFormData(this.interventionId, formData).subscribe({
-          next: () => {
-            this.notificationService.success(
-              'Succès',
-              'Intervention modifiée avec succès'
-            );
-            this.router.navigate(['/interventions']);
-          },
-          error: () => {
-            this.notificationService.error(
-              'Erreur',
-              'Impossible de modifier l\'intervention'
-            );
-            this.loading = false;
-          }
-        });
+        formData.append('interventionData', JSON.stringify({ ...payload, idDemandeIntervention: this.interventionId }));
+        formData.append('fileName', '');
+        this.interventionService.updateInterventionWithFormData(this.interventionId, formData)
+          .subscribe({ next: () => onSuccess('Intervention modifiée.'), error: onError });
       } else {
-        this.interventionService.updateIntervention(this.interventionId, interventionData, this.selectedFile).subscribe({
-          next: () => {
-            this.notificationService.success(
-              'Succès',
-              'Intervention modifiée avec succès'
-            );
-            this.router.navigate(['/interventions']);
-          },
-          error: () => {
-            this.notificationService.error(
-              'Erreur',
-              'Impossible de modifier l\'intervention'
-            );
-            this.loading = false;
-          }
-        });
+        this.interventionService.updateIntervention(this.interventionId, payload, this.selectedFile)
+          .subscribe({ next: () => onSuccess('Intervention modifiée.'), error: onError });
       }
     } else {
-      this.interventionService.createIntervention(interventionData, this.selectedFile).subscribe({
-        next: () => {
-          this.notificationService.success(
-            'Succès',
-            'Intervention créée avec succès'
-          );
-          this.router.navigate(['/interventions']);
-        },
-        error: () => {
-          this.notificationService.error(
-            'Erreur',
-            'Impossible de créer l\'intervention'
-          );
-          this.loading = false;
-        }
-      });
+      this.interventionService.createIntervention(payload, this.selectedFile)
+        .subscribe({ next: () => onSuccess('Intervention déclarée. Les superviseurs ont été prévenus.'), error: onError });
     }
   }
 
@@ -641,34 +722,22 @@ export class InterventionFormComponent implements OnInit {
 
   downloadExistingFile(): void {
     if (!this.interventionId) return;
-    
     this.interventionService.downloadFile(this.interventionId).subscribe({
       next: (blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = this.existingFileName || 'fichier';
+        a.download = this.existingFileName || 'piece-jointe';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
       },
-      error: () => {
-        this.notificationService.error('Erreur', 'Impossible de télécharger le fichier');
-      }
+      error: () => this.notificationService.error('Erreur', 'Impossible de télécharger le fichier')
     });
   }
 
   printForm(): void {
     window.print();
-  }
-
-  private formatDateForInput(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
   }
 }

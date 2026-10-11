@@ -16,6 +16,9 @@ namespace Core.Entities
         public ModeleEquipement? Modele { get; set; }     // Changed to nullable
         public int? IdGroupe { get; set; }                // Changed to int?
         public GroupeEquipement? Groupe { get; set; }     // Changed to nullable
+        // Production line the machine is installed on
+        public int? IdChaineProduction { get; set; }
+        public ChaineProduction? ChaineProduction { get; set; }
         public DateTime? DateInstallation { get; set; }
         public DateTime? DateMiseEnService { get; set; }
         public string? NumeroSerie { get; set; }

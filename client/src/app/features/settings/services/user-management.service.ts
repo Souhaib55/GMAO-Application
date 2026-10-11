@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 
@@ -36,6 +36,7 @@ export interface UpdateUserDto {
   email: string;
   idRole: number;
   appUserId?: string;
+  isActif?: boolean;
 }
 
 @Injectable({
@@ -49,7 +50,11 @@ export class UserManagementService {
   // Get all users
   getUsers(): Observable<User[]> {
     return this.http.get<User[]>(`${this.apiUrl}/users`, {
-      withCredentials: true
+      withCredentials: true,
+      headers: new HttpHeaders({
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      })
     });
   }
 

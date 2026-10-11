@@ -4,43 +4,30 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { Router } from '@angular/router';
 import { UserManagementService, User, Role, CreateUserDto, UpdateUserDto } from '../services/user-management.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'app-user-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
   template: `
     <div class="users-container">
       <!-- Header -->
-      <div class="page-header">
-        <div class="header-left">
-          <button class="btn-back" (click)="goBack()">
+      <app-page-header icon="users" title="Utilisateurs" subtitle="Comptes, rôles et accès des membres de l'équipe">
+        <button class="btn-back" (click)="goBack()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>
             Retour
           </button>
-          <div class="header-title">
-            <h1>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-              </svg>
-              Gestion des Utilisateurs
-            </h1>
-            <p>Créer, modifier et gérer les comptes utilisateurs</p>
-          </div>
-        </div>
         <button class="btn-primary" (click)="openCreateModal()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
-          Nouvel Utilisateur
+          Nouvel utilisateur
         </button>
-      </div>
+      </app-page-header>
 
       <!-- Stats Cards -->
       <div class="stats-grid">
@@ -187,7 +174,6 @@ import { NotificationService } from '../../../core/services/notification.service
             <tr *ngIf="filteredUsers.length === 0">
               <td colspan="6" class="empty-state">
                 <div class="empty-content">
-                  <span class="empty-icon">👥</span>
                   <p>Aucun utilisateur trouvé</p>
                 </div>
               </td>
@@ -240,15 +226,15 @@ import { NotificationService } from '../../../core/services/notification.service
                 <label>Mot de passe <span class="required">*</span></label>
                 <input type="password" formControlName="password" placeholder="Ex: Password1">
                 <span class="error" *ngIf="userForm.get('password')?.invalid && userForm.get('password')?.touched">
-                  Min. 6 caractères, 1 majuscule, 1 minuscule, 1 chiffre
+                  Min. 8 caractères, 1 majuscule, 1 minuscule, 1 chiffre
                 </span>
               </div>
 
               <div class="form-group">
                 <label>Rôle <span class="required">*</span></label>
                 <select formControlName="roleId">
-                  <option value="" disabled>Sélectionner un rôle</option>
-                  <option *ngFor="let role of roles" [value]="role.idRole">{{ role.libelle }}</option>
+                  <option [ngValue]="''" disabled>Sélectionner un rôle</option>
+                  <option *ngFor="let role of roles" [ngValue]="role.idRole">{{ role.libelle }}</option>
                 </select>
                 <span class="error" *ngIf="userForm.get('roleId')?.invalid && userForm.get('roleId')?.touched">
                   Le rôle est requis
@@ -269,7 +255,7 @@ import { NotificationService } from '../../../core/services/notification.service
       <div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeDeleteModal()">
         <div class="modal delete-modal" (click)="$event.stopPropagation()">
           <div class="modal-header delete">
-            <h2>⚠️ Confirmer la suppression</h2>
+            <h2>Confirmer la suppression</h2>
           </div>
           <div class="modal-body">
             <p>Êtes-vous sûr de vouloir supprimer l'utilisateur <strong>{{ userToDelete?.prenom }} {{ userToDelete?.nom }}</strong> ?</p>
@@ -288,39 +274,33 @@ import { NotificationService } from '../../../core/services/notification.service
   styles: [`
     /* ===== Variables & Base - Modern Industrial Theme (matches References) ===== */
     :host {
-      --primary: #0ea5e9;
-      --primary-dark: #0284c7;
-      --primary-light: #38bdf8;
-      --accent: #06b6d4;
-      --success: #10b981;
-      --danger: #ef4444;
-      --warning: #f59e0b;
-      --industrial-dark: #0f172a;
-      --industrial-mid: #1e293b;
-      --industrial-light: #334155;
-      --steel-50: #f8fafc;
-      --steel-100: #f1f5f9;
-      --steel-200: #e2e8f0;
-      --steel-300: #cbd5e1;
-      --steel-400: #94a3b8;
-      --steel-500: #64748b;
-      --steel-600: #475569;
-      --steel-700: #334155;
-      --text-primary: #0f172a;
-      --text-secondary: #475569;
-      --text-muted: #94a3b8;
+      --primary: var(--primary-600);
+      --primary-dark: var(--primary-700);
+      --primary-light: var(--primary-400);
+      --accent: var(--primary-600);
+      --danger: var(--error);
+      --industrial-dark: var(--gray-900);
+      --industrial-mid: var(--gray-800);
+      --industrial-light: var(--gray-700);
+      --steel-50: var(--gray-50);
+      --steel-100: var(--gray-100);
+      --steel-200: var(--gray-200);
+      --steel-300: var(--gray-300);
+      --steel-400: var(--gray-400);
+      --steel-500: var(--gray-500);
+      --steel-600: var(--gray-600);
+      --steel-700: var(--gray-700);
+      --text-primary: var(--gray-900);
+      --text-secondary: var(--gray-600);
+      --text-muted: var(--gray-500);
       --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
       --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
       --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
 
     .users-container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 1.5rem;
+      width: 100%;
       position: relative;
-      min-height: 100vh;
-      background: #f1f5f9;
     }
 
     /* Header */
@@ -344,7 +324,7 @@ import { NotificationService } from '../../../core/services/notification.service
       padding: 0.5rem 1rem;
       background: white;
       border: 1px solid var(--steel-200);
-      border-radius: 8px;
+      border-radius: var(--radius);
       font-size: 0.875rem;
       font-weight: 500;
       color: var(--steel-600);
@@ -370,7 +350,7 @@ import { NotificationService } from '../../../core/services/notification.service
       align-items: center;
       gap: 0.75rem;
       font-size: 1.5rem;
-      font-weight: 700;
+      font-weight: 600;
       color: var(--text-primary);
       margin: 0;
     }
@@ -386,21 +366,21 @@ import { NotificationService } from '../../../core/services/notification.service
       align-items: center;
       gap: 0.5rem;
       padding: 0.75rem 1.25rem;
-      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      background: var(--primary-600);
       color: white;
       border: none;
-      border-radius: 10px;
+      border-radius: var(--radius);
       font-size: 0.875rem;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s ease;
-      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+      box-shadow: none;
     }
 
     .btn-primary:hover:not(:disabled) {
-      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
-      transform: translateY(-1px);
+      background: var(--primary-700);
+      box-shadow: none;
+      transform: none;
     }
 
     .btn-primary:disabled {
@@ -423,8 +403,8 @@ import { NotificationService } from '../../../core/services/notification.service
       gap: 1rem;
       padding: 1.25rem 1.5rem;
       background: white;
-      border-radius: 16px;
-      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--gray-200);
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.02);
       transition: all 0.3s ease;
       overflow: hidden;
@@ -441,68 +421,68 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .stat-card:hover {
-      transform: translateY(-4px);
+      transform: none;
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
     }
 
     /* Total Card - Blue */
     .stat-card.total::before {
-      background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+      background: var(--primary-600);
     }
     .stat-card.total .stat-icon {
-      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-      color: #3b82f6;
+      background: var(--primary-50);
+      color: var(--primary-600);
     }
     .stat-card.total .stat-number {
-      color: #1e40af;
+      color: var(--primary-800);
     }
     .stat-card.total .stat-trend {
-      color: #10b981;
+      color: var(--success);
     }
 
     /* Superviseur Card - Purple/Indigo */
     .stat-card.superviseur::before {
-      background: linear-gradient(180deg, #8b5cf6 0%, #7c3aed 100%);
+      background: var(--violet);
     }
     .stat-card.superviseur .stat-icon {
-      background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
-      color: #8b5cf6;
+      background: var(--violet-light);
+      color: var(--violet);
     }
     .stat-card.superviseur .stat-number {
       color: #6d28d9;
     }
     .stat-card.superviseur .stat-badge {
-      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+      background: var(--violet);
     }
 
     /* Demandeur Card - Emerald/Green */
     .stat-card.demandeur::before {
-      background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+      background: var(--success);
     }
     .stat-card.demandeur .stat-icon {
-      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-      color: #10b981;
+      background: var(--success-light);
+      color: var(--success);
     }
     .stat-card.demandeur .stat-number {
-      color: #047857;
+      color: var(--success-dark);
     }
     .stat-card.demandeur .stat-badge {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      background: var(--success);
     }
 
     /* Utilisateur Card - Amber/Orange */
     .stat-card.utilisateur::before {
-      background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+      background: var(--warning);
     }
     .stat-card.utilisateur .stat-icon {
-      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-      color: #f59e0b;
+      background: var(--warning-light);
+      color: var(--warning);
     }
     .stat-card.utilisateur .stat-number {
-      color: #b45309;
+      color: var(--warning-dark);
     }
     .stat-card.utilisateur .stat-badge {
-      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      background: var(--warning);
     }
 
     .stat-icon {
@@ -511,7 +491,7 @@ import { NotificationService } from '../../../core/services/notification.service
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 14px;
+      border-radius: var(--radius-lg);
       flex-shrink: 0;
     }
 
@@ -524,14 +504,14 @@ import { NotificationService } from '../../../core/services/notification.service
 
     .stat-number {
       font-size: 1.75rem;
-      font-weight: 800;
+      font-weight: 600;
       line-height: 1;
       letter-spacing: -0.02em;
     }
 
     .stat-label {
       font-size: 0.8125rem;
-      color: #64748b;
+      color: var(--gray-500);
       font-weight: 500;
       letter-spacing: 0.01em;
     }
@@ -563,13 +543,13 @@ import { NotificationService } from '../../../core/services/notification.service
       padding: 0.75rem 1rem;
       background: white;
       border: 1px solid var(--steel-200);
-      border-radius: 10px;
+      border-radius: var(--radius);
       transition: all 0.2s ease;
     }
 
     .search-box:focus-within {
       border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+      box-shadow: 0 0 0 3px rgba(61, 96, 220, 0.1);
     }
 
     .search-box svg {
@@ -597,7 +577,7 @@ import { NotificationService } from '../../../core/services/notification.service
       padding: 0.75rem 2.5rem 0.75rem 1rem;
       background: white;
       border: 1px solid var(--steel-200);
-      border-radius: 10px;
+      border-radius: var(--radius);
       font-size: 0.875rem;
       color: var(--text-primary);
       cursor: pointer;
@@ -611,13 +591,13 @@ import { NotificationService } from '../../../core/services/notification.service
     .filter-group select:focus {
       outline: none;
       border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+      box-shadow: 0 0 0 3px rgba(61, 96, 220, 0.1);
     }
 
     /* Table */
     .table-container {
       background: white;
-      border-radius: 12px;
+      border-radius: var(--radius-lg);
       border: 1px solid var(--steel-200);
       overflow: hidden;
       box-shadow: var(--shadow-sm);
@@ -666,12 +646,12 @@ import { NotificationService } from '../../../core/services/notification.service
     .user-avatar {
       width: 40px;
       height: 40px;
-      border-radius: 10px;
+      border-radius: var(--radius);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 0.8125rem;
-      font-weight: 700;
+      font-weight: 600;
       color: white;
     }
 
@@ -707,18 +687,18 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .role-superviseur {
-      background: rgba(14, 165, 233, 0.1);
-      color: #0284c7;
+      background: rgba(61, 96, 220, 0.1);
+      color: var(--primary-700);
     }
 
     .role-demandeur {
-      background: rgba(16, 185, 129, 0.1);
-      color: #059669;
+      background: rgba(46, 125, 79, 0.1);
+      color: var(--success-dark);
     }
 
     .role-utilisateur {
-      background: rgba(245, 158, 11, 0.1);
-      color: #d97706;
+      background: rgba(184, 110, 0, 0.1);
+      color: var(--warning-dark);
     }
 
     .role-default {
@@ -736,7 +716,7 @@ import { NotificationService } from '../../../core/services/notification.service
       align-items: center;
       gap: 0.375rem;
       padding: 0.25rem 0.625rem;
-      border-radius: 20px;
+      border-radius: var(--radius-lg);
       font-size: 0.75rem;
       font-weight: 600;
     }
@@ -749,8 +729,8 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .status-badge.active {
-      background: rgba(16, 185, 129, 0.1);
-      color: #059669;
+      background: rgba(46, 125, 79, 0.1);
+      color: var(--success-dark);
     }
 
     .status-badge.active::before {
@@ -758,8 +738,8 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .status-badge.inactive {
-      background: rgba(239, 68, 68, 0.1);
-      color: #dc2626;
+      background: rgba(194, 58, 43, 0.1);
+      color: var(--error-dark);
     }
 
     .status-badge.inactive::before {
@@ -779,23 +759,23 @@ import { NotificationService } from '../../../core/services/notification.service
       justify-content: center;
       padding: 0;
       border: none;
-      border-radius: 8px;
+      border-radius: var(--radius);
       cursor: pointer;
       transition: all 0.2s ease;
     }
 
     .action-btn.view {
-      background: rgba(34, 197, 94, 0.1);
-      color: #22c55e;
+      background: rgba(46, 125, 79, 0.1);
+      color: var(--success);
     }
 
     .action-btn.view:hover {
-      background: #22c55e;
+      background: var(--success);
       color: white;
     }
 
     .action-btn.edit {
-      background: rgba(14, 165, 233, 0.1);
+      background: rgba(61, 96, 220, 0.1);
       color: var(--primary);
     }
 
@@ -805,7 +785,7 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .action-btn.delete {
-      background: rgba(239, 68, 68, 0.1);
+      background: rgba(194, 58, 43, 0.1);
       color: var(--danger);
     }
 
@@ -842,23 +822,24 @@ import { NotificationService } from '../../../core/services/notification.service
       position: absolute;
       inset: 0;
       background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(8px);
+      backdrop-filter: none;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 1.25rem;
       z-index: 100;
-      border-radius: 24px;
+      border-radius: var(--radius-lg);
     }
 
     .spinner {
-      width: 48px;
-      height: 48px;
-      border: 4px solid rgba(59, 130, 246, 0.2);
-      border-top-color: var(--primary);
+      width: 32px;
+      height: 32px;
+      border: 2.5px solid var(--primary-100);
+      border-top-color: var(--primary-600);
       border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+      animation: spin 0.75s linear infinite;
+      will-change: transform;
     }
 
     @keyframes spin {
@@ -869,21 +850,21 @@ import { NotificationService } from '../../../core/services/notification.service
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(15, 23, 42, 0.6);
+      background: rgba(21, 26, 34, 0.6);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 1000;
-      backdrop-filter: blur(4px);
+      backdrop-filter: none;
       padding: 1rem;
     }
 
     .modal {
       background: white;
-      border-radius: 16px;
+      border-radius: var(--radius-lg);
       width: 100%;
       max-width: 520px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 20px 50px rgba(21, 26, 34, 0.12);
       animation: modalIn 0.25s ease-out;
       overflow: hidden;
     }
@@ -904,12 +885,12 @@ import { NotificationService } from '../../../core/services/notification.service
       justify-content: space-between;
       align-items: center;
       padding: 1.25rem 1.5rem;
-      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      background: var(--primary-600);
       color: white;
     }
 
     .modal-header.delete {
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      background: var(--error);
     }
 
     .modal-header h2 {
@@ -924,7 +905,7 @@ import { NotificationService } from '../../../core/services/notification.service
       height: 36px;
       border: none;
       background: rgba(255, 255, 255, 0.15);
-      border-radius: 8px;
+      border-radius: var(--radius);
       font-size: 1.5rem;
       line-height: 1;
       color: white;
@@ -959,12 +940,12 @@ import { NotificationService } from '../../../core/services/notification.service
       display: block;
       font-size: 0.875rem;
       font-weight: 600;
-      color: #374151;
+      color: var(--gray-700);
       margin-bottom: 0.5rem;
     }
 
     .form-group .required {
-      color: #ef4444;
+      color: var(--error);
       margin-left: 2px;
     }
 
@@ -972,30 +953,30 @@ import { NotificationService } from '../../../core/services/notification.service
     .form-group select {
       width: 100%;
       padding: 0.75rem 1rem;
-      border: 1px solid #d1d5db;
-      border-radius: 8px;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
       font-size: 0.9375rem;
       font-family: inherit;
       transition: border-color 0.2s, box-shadow 0.2s;
       background: white;
-      color: #1f2937;
+      color: var(--gray-800);
       box-sizing: border-box;
     }
 
     .form-group input::placeholder {
-      color: #9ca3af;
+      color: var(--gray-400);
     }
 
     .form-group input:hover,
     .form-group select:hover {
-      border-color: #9ca3af;
+      border-color: var(--gray-400);
     }
 
     .form-group input:focus,
     .form-group select:focus {
       outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+      border-color: var(--primary-600);
+      box-shadow: 0 0 0 3px rgba(61, 96, 220, 0.15);
     }
 
     .form-group select {
@@ -1008,19 +989,19 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .form-group .error {
-      color: #ef4444;
+      color: var(--error);
       font-size: 0.8rem;
       margin-top: 0.375rem;
     }
 
     .warning-text {
-      color: #dc2626;
+      color: var(--error-dark);
       font-size: 0.875rem;
       margin-top: 0.75rem;
       padding: 0.75rem;
-      background: #fef2f2;
-      border-radius: 8px;
-      border-left: 3px solid #ef4444;
+      background: var(--error-light);
+      border-radius: var(--radius);
+      border-left: 3px solid var(--error);
     }
 
     .modal-footer {
@@ -1028,33 +1009,33 @@ import { NotificationService } from '../../../core/services/notification.service
       justify-content: flex-end;
       gap: 0.75rem;
       padding: 1rem 1.5rem;
-      border-top: 1px solid #e5e7eb;
-      background: #f9fafb;
+      border-top: 1px solid var(--gray-200);
+      background: var(--gray-50);
     }
 
     .btn-secondary {
       padding: 0.625rem 1.25rem;
       background: white;
-      border: 1px solid #d1d5db;
-      border-radius: 8px;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius);
       font-size: 0.875rem;
       font-weight: 600;
-      color: #4b5563;
+      color: var(--gray-600);
       cursor: pointer;
       transition: all 0.2s;
     }
 
     .btn-secondary:hover {
-      background: #f3f4f6;
-      border-color: #9ca3af;
+      background: var(--gray-100);
+      border-color: var(--gray-400);
     }
 
     .btn-danger {
       padding: 0.625rem 1.25rem;
-      background: #ef4444;
+      background: var(--error);
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: var(--radius);
       font-size: 0.875rem;
       font-weight: 600;
       cursor: pointer;
@@ -1062,7 +1043,7 @@ import { NotificationService } from '../../../core/services/notification.service
     }
 
     .btn-danger:hover:not(:disabled) {
-      background: #dc2626;
+      background: var(--error-dark);
     }
 
     .btn-danger:disabled {
@@ -1116,6 +1097,183 @@ import { NotificationService } from '../../../core/services/notification.service
         max-width: calc(100% - 2rem);
       }
     }
+
+    /* ---- Status-board KPI strip (replaces tinted icon cards) ---- */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0;
+      margin-bottom: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .stats-grid .stat-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 14px 18px 16px;
+      background: transparent;
+      border: 0;
+      border-left: 1px solid var(--border);
+      border-radius: 0;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .stats-grid .stat-card:first-child {
+      border-left: 0;
+    }
+
+    .stats-grid .stat-icon {
+      width: 8px;
+      height: 8px;
+      margin-top: 6px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+
+    .stats-grid .stat-content {
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 8px;
+    }
+
+    .stats-grid .stat-label {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .stats-grid .stat-value {
+      font-family: var(--font-mono);
+      font-size: 26px;
+      font-weight: 500;
+      line-height: 1;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+
+    .stats-grid .stat-card::before,
+    .stats-grid .stat-card::after {
+      display: none;
+    }
+
+    .stats-grid .stat-card .stat-number {
+      font-family: var(--font-mono);
+      font-size: 26px;
+      font-weight: 500;
+      line-height: 1;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stats-grid .stat-badge,
+    .stats-grid .stat-trend {
+      display: none;
+    }
+
+    /* Search field: the wrapper draws the border, the input stays bare */
+    .search-box input {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .search-box:focus-within {
+      border-color: var(--primary-500);
+      box-shadow: var(--focus-ring);
+    }
+
+    /* ---- KPI cards: separate cards, label + figure, tinted icon chip ---- */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+      overflow: visible;
+    }
+
+    .stats-grid .stat-card,
+    .stats-grid .stat-card:first-child {
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
+      transform: none;
+      transition: box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+
+    .stats-grid .stat-card:hover {
+      border-color: var(--gray-300);
+      box-shadow: var(--card-shadow-hover);
+    }
+
+    .stats-grid .stat-icon,
+    .stats-grid .stat-icon-wrapper {
+      order: 2;
+      width: 40px;
+      height: 40px;
+      margin: 0;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+    }
+
+    .stats-grid .stat-icon svg,
+    .stats-grid .stat-icon-wrapper .stat-icon {
+      display: block;
+      width: 20px;
+      height: 20px;
+      background: transparent !important;
+    }
+
+    .stats-grid .stat-content {
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .stats-grid .stat-label {
+      margin: 0;
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .stats-grid .stat-value,
+    .stats-grid .stat-card .stat-number {
+      font-family: var(--font-mono);
+      font-size: 28px;
+      font-weight: 500;
+      line-height: 1;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .table-wrapper,
+    .table-container {
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
+    }
+
   `]
 })
 export class UserManagementComponent implements OnInit {
@@ -1148,7 +1306,7 @@ export class UserManagementComponent implements OnInit {
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6), Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/)]],
+      password: ['', [Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/)]],
       roleId: ['', Validators.required]
     });
   }
@@ -1209,10 +1367,10 @@ export class UserManagementComponent implements OnInit {
 
   getAvatarColor(role: string): string {
     switch (role) {
-      case 'Superviseur': return 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)';
-      case 'Demandeur': return 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-      case 'Utilisateur': return 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
-      default: return 'linear-gradient(135deg, #64748b 0%, #475569 100%)';
+      case 'Superviseur': return 'var(--primary-600)';
+      case 'Demandeur': return 'var(--success)';
+      case 'Utilisateur': return 'var(--warning)';
+      default: return 'var(--gray-500)';
     }
   }
 
@@ -1220,7 +1378,7 @@ export class UserManagementComponent implements OnInit {
     this.isEditMode = false;
     this.editingUser = null;
     this.userForm.reset();
-    this.userForm.get('password')?.setValidators([Validators.required, Validators.minLength(6), Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/)]);
+    this.userForm.get('password')?.setValidators([Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/)]);
     this.userForm.get('password')?.updateValueAndValidity();
     this.showModal = true;
   }
@@ -1276,26 +1434,38 @@ export class UserManagementComponent implements OnInit {
 
     if (this.isEditMode && this.editingUser) {
       // For update, send the data in camelCase format (API uses camelCase JSON serialization)
-      const updateData = {
+      const roleIdValue = this.userForm.value.roleId;
+      const updateData: UpdateUserDto = {
         id: this.editingUser.id,
         prenom: this.userForm.value.firstName,
         nom: this.userForm.value.lastName,
         email: this.userForm.value.email,
-        idRole: parseInt(this.userForm.value.roleId, 10),
+        idRole: typeof roleIdValue === 'number' ? roleIdValue : parseInt(roleIdValue, 10),
         appUserId: this.editingUser.appUserId,
         isActif: true
       };
 
       console.log('Updating user with data:', updateData);
 
-      this.userService.updateUser(this.editingUser.id, updateData as any).subscribe({
-        next: () => {
+      this.userService.updateUser(this.editingUser.id, updateData).subscribe({
+        next: (updatedUser) => {
+          // Immediately update the local array for instant UI feedback
+          if (updatedUser) {
+            const index = this.users.findIndex(u => u.id === updatedUser.id);
+            if (index !== -1) {
+              this.users[index] = updatedUser;
+              this.users = [...this.users];
+              this.filterUsers();
+            }
+          }
           this.notificationService.success('Succès', 'Utilisateur mis à jour avec succès');
-          this.closeModal();
-          this.loadUsers();
           this.submitting = false;
+          this.closeModal();
+          // Also reload from server to ensure full consistency
+          this.loadUsers();
         },
         error: (err) => {
+          console.error('Update error:', err);
           this.notificationService.error('Erreur', err.error?.message || 'Erreur lors de la mise à jour');
           this.submitting = false;
         }
@@ -1322,9 +1492,9 @@ export class UserManagementComponent implements OnInit {
       this.userService.createUser(createData).subscribe({
         next: () => {
           this.notificationService.success('Succès', 'Utilisateur créé avec succès');
+          this.submitting = false;
           this.closeModal();
           this.loadUsers();
-          this.submitting = false;
         },
         error: (err) => {
           console.log('Full error:', err);
@@ -1360,12 +1530,16 @@ export class UserManagementComponent implements OnInit {
     if (!this.userToDelete) return;
 
     this.submitting = true;
-    this.userService.deleteUser(this.userToDelete.id).subscribe({
+    const deletedId = this.userToDelete.id;
+    this.userService.deleteUser(deletedId).subscribe({
       next: () => {
+        // Immediately remove from local array for instant UI feedback
+        this.users = this.users.filter(u => u.id !== deletedId);
+        this.filterUsers();
         this.notificationService.success('Succès', 'Utilisateur supprimé avec succès');
+        this.submitting = false;
         this.closeDeleteModal();
         this.loadUsers();
-        this.submitting = false;
       },
       error: (err) => {
         this.notificationService.error('Erreur', 'Erreur lors de la suppression');

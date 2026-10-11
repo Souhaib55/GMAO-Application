@@ -1,3 +1,4 @@
+using API.Security;
 using API.DTOs;
 using Core.Entities;
 using Infrastructure.Data;
@@ -11,6 +12,7 @@ using System.Threading.Tasks;
 
 namespace API.Controllers
 {
+    [SupervisorWrites]
     [ApiController]
     [Route("api/[controller]")]
     public class EquipmentController : ControllerBase
@@ -35,7 +37,7 @@ namespace API.Controllers
             if (!string.IsNullOrWhiteSpace(search))
             {
                 search = search.ToLower().Trim();
-                query = query.Where(e => e.CodeEquipement.ToLower().Contains(search));
+                query = query.Where(e => e.CodeEquipement.ToLower().Contains(search) || e.Designation.ToLower().Contains(search));
                 _logger.LogInformation($"Applying search filter: '{search}'");
             }
 
@@ -44,7 +46,11 @@ namespace API.Controllers
                 .Include(e => e.Etat)
                 .Include(e => e.Famille)
                 .Include(e => e.Modele).ThenInclude(m => m.Marque)
-                .Include(e => e.Groupe);
+                .Include(e => e.Groupe)
+                .Include(e => e.ChaineProduction);
+
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, 1, 100);
 
             var totalCount = await query.CountAsync();
             var items = await query
@@ -67,6 +73,8 @@ namespace API.Controllers
                     Modele = e.Modele != null ? new { e.Modele.IdModele, e.Modele.NomModele, Marque = e.Modele.Marque != null ? new { e.Modele.Marque.IdMarque, e.Modele.Marque.NomMarque } : null } : null,
                     e.IdGroupe,
                     Groupe = e.Groupe != null ? new { e.Groupe.IdGroupe, e.Groupe.NomGroupe } : null,
+                    e.IdChaineProduction,
+                    ChaineProduction = e.ChaineProduction != null ? new { IdChaineProduction = e.ChaineProduction.IDChaineProduction, e.ChaineProduction.Libelle } : null,
                     e.DateInstallation,
                     e.DateMiseEnService,
                     e.NumeroSerie,
@@ -102,6 +110,7 @@ namespace API.Controllers
                 .Include(e => e.Famille)
                 .Include(e => e.Modele).ThenInclude(m => m.Marque)
                 .Include(e => e.Groupe)
+                .Include(e => e.ChaineProduction)
                 .FirstOrDefaultAsync(e => e.IdEquipement == id && !e.IsDeleted);
 
             if (equipment == null)
@@ -122,10 +131,13 @@ namespace API.Controllers
                 return BadRequest(ModelState);
             }
 
-            // Check if CodeEquipement is unique
-            if (await _context.Equipments.AnyAsync(e => e.CodeEquipement == equipmentDto.CodeEquipement && !e.IsDeleted))
+            var ruleError = await ValidateBusinessRulesAsync(equipmentDto);
+            if (ruleError != null) return BadRequest(ruleError);
+
+            // The unique index covers deleted rows too
+            if (await _context.Equipments.AnyAsync(e => e.CodeEquipement == equipmentDto.CodeEquipement))
             {
-                return BadRequest("An equipment with this CodeEquipement already exists.");
+                return BadRequest("Ce code équipement est déjà utilisé (y compris par un équipement supprimé).");
             }
 
             // Validate foreign keys only if they have values
@@ -150,6 +162,7 @@ namespace API.Controllers
                 IdFamille = equipmentDto.IdFamille,
                 IdModele = equipmentDto.IdModele,
                 IdGroupe = equipmentDto.IdGroupe,
+                IdChaineProduction = equipmentDto.IdChaineProduction,
                 DateInstallation = equipmentDto.DateInstallation,
                 DateMiseEnService = equipmentDto.DateMiseEnService,
                 NumeroSerie = equipmentDto.NumeroSerie,
@@ -204,12 +217,15 @@ namespace API.Controllers
                 return NotFound("Equipment not found or deleted.");
             }
 
-            // Check for unique CodeEquipement if changed
+            var ruleError = await ValidateBusinessRulesAsync(equipmentDto);
+            if (ruleError != null) return BadRequest(ruleError);
+
+            // Check for unique CodeEquipement if changed (the index covers deleted rows too)
             if (existingEquipment.CodeEquipement != equipmentDto.CodeEquipement)
             {
-                if (await _context.Equipments.AnyAsync(e => e.CodeEquipement == equipmentDto.CodeEquipement && !e.IsDeleted))
+                if (await _context.Equipments.AnyAsync(e => e.CodeEquipement == equipmentDto.CodeEquipement && e.IdEquipement != id))
                 {
-                    return BadRequest("An equipment with this CodeEquipement already exists.");
+                    return BadRequest("Ce code équipement est déjà utilisé (y compris par un équipement supprimé).");
                 }
             }
 
@@ -234,6 +250,7 @@ namespace API.Controllers
             existingEquipment.IdFamille = equipmentDto.IdFamille;
             existingEquipment.IdModele = equipmentDto.IdModele;
             existingEquipment.IdGroupe = equipmentDto.IdGroupe;
+            existingEquipment.IdChaineProduction = equipmentDto.IdChaineProduction;
             existingEquipment.DateInstallation = equipmentDto.DateInstallation;
             existingEquipment.DateMiseEnService = equipmentDto.DateMiseEnService;
             existingEquipment.NumeroSerie = equipmentDto.NumeroSerie;
@@ -261,6 +278,60 @@ namespace API.Controllers
             }
 
             return Ok(updatedEquipment);
+        }
+
+        /// <summary>
+        /// Lightweight list for pickers (intervention form): every active machine,
+        /// optionally restricted to one production line.
+        /// </summary>
+        [HttpGet("lookup")]
+        public async Task<ActionResult<IEnumerable<object>>> Lookup(int? chaineId = null)
+        {
+            var query = _context.Equipments.Where(e => !e.IsDeleted);
+            if (chaineId.HasValue) query = query.Where(e => e.IdChaineProduction == chaineId || e.IdChaineProduction == null);
+
+            var items = await query
+                .OrderBy(e => e.CodeEquipement)
+                .Select(e => new { e.IdEquipement, e.CodeEquipement, e.Designation, e.IdChaineProduction })
+                .ToListAsync();
+            return Ok(items);
+        }
+
+        /// <summary>
+        /// Maintenance-domain rules for a machine record:
+        /// chronology build -> purchase -> installation -> commissioning,
+        /// no future dates (except warranty end), warranty after purchase,
+        /// non-negative cost, and "under warranty" derived from the warranty end date.
+        /// </summary>
+        private async Task<string?> ValidateBusinessRulesAsync(EquipmentDto dto)
+        {
+            dto.CodeEquipement = dto.CodeEquipement?.Trim() ?? string.Empty;
+            dto.Designation = dto.Designation?.Trim() ?? string.Empty;
+            if (dto.CodeEquipement.Length is 0 or > 50) return "Le code équipement est obligatoire (50 caractères maximum).";
+            if (dto.Designation.Length is 0 or > 100) return "La désignation est obligatoire (100 caractères maximum).";
+            if (dto.Description?.Length > 255) return "La description ne doit pas dépasser 255 caractères.";
+            if (dto.CoutAchat is < 0) return "Le coût d'achat ne peut pas être négatif.";
+
+            var today = DateTime.Today.AddDays(1);
+            if (dto.DateConstruction > today || dto.DateAchat > today || dto.DateInstallation > today || dto.DateMiseEnService > today)
+                return "Les dates de fabrication, d'achat, d'installation et de mise en service ne peuvent pas être dans le futur.";
+            if (dto.DateConstruction.HasValue && dto.DateAchat.HasValue && dto.DateConstruction > dto.DateAchat)
+                return "La date de fabrication doit précéder la date d'achat.";
+            if (dto.DateAchat.HasValue && dto.DateInstallation.HasValue && dto.DateAchat > dto.DateInstallation)
+                return "La date d'installation ne peut pas précéder la date d'achat.";
+            if (dto.DateInstallation.HasValue && dto.DateMiseEnService.HasValue && dto.DateInstallation > dto.DateMiseEnService)
+                return "La mise en service ne peut pas précéder l'installation.";
+            if (dto.DateAchat.HasValue && dto.DateFinGarantie.HasValue && dto.DateFinGarantie < dto.DateAchat)
+                return "La fin de garantie doit être postérieure à la date d'achat.";
+
+            // Derived, not declared: a machine is under warranty until its warranty end date
+            if (dto.DateFinGarantie.HasValue)
+                dto.SousGarantie = dto.DateFinGarantie.Value.Date >= DateTime.Today;
+
+            if (dto.IdChaineProduction.HasValue && !await _context.ChaineProductions.AnyAsync(c => c.IDChaineProduction == dto.IdChaineProduction && c.IsActif))
+                return "Chaîne de production invalide.";
+
+            return null;
         }
 
         // DELETE: api/Equipment/5

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
 
+[Authorize(Roles = "Superviseur")]
 [ApiController]
 [Route("api/[controller]")] 
 

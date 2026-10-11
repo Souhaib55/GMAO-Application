@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
 
+[Authorize(Roles = "Superviseur")]
 [ApiController]
 [Route("[controller]")]
 public class WeatherForecastController : ControllerBase

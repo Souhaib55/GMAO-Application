@@ -5,15 +5,15 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { StockService } from '../services/stock.service';
 import { ReferenceDataService, StockEntities, StockStatus, StockSupplier } from '../../../core/services/reference-data.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'app-stock-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent],
   template: `
     <div class="form-container">
-      <div class="form-header">
-        <h1>{{ isViewMode ? 'Détails' : (isEditMode ? 'Modifier' : 'Nouveau') }} Stock</h1>
+      <app-page-header icon="stock" [title]="formTitle" subtitle="Article, quantités et fournisseur">
         <div class="header-actions">
           <button class="btn btn-print" (click)="printForm()" *ngIf="isViewMode" title="Imprimer / Télécharger PDF">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -25,7 +25,7 @@ import { NotificationService } from '../../../core/services/notification.service
           </button>
           <button class="btn btn-secondary" (click)="cancel()">{{ isViewMode ? 'Retour' : 'Annuler' }}</button>
         </div>
-      </div>
+      </app-page-header>
 
       <form [formGroup]="stockForm" (ngSubmit)="onSubmit()" class="card">
         <div class="card-body">
@@ -129,6 +129,11 @@ import { NotificationService } from '../../../core/services/notification.service
 
 })
 export class StockFormComponent implements OnInit {
+
+  get formTitle(): string {
+    if (this.isViewMode) return 'Fiche stock';
+    return this.isEditMode ? 'Modifier le stock' : 'Nouvel article en stock';
+  }
   stockForm: FormGroup;
   isEditMode = false;
   isViewMode = false;

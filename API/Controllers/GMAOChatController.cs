@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +14,7 @@ using System.Linq;
 
 namespace API.Controllers
 {
+    [Authorize(Roles = "Superviseur")]
     [ApiController]
     [Route("api/gmao-chat")]
     public class GMAOChatController : ControllerBase

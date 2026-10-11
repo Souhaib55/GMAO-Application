@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { InterventionService } from '../interventions/services/intervention.service';
 import { DemandeIntervention } from '../../core/models';
 import { InterventionDetailModalComponent } from './intervention-detail-modal/intervention-detail-modal.component';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 
 interface CalendarDay {
   date: Date;
@@ -15,26 +16,13 @@ interface CalendarDay {
 @Component({
   selector: 'app-planning',
   standalone: true,
-  imports: [CommonModule, RouterModule, InterventionDetailModalComponent],
+  imports: [CommonModule, RouterModule, InterventionDetailModalComponent, PageHeaderComponent],
   template: `
     <div class="planning-container">
       <!-- Header with Title -->
-      <div class="page-header">
-        <div class="header-left">
-          <div class="header-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="16" y1="2" x2="16" y2="6"></line>
-              <line x1="8" y1="2" x2="8" y2="6"></line>
-              <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-          </div>
-          <div>
-            <h1 class="page-title">Planning des Interventions</h1>
-            <p class="page-subtitle">Calendrier et planification des interventions</p>
-          </div>
-        </div>
-      </div>
+      <app-page-header icon="calendar" title="Planning des interventions" subtitle="Calendrier et planification des interventions">
+
+      </app-page-header>
 
       <!-- Stats Cards -->
       <div class="stats-grid">
@@ -186,53 +174,71 @@ interface CalendarDay {
   `,
   styles: [`
     .planning-container {
-      padding: 24px;
-      background: #f5f6fa;
-      min-height: 100vh;
+      width: 100%;
     }
 
-    /* Page Header - Blue Gradient Bar Style */
+    /* Page header: title on the page, primary action on the right */
     .page-header {
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       justify-content: space-between;
-      margin-bottom: 24px;
-      padding: 24px 32px;
-      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 50%, #2563eb 100%);
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+      gap: 16px;
+      margin-bottom: 20px;
     }
 
     .header-left {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
     }
 
     .header-icon {
-      width: 52px;
-      height: 52px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      backdrop-filter: blur(4px);
+      display: none;
     }
 
     .page-title {
-      font-size: 26px;
-      font-weight: 700;
-      color: white;
       margin: 0;
-      letter-spacing: -0.5px;
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+      color: var(--text);
     }
 
     .page-subtitle {
+      margin: 4px 0 0;
       font-size: 14px;
-      color: rgba(255, 255, 255, 0.85);
-      margin: 4px 0 0 0;
+      color: var(--text-secondary);
+    }
+
+    .btn-new {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      height: 36px;
+      padding: 0 14px;
+      background: var(--primary-600);
+      color: #fff;
+      border: 1px solid var(--primary-600);
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn-new:hover {
+      background: var(--primary-700);
+      border-color: var(--primary-700);
+      color: #fff;
+    }
+
+    .btn-icon {
+      font-size: 18px;
+      font-weight: 400;
+      line-height: 1;
+      margin-top: -2px;
     }
 
     /* Stats Grid */
@@ -245,12 +251,12 @@ interface CalendarDay {
 
     .stat-card {
       background: white;
-      border-radius: 12px;
+      border-radius: var(--radius-lg);
       padding: 20px;
       display: flex;
       align-items: flex-start;
       gap: 16px;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--gray-200);
       transition: all 0.2s;
       position: relative;
       overflow: hidden;
@@ -263,47 +269,47 @@ interface CalendarDay {
       top: 0;
       bottom: 0;
       width: 4px;
-      background: #e2e8f0;
+      background: var(--gray-200);
     }
 
     .stat-card:hover {
-      transform: translateY(-2px);
+      transform: none;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
 
-    .stat-card.stat-nouveau::before { background: #8b5cf6; }
-    .stat-card.stat-encours::before { background: #f59e0b; }
-    .stat-card.stat-termine::before { background: #10b981; }
+    .stat-card.stat-nouveau::before { background: var(--violet); }
+    .stat-card.stat-encours::before { background: var(--warning); }
+    .stat-card.stat-termine::before { background: var(--success); }
 
     .stat-icon-wrapper {
       width: 48px;
       height: 48px;
-      border-radius: 10px;
+      border-radius: var(--radius);
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #f8fafc;
+      background: var(--gray-50);
       flex-shrink: 0;
     }
 
     .stat-card:first-child .stat-icon-wrapper {
-      background: #dbeafe;
-      color: #3b82f6;
+      background: var(--primary-100);
+      color: var(--primary-600);
     }
 
     .stat-card.stat-nouveau .stat-icon-wrapper {
-      background: #f3e8ff;
-      color: #8b5cf6;
+      background: var(--violet-light);
+      color: var(--violet);
     }
 
     .stat-card.stat-encours .stat-icon-wrapper {
-      background: #fef3c7;
-      color: #f59e0b;
+      background: var(--warning-light);
+      color: var(--warning);
     }
 
     .stat-card.stat-termine .stat-icon-wrapper {
-      background: #d1fae5;
-      color: #10b981;
+      background: var(--success-light);
+      color: var(--success);
     }
 
     .stat-icon {
@@ -317,23 +323,24 @@ interface CalendarDay {
 
     .stat-label {
       font-size: 13px;
-      color: #64748b;
+      color: var(--gray-500);
       margin-bottom: 4px;
     }
 
     .stat-value {
       font-size: 32px;
-      font-weight: 700;
-      color: #1e293b;
+      font-weight: 600;
+      color: var(--gray-800);
       line-height: 1;
     }
 
     /* Calendar Wrapper */
     .calendar-wrapper {
       background: white;
-      border-radius: 12px;
-      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--gray-200);
       overflow: hidden;
+      box-shadow: var(--card-shadow);
     }
 
     /* Calendar Header Bar */
@@ -342,14 +349,14 @@ interface CalendarDay {
       align-items: center;
       justify-content: space-between;
       padding: 16px 24px;
-      border-bottom: 1px solid #e2e8f0;
-      background: #fafbfc;
+      border-bottom: 1px solid var(--gray-200);
+      background: var(--gray-50);
     }
 
     .month-title {
       font-size: 18px;
       font-weight: 600;
-      color: #1e293b;
+      color: var(--gray-800);
       margin: 0;
     }
 
@@ -362,21 +369,21 @@ interface CalendarDay {
     .nav-btn {
       width: 32px;
       height: 32px;
-      border-radius: 8px;
+      border-radius: var(--radius);
       background: white;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--gray-200);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       transition: all 0.2s;
-      color: #64748b;
+      color: var(--gray-500);
     }
 
     .nav-btn:hover {
-      background: #f8fafc;
-      border-color: #3b82f6;
-      color: #3b82f6;
+      background: var(--gray-50);
+      border-color: var(--primary-600);
+      color: var(--primary-600);
     }
 
     .nav-btn svg {
@@ -386,19 +393,19 @@ interface CalendarDay {
 
     .today-btn {
       padding: 6px 16px;
-      border-radius: 8px;
+      border-radius: var(--radius);
       background: white;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--gray-200);
       font-size: 14px;
       font-weight: 500;
-      color: #475569;
+      color: var(--gray-600);
       cursor: pointer;
       transition: all 0.2s;
     }
 
     .today-btn:hover {
-      background: #3b82f6;
-      border-color: #3b82f6;
+      background: var(--primary-600);
+      border-color: var(--primary-600);
       color: white;
     }
 
@@ -410,8 +417,8 @@ interface CalendarDay {
     .calendar-weekdays {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      border-bottom: 1px solid #e2e8f0;
-      background: #fafbfc;
+      border-bottom: 1px solid var(--gray-200);
+      background: var(--gray-50);
     }
 
     .weekday-name {
@@ -419,7 +426,7 @@ interface CalendarDay {
       text-align: center;
       font-size: 12px;
       font-weight: 600;
-      color: #64748b;
+      color: var(--gray-500);
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
@@ -427,38 +434,38 @@ interface CalendarDay {
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      border-left: 1px solid #e2e8f0;
-      border-bottom: 1px solid #e2e8f0;
+      border-left: 1px solid var(--gray-200);
+      border-bottom: 1px solid var(--gray-200);
     }
 
     .calendar-day {
       min-height: 120px;
       padding: 8px;
-      border-right: 1px solid #e2e8f0;
-      border-top: 1px solid #e2e8f0;
+      border-right: 1px solid var(--gray-200);
+      border-top: 1px solid var(--gray-200);
       background: white;
       position: relative;
       transition: background 0.2s;
     }
 
     .calendar-day:hover {
-      background: #f8fafc;
+      background: var(--gray-50);
     }
 
     .calendar-day.other-month {
-      background: #fafbfc;
+      background: var(--gray-50);
     }
 
     .calendar-day.other-month .day-number {
-      color: #cbd5e1;
+      color: var(--gray-300);
     }
 
     .calendar-day.today {
-      background: #eff6ff;
+      background: var(--primary-50);
     }
 
     .calendar-day.today .day-number {
-      background: #3b82f6;
+      background: var(--primary-600);
       color: white;
       width: 28px;
       height: 28px;
@@ -466,13 +473,13 @@ interface CalendarDay {
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 700;
+      font-weight: 600;
     }
 
     .day-number {
       font-size: 14px;
       font-weight: 600;
-      color: #1e293b;
+      color: var(--gray-800);
       margin-bottom: 6px;
     }
 
@@ -501,37 +508,37 @@ interface CalendarDay {
 
     /* A traiter - Blue (new/pending) */
     .intervention-badge.status-a-traiter {
-      background: #dbeafe;
-      color: #1e40af;
-      border-left-color: #3b82f6;
+      background: var(--primary-100);
+      color: var(--primary-800);
+      border-left-color: var(--primary-600);
     }
 
     /* En cours - Orange (in progress) */
     .intervention-badge.status-en-cours {
-      background: #fef3c7;
-      color: #92400e;
-      border-left-color: #f59e0b;
+      background: var(--warning-light);
+      color: var(--warning-text);
+      border-left-color: var(--warning);
     }
 
     /* Réalisée - Orange-red (completed, awaiting validation) */
     .intervention-badge.status-realisee {
-      background: #ffedd5;
-      color: #c2410c;
-      border-left-color: #f97316;
+      background: var(--accent-50);
+      color: var(--accent-700);
+      border-left-color: var(--accent-500);
     }
 
     /* Cloturée - Green (closed/validated) */
     .intervention-badge.status-cloturee {
-      background: #d1fae5;
-      color: #065f46;
-      border-left-color: #10b981;
+      background: var(--success-light);
+      color: var(--success-text);
+      border-left-color: var(--success);
     }
 
     /* Annulée - Red (cancelled) */
     .intervention-badge.status-annulee {
-      background: #fee2e2;
-      color: #991b1b;
-      border-left-color: #ef4444;
+      background: var(--error-light);
+      color: var(--error-text);
+      border-left-color: var(--error);
     }
 
     .intervention-badge {
@@ -545,7 +552,7 @@ interface CalendarDay {
       width: 16px;
       height: 16px;
       border-radius: 50%;
-      background: #ef4444;
+      background: var(--error);
       border: 2px solid white;
       cursor: pointer;
       display: flex;
@@ -555,7 +562,7 @@ interface CalendarDay {
       transition: all 0.2s ease;
       color: white;
       padding: 0;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 1px 3px rgba(21, 26, 34, 0.12);
     }
 
     .intervention-badge:hover .intervention-remove {
@@ -563,8 +570,8 @@ interface CalendarDay {
     }
 
     .intervention-remove:hover {
-      background: #dc2626;
-      transform: scale(1.1);
+      background: var(--error-dark);
+      transform: none;
     }
 
     .intervention-dot {
@@ -584,8 +591,8 @@ interface CalendarDay {
 
     .more-badge {
       padding: 4px 8px;
-      background: #f1f5f9;
-      color: #64748b;
+      background: var(--gray-100);
+      color: var(--gray-500);
       font-size: 11px;
       font-weight: 600;
       text-align: center;
@@ -595,26 +602,27 @@ interface CalendarDay {
     }
 
     .more-badge:hover {
-      background: #e2e8f0;
-      color: #475569;
+      background: var(--gray-200);
+      color: var(--gray-600);
     }
 
     /* Loading State */
     .loading-state {
       background: white;
-      border-radius: 12px;
+      border-radius: var(--radius-lg);
       padding: 60px;
       text-align: center;
-      color: #64748b;
+      color: var(--gray-500);
     }
 
     .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid #f1f5f9;
-      border-top-color: #3b82f6;
+      width: 32px;
+      height: 32px;
+      border: 2.5px solid var(--primary-100);
+      border-top-color: var(--primary-600);
       border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+      animation: spin 0.75s linear infinite;
+      will-change: transform;
       margin: 0 auto 16px;
     }
 
@@ -631,7 +639,7 @@ interface CalendarDay {
 
     @media (max-width: 768px) {
       .planning-container {
-        padding: 16px;
+        padding: 0;
       }
 
       .page-header h1 {
@@ -685,13 +693,13 @@ interface CalendarDay {
     .stat-item {
       text-align: center;
       padding: 16px;
-      background: #f9fafb;
-      border-radius: 8px;
+      background: var(--gray-50);
+      border-radius: var(--radius);
     }
 
     .stat-value {
       font-size: 32px;
-      font-weight: 700;
+      font-weight: 600;
       color: var(--text-primary);
       margin-bottom: 4px;
     }
@@ -704,6 +712,206 @@ interface CalendarDay {
     .loading-state {
       text-align: center;
       padding: 60px 20px;
+    }
+
+    /* ---- Status-board KPI strip (replaces tinted icon cards) ---- */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0;
+      margin-bottom: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .stats-grid .stat-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 14px 18px 16px;
+      background: transparent;
+      border: 0;
+      border-left: 1px solid var(--border);
+      border-radius: 0;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .stats-grid .stat-card:first-child {
+      border-left: 0;
+    }
+
+    .stats-grid .stat-icon {
+      width: 8px;
+      height: 8px;
+      margin-top: 6px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+
+    .stats-grid .stat-content {
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 8px;
+    }
+
+    .stats-grid .stat-label {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .stats-grid .stat-value {
+      font-family: var(--font-mono);
+      font-size: 26px;
+      font-weight: 500;
+      line-height: 1;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ---- Row actions: neutral until hovered, red only for delete ---- */
+    .action-buttons .btn-action,
+    .action-buttons .btn-action.btn-view,
+    .action-buttons .btn-action.btn-edit,
+    .action-buttons .btn-action.btn-action-danger {
+      width: 32px;
+      height: 32px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+      color: var(--gray-500);
+    }
+
+    .action-buttons .btn-action svg {
+      width: 17px;
+      height: 17px;
+    }
+
+    .action-buttons .btn-action.btn-view:hover,
+    .action-buttons .btn-action.btn-edit:hover {
+      background: var(--gray-100);
+      color: var(--gray-900);
+    }
+
+    .action-buttons .btn-action.btn-action-danger:hover {
+      background: var(--error-light);
+      color: var(--error);
+    }
+
+    .status-badge {
+      white-space: nowrap;
+    }
+
+    /* Planning markup: label before value, icon inside a wrapper */
+    .stats-grid .stat-icon-wrapper {
+      width: 8px;
+      height: 8px;
+      margin-top: 6px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+
+    .stats-grid .stat-content {
+      flex-direction: column;
+    }
+
+    .stats-grid .stat-card::before,
+    .stats-grid .stat-card::after {
+      display: none;
+    }
+
+    /* ---- KPI cards: separate cards, label + figure, tinted icon chip ---- */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+      overflow: visible;
+    }
+
+    .stats-grid .stat-card,
+    .stats-grid .stat-card:first-child {
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
+      transform: none;
+      transition: box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+
+    .stats-grid .stat-card:hover {
+      border-color: var(--gray-300);
+      box-shadow: var(--card-shadow-hover);
+    }
+
+    .stats-grid .stat-icon,
+    .stats-grid .stat-icon-wrapper {
+      order: 2;
+      width: 40px;
+      height: 40px;
+      margin: 0;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+    }
+
+    .stats-grid .stat-icon svg,
+    .stats-grid .stat-icon-wrapper .stat-icon {
+      display: block;
+      width: 20px;
+      height: 20px;
+      background: transparent !important;
+    }
+
+    .stats-grid .stat-content {
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .stats-grid .stat-label {
+      margin: 0;
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .stats-grid .stat-value,
+    .stats-grid .stat-card .stat-number {
+      font-family: var(--font-mono);
+      font-size: 28px;
+      font-weight: 500;
+      line-height: 1;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .table-wrapper,
+    .table-container {
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
+    }
+
+    /* Planning markup has the label before the value */
+    .stats-grid .stat-card .stat-content {
+      flex-direction: column;
     }
   `]
 })

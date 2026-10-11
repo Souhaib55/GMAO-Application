@@ -1,9 +1,12 @@
+using System.Threading.RateLimiting;
 using API.Services;
 using Core.Entities;
 using Infrastructure.Data;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,7 +21,6 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
     serverOptions.Limits.MaxRequestBodySize = 10 * 1024 * 1024; // 10 MB
 });
 
-// Add services to the container.
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -26,81 +28,121 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     });
 
-// Register Email Service
 builder.Services.AddScoped<IEmailService, EmailService>();
 
-// Configure CORS properly
+// CORS: only needed when the Angular app is served from another origin (ng serve).
+// In production nginx serves the app and proxies /api, so requests are same-origin.
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+                     ?? new[] { "http://localhost:4200", "https://localhost:4200" };
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AngularCorsPolicy", policy =>
     {
-        policy.WithOrigins(
-                "http://localhost:4200", 
-                "https://localhost:4200",
-                "http://frontend",
-                "http://frontend:80"
-              )
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
     });
 });
 
-// Database Context
 builder.Services.AddDbContext<StoreContext>(opt =>
 {
     opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
-// Identity Services - REPLACE the AddIdentityApiEndpoints with AddIdentity
-builder.Services.AddIdentity<AppUser, IdentityRole>(options => 
+builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 {
-    // Configure identity options if needed
     options.SignIn.RequireConfirmedAccount = false;
+    options.User.RequireUniqueEmail = true;
+
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireUppercase = true;
     options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequiredLength = 6;
+    options.Password.RequiredLength = 8;
+
+    // Brute-force protection on the login form
+    options.Lockout.AllowedForNewUsers = true;
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
 })
 .AddEntityFrameworkStores<StoreContext>()
 .AddDefaultTokenProviders();
 
-// Add Authorization after Identity
-builder.Services.AddAuthorization();
-
-// Configure cookie authentication options separately
-builder.Services.ConfigureApplicationCookie(options => 
+// Role changes and deactivations reach open sessions within a few minutes
+builder.Services.Configure<SecurityStampValidatorOptions>(options =>
 {
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.Cookie.SameSite = SameSiteMode.None; // Required for cross-origin requests
-    options.Cookie.HttpOnly = true;
-    options.Cookie.Name = ".AspNetCore.Identity.Application";
-    options.ExpireTimeSpan = TimeSpan.FromDays(7); // Persist for 7 days
-    options.SlidingExpiration = true; // Refresh expiration on activity
+    options.ValidationInterval = TimeSpan.FromMinutes(5);
+});
 
+// Every endpoint requires a signed-in user unless it is explicitly [AllowAnonymous]
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
+
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    // The factory network serves the app over plain HTTP on the same origin as the
+    // API (nginx proxy). A cookie marked "Secure" would be dropped by browsers there,
+    // so it is only marked Secure when the request itself is HTTPS.
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.HttpOnly = true;
+    options.Cookie.Name = "gmao.session";
+    options.ExpireTimeSpan = TimeSpan.FromHours(12); // one shift, renewed while active
+    options.SlidingExpiration = true;
+
+    // An API answers with status codes, never with redirects to login pages
     options.Events.OnRedirectToLogin = context =>
     {
-        context.Response.StatusCode = 401;
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        return Task.CompletedTask;
+    };
+    options.Events.OnRedirectToAccessDenied = context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
         return Task.CompletedTask;
     };
 });
+
+// Rate limiting on the anonymous authentication endpoints (per client IP)
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+});
+
+// Behind nginx: trust the forwarded scheme / client IP
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 var app = builder.Build();
 
-// Apply migrations and seed data on startup
+// Apply migrations and seed roles on startup
 using (var scope = app.Services.CreateScope())
 {
     try
     {
         var context = scope.ServiceProvider.GetRequiredService<StoreContext>();
-        
-        // Apply any pending migrations
         await context.Database.MigrateAsync();
-        
-        // Seed roles
+
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-        var roles = new[] { "Superviseur", "Demandeur", "Utilisateur" };
-        foreach (var role in roles)
+        foreach (var role in new[] { "Superviseur", "Demandeur", "Utilisateur" })
         {
             if (!await roleManager.RoleExistsAsync(role))
             {
@@ -116,17 +158,33 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Middleware pipeline
-//app.UseHttpsRedirection();
+app.UseForwardedHeaders();
 
-// CORS must come after UseRouting and before UseAuthorization
+if (!app.Environment.IsDevelopment())
+{
+    // Never leak stack traces or exception messages to the client
+    app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        await context.Response.WriteAsJsonAsync(new { message = "Une erreur interne est survenue." });
+    }));
+}
+
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+    headers["X-Content-Type-Options"] = "nosniff";
+    headers["X-Frame-Options"] = "DENY";
+    headers["Referrer-Policy"] = "same-origin";
+    await next();
+});
+
 app.UseCors("AngularCorsPolicy");
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-// Remove or comment out this line since we're not using Identity API endpoints anymore
-// app.MapGroup("api").MapIdentityApi<AppUser>();
 
 app.Run();

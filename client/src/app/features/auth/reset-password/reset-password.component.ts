@@ -3,15 +3,17 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { AuthVisualComponent } from '../auth-visual/auth-visual.component';
 
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, AuthVisualComponent],
   templateUrl: './reset-password.component.html',
-  styleUrls: ['./reset-password.component.scss']
+  styleUrls: ['../auth-shell.scss']
 })
 export class ResetPasswordComponent implements OnInit {
+  currentYear = new Date().getFullYear();
   resetPasswordForm: FormGroup;
   loading = false;
   validatingToken = true;
@@ -31,7 +33,7 @@ export class ResetPasswordComponent implements OnInit {
     private route: ActivatedRoute
   ) {
     this.resetPasswordForm = this.fb.group({
-      newPassword: ['', [Validators.required, Validators.minLength(6)]],
+      newPassword: ['', [Validators.required, Validators.minLength(8)]],
       confirmPassword: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
   }
@@ -115,7 +117,7 @@ export class ResetPasswordComponent implements OnInit {
 
   // Password validation helpers
   hasMinLength(): boolean {
-    return this.newPassword?.value?.length >= 6;
+    return this.newPassword?.value?.length >= 8;
   }
 
   hasUppercase(): boolean {
