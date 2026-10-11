@@ -129,7 +129,13 @@ namespace API.Controllers
             d.DateResolution,
             d.DateCloture,
             d.RaisonAnnulation,
-            d.IsActif
+            d.IsActif,
+            d.DatePlanifiee,
+            d.DureeEstimeeMinutes,
+            d.Cause,
+            d.Remede,
+            d.IdPlanPreventif,
+            PlanPreventif = d.PlanPreventif != null ? new { d.PlanPreventif.Id, d.PlanPreventif.Code } : null
         };
 
         private Task<object?> LoadDtoAsync(int id) =>

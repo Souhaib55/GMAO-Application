@@ -39,6 +39,12 @@ namespace Infrastructure.Config
                    .HasForeignKey(e => e.IdChaineProduction)
                    .IsRequired(false)
                    .OnDelete(DeleteBehavior.Restrict);
+            builder.Property(e => e.Emplacement).HasMaxLength(100);
+            builder.HasOne(e => e.Fournisseur)
+                   .WithMany()
+                   .HasForeignKey(e => e.IdFournisseur)
+                   .OnDelete(DeleteBehavior.Restrict);
+
             builder.HasOne(e => e.Groupe)
                    .WithMany(g => g.Equipments)
                    .HasForeignKey(e => e.IdGroupe)

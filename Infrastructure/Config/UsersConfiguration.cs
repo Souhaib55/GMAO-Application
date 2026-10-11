@@ -16,6 +16,9 @@ public class UsersConfiguration : IEntityTypeConfiguration<Users>
         builder.Property(u => u.DateCreation).IsRequired();
         builder.Property(u => u.DateModification).IsRequired();
         builder.Property(u => u.IsActif).IsRequired().HasDefaultValue(true);
+        builder.Property(u => u.TauxHoraire).HasPrecision(10, 3);
+        builder.Property(u => u.Specialite).HasMaxLength(100);
+        builder.Property(u => u.Telephone).HasMaxLength(30);
         builder.HasOne(u => u.AppUser)
                .WithOne()
                .HasForeignKey<Users>(u => u.AppUserId)

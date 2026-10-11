@@ -13,4 +13,9 @@ public class Users
     public bool IsActif { get; set; }
     public int IDRole { get; set; } // Foreign key to Role
     public Role Role { get; set; }  // Navigation property
+
+    // Technician profile (labour cost and dispatching)
+    public decimal? TauxHoraire { get; set; }
+    public string? Specialite { get; set; }
+    public string? Telephone { get; set; }
 }

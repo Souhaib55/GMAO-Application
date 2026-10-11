@@ -70,6 +70,16 @@ namespace Infrastructure.Config
                    .WithMany()
                    .HasForeignKey(d => d.DestinatairesID)
                    .OnDelete(DeleteBehavior.SetNull);
+
+            builder.Property(d => d.Cause).HasMaxLength(500);
+            builder.Property(d => d.Remede).HasMaxLength(500);
+            builder.Property(d => d.CoutExterne).HasPrecision(12, 3);
+            builder.HasIndex(d => d.DatePlanifiee);
+
+            builder.HasOne(d => d.PlanPreventif)
+                   .WithMany()
+                   .HasForeignKey(d => d.IdPlanPreventif)
+                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

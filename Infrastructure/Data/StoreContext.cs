@@ -50,6 +50,28 @@ public class StoreContext : IdentityDbContext<AppUser, IdentityRole, string>
     // Notifications
     public DbSet<Notification> Notifications { get; set; }
 
+    // Store, purchasing and budgets
+    public DbSet<Magasin> Magasins { get; set; }
+    public DbSet<Fournisseur> Fournisseurs { get; set; }
+    public DbSet<MouvementStock> MouvementsStock { get; set; }
+    public DbSet<DemandeAchat> DemandesAchat { get; set; }
+    public DbSet<DemandeAchatLigne> DemandeAchatLignes { get; set; }
+    public DbSet<BonCommande> BonsCommande { get; set; }
+    public DbSet<BonCommandeLigne> BonCommandeLignes { get; set; }
+    public DbSet<Budget> Budgets { get; set; }
+
+    // Work order follow-up and preventive maintenance
+    public DbSet<InterventionTemps> InterventionTemps { get; set; }
+    public DbSet<InterventionPiece> InterventionPieces { get; set; }
+    public DbSet<InterventionTache> InterventionTaches { get; set; }
+    public DbSet<PlanPreventif> PlansPreventifs { get; set; }
+    public DbSet<PlanPreventifTache> PlanPreventifTaches { get; set; }
+
+    // Cross-cutting
+    public DbSet<PieceJointe> PiecesJointes { get; set; }
+    public DbSet<JournalActivite> JournalActivites { get; set; }
+    public DbSet<ParametreApplication> ParametresApplication { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -83,5 +105,23 @@ public class StoreContext : IdentityDbContext<AppUser, IdentityRole, string>
 
         // Notifications
         modelBuilder.ApplyConfiguration(new NotificationConfiguration());
+
+        // Store, purchasing, budgets, preventive maintenance, cross-cutting
+        modelBuilder.ApplyConfiguration(new MagasinConfiguration());
+        modelBuilder.ApplyConfiguration(new FournisseurConfiguration());
+        modelBuilder.ApplyConfiguration(new MouvementStockConfiguration());
+        modelBuilder.ApplyConfiguration(new InterventionTempsConfiguration());
+        modelBuilder.ApplyConfiguration(new InterventionPieceConfiguration());
+        modelBuilder.ApplyConfiguration(new InterventionTacheConfiguration());
+        modelBuilder.ApplyConfiguration(new PlanPreventifConfiguration());
+        modelBuilder.ApplyConfiguration(new PlanPreventifTacheConfiguration());
+        modelBuilder.ApplyConfiguration(new DemandeAchatConfiguration());
+        modelBuilder.ApplyConfiguration(new DemandeAchatLigneConfiguration());
+        modelBuilder.ApplyConfiguration(new BonCommandeConfiguration());
+        modelBuilder.ApplyConfiguration(new BonCommandeLigneConfiguration());
+        modelBuilder.ApplyConfiguration(new BudgetConfiguration());
+        modelBuilder.ApplyConfiguration(new PieceJointeConfiguration());
+        modelBuilder.ApplyConfiguration(new JournalActiviteConfiguration());
+        modelBuilder.ApplyConfiguration(new ParametreApplicationConfiguration());
     }
 }

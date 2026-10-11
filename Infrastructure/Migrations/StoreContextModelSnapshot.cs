@@ -93,6 +93,139 @@ namespace Infrastructure.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("Core.Entities.BonCommande", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("DateCommande")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DateCreation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime?>("DateLivraisonPrevue")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateReceptionComplete")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("IdCreateur")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("IdDemandeAchat")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdFournisseur")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Numero")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Statut")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdDemandeAchat");
+
+                    b.HasIndex("IdFournisseur");
+
+                    b.HasIndex("Numero")
+                        .IsUnique();
+
+                    b.ToTable("BonsCommande", (string)null);
+                });
+
+            modelBuilder.Entity("Core.Entities.BonCommandeLigne", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Designation")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("IdBonCommande")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("IdPiece")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("PrixUnitaire")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("decimal(12,3)");
+
+                    b.Property<int>("Quantite")
+                        .HasColumnType("int");
+
+                    b.Property<int>("QuantiteRecue")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdBonCommande");
+
+                    b.HasIndex("IdPiece");
+
+                    b.ToTable("BonCommandeLignes", (string)null);
+                });
+
+            modelBuilder.Entity("Core.Entities.Budget", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Annee")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Categorie")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int?>("IdChaineProduction")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Montant")
+                        .HasPrecision(14, 3)
+                        .HasColumnType("decimal(14,3)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdChaineProduction");
+
+                    b.HasIndex("Annee", "Categorie", "IdChaineProduction")
+                        .IsUnique()
+                        .HasFilter("[IdChaineProduction] IS NOT NULL");
+
+                    b.ToTable("Budgets", (string)null);
+                });
+
             modelBuilder.Entity("Core.Entities.ChaineProduction", b =>
                 {
                     b.Property<int>("IDChaineProduction")
@@ -194,6 +327,94 @@ namespace Infrastructure.Migrations
                     b.ToTable("CriticitePieces");
                 });
 
+            modelBuilder.Entity("Core.Entities.DemandeAchat", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CommentaireDecision")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("DateDecision")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DateDemande")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("IdDecideur")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("IdDemandeIntervention")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdDemandeur")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Motif")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Numero")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Statut")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdDemandeIntervention");
+
+                    b.HasIndex("IdDemandeur");
+
+                    b.HasIndex("Numero")
+                        .IsUnique();
+
+                    b.ToTable("DemandesAchat", (string)null);
+                });
+
+            modelBuilder.Entity("Core.Entities.DemandeAchatLigne", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Designation")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("IdDemandeAchat")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("IdPiece")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("PrixEstime")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("decimal(12,3)");
+
+                    b.Property<int>("Quantite")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdDemandeAchat");
+
+                    b.HasIndex("IdPiece");
+
+                    b.ToTable("DemandeAchatLignes", (string)null);
+                });
+
             modelBuilder.Entity("Core.Entities.DemandeIntervention", b =>
                 {
                     b.Property<int>("IdDemandeIntervention")
@@ -202,6 +423,10 @@ namespace Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdDemandeIntervention"));
 
+                    b.Property<string>("Cause")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("CompteRendu")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
@@ -209,6 +434,10 @@ namespace Infrastructure.Migrations
                     b.Property<string>("ContentType")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal?>("CoutExterne")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("decimal(12,3)");
 
                     b.Property<DateTime?>("DateAssignation")
                         .HasColumnType("datetime2");
@@ -220,6 +449,9 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime?>("DatePlanifiee")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("DatePriseEnCharge")
                         .HasColumnType("datetime");
@@ -238,6 +470,9 @@ namespace Infrastructure.Migrations
                         .HasColumnType("nvarchar(2000)");
 
                     b.Property<int?>("DestinatairesID")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DureeEstimeeMinutes")
                         .HasColumnType("int");
 
                     b.Property<byte[]>("FileData")
@@ -265,6 +500,9 @@ namespace Infrastructure.Migrations
                     b.Property<int>("IDUrgence")
                         .HasColumnType("int");
 
+                    b.Property<int?>("IdPlanPreventif")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsActif")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -275,6 +513,10 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("RaisonAnnulation")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Remede")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("StatusId")
                         .ValueGeneratedOnAdd()
@@ -287,6 +529,8 @@ namespace Infrastructure.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.HasKey("IdDemandeIntervention");
+
+                    b.HasIndex("DatePlanifiee");
 
                     b.HasIndex("DemandeursID");
 
@@ -303,6 +547,8 @@ namespace Infrastructure.Migrations
                     b.HasIndex("IDTypeIntervention");
 
                     b.HasIndex("IDUrgence");
+
+                    b.HasIndex("IdPlanPreventif");
 
                     b.HasIndex("StatusId");
 
@@ -358,6 +604,10 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("Emplacement")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<int?>("IdChaineProduction")
                         .HasColumnType("int");
 
@@ -368,6 +618,9 @@ namespace Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<int?>("IdFamille")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("IdFournisseur")
                         .HasColumnType("int");
 
                     b.Property<int?>("IdGroupe")
@@ -400,6 +653,8 @@ namespace Infrastructure.Migrations
                     b.HasIndex("IdEtat");
 
                     b.HasIndex("IdFamille");
+
+                    b.HasIndex("IdFournisseur");
 
                     b.HasIndex("IdGroupe");
 
@@ -579,6 +834,65 @@ namespace Infrastructure.Migrations
                     b.ToTable("FamillePieces");
                 });
 
+            modelBuilder.Entity("Core.Entities.Fournisseur", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Adresse")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Contact")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("DateCreation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<int?>("DelaiLivraisonJours")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<bool>("IsActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Nom")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Telephone")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("Fournisseurs", (string)null);
+                });
+
             modelBuilder.Entity("Core.Entities.GroupeEquipement", b =>
                 {
                     b.Property<int>("IdGroupe")
@@ -612,6 +926,204 @@ namespace Infrastructure.Migrations
                     b.HasKey("IdGroupe");
 
                     b.ToTable("GroupeEquipements");
+                });
+
+            modelBuilder.Entity("Core.Entities.InterventionPiece", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("IdDemandeIntervention")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("IdMouvementStock")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdPiece")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("PrixUnitaire")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("decimal(12,3)");
+
+                    b.Property<int>("Quantite")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdDemandeIntervention");
+
+                    b.HasIndex("IdPiece");
+
+                    b.ToTable("InterventionPieces", (string)null);
+                });
+
+            modelBuilder.Entity("Core.Entities.InterventionTache", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("DateFait")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("Fait")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("FaitParId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdDemandeIntervention")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Libelle")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int>("Ordre")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdDemandeIntervention");
+
+                    b.ToTable("InterventionTaches", (string)null);
+                });
+
+            modelBuilder.Entity("Core.Entities.InterventionTemps", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Commentaire")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("DateSaisie")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("Debut")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DureeMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("Fin")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("IdDemandeIntervention")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdTechnicien")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("TauxHoraire")
+                        .HasPrecision(10, 3)
+                        .HasColumnType("decimal(10,3)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdDemandeIntervention");
+
+                    b.HasIndex("IdTechnicien");
+
+                    b.ToTable("InterventionTemps", (string)null);
+                });
+
+            modelBuilder.Entity("Core.Entities.JournalActivite", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Entite")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int?>("EntiteId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UtilisateurId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UtilisateurNom")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Date");
+
+                    b.HasIndex("Entite", "EntiteId");
+
+                    b.ToTable("JournalActivites", (string)null);
+                });
+
+            modelBuilder.Entity("Core.Entities.Magasin", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("DateCreation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<bool>("IsActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Nom")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("Magasins", (string)null);
                 });
 
             modelBuilder.Entity("Core.Entities.Marque", b =>
@@ -693,6 +1205,63 @@ namespace Infrastructure.Migrations
                     b.HasIndex("IdMarque");
 
                     b.ToTable("ModeleEquipements");
+                });
+
+            modelBuilder.Entity("Core.Entities.MouvementStock", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("IdBonCommande")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("IdDemandeIntervention")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdPiece")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Motif")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<decimal?>("PrixUnitaire")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("decimal(12,3)");
+
+                    b.Property<int>("Quantite")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StockApres")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int?>("UtilisateurId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Date");
+
+                    b.HasIndex("IdBonCommande");
+
+                    b.HasIndex("IdDemandeIntervention");
+
+                    b.HasIndex("UtilisateurId");
+
+                    b.HasIndex("IdPiece", "Date");
+
+                    b.ToTable("MouvementsStock", (string)null);
                 });
 
             modelBuilder.Entity("Core.Entities.Notification", b =>
@@ -784,6 +1353,23 @@ namespace Infrastructure.Migrations
                     b.ToTable("Pannes");
                 });
 
+            modelBuilder.Entity("Core.Entities.ParametreApplication", b =>
+                {
+                    b.Property<string>("Cle")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("DateModification")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Valeur")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Cle");
+
+                    b.ToTable("ParametresApplication", (string)null);
+                });
+
             modelBuilder.Entity("Core.Entities.Piece", b =>
                 {
                     b.Property<int>("IDPiece")
@@ -805,6 +1391,9 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime?>("DateModification")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("DelaiApproJours")
+                        .HasColumnType("int");
+
                     b.Property<string>("Description")
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
@@ -814,13 +1403,23 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int>("IDConstructeur")
+                    b.Property<string>("Emplacement")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("IDConstructeur")
                         .HasColumnType("int");
 
                     b.Property<int>("IDCriticitePiece")
                         .HasColumnType("int");
 
                     b.Property<int>("IDFamillePiece")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("IdFournisseur")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("IdMagasin")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsActif")
@@ -835,10 +1434,31 @@ namespace Infrastructure.Migrations
                     b.Property<int>("Quantite_Stock")
                         .HasColumnType("int");
 
+                    b.Property<string>("ReferenceFournisseur")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<int>("SeuilMinimum")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasDefaultValue(0);
+
+                    b.Property<int?>("StockMaximum")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TypeArticle")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasDefaultValue("Pièce de rechange");
+
+                    b.Property<string>("Unite")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("pièce");
 
                     b.HasKey("IDPiece");
 
@@ -851,7 +1471,170 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("IDFamillePiece");
 
+                    b.HasIndex("IdFournisseur");
+
+                    b.HasIndex("IdMagasin");
+
                     b.ToTable("Pieces");
+                });
+
+            modelBuilder.Entity("Core.Entities.PieceJointe", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AjouteParId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("DateAjout")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("Donnees")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("Entite")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int>("EntiteId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("NomFichier")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<long>("Taille")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Entite", "EntiteId");
+
+                    b.ToTable("PiecesJointes", (string)null);
+                });
+
+            modelBuilder.Entity("Core.Entities.PlanPreventif", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int?>("CreeParId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("DateCreation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime>("DateDebut")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DelaiGenerationJours")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(7);
+
+                    b.Property<DateTime?>("DerniereGeneration")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("DureeEstimeeMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Frequence")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<int>("IdEquipement")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("IdTechnicien")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("IdTypeIntervention")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Intervalle")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
+                    b.Property<bool>("IsActif")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime>("ProchaineEcheance")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Titre")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("IdEquipement");
+
+                    b.HasIndex("IdTechnicien");
+
+                    b.HasIndex("IdTypeIntervention");
+
+                    b.HasIndex("IsActif", "ProchaineEcheance");
+
+                    b.ToTable("PlansPreventifs", (string)null);
+                });
+
+            modelBuilder.Entity("Core.Entities.PlanPreventifTache", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("IdPlanPreventif")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Libelle")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int>("Ordre")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdPlanPreventif");
+
+                    b.ToTable("PlanPreventifTaches", (string)null);
                 });
 
             modelBuilder.Entity("Core.Entities.Role", b =>
@@ -1282,6 +2065,18 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("Specialite")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal?>("TauxHoraire")
+                        .HasPrecision(10, 3)
+                        .HasColumnType("decimal(10,3)");
+
+                    b.Property<string>("Telephone")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
                     b.HasKey("ID");
 
                     b.HasIndex("AppUserId")
@@ -1294,6 +2089,88 @@ namespace Infrastructure.Migrations
                     b.HasIndex("IDRole");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Core.Entities.BonCommande", b =>
+                {
+                    b.HasOne("Core.Entities.DemandeAchat", "DemandeAchat")
+                        .WithMany()
+                        .HasForeignKey("IdDemandeAchat")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Core.Entities.Fournisseur", "Fournisseur")
+                        .WithMany()
+                        .HasForeignKey("IdFournisseur")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DemandeAchat");
+
+                    b.Navigation("Fournisseur");
+                });
+
+            modelBuilder.Entity("Core.Entities.BonCommandeLigne", b =>
+                {
+                    b.HasOne("Core.Entities.BonCommande", "BonCommande")
+                        .WithMany("Lignes")
+                        .HasForeignKey("IdBonCommande")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Core.Entities.Piece", "Piece")
+                        .WithMany()
+                        .HasForeignKey("IdPiece")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("BonCommande");
+
+                    b.Navigation("Piece");
+                });
+
+            modelBuilder.Entity("Core.Entities.Budget", b =>
+                {
+                    b.HasOne("Core.Entities.ChaineProduction", "ChaineProduction")
+                        .WithMany()
+                        .HasForeignKey("IdChaineProduction")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ChaineProduction");
+                });
+
+            modelBuilder.Entity("Core.Entities.DemandeAchat", b =>
+                {
+                    b.HasOne("Core.Entities.DemandeIntervention", "DemandeIntervention")
+                        .WithMany()
+                        .HasForeignKey("IdDemandeIntervention")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Users", "Demandeur")
+                        .WithMany()
+                        .HasForeignKey("IdDemandeur")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DemandeIntervention");
+
+                    b.Navigation("Demandeur");
+                });
+
+            modelBuilder.Entity("Core.Entities.DemandeAchatLigne", b =>
+                {
+                    b.HasOne("Core.Entities.DemandeAchat", "DemandeAchat")
+                        .WithMany("Lignes")
+                        .HasForeignKey("IdDemandeAchat")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Core.Entities.Piece", "Piece")
+                        .WithMany()
+                        .HasForeignKey("IdPiece")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("DemandeAchat");
+
+                    b.Navigation("Piece");
                 });
 
             modelBuilder.Entity("Core.Entities.DemandeIntervention", b =>
@@ -1344,6 +2221,11 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Core.Entities.PlanPreventif", "PlanPreventif")
+                        .WithMany()
+                        .HasForeignKey("IdPlanPreventif")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Core.Entities.Status", "Status")
                         .WithMany("DemandeInterventions")
                         .HasForeignKey("StatusId")
@@ -1361,6 +2243,8 @@ namespace Infrastructure.Migrations
                     b.Navigation("Etat");
 
                     b.Navigation("Panne");
+
+                    b.Navigation("PlanPreventif");
 
                     b.Navigation("Status");
 
@@ -1391,6 +2275,11 @@ namespace Infrastructure.Migrations
                         .HasForeignKey("IdFamille")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("Core.Entities.Fournisseur", "Fournisseur")
+                        .WithMany()
+                        .HasForeignKey("IdFournisseur")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Core.Entities.GroupeEquipement", "Groupe")
                         .WithMany("Equipments")
                         .HasForeignKey("IdGroupe")
@@ -1409,9 +2298,60 @@ namespace Infrastructure.Migrations
 
                     b.Navigation("Famille");
 
+                    b.Navigation("Fournisseur");
+
                     b.Navigation("Groupe");
 
                     b.Navigation("Modele");
+                });
+
+            modelBuilder.Entity("Core.Entities.InterventionPiece", b =>
+                {
+                    b.HasOne("Core.Entities.DemandeIntervention", "DemandeIntervention")
+                        .WithMany("PiecesConsommees")
+                        .HasForeignKey("IdDemandeIntervention")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Core.Entities.Piece", "Piece")
+                        .WithMany()
+                        .HasForeignKey("IdPiece")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DemandeIntervention");
+
+                    b.Navigation("Piece");
+                });
+
+            modelBuilder.Entity("Core.Entities.InterventionTache", b =>
+                {
+                    b.HasOne("Core.Entities.DemandeIntervention", "DemandeIntervention")
+                        .WithMany("Taches")
+                        .HasForeignKey("IdDemandeIntervention")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DemandeIntervention");
+                });
+
+            modelBuilder.Entity("Core.Entities.InterventionTemps", b =>
+                {
+                    b.HasOne("Core.Entities.DemandeIntervention", "DemandeIntervention")
+                        .WithMany("Temps")
+                        .HasForeignKey("IdDemandeIntervention")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Users", "Technicien")
+                        .WithMany()
+                        .HasForeignKey("IdTechnicien")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DemandeIntervention");
+
+                    b.Navigation("Technicien");
                 });
 
             modelBuilder.Entity("Core.Entities.ModeleEquipement", b =>
@@ -1436,6 +2376,38 @@ namespace Infrastructure.Migrations
                     b.Navigation("Famille");
 
                     b.Navigation("Marque");
+                });
+
+            modelBuilder.Entity("Core.Entities.MouvementStock", b =>
+                {
+                    b.HasOne("Core.Entities.BonCommande", "BonCommande")
+                        .WithMany()
+                        .HasForeignKey("IdBonCommande")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Core.Entities.DemandeIntervention", "DemandeIntervention")
+                        .WithMany()
+                        .HasForeignKey("IdDemandeIntervention")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Core.Entities.Piece", "Piece")
+                        .WithMany()
+                        .HasForeignKey("IdPiece")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Users", "Utilisateur")
+                        .WithMany()
+                        .HasForeignKey("UtilisateurId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("BonCommande");
+
+                    b.Navigation("DemandeIntervention");
+
+                    b.Navigation("Piece");
+
+                    b.Navigation("Utilisateur");
                 });
 
             modelBuilder.Entity("Core.Entities.Notification", b =>
@@ -1468,8 +2440,7 @@ namespace Infrastructure.Migrations
                     b.HasOne("Core.Entities.Constructeur", "Constructeur")
                         .WithMany("Pieces")
                         .HasForeignKey("IDConstructeur")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Core.Entities.CriticitePiece", "CriticitePiece")
                         .WithMany("Pieces")
@@ -1483,11 +2454,61 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Core.Entities.Fournisseur", "Fournisseur")
+                        .WithMany()
+                        .HasForeignKey("IdFournisseur")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Core.Entities.Magasin", "Magasin")
+                        .WithMany()
+                        .HasForeignKey("IdMagasin")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Constructeur");
 
                     b.Navigation("CriticitePiece");
 
                     b.Navigation("FamillePiece");
+
+                    b.Navigation("Fournisseur");
+
+                    b.Navigation("Magasin");
+                });
+
+            modelBuilder.Entity("Core.Entities.PlanPreventif", b =>
+                {
+                    b.HasOne("Core.Entities.Equipment", "Equipement")
+                        .WithMany()
+                        .HasForeignKey("IdEquipement")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Users", "Technicien")
+                        .WithMany()
+                        .HasForeignKey("IdTechnicien")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Core.Entities.TypeIntervention", "TypeIntervention")
+                        .WithMany()
+                        .HasForeignKey("IdTypeIntervention")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Equipement");
+
+                    b.Navigation("Technicien");
+
+                    b.Navigation("TypeIntervention");
+                });
+
+            modelBuilder.Entity("Core.Entities.PlanPreventifTache", b =>
+                {
+                    b.HasOne("Core.Entities.PlanPreventif", "PlanPreventif")
+                        .WithMany("Taches")
+                        .HasForeignKey("IdPlanPreventif")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PlanPreventif");
                 });
 
             modelBuilder.Entity("Core.Entities.Stock", b =>
@@ -1586,6 +2607,11 @@ namespace Infrastructure.Migrations
                     b.Navigation("Role");
                 });
 
+            modelBuilder.Entity("Core.Entities.BonCommande", b =>
+                {
+                    b.Navigation("Lignes");
+                });
+
             modelBuilder.Entity("Core.Entities.Constructeur", b =>
                 {
                     b.Navigation("Pieces");
@@ -1594,6 +2620,20 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Core.Entities.CriticitePiece", b =>
                 {
                     b.Navigation("Pieces");
+                });
+
+            modelBuilder.Entity("Core.Entities.DemandeAchat", b =>
+                {
+                    b.Navigation("Lignes");
+                });
+
+            modelBuilder.Entity("Core.Entities.DemandeIntervention", b =>
+                {
+                    b.Navigation("PiecesConsommees");
+
+                    b.Navigation("Taches");
+
+                    b.Navigation("Temps");
                 });
 
             modelBuilder.Entity("Core.Entities.EquipmentCriticite", b =>
@@ -1633,6 +2673,11 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Core.Entities.ModeleEquipement", b =>
                 {
                     b.Navigation("Equipments");
+                });
+
+            modelBuilder.Entity("Core.Entities.PlanPreventif", b =>
+                {
+                    b.Navigation("Taches");
                 });
 
             modelBuilder.Entity("Core.Entities.Status", b =>

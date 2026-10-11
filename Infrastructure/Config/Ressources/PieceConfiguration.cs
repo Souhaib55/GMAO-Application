@@ -18,6 +18,20 @@ namespace Infrastructure.Config
             builder.Property(p => p.PrixUnitaire).HasPrecision(10, 2);
             builder.Property(p => p.DateCreation).HasDefaultValueSql("GETDATE()");
             builder.Property(p => p.IsActif).HasDefaultValue(true);
+            builder.Property(p => p.TypeArticle).IsRequired().HasMaxLength(30).HasDefaultValue("Pièce de rechange");
+            builder.Property(p => p.Unite).IsRequired().HasMaxLength(20).HasDefaultValue("pièce");
+            builder.Property(p => p.Emplacement).HasMaxLength(50);
+            builder.Property(p => p.ReferenceFournisseur).HasMaxLength(50);
+
+            builder.HasOne(p => p.Magasin)
+                   .WithMany()
+                   .HasForeignKey(p => p.IdMagasin)
+                   .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(p => p.Fournisseur)
+                   .WithMany()
+                   .HasForeignKey(p => p.IdFournisseur)
+                   .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(p => p.FamillePiece)
                    .WithMany(f => f.Pieces)

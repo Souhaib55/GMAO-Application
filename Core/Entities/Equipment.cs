@@ -19,6 +19,10 @@ namespace Core.Entities
         // Production line the machine is installed on
         public int? IdChaineProduction { get; set; }
         public ChaineProduction? ChaineProduction { get; set; }
+        // Exact place in the workshop and the usual maintenance supplier
+        public string? Emplacement { get; set; }
+        public int? IdFournisseur { get; set; }
+        public Fournisseur? Fournisseur { get; set; }
         public DateTime? DateInstallation { get; set; }
         public DateTime? DateMiseEnService { get; set; }
         public string? NumeroSerie { get; set; }

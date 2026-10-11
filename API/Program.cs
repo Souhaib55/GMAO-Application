@@ -29,6 +29,14 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddScoped<IJournalService, JournalService>();
+builder.Services.AddScoped<IStockService, StockService>();
+builder.Services.AddScoped<IPreventifService, PreventifService>();
+builder.Services.AddScoped<IExplorateurService, ExplorateurService>();
+builder.Services.AddHostedService<PreventifHostedService>();
+builder.Services.AddScoped<DemoDataSeeder>();
 
 // CORS: only needed when the Angular app is served from another origin (ng serve).
 // In production nginx serves the app and proxies /api, so requests are same-origin.
@@ -148,6 +156,14 @@ using (var scope = app.Services.CreateScope())
             {
                 await roleManager.CreateAsync(new IdentityRole(role));
             }
+        }
+
+        // Demo data, opt-in only: "--seed-demo" on the command line or DemoData:Seed=true
+        if (args.Contains("--seed-demo") || app.Configuration.GetValue<bool>("DemoData:Seed"))
+        {
+            var seeder = scope.ServiceProvider.GetRequiredService<DemoDataSeeder>();
+            var summary = await seeder.SeedAsync();
+            scope.ServiceProvider.GetRequiredService<ILogger<Program>>().LogInformation("{Summary}", summary);
         }
     }
     catch (Exception ex)
