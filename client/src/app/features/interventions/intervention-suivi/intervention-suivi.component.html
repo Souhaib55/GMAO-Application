@@ -1,0 +1,183 @@
+<section class="suivi" [class.compact]="compact">
+  <header class="suivi-head">
+    <div>
+      <h3>Suivi des travaux</h3>
+      <p *ngIf="suivi?.plan">Généré par le plan préventif <b>{{ suivi?.plan?.code }}</b> — {{ suivi?.plan?.titre }}</p>
+      <p *ngIf="!suivi?.plan">Temps passé, pièces, contrôles et analyse de la panne.</p>
+    </div>
+    <span class="gm-tag t-neutral" *ngIf="suivi && !suivi.peutSaisir"><app-icon name="eye"></app-icon> Lecture seule</span>
+  </header>
+
+  <div class="gm-loading" *ngIf="loading"><span class="spinner"></span></div>
+  <div class="gm-error-box" *ngIf="error"><app-icon name="alert"></app-icon>{{ error }}</div>
+
+  <ng-container *ngIf="suivi as s">
+    <!-- Cost -->
+    <div class="cost">
+      <div><span class="k">Main-d'œuvre</span><b class="num">{{ s.cout.mainOeuvre | number:'1.0-0':'fr' }} DT</b><small>{{ s.cout.heures | number:'1.0-1':'fr' }} h</small></div>
+      <div><span class="k">Pièces</span><b class="num">{{ s.cout.pieces | number:'1.0-0':'fr' }} DT</b><small>{{ s.pieces.length }} ligne{{ s.pieces.length > 1 ? 's' : '' }}</small></div>
+      <div><span class="k">Externe</span><b class="num">{{ s.cout.externe | number:'1.0-0':'fr' }} DT</b><small>Sous-traitance</small></div>
+      <div class="total"><span class="k">Coût total</span><b class="num">{{ s.cout.total | number:'1.0-0':'fr' }} DT</b><small *ngIf="s.dureeEstimeeMinutes">Prévu : {{ fmtMinutes(s.dureeEstimeeMinutes) }}</small></div>
+    </div>
+
+    <!-- Checklist -->
+    <div class="block" *ngIf="s.taches.length || s.peutSaisir">
+      <div class="block-head">
+        <h4><app-icon name="check"></app-icon> Contrôles et étapes</h4>
+        <span class="muted small" *ngIf="s.taches.length">{{ tachesFaites }} / {{ s.taches.length }}</span>
+      </div>
+      <div class="gm-progress ok" *ngIf="s.taches.length"><span [style.width.%]="(tachesFaites / s.taches.length) * 100"></span></div>
+      <ul class="checklist">
+        <li *ngFor="let t of s.taches" [class.done]="t.fait">
+          <button type="button" class="check" [disabled]="!s.peutSaisir" (click)="toggleTache(t)" [attr.aria-pressed]="t.fait" [attr.aria-label]="t.libelle">
+            <app-icon name="check" *ngIf="t.fait"></app-icon>
+          </button>
+          <span class="lib">{{ t.libelle }}</span>
+          <small class="muted" *ngIf="t.fait && t.dateFait">{{ fmtDateTime(t.dateFait) }}</small>
+          <button type="button" class="gm-icon-btn danger" *ngIf="s.peutSaisir" (click)="deleteTache(t.id)" title="Supprimer l'étape"><app-icon name="trash"></app-icon></button>
+        </li>
+      </ul>
+      <div class="add-line" *ngIf="s.peutSaisir">
+        <input [(ngModel)]="newTache" placeholder="Ajouter une étape…" maxlength="255" (keydown.enter)="addTache()">
+        <button type="button" class="btn btn-secondary btn-sm" (click)="addTache()" [disabled]="!newTache.trim() || busy"><app-icon name="plus"></app-icon></button>
+      </div>
+    </div>
+
+    <!-- Time -->
+    <div class="block">
+      <div class="block-head">
+        <h4><app-icon name="clock"></app-icon> Temps passé</h4>
+        <button type="button" class="btn btn-secondary btn-sm" *ngIf="s.peutSaisir && !tempsOpen" (click)="openTemps()"><app-icon name="plus"></app-icon> Saisir</button>
+      </div>
+      <div class="entry-form" *ngIf="tempsOpen">
+        <div class="gm-form">
+          <div class="gm-field" *ngIf="isSuperviseur && techniciens.length">
+            <label>Technicien</label>
+            <select [(ngModel)]="tempsForm.idTechnicien">
+              <option [ngValue]="null">Technicien affecté</option>
+              <option *ngFor="let t of techniciens" [ngValue]="t.id">{{ t.prenom }} {{ t.nom }}</option>
+            </select>
+          </div>
+          <div class="gm-field"><label>Début</label><input type="datetime-local" [(ngModel)]="tempsForm.debut"></div>
+          <div class="gm-field"><label>Durée (minutes)</label><input type="number" min="5" max="1440" step="5" [(ngModel)]="tempsForm.dureeMinutes"></div>
+          <div class="gm-field full"><label>Commentaire</label><input maxlength="500" [(ngModel)]="tempsForm.commentaire" placeholder="Facultatif"></div>
+        </div>
+        <div class="entry-actions">
+          <button type="button" class="btn btn-secondary btn-sm" (click)="tempsOpen = false">Annuler</button>
+          <button type="button" class="btn btn-primary btn-sm" (click)="saveTemps()" [disabled]="busy">Enregistrer</button>
+        </div>
+      </div>
+      <div class="rows" *ngIf="s.temps.length; else noTime">
+        <div class="row" *ngFor="let t of s.temps">
+          <span class="who"><b>{{ t.technicien }}</b><small>{{ fmtDateTime(t.debut) }}<ng-container *ngIf="t.commentaire"> · {{ t.commentaire }}</ng-container></small></span>
+          <span class="num strong">{{ fmtMinutes(t.dureeMinutes) }}</span>
+          <button type="button" class="gm-icon-btn danger" *ngIf="s.peutSaisir" (click)="deleteTemps(t.id)" title="Supprimer"><app-icon name="trash"></app-icon></button>
+        </div>
+      </div>
+      <ng-template #noTime><p class="empty">Aucun temps saisi.</p></ng-template>
+    </div>
+
+    <!-- Parts -->
+    <div class="block">
+      <div class="block-head">
+        <h4><app-icon name="stock"></app-icon> Pièces consommées</h4>
+        <button type="button" class="btn btn-secondary btn-sm" *ngIf="s.peutSaisir && !pieceOpen" (click)="pieceOpen = true"><app-icon name="plus"></app-icon> Sortir du magasin</button>
+      </div>
+      <div class="entry-form" *ngIf="pieceOpen">
+        <div class="gm-form">
+          <div class="gm-field full picker">
+            <label>Article</label>
+            <input [(ngModel)]="pieceSearch" (input)="onPieceSearch()" placeholder="Rechercher par code ou désignation…" autocomplete="off">
+            <div class="picker-list" *ngIf="pieceResults.length && !pieceChoice">
+              <button type="button" *ngFor="let a of pieceResults" (click)="choosePiece(a)" [disabled]="a.quantite_Stock <= 0">
+                <span><b>{{ a.designation }}</b><small>{{ a.codePiece }} · {{ a.emplacement || a.magasin || '' }}</small></span>
+                <span class="stock" [class.zero]="a.quantite_Stock <= 0">{{ a.quantite_Stock }} {{ a.unite }}</span>
+              </button>
+            </div>
+          </div>
+          <div class="gm-field"><label>Quantité{{ pieceChoice ? ' (' + pieceChoice.unite + ')' : '' }}</label><input type="number" min="1" [max]="pieceChoice?.quantite_Stock || 9999" [(ngModel)]="pieceQte"></div>
+          <div class="gm-field" *ngIf="pieceChoice"><label>Disponible</label><div class="avail num">{{ pieceChoice.quantite_Stock }} {{ pieceChoice.unite }}</div></div>
+        </div>
+        <div class="entry-actions">
+          <button type="button" class="btn btn-secondary btn-sm" (click)="pieceOpen = false">Annuler</button>
+          <button type="button" class="btn btn-primary btn-sm" (click)="savePiece()" [disabled]="busy || !pieceChoice">Valider la sortie</button>
+        </div>
+      </div>
+      <div class="rows" *ngIf="s.pieces.length; else noPart">
+        <div class="row" *ngFor="let p of s.pieces">
+          <span class="who"><b>{{ p.designation }}</b><small>{{ p.codePiece }} · {{ fmtDate(p.date) }}</small></span>
+          <span class="num">{{ p.quantite }} {{ p.unite }}</span>
+          <span class="num strong">{{ p.montant | number:'1.0-0':'fr' }} DT</span>
+          <button type="button" class="gm-icon-btn danger" *ngIf="s.peutSaisir" (click)="deletePiece(p.id)" title="Retourner au magasin"><app-icon name="trash"></app-icon></button>
+        </div>
+      </div>
+      <ng-template #noPart><p class="empty">Aucune pièce sortie du magasin.</p></ng-template>
+    </div>
+
+    <!-- Analysis -->
+    <div class="block">
+      <div class="block-head"><h4><app-icon name="info"></app-icon> Analyse de la panne</h4></div>
+      <div class="gm-form">
+        <div class="gm-field full">
+          <label>Cause identifiée</label>
+          <input maxlength="500" [(ngModel)]="analyse.cause" (ngModelChange)="analyseDirty = true" [disabled]="!s.peutSaisir" placeholder="Ex. ressort de tension usé">
+        </div>
+        <div class="gm-field full">
+          <label>Remède appliqué</label>
+          <input maxlength="500" [(ngModel)]="analyse.remede" (ngModelChange)="analyseDirty = true" [disabled]="!s.peutSaisir" placeholder="Ex. remplacement du ressort et réglage">
+        </div>
+        <div class="gm-field">
+          <label>Coût externe (DT)</label>
+          <input type="number" min="0" step="0.001" [(ngModel)]="analyse.coutExterne" (ngModelChange)="analyseDirty = true" [disabled]="!s.peutSaisir">
+        </div>
+        <ng-container *ngIf="s.peutPlanifier">
+          <div class="gm-field">
+            <label>Date planifiée</label>
+            <input type="date" [(ngModel)]="analyse.datePlanifiee" (ngModelChange)="analyseDirty = true">
+          </div>
+          <div class="gm-field">
+            <label>Durée estimée (minutes)</label>
+            <input type="number" min="0" step="15" [(ngModel)]="analyse.dureeEstimeeMinutes" (ngModelChange)="analyseDirty = true">
+          </div>
+        </ng-container>
+      </div>
+      <div class="entry-actions" *ngIf="s.peutSaisir && analyseDirty">
+        <button type="button" class="btn btn-primary btn-sm" (click)="saveAnalyse()" [disabled]="busy">Enregistrer l'analyse</button>
+      </div>
+    </div>
+
+    <!-- Documents -->
+    <div class="block">
+      <div class="block-head">
+        <h4><app-icon name="file"></app-icon> Documents et photos</h4>
+        <label class="btn btn-secondary btn-sm upload" *ngIf="peutAjouterFichier">
+          <app-icon name="upload"></app-icon> {{ uploading ? 'Envoi…' : 'Ajouter' }}
+          <input type="file" (change)="onFile($event)" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip" capture="environment" hidden>
+        </label>
+      </div>
+      <div class="files" *ngIf="fichiers.length; else noFile">
+        <div class="file" *ngFor="let f of fichiers">
+          <app-icon [name]="fileIcon(f)"></app-icon>
+          <button type="button" class="link" (click)="download(f)">{{ f.nomFichier }}</button>
+          <small class="muted">{{ size(f.taille) }} · {{ fmtDate(f.dateAjout) }}</small>
+          <button type="button" class="gm-icon-btn danger" *ngIf="peutAjouterFichier" (click)="deleteFichier(f)" title="Supprimer"><app-icon name="trash"></app-icon></button>
+        </div>
+      </div>
+      <ng-template #noFile><p class="empty">Aucun document. Sur tablette ou téléphone, « Ajouter » ouvre l'appareil photo.</p></ng-template>
+    </div>
+
+    <!-- History -->
+    <details class="block history" *ngIf="s.journal.length">
+      <summary><app-icon name="history"></app-icon> Historique ({{ s.journal.length }})</summary>
+      <ol>
+        <li *ngFor="let j of s.journal">
+          <span class="when">{{ fmtDateTime(j.date) }}</span>
+          <span><b>{{ j.action }}</b><ng-container *ngIf="j.details"> — {{ j.details }}</ng-container></span>
+          <span class="muted">{{ j.utilisateurNom }}</span>
+        </li>
+      </ol>
+    </details>
+  </ng-container>
+
+  <div class="flash" *ngIf="message" [class.error]="messageError"><app-icon [name]="messageError ? 'alert' : 'check'"></app-icon>{{ message }}</div>
+</section>

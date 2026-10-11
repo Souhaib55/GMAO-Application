@@ -34,8 +34,10 @@ namespace API.Controllers
             _journal = journal;
         }
 
+        // An article without a reorder point is not stock-managed: an empty shelf is not an alert
         public static string NiveauStock(int quantite, int seuil) =>
-            quantite <= 0 ? "Rupture" : quantite <= seuil ? "Sous le seuil" : "Disponible";
+            seuil <= 0 ? (quantite > 0 ? "Disponible" : "Non suivi")
+            : quantite <= 0 ? "Rupture" : quantite <= seuil ? "Sous le seuil" : "Disponible";
 
         // ------------------------------------------------------------------
         // Articles
@@ -63,15 +65,15 @@ namespace API.Controllers
             if (familleId.HasValue) query = query.Where(p => p.IDFamillePiece == familleId);
             query = niveau switch
             {
-                "rupture" => query.Where(p => p.Quantite_Stock <= 0),
-                "alerte" => query.Where(p => p.Quantite_Stock <= p.SeuilMinimum),
+                "rupture" => query.Where(p => p.SeuilMinimum > 0 && p.Quantite_Stock <= 0),
+                "alerte" => query.Where(p => p.SeuilMinimum > 0 && p.Quantite_Stock <= p.SeuilMinimum),
                 "disponible" => query.Where(p => p.Quantite_Stock > p.SeuilMinimum),
                 _ => query
             };
 
             var total = await query.CountAsync();
             var rows = await query
-                .OrderBy(p => p.Quantite_Stock <= p.SeuilMinimum ? 0 : 1).ThenBy(p => p.Designation)
+                .OrderBy(p => p.SeuilMinimum > 0 && p.Quantite_Stock <= p.SeuilMinimum ? 0 : 1).ThenBy(p => p.Designation)
                 .Skip((page - 1) * pageSize).Take(pageSize)
                 .Select(p => new
                 {
@@ -378,7 +380,7 @@ namespace API.Controllers
 
             var valeur = await actifs.SumAsync(p => (decimal?)(p.Quantite_Stock * p.PrixUnitaire)) ?? 0;
             var articles = await actifs.CountAsync();
-            var ruptures = await actifs.CountAsync(p => p.Quantite_Stock <= 0);
+            var ruptures = await actifs.CountAsync(p => p.SeuilMinimum > 0 && p.Quantite_Stock <= 0);
             var sousSeuil = await actifs.CountAsync(p => p.Quantite_Stock > 0 && p.Quantite_Stock <= p.SeuilMinimum);
             var mouvements30 = _context.MouvementsStock.AsNoTracking().Where(m => m.Date >= depuis);
             var entrees = await mouvements30.Where(m => m.Quantite > 0 && m.Type != MouvementStock.TypeInventaireInitial)

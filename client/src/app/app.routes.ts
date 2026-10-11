@@ -6,7 +6,6 @@ import { ForgotPasswordComponent } from './features/auth/forgot-password/forgot-
 import { ResetPasswordComponent } from './features/auth/reset-password/reset-password.component';
 import { LayoutComponent } from './shared/layout/layout.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
-import { ChatComponent } from './features/chat/chat.component';
 import { InterventionsComponent } from './features/interventions/interventions.component';
 import { InterventionFormComponent } from './features/interventions/intervention-form/intervention-form.component';
 import { EquipmentComponent } from './features/equipment/equipment.component';
@@ -20,6 +19,8 @@ import { SettingsComponent } from './features/settings/settings.component';
 import { UserManagementComponent } from './features/settings/user-management/user-management.component';
 import { ReferencesComponent } from './features/settings/references/references.component';
 import { RapportsComponent } from './features/rapports/rapports.component';
+import { PreventifComponent } from './features/preventif/preventif.component';
+import { MagasinComponent } from './features/magasin/magasin.component';
 
 export const routes: Routes = [
   {
@@ -49,10 +50,22 @@ export const routes: Routes = [
         component: DashboardComponent
       },
       {
+        // "Assistant GMAO" was replaced by the Explorateur de données
         path: 'chat',
-        component: ChatComponent,
+        redirectTo: 'explorateur',
+        pathMatch: 'full'
+      },
+      {
+        path: 'magasin',
+        component: MagasinComponent,
         canActivate: [roleGuard],
-        data: { role: 'Superviseur' }
+        data: { role: ['Superviseur', 'Utilisateur'] }
+      },
+      {
+        path: 'preventif',
+        component: PreventifComponent,
+        canActivate: [roleGuard],
+        data: { role: ['Superviseur', 'Utilisateur'] }
       },
       {
         path: 'planning',

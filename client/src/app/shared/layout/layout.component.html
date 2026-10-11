@@ -74,6 +74,28 @@
       </div>
 
       <div class="navbar-right">
+        <!-- Global search: screens, work orders, machines, store articles -->
+        <div class="global-search" [class.open]="searchOpen && searchTerm.trim().length >= 2" (click)="$event.stopPropagation()">
+          <app-icon name="search" class="gs-icon"></app-icon>
+          <input id="gm-global-search" type="search" autocomplete="off" [(ngModel)]="searchTerm"
+                 placeholder="Rechercher un OT, une machine, un article…" aria-label="Recherche globale"
+                 (input)="onSearchInput()" (focus)="searchOpen = true" (keydown)="onSearchKey($event)">
+          <kbd class="hide-mobile">Ctrl K</kbd>
+          <div class="gs-panel" *ngIf="searchOpen && searchTerm.trim().length >= 2">
+            <div class="gs-state" *ngIf="searchLoading && !searchHits.length"><span class="spinner"></span> Recherche…</div>
+            <div class="gs-state" *ngIf="!searchLoading && !searchHits.length">Aucun résultat pour « {{ searchTerm.trim() }} »</div>
+            <div class="gs-group" *ngFor="let g of hitGroups()">
+              <div class="gs-group-label">{{ g }}</div>
+              <button type="button" class="gs-hit" *ngFor="let h of hitsOf(g)" [class.active]="hitPosition(h) === searchIndex"
+                      (mouseenter)="searchIndex = hitPosition(h)" (click)="openHit(h)">
+                <span class="gs-hit-icon"><app-icon [name]="h.icon"></app-icon></span>
+                <span class="gs-hit-text"><b>{{ h.label }}</b><small *ngIf="h.sub">{{ h.sub }}</small></span>
+                <app-icon name="arrow-right" class="gs-go"></app-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <span class="today hide-mobile">{{ today | date:'EEEE d MMMM':'':'fr' }}</span>
 
         <!-- Notifications - Superviseur and Utilisateur only -->

@@ -10,6 +10,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { EquipmentService } from '../../equipment/services/equipment.service';
 import { DemandeIntervention, EquipementSummary, InterventionDto } from '../../../core/models';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { InterventionSuiviComponent } from '../intervention-suivi/intervention-suivi.component';
 
 /** Statuses of the maintenance workflow (server-side ids). */
 const STATUS = { A_TRAITER: 1, EN_COURS: 2, REALISEE: 3, CLOTUREE: 4, ANNULEE: 5 };
@@ -17,7 +18,7 @@ const STATUS = { A_TRAITER: 1, EN_COURS: 2, REALISEE: 3, CLOTUREE: 4, ANNULEE: 5
 @Component({
   selector: 'app-intervention-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, InterventionSuiviComponent],
   template: `
     <div class="form-container" [class.view-mode]="isViewMode">
       <app-page-header icon="interventions" [title]="formTitle" [subtitle]="formSubtitle">
@@ -60,6 +61,10 @@ const STATUS = { A_TRAITER: 1, EN_COURS: 2, REALISEE: 3, CLOTUREE: 4, ANNULEE: 5
         <div class="fact">
           <span class="fact-label">Technicien</span>
           <span class="fact-value">{{ intervention.destinataire ? intervention.destinataire.prenom + ' ' + intervention.destinataire.nom : 'Non affecté' }}</span>
+        </div>
+        <div class="fact" *ngIf="$any(intervention).datePlanifiee">
+          <span class="fact-label">Planifiée le</span>
+          <span class="fact-value">{{ $any(intervention).datePlanifiee | date:'dd/MM/yyyy' }}<ng-container *ngIf="$any(intervention).planPreventif"> · {{ $any(intervention).planPreventif.code }}</ng-container></span>
         </div>
         <div class="fact">
           <span class="fact-label">Arrêt machine</span>
@@ -206,14 +211,21 @@ const STATUS = { A_TRAITER: 1, EN_COURS: 2, REALISEE: 3, CLOTUREE: 4, ANNULEE: 5
           </button>
         </div>
       </form>
+
+      <!-- Execution record: time, parts, checklist, analysis, cost, documents -->
+      <app-intervention-suivi class="suivi-block" *ngIf="intervention?.idDemandeIntervention"
+                              [interventionId]="intervention!.idDemandeIntervention" [version]="intervention?.statusId"></app-intervention-suivi>
     </div>
   `,
   styles: [`
     .header-actions { display: flex; gap: 12px; align-items: center; }
 
+    .suivi-block { display: block; margin-top: 16px; }
+    @media print { .suivi-block { break-before: page; } }
+
     .facts-card {
       display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 0;
       margin-bottom: 16px;
       background: var(--surface);

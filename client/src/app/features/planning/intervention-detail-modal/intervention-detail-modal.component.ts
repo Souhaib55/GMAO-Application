@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { InterventionSuiviComponent } from '../../interventions/intervention-suivi/intervention-suivi.component';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { DemandeIntervention } from '../../../core/models';
@@ -30,7 +31,7 @@ interface Step {
 @Component({
   selector: 'app-intervention-detail-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, InterventionSuiviComponent],
   template: `
     <div class="overlay" (click)="close()">
       <aside class="panel" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
@@ -133,6 +134,11 @@ interface Step {
           </section>
 
           <!-- Details -->
+          <!-- Work record, where the technician already is -->
+          <section class="block suivi-wrap" *ngIf="status !== STATUS.A_TRAITER && status !== STATUS.ANNULEE">
+            <app-intervention-suivi [compact]="true" [interventionId]="intervention.idDemandeIntervention" [version]="status"></app-intervention-suivi>
+          </section>
+
           <section class="block">
             <h3>Détails</h3>
             <dl class="details">

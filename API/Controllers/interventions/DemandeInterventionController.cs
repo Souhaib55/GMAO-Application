@@ -164,7 +164,11 @@ namespace API.Controllers
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var term = search.Trim().ToLower();
+                // A reference typed as "INT-0042" or "42" finds the work order itself
+                var reference = System.Text.RegularExpressions.Regex.Match(term, @"^(?:int-?)?0*(\d{1,7})$");
+                int? searchId = reference.Success ? int.Parse(reference.Groups[1].Value) : null;
                 query = query.Where(d =>
+                    (searchId != null && d.IdDemandeIntervention == searchId) ||
                     d.Titre.ToLower().Contains(term) ||
                     (d.Description != null && d.Description.ToLower().Contains(term)) ||
                     (d.Equipement != null && (d.Equipement.CodeEquipement.ToLower().Contains(term) || d.Equipement.Designation.ToLower().Contains(term))) ||

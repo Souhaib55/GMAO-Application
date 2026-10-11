@@ -1,0 +1,402 @@
+<div class="gm-page">
+  <app-page-header icon="stock" title="Magasin" subtitle="Pièces de rechange, consommables et outillage : stock en temps réel, mouvements et réapprovisionnement.">
+    <button class="btn btn-primary" *ngIf="isSuperviseur" (click)="openCreate()"><app-icon name="plus"></app-icon> Nouvel article</button>
+  </app-page-header>
+
+  <div class="gm-kpis" *ngIf="synthese">
+    <div class="gm-kpi">
+      <div class="kpi-top"><span class="kpi-label">Valeur du stock</span><span class="kpi-icon t-info"><app-icon name="coins"></app-icon></span></div>
+      <div class="kpi-value">{{ synthese.valeur | number:'1.0-0':'fr' }}<small>DT</small></div>
+      <div class="kpi-foot"><span class="kpi-hint">{{ synthese.articles }} articles actifs</span></div>
+    </div>
+    <button class="gm-kpi clickable" (click)="setTab('articles'); setNiveau('rupture')">
+      <div class="kpi-top"><span class="kpi-label">En rupture</span><span class="kpi-icon" [ngClass]="synthese.ruptures ? 't-bad' : 't-ok'"><app-icon name="alert"></app-icon></span></div>
+      <div class="kpi-value">{{ synthese.ruptures }}</div>
+      <div class="kpi-foot"><span class="kpi-hint">Articles à zéro</span></div>
+    </button>
+    <button class="gm-kpi clickable" (click)="setTab('reappro')">
+      <div class="kpi-top"><span class="kpi-label">Sous le seuil</span><span class="kpi-icon" [ngClass]="synthese.sousSeuil ? 't-warn' : 't-ok'"><app-icon name="truck"></app-icon></span></div>
+      <div class="kpi-value">{{ synthese.sousSeuil }}</div>
+      <div class="kpi-foot"><span class="kpi-hint">À réapprovisionner</span></div>
+    </button>
+    <div class="gm-kpi">
+      <div class="kpi-top"><span class="kpi-label">Sorties sur 30 jours</span><span class="kpi-icon t-info"><app-icon name="move"></app-icon></span></div>
+      <div class="kpi-value">{{ synthese.sorties30 | number:'1.0-0':'fr' }}<small>DT</small></div>
+      <div class="kpi-foot"><span class="kpi-hint">Entrées : {{ synthese.entrees30 | number:'1.0-0':'fr' }} DT</span></div>
+    </div>
+    <div class="gm-kpi">
+      <div class="kpi-top"><span class="kpi-label">Stock dormant</span><span class="kpi-icon t-neutral"><app-icon name="clock"></app-icon></span></div>
+      <div class="kpi-value">{{ synthese.valeurDormante | number:'1.0-0':'fr' }}<small>DT</small></div>
+      <div class="kpi-foot"><span class="kpi-hint">Aucune sortie depuis 12 mois</span></div>
+    </div>
+  </div>
+
+  <div class="gm-tabs">
+    <button [class.on]="tab === 'articles'" (click)="setTab('articles')"><app-icon name="stock"></app-icon> Articles <span class="count">{{ total }}</span></button>
+    <button [class.on]="tab === 'mouvements'" (click)="setTab('mouvements')"><app-icon name="move"></app-icon> Mouvements</button>
+    <button [class.on]="tab === 'reappro'" (click)="setTab('reappro')"><app-icon name="truck"></app-icon> Réapprovisionnement <span class="count" *ngIf="synthese">{{ synthese.ruptures + synthese.sousSeuil }}</span></button>
+    <button *ngIf="isSuperviseur" [class.on]="tab === 'magasins'" (click)="setTab('magasins')"><app-icon name="warehouse"></app-icon> Magasins</button>
+  </div>
+
+  <!-- ============================================================ Articles -->
+  <ng-container *ngIf="tab === 'articles'">
+    <div class="gm-filters">
+      <span class="gm-search"><app-icon name="search"></app-icon>
+        <input type="search" placeholder="Code, désignation, emplacement…" [(ngModel)]="search" (keyup.enter)="loadArticles()" (search)="loadArticles()">
+      </span>
+      <select [(ngModel)]="type" (ngModelChange)="loadArticles()" aria-label="Type">
+        <option value="">Tous les types</option>
+        <option *ngFor="let t of refs?.types" [value]="t">{{ t }}</option>
+      </select>
+      <select [(ngModel)]="magasinId" (ngModelChange)="loadArticles()" aria-label="Magasin">
+        <option [ngValue]="null">Tous les magasins</option>
+        <option *ngFor="let m of refs?.magasins" [ngValue]="m.id">{{ m.libelle }}</option>
+      </select>
+      <div class="gm-seg">
+        <button [class.on]="niveau === ''" (click)="setNiveau('')">Tous</button>
+        <button [class.on]="niveau === 'alerte'" (click)="setNiveau('alerte')">À surveiller</button>
+        <button [class.on]="niveau === 'rupture'" (click)="setNiveau('rupture')">En rupture</button>
+      </div>
+      <span class="spacer"></span>
+      <button class="btn btn-secondary btn-sm" (click)="exportArticles()"><app-icon name="download"></app-icon> Exporter</button>
+    </div>
+
+    <div class="gm-card">
+      <div class="gm-loading" *ngIf="loading"><span class="spinner"></span> Chargement des articles…</div>
+      <div class="gm-error-box" *ngIf="error && !loading"><app-icon name="alert"></app-icon>{{ error }}</div>
+      <div class="gm-empty" *ngIf="!loading && !error && !articles.length"><app-icon name="stock"></app-icon><strong>Aucun article</strong><span>Modifiez les filtres ou créez un article.</span></div>
+
+      <div class="gm-table-wrap" *ngIf="!loading && articles.length">
+        <table class="gm-table responsive">
+          <thead><tr><th>Article</th><th>Emplacement</th><th>Stock</th><th class="right">Prix unitaire</th><th class="right">Valeur</th><th>Fournisseur</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let a of articles" class="clickable" (click)="openDetail(a.idPiece)">
+              <td class="primary" data-label="Article">
+                <span class="title">{{ a.designation }}</span>
+                <span class="sub"><span class="gm-code">{{ a.codePiece }}</span> · {{ a.typeArticle }} · {{ a.famille }}</span>
+              </td>
+              <td data-label="Emplacement"><span class="title">{{ a.emplacement || '—' }}</span><span class="sub">{{ a.magasin || 'Magasin non défini' }}</span></td>
+              <td data-label="Stock">
+                <div class="stock-cell">
+                  <div class="stock-line"><b class="num">{{ a.quantite_Stock }}</b> <span class="muted">{{ a.unite }}</span><span class="gm-tag" [ngClass]="niveauTone(a.niveau)">{{ a.niveau }}</span></div>
+                  <div class="gm-progress" [ngClass]="fillClass(a.niveau)"><span [style.width.%]="fill(a)"></span></div>
+                  <span class="sub">Seuil {{ a.seuilMinimum }}<ng-container *ngIf="a.stockMaximum"> · max {{ a.stockMaximum }}</ng-container></span>
+                </div>
+              </td>
+              <td class="right num" data-label="Prix unitaire">{{ a.prixUnitaire | number:'1.3-3':'fr' }} DT</td>
+              <td class="right num" data-label="Valeur">{{ a.valeur | number:'1.0-0':'fr' }} DT</td>
+              <td data-label="Fournisseur">{{ a.fournisseur || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="gm-pager" *ngIf="!loading && total > pageSize">
+        <span>{{ (page - 1) * pageSize + 1 }}–{{ page * pageSize > total ? total : page * pageSize }} sur {{ total }}</span>
+        <div class="pages">
+          <button class="gm-icon-btn" [disabled]="page === 1" (click)="loadArticles(page - 1)"><app-icon name="chevron-left"></app-icon></button>
+          <button class="gm-icon-btn" [disabled]="page >= pages" (click)="loadArticles(page + 1)"><app-icon name="chevron-right"></app-icon></button>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ============================================================ Movements -->
+  <ng-container *ngIf="tab === 'mouvements'">
+    <div class="gm-filters">
+      <span class="gm-search"><app-icon name="search"></app-icon>
+        <input type="search" placeholder="Article, motif…" [(ngModel)]="mvSearch" (keyup.enter)="loadMouvements()" (search)="loadMouvements()">
+      </span>
+      <select [(ngModel)]="mvType" (ngModelChange)="loadMouvements()" aria-label="Type">
+        <option value="">Tous les mouvements</option>
+        <option value="Entrée">Entrées</option>
+        <option value="Sortie">Sorties</option>
+        <option value="Ajustement">Ajustements</option>
+        <option value="Inventaire initial">Inventaires initiaux</option>
+      </select>
+      <input type="date" [(ngModel)]="mvFrom" (change)="loadMouvements()" aria-label="Du">
+      <input type="date" [(ngModel)]="mvTo" (change)="loadMouvements()" aria-label="Au">
+      <span class="spacer"></span>
+      <button class="btn btn-secondary btn-sm" (click)="exportMouvements()"><app-icon name="download"></app-icon> Exporter</button>
+    </div>
+    <div class="gm-card">
+      <div class="gm-loading" *ngIf="mvLoading"><span class="spinner"></span></div>
+      <div class="gm-empty" *ngIf="!mvLoading && !mouvements.length"><app-icon name="move"></app-icon><strong>Aucun mouvement sur la période</strong></div>
+      <div class="gm-table-wrap" *ngIf="!mvLoading && mouvements.length">
+        <table class="gm-table responsive">
+          <thead><tr><th>Date</th><th>Article</th><th>Mouvement</th><th class="right">Quantité</th><th class="right">Stock après</th><th>Origine</th><th>Par</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let m of mouvements" class="clickable" (click)="openDetail(m.idPiece!)">
+              <td data-label="Date" class="nowrap">{{ fmtDateTime(m.date) }}</td>
+              <td class="primary" data-label="Article"><span class="title">{{ m.designation }}</span><span class="sub gm-code">{{ m.code }}</span></td>
+              <td data-label="Mouvement"><span class="gm-tag" [ngClass]="mvTone(m)">{{ m.type }}</span></td>
+              <td class="right num" data-label="Quantité" [class.pos]="m.quantite > 0" [class.neg]="m.quantite < 0">{{ m.quantite > 0 ? '+' : '' }}{{ m.quantite }} {{ m.unite }}</td>
+              <td class="right num" data-label="Stock après">{{ m.stockApres }}</td>
+              <td data-label="Origine">
+                <a *ngIf="m.idDemandeIntervention" [routerLink]="['/interventions/view', m.idDemandeIntervention]" (click)="$event.stopPropagation()">{{ otCode(m.idDemandeIntervention) }}</a>
+                <span *ngIf="m.bonCommande">{{ m.bonCommande }}</span>
+                <span class="sub">{{ m.motif }}</span>
+              </td>
+              <td data-label="Par">{{ m.utilisateur || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="gm-pager" *ngIf="!mvLoading && mvTotal > 50">
+        <span>{{ (mvPage - 1) * 50 + 1 }}–{{ mvPage * 50 > mvTotal ? mvTotal : mvPage * 50 }} sur {{ mvTotal }}</span>
+        <div class="pages">
+          <button class="gm-icon-btn" [disabled]="mvPage === 1" (click)="loadMouvements(mvPage - 1)"><app-icon name="chevron-left"></app-icon></button>
+          <button class="gm-icon-btn" [disabled]="mvPage >= mvPages" (click)="loadMouvements(mvPage + 1)"><app-icon name="chevron-right"></app-icon></button>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ============================================================ Replenishment -->
+  <ng-container *ngIf="tab === 'reappro'">
+    <div class="gm-note"><app-icon name="info"></app-icon>
+      <span>Articles en rupture ou sous leur seuil. La quantité proposée ramène le stock au maximum, déduction faite des quantités déjà commandées.
+        <ng-container *ngIf="isSuperviseur"> Sélectionnez les lignes puis créez les bons de commande en brouillon (un par fournisseur).</ng-container></span>
+    </div>
+    <div class="gm-card">
+      <div class="gm-loading" *ngIf="reapproLoading"><span class="spinner"></span></div>
+      <div class="gm-empty" *ngIf="!reapproLoading && !reappro.length"><app-icon name="check"></app-icon><strong>Aucun article à réapprovisionner</strong><span>Tous les stocks sont au-dessus de leur seuil.</span></div>
+      <div class="gm-table-wrap" *ngIf="!reapproLoading && reappro.length">
+        <table class="gm-table responsive">
+          <thead><tr><th *ngIf="isSuperviseur"></th><th>Article</th><th class="right">Stock / seuil</th><th class="right">En commande</th><th>Fournisseur</th><th class="right">À commander</th><th class="right">Montant estimé</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let r of reappro">
+              <td *ngIf="isSuperviseur" data-label="Sélection"><input type="checkbox" [(ngModel)]="r.selected" [disabled]="!r.idFournisseur" [title]="r.idFournisseur ? '' : 'Aucun fournisseur défini pour cet article'"></td>
+              <td class="primary" data-label="Article"><span class="title">{{ r.designation }}</span><span class="sub gm-code">{{ r.codePiece }}</span></td>
+              <td class="right num" data-label="Stock / seuil"><span [class.neg]="r.quantite_Stock <= 0">{{ r.quantite_Stock }}</span> / {{ r.seuilMinimum }}</td>
+              <td class="right num" data-label="En commande">{{ r.enCommande || '—' }}</td>
+              <td data-label="Fournisseur">{{ r.fournisseur || 'Non défini' }}<span class="sub" *ngIf="r.delaiApproJours">Délai {{ r.delaiApproJours }} j</span></td>
+              <td class="right" data-label="À commander">
+                <input *ngIf="isSuperviseur; else qte" class="qty" type="number" min="0" [(ngModel)]="r.qte"> <span class="muted">{{ r.unite }}</span>
+                <ng-template #qte><span class="num">{{ r.quantiteSuggeree }} {{ r.unite }}</span></ng-template>
+              </td>
+              <td class="right num" data-label="Montant">{{ r.qte * r.prixUnitaire | number:'1.0-0':'fr' }} DT</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="reappro-foot" *ngIf="isSuperviseur && reappro.length">
+        <span>{{ reapproSelection.length }} ligne(s) · {{ reapproFournisseurs }} fournisseur(s) · <b>{{ reapproMontant | number:'1.0-0':'fr' }} DT</b></span>
+        <button class="btn btn-primary" [disabled]="!reapproSelection.length || creatingOrders" (click)="createDraftOrders()">
+          <span class="spinner spinner-sm" *ngIf="creatingOrders"></span><app-icon name="purchase" *ngIf="!creatingOrders"></app-icon> Créer les bons de commande
+        </button>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ============================================================ Store rooms -->
+  <ng-container *ngIf="tab === 'magasins'">
+    <div class="gm-filters"><span class="muted">Lieux de stockage des articles.</span><span class="spacer"></span>
+      <button class="btn btn-secondary btn-sm" (click)="openMagasin()"><app-icon name="plus"></app-icon> Nouveau magasin</button>
+    </div>
+    <div class="gm-card">
+      <table class="gm-table responsive">
+        <thead><tr><th>Magasin</th><th class="right">Articles</th><th class="right">Valeur</th><th>Statut</th><th></th></tr></thead>
+        <tbody>
+          <tr *ngFor="let m of magasins">
+            <td class="primary" data-label="Magasin"><span class="title">{{ m.nom }}</span><span class="sub"><span class="gm-code">{{ m.code }}</span> {{ m.description }}</span></td>
+            <td class="right num" data-label="Articles">{{ m.articles }}</td>
+            <td class="right num" data-label="Valeur">{{ m.valeur | number:'1.0-0':'fr' }} DT</td>
+            <td data-label="Statut"><span class="gm-dot" [ngClass]="m.isActif ? 'd-ok' : 'd-muted'">{{ m.isActif ? 'Actif' : 'Inactif' }}</span></td>
+            <td class="right"><button class="gm-icon-btn" title="Modifier" (click)="openMagasin(m)"><app-icon name="edit"></app-icon></button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+</div>
+
+<!-- ============================================================ Article drawer -->
+<ng-container *ngIf="detail || detailLoading">
+  <div class="gm-backdrop" (click)="closeDetail()"></div>
+  <aside class="gm-drawer wide" role="dialog" aria-label="Fiche article">
+    <div class="gm-loading" *ngIf="detailLoading"><span class="spinner"></span></div>
+    <ng-container *ngIf="detail as d">
+      <div class="gm-drawer-head">
+        <div>
+          <div class="gm-inline"><span class="gm-code">{{ d.article.codePiece }}</span><span class="gm-tag">{{ d.article.typeArticle }}</span><span class="gm-tag" *ngIf="!d.article.isActif">Désactivé</span></div>
+          <h2>{{ d.article.designation }}</h2>
+          <div class="sub">{{ d.article.famille }}<ng-container *ngIf="d.article.constructeur"> · {{ d.article.constructeur }}</ng-container> · criticité {{ d.article.criticite | lowercase }}</div>
+        </div>
+        <button class="gm-icon-btn" (click)="closeDetail()" aria-label="Fermer"><app-icon name="close"></app-icon></button>
+      </div>
+      <div class="gm-drawer-body">
+        <div class="stock-hero">
+          <div>
+            <div class="k">En stock</div>
+            <div class="big num">{{ d.article.quantite_Stock }} <small>{{ d.article.unite }}</small></div>
+            <span class="gm-tag" [ngClass]="niveauTone(d.niveau)">{{ d.niveau }}</span>
+          </div>
+          <div class="hero-facts">
+            <div><span class="k">Seuil / maximum</span><b class="num">{{ d.article.seuilMinimum }} / {{ d.article.stockMaximum ?? '—' }}</b></div>
+            <div><span class="k">Valeur</span><b class="num">{{ d.valeur | number:'1.0-0':'fr' }} DT</b></div>
+            <div><span class="k">Conso. moyenne</span><b class="num">{{ d.consommationMoyenneMensuelle | number:'1.0-1':'fr' }} / mois</b></div>
+            <div><span class="k">Couverture</span><b class="num">{{ d.couvertureMois !== null ? (d.couvertureMois | number:'1.0-1':'fr') + ' mois' : '—' }}</b></div>
+          </div>
+        </div>
+
+        <div class="gm-inline" *ngIf="isSuperviseur">
+          <button class="btn btn-secondary btn-sm" (click)="openMovement('Entrée')"><app-icon name="download"></app-icon> Entrée</button>
+          <button class="btn btn-secondary btn-sm" (click)="openMovement('Sortie')"><app-icon name="upload"></app-icon> Sortie</button>
+          <button class="btn btn-secondary btn-sm" (click)="openMovement('Ajustement')"><app-icon name="edit"></app-icon> Inventaire</button>
+        </div>
+
+        <div class="gm-facts">
+          <div class="fact"><div class="k">Magasin</div><div class="v">{{ d.article.magasin || '—' }}</div></div>
+          <div class="fact"><div class="k">Emplacement</div><div class="v">{{ d.article.emplacement || '—' }}</div></div>
+          <div class="fact"><div class="k">Prix unitaire</div><div class="v num">{{ d.article.prixUnitaire | number:'1.3-3':'fr' }} DT</div></div>
+          <div class="fact"><div class="k">Fournisseur</div><div class="v">{{ d.article.fournisseur || '—' }}</div></div>
+          <div class="fact"><div class="k">Réf. fournisseur</div><div class="v">{{ d.article.referenceFournisseur || '—' }}</div></div>
+          <div class="fact"><div class="k">Délai d'appro.</div><div class="v">{{ d.article.delaiApproJours ? d.article.delaiApproJours + ' j' : '—' }}</div></div>
+        </div>
+
+        <div>
+          <div class="gm-section-title">Sorties des 12 derniers mois</div>
+          <gm-column-chart [labels]="conso.labels" [series]="conso.series" [target]="null"></gm-column-chart>
+        </div>
+
+        <div>
+          <div class="gm-section-title">Derniers mouvements</div>
+          <div class="mv-list">
+            <div class="mv-row" *ngFor="let m of d.mouvements">
+              <span class="gm-tag" [ngClass]="mvTone(m)">{{ m.type }}</span>
+              <span class="mv-what">
+                <b class="num" [class.pos]="m.quantite > 0" [class.neg]="m.quantite < 0">{{ m.quantite > 0 ? '+' : '' }}{{ m.quantite }}</b>
+                <span class="muted">→ {{ m.stockApres }}</span>
+                <a *ngIf="m.idDemandeIntervention" [routerLink]="['/interventions/view', m.idDemandeIntervention]">{{ otCode(m.idDemandeIntervention) }}</a>
+                <span *ngIf="m.bonCommande">{{ m.bonCommande }}</span>
+                <small>{{ m.motif }}</small>
+              </span>
+              <span class="mv-when muted">{{ fmtDate(m.date) }}<small *ngIf="m.utilisateur"> · {{ m.utilisateur }}</small></span>
+            </div>
+            <div class="gm-empty" *ngIf="!d.mouvements.length">Aucun mouvement.</div>
+          </div>
+        </div>
+      </div>
+      <div class="gm-drawer-foot" *ngIf="isSuperviseur">
+        <button class="btn btn-secondary" (click)="openEdit()"><app-icon name="edit"></app-icon> Modifier l'article</button>
+      </div>
+    </ng-container>
+  </aside>
+</ng-container>
+
+<!-- ============================================================ Movement dialog -->
+<ng-container *ngIf="mvDialog as m">
+  <div class="gm-backdrop" style="z-index: 1010" (click)="mvDialog = null"></div>
+  <div class="gm-dialog" style="z-index: 1011" role="dialog">
+    <div class="gm-drawer-head"><h2>{{ m.type === 'Ajustement' ? 'Inventaire' : m.type }} — {{ m.article.designation }}</h2></div>
+    <form class="gm-drawer-body" (ngSubmit)="saveMovement()" id="mvForm">
+      <div class="gm-error-box" *ngIf="mvError"><app-icon name="alert"></app-icon>{{ mvError }}</div>
+      <div class="gm-seg">
+        <button type="button" [class.on]="m.type === 'Entrée'" (click)="openMovement('Entrée', m.article)">Entrée</button>
+        <button type="button" [class.on]="m.type === 'Sortie'" (click)="openMovement('Sortie', m.article)">Sortie</button>
+        <button type="button" [class.on]="m.type === 'Ajustement'" (click)="openMovement('Ajustement', m.article)">Inventaire</button>
+      </div>
+      <div class="gm-form">
+        <div class="gm-field">
+          <label for="mvQ">{{ m.type === 'Ajustement' ? 'Quantité comptée' : 'Quantité' }} ({{ m.article.unite }})</label>
+          <input id="mvQ" type="number" name="q" min="0" [(ngModel)]="m.quantite" required>
+        </div>
+        <div class="gm-field" *ngIf="m.type === 'Entrée'">
+          <label for="mvP">Prix unitaire (DT)</label>
+          <input id="mvP" type="number" name="p" min="0" step="0.001" [(ngModel)]="m.prix">
+        </div>
+        <div class="gm-field full">
+          <label for="mvM">Motif{{ m.type === 'Ajustement' ? ' *' : '' }}</label>
+          <input id="mvM" name="motif" maxlength="255" [(ngModel)]="m.motif" [placeholder]="m.type === 'Ajustement' ? 'Inventaire annuel, casse, perte…' : 'Facultatif'">
+        </div>
+      </div>
+      <div class="mv-preview" *ngIf="mvResult !== null">
+        Stock actuel <b>{{ m.article.quantite_Stock }}</b> → après mouvement <b [class.neg]="mvResult < 0">{{ mvResult }}</b> {{ m.article.unite }}
+      </div>
+    </form>
+    <div class="gm-drawer-foot">
+      <button class="btn btn-secondary" type="button" (click)="mvDialog = null">Annuler</button>
+      <button class="btn btn-primary" type="submit" form="mvForm" [disabled]="mvSaving"><span class="spinner spinner-sm" *ngIf="mvSaving"></span>Enregistrer</button>
+    </div>
+  </div>
+</ng-container>
+
+<!-- ============================================================ Article editor -->
+<ng-container *ngIf="editorOpen">
+  <div class="gm-backdrop" style="z-index: 1010" (click)="editorOpen = false"></div>
+  <aside class="gm-drawer" style="z-index: 1011" role="dialog">
+    <div class="gm-drawer-head">
+      <div><h2>{{ editingId ? "Modifier l'article" : 'Nouvel article' }}</h2><div class="sub">Le stock ne se modifie pas ici : utilisez les mouvements.</div></div>
+      <button class="gm-icon-btn" (click)="editorOpen = false" aria-label="Fermer"><app-icon name="close"></app-icon></button>
+    </div>
+    <form class="gm-drawer-body" (ngSubmit)="saveArticle()" id="artForm">
+      <div class="gm-error-box" *ngIf="formError"><app-icon name="alert"></app-icon>{{ formError }}</div>
+      <div class="gm-section-title">Identification</div>
+      <div class="gm-form">
+        <div class="gm-field"><label>Code article<span class="req">*</span></label><input name="code" maxlength="50" [(ngModel)]="form.codePiece" placeholder="Ex. AIG-DBX1-90"></div>
+        <div class="gm-field"><label>Type</label>
+          <select name="type" [(ngModel)]="form.typeArticle"><option *ngFor="let t of refs?.types" [value]="t">{{ t }}</option></select>
+        </div>
+        <div class="gm-field full"><label>Désignation<span class="req">*</span></label><input name="des" maxlength="100" [(ngModel)]="form.designation"></div>
+        <div class="gm-field"><label>Famille</label>
+          <select name="fam" [(ngModel)]="form.idFamillePiece"><option *ngFor="let f of refs?.familles" [ngValue]="f.id">{{ f.libelle }}</option></select>
+        </div>
+        <div class="gm-field"><label>Criticité</label>
+          <select name="crit" [(ngModel)]="form.idCriticitePiece"><option *ngFor="let c of refs?.criticites" [ngValue]="c.id">{{ c.libelle }}</option></select>
+        </div>
+        <div class="gm-field"><label>Constructeur</label>
+          <select name="cons" [(ngModel)]="form.idConstructeur"><option [ngValue]="null">—</option><option *ngFor="let c of refs?.constructeurs" [ngValue]="c.id">{{ c.libelle }}</option></select>
+        </div>
+        <div class="gm-field"><label>Unité</label><input name="unite" maxlength="20" [(ngModel)]="form.unite" placeholder="pièce, boîte, litre…"></div>
+      </div>
+      <div class="gm-section-title">Stockage</div>
+      <div class="gm-form">
+        <div class="gm-field"><label>Magasin</label>
+          <select name="mag" [(ngModel)]="form.idMagasin"><option [ngValue]="null">—</option><option *ngFor="let m of refs?.magasins" [ngValue]="m.id">{{ m.libelle }}</option></select>
+        </div>
+        <div class="gm-field"><label>Emplacement</label><input name="emp" maxlength="50" [(ngModel)]="form.emplacement" placeholder="Allée-étagère-case, ex. A-02-03"></div>
+        <div class="gm-field"><label>Seuil de réapprovisionnement</label><input name="seuil" type="number" min="0" [(ngModel)]="form.seuilMinimum"></div>
+        <div class="gm-field"><label>Stock maximum</label><input name="max" type="number" min="0" [(ngModel)]="form.stockMaximum"></div>
+        <div class="gm-field" *ngIf="!editingId"><label>Quantité initiale</label><input name="init" type="number" min="0" [(ngModel)]="form.quantiteInitiale"><span class="hint">Enregistrée comme inventaire d'ouverture.</span></div>
+      </div>
+      <div class="gm-section-title">Achat</div>
+      <div class="gm-form">
+        <div class="gm-field"><label>Prix unitaire (DT)</label><input name="prix" type="number" min="0" step="0.001" [(ngModel)]="form.prixUnitaire"></div>
+        <div class="gm-field"><label>Fournisseur habituel</label>
+          <select name="frn" [(ngModel)]="form.idFournisseur"><option [ngValue]="null">—</option><option *ngFor="let f of refs?.fournisseurs" [ngValue]="f.id">{{ f.libelle }}</option></select>
+        </div>
+        <div class="gm-field"><label>Référence fournisseur</label><input name="ref" maxlength="50" [(ngModel)]="form.referenceFournisseur"></div>
+        <div class="gm-field"><label>Délai d'approvisionnement (jours)</label><input name="delai" type="number" min="0" [(ngModel)]="form.delaiApproJours"></div>
+        <div class="gm-field full"><label>Description</label><textarea name="desc" rows="2" maxlength="255" [(ngModel)]="form.description"></textarea></div>
+      </div>
+      <label class="check-row"><input type="checkbox" name="actif" [(ngModel)]="form.isActif"> Article actif</label>
+    </form>
+    <div class="gm-drawer-foot">
+      <button class="btn btn-secondary" type="button" (click)="editorOpen = false">Annuler</button>
+      <button class="btn btn-primary" type="submit" form="artForm" [disabled]="saving"><span class="spinner spinner-sm" *ngIf="saving"></span>{{ editingId ? 'Enregistrer' : "Créer l'article" }}</button>
+    </div>
+  </aside>
+</ng-container>
+
+<!-- ============================================================ Store room dialog -->
+<ng-container *ngIf="magasinDialog as m">
+  <div class="gm-backdrop" (click)="magasinDialog = null"></div>
+  <div class="gm-dialog" role="dialog">
+    <div class="gm-drawer-head"><h2>{{ m.id ? 'Modifier le magasin' : 'Nouveau magasin' }}</h2></div>
+    <form class="gm-drawer-body" (ngSubmit)="saveMagasin()" id="magForm">
+      <div class="gm-error-box" *ngIf="formError"><app-icon name="alert"></app-icon>{{ formError }}</div>
+      <div class="gm-form">
+        <div class="gm-field"><label>Code</label><input name="code" maxlength="20" [(ngModel)]="m.code"></div>
+        <div class="gm-field"><label>Nom</label><input name="nom" maxlength="100" [(ngModel)]="m.nom"></div>
+        <div class="gm-field full"><label>Description</label><input name="desc" maxlength="255" [(ngModel)]="m.description"></div>
+      </div>
+      <label class="check-row"><input type="checkbox" name="actif" [(ngModel)]="m.isActif"> Actif</label>
+    </form>
+    <div class="gm-drawer-foot">
+      <button class="btn btn-secondary" type="button" (click)="magasinDialog = null">Annuler</button>
+      <button class="btn btn-primary" type="submit" form="magForm">Enregistrer</button>
+    </div>
+  </div>
+</ng-container>
+
+<div class="gm-toast" *ngIf="toast" [class.error]="toastError"><app-icon [name]="toastError ? 'alert' : 'check'"></app-icon>{{ toast }}</div>

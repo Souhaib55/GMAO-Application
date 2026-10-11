@@ -488,7 +488,7 @@ ORDER BY p.ProchaineEcheance"),
                 "chiffre", Array.Empty<string>(), @"
 SELECT COUNT(*) AS [Articles actifs],
        CAST(SUM(p.Quantite_Stock * p.PrixUnitaire) AS decimal(14,3)) AS [Valeur du stock (DT)],
-       SUM(CASE WHEN p.Quantite_Stock <= 0 THEN 1 ELSE 0 END) AS [En rupture],
+       SUM(CASE WHEN p.SeuilMinimum > 0 AND p.Quantite_Stock <= 0 THEN 1 ELSE 0 END) AS [En rupture],
        SUM(CASE WHEN p.Quantite_Stock > 0 AND p.Quantite_Stock <= p.SeuilMinimum THEN 1 ELSE 0 END) AS [Sous le seuil]
 FROM Pieces p WHERE p.IsActif = 1"),
 
@@ -503,7 +503,7 @@ LEFT JOIN Fournisseurs f ON f.Id = p.IdFournisseur
 LEFT JOIN Magasins m ON m.Id = p.IdMagasin
 OUTER APPLY (SELECT SUM(l.Quantite - l.QuantiteRecue) AS Qte FROM BonCommandeLignes l JOIN BonsCommande b ON b.Id = l.IdBonCommande
              WHERE l.IdPiece = p.IDPiece AND b.Statut IN (N'Brouillon', N'Envoyé', N'Partiellement reçu')) cmd
-WHERE p.IsActif = 1 AND p.Quantite_Stock <= p.SeuilMinimum AND (@fournisseur IS NULL OR p.IdFournisseur = @fournisseur)
+WHERE p.IsActif = 1 AND p.SeuilMinimum > 0 AND p.Quantite_Stock <= p.SeuilMinimum AND (@fournisseur IS NULL OR p.IdFournisseur = @fournisseur)
 ORDER BY p.Quantite_Stock, p.Designation"),
 
             new("mag-plus-consommes", "magasin",

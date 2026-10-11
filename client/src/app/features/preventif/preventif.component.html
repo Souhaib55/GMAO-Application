@@ -1,0 +1,331 @@
+<div class="gm-page">
+  <app-page-header icon="preventive" title="Maintenance préventive"
+                   subtitle="Plans récurrents par machine. Les ordres de travail sont créés automatiquement avant chaque échéance.">
+    <button class="btn btn-secondary" *ngIf="isSuperviseur" (click)="generateAll()" title="Créer maintenant les ordres de travail dont l'échéance approche">
+      <app-icon name="refresh"></app-icon> Générer les OT dus
+    </button>
+    <button class="btn btn-primary" *ngIf="isSuperviseur" (click)="openCreate()">
+      <app-icon name="plus"></app-icon> Nouveau plan
+    </button>
+  </app-page-header>
+
+  <!-- Indicators -->
+  <div class="gm-kpis" *ngIf="stats">
+    <div class="gm-kpi">
+      <div class="kpi-top"><span class="kpi-label">Respect du préventif</span><span class="kpi-icon" [ngClass]="tauxTone(stats.tauxRespect)"><app-icon name="preventive"></app-icon></span></div>
+      <div class="kpi-value">{{ stats.tauxRespect !== null ? (stats.tauxRespect | number:'1.0-1':'fr') : '—' }}<small *ngIf="stats.tauxRespect !== null">%</small></div>
+      <div class="kpi-foot"><span class="kpi-hint">{{ stats.aLHeure }} à l'heure sur {{ stats.dus }} échéances (90 j, tolérance {{ stats.toleranceJours }} j)</span></div>
+    </div>
+    <div class="gm-kpi">
+      <div class="kpi-top"><span class="kpi-label">Préventifs en retard</span><span class="kpi-icon" [ngClass]="stats.enRetard ? 't-bad' : 't-ok'"><app-icon name="alert"></app-icon></span></div>
+      <div class="kpi-value">{{ stats.enRetard }}</div>
+      <div class="kpi-foot"><span class="kpi-hint">Date prévue dépassée, travail non réalisé</span></div>
+    </div>
+    <div class="gm-kpi">
+      <div class="kpi-top"><span class="kpi-label">À réaliser sous 7 jours</span><span class="kpi-icon t-info"><app-icon name="calendar"></app-icon></span></div>
+      <div class="kpi-value">{{ stats.aVenir7 }}</div>
+      <div class="kpi-foot"><span class="kpi-hint">Ordres de travail déjà générés</span></div>
+    </div>
+    <div class="gm-kpi">
+      <div class="kpi-top"><span class="kpi-label">Couverture du parc</span><span class="kpi-icon t-info"><app-icon name="equipment"></app-icon></span></div>
+      <div class="kpi-value">{{ stats.couverture !== null ? (stats.couverture | number:'1.0-0':'fr') : '—' }}<small>%</small></div>
+      <div class="kpi-foot"><span class="kpi-hint">{{ stats.equipementsCouverts }} machines sur {{ stats.equipements }} · {{ stats.plansActifs }} plans actifs</span></div>
+    </div>
+  </div>
+
+  <div class="gm-tabs">
+    <button [class.on]="tab === 'plans'" (click)="setTab('plans')"><app-icon name="list"></app-icon> Plans <span class="count">{{ plans.length }}</span></button>
+    <button [class.on]="tab === 'calendrier'" (click)="setTab('calendrier')"><app-icon name="calendar"></app-icon> Calendrier</button>
+  </div>
+
+  <!-- ============================================================ Plans -->
+  <ng-container *ngIf="tab === 'plans'">
+    <div class="gm-filters">
+      <span class="gm-search"><app-icon name="search"></app-icon>
+        <input type="search" placeholder="Plan, machine, code…" [(ngModel)]="search" (keyup.enter)="load()" (search)="load()">
+      </span>
+      <select [(ngModel)]="chaineId" (ngModelChange)="load()" aria-label="Chaîne">
+        <option [ngValue]="null">Toutes les chaînes</option>
+        <option *ngFor="let c of chaines" [ngValue]="c.id">{{ c.libelle }}</option>
+      </select>
+      <div class="gm-seg">
+        <button [class.on]="etat === 'actifs'" (click)="etat = 'actifs'; load()">Actifs</button>
+        <button [class.on]="etat === 'suspendus'" (click)="etat = 'suspendus'; load()">Suspendus</button>
+        <button [class.on]="etat === 'tous'" (click)="etat = 'tous'; load()">Tous</button>
+      </div>
+      <span class="spacer"></span>
+      <button class="btn btn-secondary btn-sm" (click)="exportPlans()" [disabled]="!plans.length"><app-icon name="download"></app-icon> Exporter</button>
+    </div>
+
+    <div class="gm-card">
+      <div class="gm-loading" *ngIf="loading"><span class="spinner"></span> Chargement des plans…</div>
+      <div class="gm-error-box" *ngIf="error && !loading"><app-icon name="alert"></app-icon>{{ error }}</div>
+
+      <div class="gm-empty" *ngIf="!loading && !error && !plans.length">
+        <app-icon name="preventive"></app-icon>
+        <strong>Aucun plan préventif</strong>
+        <span>Créez un plan pour qu'un ordre de travail soit généré à chaque échéance.</span>
+        <button class="btn btn-primary btn-sm mt-1" *ngIf="isSuperviseur" (click)="openCreate()"><app-icon name="plus"></app-icon> Nouveau plan</button>
+      </div>
+
+      <div class="gm-table-wrap" *ngIf="!loading && plans.length">
+        <table class="gm-table responsive">
+          <thead>
+            <tr>
+              <th>Plan</th><th>Machine</th><th>Fréquence</th><th>Prochaine échéance</th><th>Technicien</th><th>Dernier OT</th><th class="right" *ngIf="isSuperviseur"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of plans" class="clickable" [class.inactive]="!p.isActif" (click)="openDetail(p.id)">
+              <td class="primary" data-label="Plan">
+                <span class="title">{{ p.titre }}</span>
+                <span class="sub"><span class="gm-code">{{ p.code }}</span> · {{ p.nbTaches }} étape{{ p.nbTaches > 1 ? 's' : '' }}<ng-container *ngIf="p.dureeEstimeeMinutes"> · {{ fmtMinutes(p.dureeEstimeeMinutes) }}</ng-container></span>
+              </td>
+              <td data-label="Machine">
+                <span class="title">{{ p.equipement.designation }}</span>
+                <span class="sub">{{ p.equipement.codeEquipement }}<ng-container *ngIf="p.chaine"> · {{ p.chaine }}</ng-container></span>
+              </td>
+              <td data-label="Fréquence" class="nowrap">{{ frequenceShort(p) }}</td>
+              <td data-label="Échéance">
+                <span class="due" [ngClass]="echeanceTone(p)">
+                  <span class="title">{{ fmtDate(p.prochaineEcheance) }}</span>
+                  <span class="sub">{{ p.isActif ? relativeDays(p.prochaineEcheance) : 'Plan suspendu' }}</span>
+                </span>
+              </td>
+              <td data-label="Technicien">{{ p.technicien ? p.technicien.prenom + ' ' + p.technicien.nom : '—' }}</td>
+              <td data-label="Dernier OT">
+                <ng-container *ngIf="p.dernierOt; else noOt">
+                  <span class="gm-dot" [ngClass]="p.otEnRetard ? 'd-bad' : statutDot(p.dernierOt.statusId)">{{ p.otEnRetard ? 'En retard' : statutLabel(p.dernierOt.statusId) }}</span>
+                  <span class="sub">{{ otCode(p.dernierOt.idDemandeIntervention) }} · {{ fmtDate(p.dernierOt.datePlanifiee) }}</span>
+                </ng-container>
+                <ng-template #noOt><span class="muted">Pas encore généré</span></ng-template>
+              </td>
+              <td class="right" *ngIf="isSuperviseur" data-label="">
+                <div class="row-actions">
+                  <button class="gm-icon-btn" title="Générer le prochain OT maintenant" [disabled]="!p.isActif || busyPlanId === p.id" (click)="generateNow(p.id, $event)"><app-icon name="play"></app-icon></button>
+                  <button class="gm-icon-btn" title="Modifier" (click)="openEdit(p.id, $event)"><app-icon name="edit"></app-icon></button>
+                  <button class="gm-icon-btn" [title]="p.isActif ? 'Suspendre' : 'Réactiver'" (click)="toggleActif(p, $event)"><app-icon [name]="p.isActif ? 'pause' : 'refresh'"></app-icon></button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ============================================================ Calendar -->
+  <ng-container *ngIf="tab === 'calendrier'">
+    <div class="gm-filters">
+      <div class="gm-inline">
+        <button class="gm-icon-btn" (click)="shiftMonth(-1)" aria-label="Mois précédent"><app-icon name="chevron-left"></app-icon></button>
+        <strong class="month-label">{{ monthLabel }}</strong>
+        <button class="gm-icon-btn" (click)="shiftMonth(1)" aria-label="Mois suivant"><app-icon name="chevron-right"></app-icon></button>
+        <button class="btn btn-secondary btn-sm" (click)="goToday()">Aujourd'hui</button>
+      </div>
+      <select [(ngModel)]="chaineId" (ngModelChange)="loadCalendar()" aria-label="Chaîne">
+        <option [ngValue]="null">Toutes les chaînes</option>
+        <option *ngFor="let c of chaines" [ngValue]="c.id">{{ c.libelle }}</option>
+      </select>
+      <span class="spacer"></span>
+      <div class="legend">
+        <span><i class="ev-todo"></i>À faire</span>
+        <span><i class="ev-doing"></i>En cours</span>
+        <span><i class="ev-done"></i>Réalisé</span>
+        <span><i class="ev-late"></i>En retard</span>
+        <span><i class="ev-prev"></i>Prévision</span>
+      </div>
+    </div>
+
+    <div class="gm-card calendar-card">
+      <div class="gm-loading" *ngIf="calendarLoading && !weeks.length"><span class="spinner"></span> Chargement du calendrier…</div>
+
+      <!-- Month grid (desktop, tablet) -->
+      <div class="month" *ngIf="!compact && weeks.length" [class.loading]="calendarLoading">
+        <div class="wd" *ngFor="let d of weekDays">{{ d }}</div>
+        <ng-container *ngFor="let week of weeks">
+          <div class="day" *ngFor="let day of week" [class.out]="!day.inMonth" [class.today]="day.today">
+            <span class="dnum">{{ day.date.getDate() }}</span>
+            <button type="button" class="ev" *ngFor="let e of day.events.slice(0, 3)" [ngClass]="eventClass(e, day)" (click)="openEvent(e)"
+                    [title]="e.titre + (e.equipement ? ' — ' + e.equipement : '') + (e.technicien ? ' · ' + e.technicien : '')">
+              {{ e.equipement || e.titre }}
+            </button>
+            <span class="more" *ngIf="day.events.length > 3">+ {{ day.events.length - 3 }} autre{{ day.events.length - 3 > 1 ? 's' : '' }}</span>
+          </div>
+        </ng-container>
+      </div>
+
+      <!-- Agenda (phones) -->
+      <div class="agenda" *ngIf="compact">
+        <div class="gm-empty" *ngIf="!calendarLoading && !agenda.length"><app-icon name="calendar"></app-icon><strong>Rien de prévu ce mois-ci</strong></div>
+        <div class="agenda-day" *ngFor="let day of agenda">
+          <div class="agenda-date" [class.today]="day.today">{{ day.date | date:'EEEE d MMMM':'':'fr' }}</div>
+          <button type="button" class="agenda-ev" *ngFor="let e of day.events" (click)="openEvent(e)">
+            <i [ngClass]="eventClass(e, day)"></i>
+            <span><b>{{ e.titre }}</b><small>{{ e.equipement }}<ng-container *ngIf="e.technicien"> · {{ e.technicien }}</ng-container></small></span>
+            <app-icon name="chevron-right"></app-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>
+
+<!-- ============================================================ Plan detail -->
+<ng-container *ngIf="detail || detailLoading">
+  <div class="gm-backdrop" (click)="closeDetail()"></div>
+  <aside class="gm-drawer" role="dialog" aria-label="Détail du plan">
+    <div class="gm-loading" *ngIf="detailLoading"><span class="spinner"></span></div>
+    <ng-container *ngIf="detail as d">
+      <div class="gm-drawer-head">
+        <div>
+          <div class="gm-inline"><span class="gm-code">{{ d.plan.code }}</span><span class="gm-tag" [ngClass]="d.plan.isActif ? 't-ok' : 't-neutral'">{{ d.plan.isActif ? 'Actif' : 'Suspendu' }}</span></div>
+          <h2>{{ d.plan.titre }}</h2>
+          <div class="sub">{{ d.plan.equipement.codeEquipement }} — {{ d.plan.equipement.designation }}</div>
+        </div>
+        <button class="gm-icon-btn" (click)="closeDetail()" aria-label="Fermer"><app-icon name="close"></app-icon></button>
+      </div>
+      <div class="gm-drawer-body">
+        <div class="gm-facts">
+          <div class="fact"><div class="k">Fréquence</div><div class="v">{{ frequenceShort(d.plan) }}</div></div>
+          <div class="fact"><div class="k">Prochaine échéance</div><div class="v">{{ fmtDate(d.plan.prochaineEcheance) }} <span class="muted">({{ relativeDays(d.plan.prochaineEcheance) }})</span></div></div>
+          <div class="fact"><div class="k">Durée estimée</div><div class="v">{{ fmtMinutes(d.plan.dureeEstimeeMinutes) }}</div></div>
+          <div class="fact"><div class="k">Technicien</div><div class="v">{{ d.plan.technicien ? d.plan.technicien.prenom + ' ' + d.plan.technicien.nom : 'Non affecté' }}</div></div>
+          <div class="fact"><div class="k">Génération</div><div class="v">{{ d.plan.delaiGenerationJours }} j avant l'échéance</div></div>
+          <div class="fact"><div class="k">Dernière génération</div><div class="v">{{ fmtDate(d.plan.derniereGeneration) }}</div></div>
+        </div>
+
+        <div *ngIf="d.plan.description" class="desc">{{ d.plan.description }}</div>
+
+        <div>
+          <div class="gm-section-title">Gamme opératoire ({{ d.plan.taches.length }})</div>
+          <ol class="checklist" *ngIf="d.plan.taches.length; else noTask">
+            <li *ngFor="let t of d.plan.taches">{{ t.libelle }}</li>
+          </ol>
+          <ng-template #noTask><p class="muted small">Aucune étape définie.</p></ng-template>
+        </div>
+
+        <div>
+          <div class="gm-section-title">Historique des ordres de travail</div>
+          <div class="history" *ngIf="d.plan.historique.length; else noHisto">
+            <a class="history-row" *ngFor="let h of d.plan.historique" [routerLink]="['/interventions/view', h.idDemandeIntervention]">
+              <span class="gm-code">{{ otCode(h.idDemandeIntervention) }}</span>
+              <span class="h-date">Prévu le {{ fmtDate(h.datePlanifiee) }}</span>
+              <span class="gm-dot" [ngClass]="h.statusId <= 2 && (daysFromToday(h.datePlanifiee) ?? 0) < 0 ? 'd-bad' : statutDot(h.statusId)">
+                {{ h.statusId <= 2 && (daysFromToday(h.datePlanifiee) ?? 0) < 0 ? 'En retard' : h.statut }}
+              </span>
+              <span class="h-done muted">{{ h.dateRealisation ? 'Fait le ' + fmtDate(h.dateRealisation) : '' }}</span>
+            </a>
+          </div>
+          <ng-template #noHisto><p class="muted small">Aucun ordre de travail généré pour l'instant.</p></ng-template>
+        </div>
+      </div>
+      <div class="gm-drawer-foot" *ngIf="isSuperviseur">
+        <button class="btn btn-secondary" (click)="toggleActif(d.plan)"><app-icon [name]="d.plan.isActif ? 'pause' : 'refresh'"></app-icon> {{ d.plan.isActif ? 'Suspendre' : 'Réactiver' }}</button>
+        <button class="btn btn-secondary" (click)="openEdit(d.plan.id)"><app-icon name="edit"></app-icon> Modifier</button>
+        <button class="btn btn-primary" [disabled]="!d.plan.isActif || busyPlanId === d.plan.id" (click)="generateNow(d.plan.id)"><app-icon name="play"></app-icon> Générer le prochain OT</button>
+      </div>
+    </ng-container>
+  </aside>
+</ng-container>
+
+<!-- ============================================================ Plan editor -->
+<ng-container *ngIf="editorOpen">
+  <div class="gm-backdrop" (click)="closeEditor()"></div>
+  <aside class="gm-drawer" role="dialog" [attr.aria-label]="editingId ? 'Modifier le plan' : 'Nouveau plan'">
+    <div class="gm-drawer-head">
+      <div>
+        <h2>{{ editingId ? 'Modifier le plan' : 'Nouveau plan préventif' }}</h2>
+        <div class="sub">Un ordre de travail sera créé automatiquement avant chaque échéance.</div>
+      </div>
+      <button class="gm-icon-btn" (click)="closeEditor()" aria-label="Fermer"><app-icon name="close"></app-icon></button>
+    </div>
+    <form class="gm-drawer-body" (ngSubmit)="save()" id="planForm">
+      <div class="gm-error-box" *ngIf="formError"><app-icon name="alert"></app-icon>{{ formError }}</div>
+
+      <div class="gm-form">
+        <div class="gm-field full">
+          <label for="pTitre">Intitulé de la maintenance<span class="req">*</span></label>
+          <input id="pTitre" name="titre" [(ngModel)]="form.titre" maxlength="150" placeholder="Ex. Nettoyage et lubrification hebdomadaire" required>
+        </div>
+        <div class="gm-field full">
+          <label for="pMachine">Machine<span class="req">*</span></label>
+          <select id="pMachine" name="idEquipement" [(ngModel)]="form.idEquipement" required>
+            <option [ngValue]="0" disabled>Choisir une machine…</option>
+            <option *ngFor="let e of filteredEquipements" [ngValue]="e.id">{{ e.code }} — {{ e.libelle }}</option>
+          </select>
+        </div>
+
+        <div class="gm-field">
+          <label>Fréquence<span class="req">*</span></label>
+          <div class="freq">
+            <span>Tous les</span>
+            <input type="number" name="intervalle" min="1" max="365" [(ngModel)]="form.intervalle" required>
+            <select name="frequence" [(ngModel)]="form.frequence">
+              <option *ngFor="let f of frequences" [ngValue]="f.value">{{ form.intervalle > 1 ? f.pluriel : f.singulier }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="gm-field">
+          <label for="pDuree">Durée estimée (minutes)</label>
+          <input id="pDuree" type="number" name="duree" min="0" max="10080" step="5" [(ngModel)]="form.dureeEstimeeMinutes">
+        </div>
+
+        <div class="gm-field" *ngIf="!editingId">
+          <label for="pDebut">Première échéance</label>
+          <input id="pDebut" type="date" name="dateDebut" [(ngModel)]="form.dateDebut">
+        </div>
+        <div class="gm-field" *ngIf="editingId">
+          <label for="pNext">Prochaine échéance</label>
+          <input id="pNext" type="date" name="prochaineEcheance" [(ngModel)]="form.prochaineEcheance">
+        </div>
+        <div class="gm-field">
+          <label for="pDelai">Générer l'OT (jours avant)</label>
+          <input id="pDelai" type="number" name="delai" min="0" max="60" [(ngModel)]="form.delaiGenerationJours">
+        </div>
+        <div class="gm-field full hint-line" *ngIf="frequencePreview"><span class="hint"><app-icon name="calendar"></app-icon> {{ frequencePreview }}</span></div>
+
+        <div class="gm-field full">
+          <label for="pTech">Technicien responsable</label>
+          <select id="pTech" name="technicien" [(ngModel)]="form.idTechnicien">
+            <option [ngValue]="null">Non affecté (le superviseur affectera)</option>
+            <option *ngFor="let t of techniciens" [ngValue]="t.id">{{ t.prenom }} {{ t.nom }}{{ t.specialite ? ' — ' + t.specialite : '' }}</option>
+          </select>
+        </div>
+
+        <div class="gm-field full">
+          <label for="pDesc">Consignes</label>
+          <textarea id="pDesc" name="description" rows="3" maxlength="2000" [(ngModel)]="form.description" placeholder="Sécurité, consignation, outillage nécessaire…"></textarea>
+        </div>
+      </div>
+
+      <div>
+        <div class="gm-section-title">Gamme opératoire</div>
+        <p class="hint small">Chaque étape devient une case à cocher dans l'ordre de travail.</p>
+        <div class="tasks">
+          <div class="task-row" *ngFor="let t of formTaches; let i = index">
+            <span class="task-num">{{ i + 1 }}</span>
+            <input [name]="'tache' + i" [(ngModel)]="t.libelle" maxlength="255" placeholder="Décrire l'étape…" (keydown.enter)="$event.preventDefault(); addTache()">
+            <button type="button" class="gm-icon-btn" title="Monter" (click)="moveTache(i, -1)" [disabled]="i === 0"><app-icon name="chevron-left" class="rot-up"></app-icon></button>
+            <button type="button" class="gm-icon-btn" title="Descendre" (click)="moveTache(i, 1)" [disabled]="i === formTaches.length - 1"><app-icon name="chevron-right" class="rot-up"></app-icon></button>
+            <button type="button" class="gm-icon-btn danger" title="Supprimer" (click)="removeTache(i)"><app-icon name="trash"></app-icon></button>
+          </div>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm mt-1" (click)="addTache()"><app-icon name="plus"></app-icon> Ajouter une étape</button>
+      </div>
+
+      <label class="switch-row">
+        <input type="checkbox" name="actif" [(ngModel)]="form.isActif">
+        <span>Plan actif (génère les ordres de travail)</span>
+      </label>
+    </form>
+    <div class="gm-drawer-foot">
+      <button class="btn btn-secondary" type="button" (click)="closeEditor()" [disabled]="saving">Annuler</button>
+      <button class="btn btn-primary" type="submit" form="planForm" [disabled]="saving">
+        <span class="spinner spinner-sm" *ngIf="saving"></span>{{ editingId ? 'Enregistrer' : 'Créer le plan' }}
+      </button>
+    </div>
+  </aside>
+</ng-container>
+
+<div class="gm-toast" *ngIf="toast" [class.error]="toastError"><app-icon [name]="toastError ? 'alert' : 'check'"></app-icon>{{ toast }}</div>

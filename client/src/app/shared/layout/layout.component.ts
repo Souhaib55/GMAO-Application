@@ -7,8 +7,12 @@ import { AuthService } from '../../core/services/auth.service';
 import { InterventionNotificationService } from '../../core/services/intervention-notification.service';
 import { UserInfo, Notification } from '../../core/models';
 import { AppIconComponent } from '../components/app-icon/app-icon.component';
-import { Subscription } from 'rxjs';
-import { filter } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
+import { Observable, Subject, Subscription, forkJoin, of } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, filter, map, switchMap } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
+import { otCode } from '../utils/gm-format';
 
 registerLocaleData(localeFr, 'fr');
 
@@ -24,10 +28,19 @@ interface MenuGroup {
   items: MenuItem[];
 }
 
+interface SearchHit {
+  group: string;
+  icon: string;
+  label: string;
+  sub?: string;
+  route: any[];
+  query?: { [key: string]: any };
+}
+
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, AppIconComponent],
+  imports: [CommonModule, RouterModule, FormsModule, AppIconComponent],
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.scss']
 })
@@ -54,49 +67,87 @@ export class LayoutComponent implements OnInit, OnDestroy {
       label: 'Pilotage',
       items: [
         { label: 'Tableau de bord', icon: 'dashboard', route: '/dashboard', roles: ['Superviseur', 'Demandeur', 'Utilisateur'] },
-        { label: 'Planning', icon: 'calendar', route: '/planning', roles: ['Superviseur', 'Utilisateur'] },
-        { label: 'Rapports', icon: 'reports', route: '/rapports', roles: ['Superviseur'] }
+        { label: 'Planning', icon: 'calendar', route: '/planning', roles: ['Superviseur', 'Utilisateur'] }
       ]
     },
     {
       label: 'Maintenance',
       items: [
         { label: 'Interventions', icon: 'interventions', route: '/interventions', roles: ['Superviseur', 'Demandeur', 'Utilisateur'] },
-        { label: 'Équipements', icon: 'equipment', route: '/equipment', roles: ['Superviseur', 'Utilisateur'] }
+        { label: 'Préventif', icon: 'preventive', route: '/preventif', roles: ['Superviseur', 'Utilisateur'] },
+        { label: 'Équipements', icon: 'equipment', route: '/equipment', roles: ['Superviseur', 'Utilisateur'] },
+        { label: 'Techniciens', icon: 'team', route: '/techniciens', roles: ['Superviseur'] }
       ]
     },
     {
-      label: 'Magasin',
+      label: 'Magasin & achats',
       items: [
-        { label: 'Pièces de rechange', icon: 'resources', route: '/resources', roles: ['Superviseur'] },
-        { label: 'Stock & achats', icon: 'stock', route: '/stock', roles: ['Superviseur'] }
+        { label: 'Magasin', icon: 'stock', route: '/magasin', roles: ['Superviseur', 'Utilisateur'] },
+        { label: 'Achats', icon: 'purchase', route: '/achats', roles: ['Superviseur', 'Utilisateur'] },
+        { label: 'Budgets', icon: 'budget', route: '/budgets', roles: ['Superviseur'] }
+      ]
+    },
+    {
+      label: 'Analyse',
+      items: [
+        { label: 'Explorateur de données', icon: 'explorer', route: '/explorateur', roles: ['Superviseur'] },
+        { label: 'Rapports', icon: 'reports', route: '/rapports', roles: ['Superviseur'] }
       ]
     },
     {
       label: 'Système',
       items: [
-        { label: 'Assistant GMAO', icon: 'chat', route: '/chat', roles: ['Superviseur'] },
         { label: 'Paramètres', icon: 'settings', route: '/settings', roles: ['Superviseur'] }
       ]
     }
   ];
+
+  /** Screens that are reachable but no longer listed in the menu (kept for existing links). */
+  private readonly hiddenPages: { [route: string]: { section: string; title: string } } = {
+    '/resources': { section: 'Magasin & achats', title: 'Pièces de rechange' },
+    '/stock': { section: 'Magasin & achats', title: 'Stock (ancien module)' },
+    '/journal': { section: 'Système', title: "Journal d'activité" }
+  };
 
   private readonly subPageLabels: { [segment: string]: string } = {
     new: 'Nouveau',
     edit: 'Modification',
     view: 'Fiche',
     users: 'Utilisateurs',
-    references: 'Référentiels'
+    references: 'Référentiels',
+    historique: 'Historique'
   };
+
+  // Global search (Ctrl K)
+  searchTerm = '';
+  searchOpen = false;
+  searchLoading = false;
+  searchHits: SearchHit[] = [];
+  searchIndex = 0;
+  private search$ = new Subject<string>();
 
   constructor(
     private authService: AuthService,
     private router: Router,
     private notificationService: InterventionNotificationService,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private http: HttpClient
   ) {}
 
   ngOnInit(): void {
+    this.subscriptions.push(
+      this.search$.pipe(
+        map(t => t.trim()),
+        debounceTime(220),
+        distinctUntilChanged(),
+        switchMap(term => this.runSearch(term))
+      ).subscribe(hits => {
+        this.searchHits = hits;
+        this.searchIndex = 0;
+        this.searchLoading = false;
+      })
+    );
+
     this.updatePageTitle(this.router.url);
     this.subscriptions.push(
       this.router.events
@@ -136,6 +187,106 @@ export class LayoutComponent implements OnInit, OnDestroy {
   onDocumentClick(event: Event): void {
     this.userDropdownOpen = false;
     this.notificationDropdownOpen = false;
+    this.searchOpen = false;
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent): void {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      (document.getElementById('gm-global-search') as HTMLInputElement | null)?.focus();
+    }
+  }
+
+  // ------------------------------------------------------------------ Global search
+
+  onSearchInput(): void {
+    this.searchOpen = true;
+    this.searchLoading = this.searchTerm.trim().length >= 2;
+    this.search$.next(this.searchTerm);
+  }
+
+  onSearchKey(event: KeyboardEvent): void {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      this.searchIndex = Math.min(this.searchIndex + 1, this.searchHits.length - 1);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      this.searchIndex = Math.max(this.searchIndex - 1, 0);
+    } else if (event.key === 'Enter' && this.searchHits[this.searchIndex]) {
+      this.openHit(this.searchHits[this.searchIndex]);
+    } else if (event.key === 'Escape') {
+      this.searchOpen = false;
+      (event.target as HTMLElement).blur();
+    }
+  }
+
+  openHit(hit: SearchHit): void {
+    this.router.navigate(hit.route, hit.query ? { queryParams: hit.query } : undefined);
+    this.searchOpen = false;
+    this.searchTerm = '';
+    this.searchHits = [];
+    this.closeMobileMenu();
+  }
+
+  hitGroups(): string[] {
+    return [...new Set(this.searchHits.map(h => h.group))];
+  }
+
+  hitsOf(group: string): SearchHit[] {
+    return this.searchHits.filter(h => h.group === group);
+  }
+
+  hitPosition(hit: SearchHit): number {
+    return this.searchHits.indexOf(hit);
+  }
+
+  private runSearch(term: string): Observable<SearchHit[]> {
+    if (term.length < 2 || !this.currentUser) return of([]);
+    const role = this.currentUser.role;
+    const low = term.toLowerCase();
+    const api = environment.apiUrl;
+    const canSeeAssets = role === 'Superviseur' || role === 'Utilisateur';
+
+    const pages: SearchHit[] = this.visibleGroups
+      .flatMap(g => g.items)
+      .filter(i => i.label.toLowerCase().includes(low))
+      .map(i => ({ group: 'Écrans', icon: i.icon, label: i.label, route: [i.route] }));
+
+    const interventions$: Observable<SearchHit[]> = this.http
+      .get<any>(`${api}/DemandeIntervention`, { params: { search: term, page: 1, pageSize: 5 } })
+      .pipe(
+        map(r => (r.data || r.items || []).map((d: any): SearchHit => ({
+          group: 'Interventions', icon: 'interventions', label: d.titre,
+          sub: `${otCode(d.idDemandeIntervention)} · ${d.equipement?.designation || d.chaineProduction?.libelle || ''}`,
+          route: ['/interventions/view', d.idDemandeIntervention]
+        }))),
+        catchError(() => of([]))
+      );
+
+    const equipements$: Observable<SearchHit[]> = !canSeeAssets ? of([]) : this.http
+      .get<any[]>(`${api}/Equipment/lookup`)
+      .pipe(
+        map(list => list
+          .filter(e => `${e.codeEquipement} ${e.designation}`.toLowerCase().includes(low))
+          .slice(0, 5)
+          .map((e): SearchHit => ({ group: 'Équipements', icon: 'equipment', label: e.designation, sub: e.codeEquipement, route: ['/equipment/view', e.idEquipement] }))),
+        catchError(() => of([]))
+      );
+
+    const articles$: Observable<SearchHit[]> = !canSeeAssets ? of([]) : this.http
+      .get<any>(`${api}/magasin/articles`, { params: { search: term, pageSize: 5 } })
+      .pipe(
+        map(r => (r.data || []).map((a: any): SearchHit => ({
+          group: 'Magasin', icon: 'stock', label: a.designation, sub: `${a.codePiece} · ${a.quantite_Stock} ${a.unite} en stock`,
+          route: ['/magasin'], query: { article: a.idPiece }
+        }))),
+        catchError(() => of([]))
+      );
+
+    return forkJoin([interventions$, equipements$, articles$]).pipe(
+      map(([i, e, a]) => [...pages.slice(0, 4), ...i, ...e, ...a])
+    );
   }
 
   toggleSidebar(): void {
@@ -291,8 +442,9 @@ export class LayoutComponent implements OnInit, OnDestroy {
         return;
       }
     }
-    this.pageSection = 'GMAO';
-    this.pageTitle = '';
+    const hidden = this.hiddenPages[root];
+    this.pageSection = hidden?.section ?? 'GMAO';
+    this.pageTitle = hidden?.title ?? '';
   }
 
   logout(): void {
