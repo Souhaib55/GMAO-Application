@@ -44,7 +44,7 @@
   .wd {
     padding: 8px 10px;
     font-size: 0.72rem;
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--text-muted);
@@ -110,7 +110,7 @@
   padding: 4px 0;
 
   .agenda-day + .agenda-day { border-top: 1px solid var(--gray-100); }
-  .agenda-date { padding: 10px 14px 4px; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: capitalize; &.today { color: var(--primary-700); } }
+  .agenda-date { padding: 10px 14px 4px; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: capitalize; &.today { color: var(--primary-700); } }
 
   .agenda-ev {
     width: 100%;
@@ -194,7 +194,7 @@
     background: var(--primary-50);
     color: var(--primary-700);
     font-size: 0.75rem;
-    font-weight: 700;
+    font-weight: 600;
     display: grid;
     place-items: center;
     flex-shrink: 0;

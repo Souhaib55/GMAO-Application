@@ -143,7 +143,7 @@
             <span class="qty-hint" *ngIf="piece.seuilMinimum">/ seuil {{ piece.seuilMinimum }}</span>
             <span class="low-tag" *ngIf="piece.enAlerte">Stock bas</span>
           </td>
-          <td data-label="Prix">{{ piece.prixUnitaire | number:'1.3-3' }} DT</td>
+          <td data-label="Prix">{{ piece.prixUnitaire | number:'1.0-3':'fr' }} DT</td>
           <td data-label="Actions" class="td-actions">
             <div class="action-buttons">
               <button class="btn-action btn-view" [routerLink]="['/resources/view', piece.idPiece]" title="Consulter">

@@ -1150,7 +1150,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
     }
 
     .stats-grid .stat-value {
-      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
       font-size: 26px;
       font-weight: 500;
       line-height: 1;
@@ -1165,7 +1165,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
     }
 
     .stats-grid .stat-card .stat-number {
-      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
       font-size: 26px;
       font-weight: 500;
       line-height: 1;
@@ -1260,7 +1260,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 
     .stats-grid .stat-value,
     .stats-grid .stat-card .stat-number {
-      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
       font-size: 28px;
       font-weight: 500;
       line-height: 1;

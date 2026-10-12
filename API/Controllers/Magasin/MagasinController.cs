@@ -306,6 +306,8 @@ namespace API.Controllers
                     break;
                 case MouvementStock.TypeSortie:
                     if (dto.Quantite <= 0) return BadRequest(new { message = "La quantité doit être positive." });
+                    if (!dto.IdDemandeIntervention.HasValue && string.IsNullOrWhiteSpace(dto.Motif))
+                        return BadRequest(new { message = "Indiquez le motif de la sortie (ou sortez la pièce depuis l'intervention concernée)." });
                     delta = -dto.Quantite;
                     break;
                 case MouvementStock.TypeAjustement:

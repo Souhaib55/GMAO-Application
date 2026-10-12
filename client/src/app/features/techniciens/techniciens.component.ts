@@ -47,7 +47,7 @@ import { errorMessage, exportCsv } from '../../shared/utils/gm-format';
             <div><span>En retard</span><b [class.bad]="t.enRetard">{{ t.enRetard }}</b></div>
             <div><span>Réalisées</span><b>{{ t.realisees }}</b></div>
             <div><span>Heures saisies</span><b>{{ t.heuresSaisies | number:'1.0-1':'fr' }}</b></div>
-            <div><span>Taux horaire</span><b>{{ t.tauxHoraire !== null ? (t.tauxHoraire | number:'1.3-3':'fr') + ' DT' : '—' }}</b></div>
+            <div><span>Taux horaire</span><b>{{ t.tauxHoraire !== null ? (t.tauxHoraire | number:'1.0-3':'fr') + ' DT/h' : '—' }}</b></div>
           </div>
           <div class="contact muted">{{ t.telephone || 'Téléphone non renseigné' }} · {{ t.email }}</div>
         </div>
@@ -61,7 +61,7 @@ import { errorMessage, exportCsv } from '../../shared/utils/gm-format';
         <div class="gm-drawer-body">
           <div class="gm-error-box" *ngIf="formError"><app-icon name="alert"></app-icon>{{ formError }}</div>
           <div class="gm-field"><label>Spécialité</label><input maxlength="100" [(ngModel)]="d.specialite" placeholder="Ex. Mécanique machines à coudre"></div>
-          <div class="gm-field"><label>Taux horaire (DT)</label><input type="number" min="0" step="0.5" [(ngModel)]="d.tauxHoraire"><span class="hint">Sert au calcul du coût de main-d'œuvre des interventions.</span></div>
+          <div class="gm-field"><label>Taux horaire (DT par heure)</label><input type="number" min="0" step="0.5" [(ngModel)]="d.tauxHoraire"><span class="hint">Sert au calcul du coût de main-d'œuvre des interventions.</span></div>
           <div class="gm-field"><label>Téléphone</label><input maxlength="30" [(ngModel)]="d.telephone"></div>
         </div>
         <div class="gm-drawer-foot">
@@ -78,7 +78,7 @@ import { errorMessage, exportCsv } from '../../shared/utils/gm-format';
     .team { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
     .tech { padding: 16px; gap: 14px; }
     .tech-head { display: flex; align-items: center; gap: 12px; }
-    .av { width: 42px; height: 42px; border-radius: 50%; background: var(--brand-gradient); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 0.875rem; flex-shrink: 0; }
+    .av { width: 42px; height: 42px; border-radius: 50%; background: var(--brand-gradient); color: #fff; display: grid; place-items: center; font-weight: 600; font-size: 0.875rem; flex-shrink: 0; }
     .who { flex: 1; min-width: 0; display: flex; flex-direction: column; b { font-size: 0.9375rem; } small { font-size: 0.78rem; color: var(--text-muted); } }
     .load { display: flex; flex-direction: column; gap: 6px; }
     .load-top { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); b { color: var(--text); font-weight: 600; } }
@@ -127,7 +127,7 @@ export class TechniciensComponent implements OnInit {
   }
 
   export(): void {
-    exportCsv(`techniciens-${this.days}j`, ['Technicien', 'Spécialité', 'En cours', 'À démarrer', 'En retard', 'Réalisées', 'Heures saisies', 'Taux horaire (DT)'],
+    exportCsv(`techniciens-${this.days}j`, ['Technicien', 'Spécialité', 'En cours', 'À démarrer', 'En retard', 'Réalisées', 'Heures saisies', 'Taux horaire (DT/h)'],
       this.rows.map(t => [`${t.prenom} ${t.nom}`, t.specialite, t.enCours, t.aFaire, t.enRetard, t.realisees, t.heuresSaisies, t.tauxHoraire]));
   }
 }

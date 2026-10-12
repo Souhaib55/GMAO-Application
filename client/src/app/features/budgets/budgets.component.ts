@@ -86,8 +86,8 @@ export class BudgetsComponent implements OnInit {
   prorataPct(l: BudgetLigne): number { return l.montant ? Math.min(100, (l.prorata / l.montant) * 100) : 0; }
 
   get projection(): number | null {
-    if (!this.vue || !this.vue.moisEcoules) return null;
-    return (this.vue.realiseTotal / this.vue.moisEcoules) * 12;
+    if (!this.vue || !this.vue.fractionEcoulee) return null;
+    return this.vue.realiseTotal / this.vue.fractionEcoulee;
   }
 
   openDialog(l?: BudgetLigne): void {

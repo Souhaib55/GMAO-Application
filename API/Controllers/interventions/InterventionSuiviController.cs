@@ -183,8 +183,18 @@ namespace API.Controllers
                 minutes = dto.DureeMinutes ?? 0;
             }
             if (minutes <= 0 || minutes > 24 * 60) return BadRequest(new { message = "La durée doit être comprise entre 1 minute et 24 heures." });
-            if (dto.Debut > DateTime.Now.AddMinutes(5)) return BadRequest(new { message = "Le temps passé ne peut pas être dans le futur." });
-            if (dto.Debut < demande!.DateCreation.AddDays(-1)) return BadRequest(new { message = "Le temps passé ne peut pas précéder la demande." });
+            var fin = dto.Debut.AddMinutes(minutes);
+            if (fin > DateTime.Now.AddMinutes(5)) return BadRequest(new { message = "Le temps passé ne peut pas se terminer dans le futur." });
+            // Small tolerance: a technician may start before the request is typed in
+            if (dto.Debut < demande!.DateCreation.AddHours(-2)) return BadRequest(new { message = "Le temps passé ne peut pas précéder la déclaration de la demande." });
+
+            // A technician cannot be in two places at once
+            var chevauchement = await _context.InterventionTemps.AsNoTracking()
+                .Where(t => t.IdTechnicien == tech.ID && t.Debut < fin && (t.Fin ?? t.Debut.AddMinutes(t.DureeMinutes)) > dto.Debut)
+                .Select(t => new { t.IdDemandeIntervention, t.Debut })
+                .FirstOrDefaultAsync();
+            if (chevauchement != null)
+                return BadRequest(new { message = $"Cette période chevauche une saisie existante de {tech.Prenom} {tech.Nom} (INT-{chevauchement.IdDemandeIntervention:0000}, {chevauchement.Debut:dd/MM HH:mm})." });
             if (dto.Commentaire?.Length > 500) return BadRequest(new { message = "Le commentaire ne doit pas dépasser 500 caractères." });
 
             _context.InterventionTemps.Add(new InterventionTemps

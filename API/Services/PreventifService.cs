@@ -36,6 +36,9 @@ namespace API.Services
 
     public class PreventifService : IPreventifService
     {
+        /// <summary>The plant works Monday to Saturday: a job due on Sunday is planned for Monday.</summary>
+        public static DateTime JourOuvre(DateTime date) => date.DayOfWeek == DayOfWeek.Sunday ? date.AddDays(1) : date;
+
         private readonly StoreContext _context;
         private readonly IJournalService _journal;
         private readonly ILogger<PreventifService> _logger;
@@ -94,8 +97,9 @@ namespace API.Services
                 var inWindow = echeance.AddDays(-Math.Max(0, plan.DelaiGenerationJours)) <= today;
                 if (!inWindow && !force) continue;
 
+                var planifiee = JourOuvre(echeance);
                 var alreadyExists = await _context.DemandeInterventions.AnyAsync(d =>
-                    d.IdPlanPreventif == plan.Id && d.IsActif && d.DatePlanifiee == echeance);
+                    d.IdPlanPreventif == plan.Id && d.IsActif && (d.DatePlanifiee == echeance || d.DatePlanifiee == planifiee));
                 if (alreadyExists)
                 {
                     plan.ProchaineEcheance = plan.NextAfter(echeance);
@@ -116,7 +120,7 @@ namespace API.Services
                         ? $"Maintenance préventive générée par le plan {plan.Code}."
                         : plan.Description,
                     DateCreation = DateTime.Now,
-                    DatePlanifiee = echeance,
+                    DatePlanifiee = JourOuvre(echeance),
                     DureeEstimeeMinutes = plan.DureeEstimeeMinutes,
                     StatusId = DemandeInterventionController.StatusATraiter,
                     IDEtat = etatId.Value,

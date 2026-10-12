@@ -127,7 +127,7 @@
 
 .brand-name {
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.08em;
   white-space: nowrap;
 }
@@ -944,7 +944,7 @@
 
   .gs-state { display: flex; align-items: center; gap: 8px; padding: 14px 10px; color: var(--text-muted); font-size: 0.8125rem; }
   .gs-group + .gs-group { margin-top: 4px; border-top: 1px solid var(--gray-100); padding-top: 4px; }
-  .gs-group-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); padding: 6px 8px 4px; }
+  .gs-group-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); padding: 6px 8px 4px; }
 
   .gs-hit {
     width: 100%;

@@ -241,6 +241,30 @@ namespace API.Controllers
             // Suppression logique
             user.IsActif = false;
             user.DateModification = DateTime.Now;
+
+            // Open work orders and preventive plans of a departing technician must not stay
+            // assigned to an account nobody can use: they go back to "à affecter".
+            var ouverts = await _context.DemandeInterventions
+                .Where(d => d.IsActif && d.DestinatairesID == user.ID && (d.StatusId == 1 || d.StatusId == 2))
+                .ToListAsync();
+            foreach (var d in ouverts)
+            {
+                d.DestinatairesID = null;
+                d.DateAssignation = null;
+                d.DatePriseEnCharge = null;
+                d.StatusId = 1;
+            }
+            var plans = await _context.PlansPreventifs.Where(p => p.IdTechnicien == user.ID).ToListAsync();
+            plans.ForEach(p => p.IdTechnicien = null);
+            if (ouverts.Count > 0 || plans.Count > 0)
+            {
+                _context.JournalActivites.Add(new JournalActivite
+                {
+                    Date = DateTime.Now, Entite = "Utilisateur", EntiteId = user.ID, Action = "Désactivation",
+                    UtilisateurNom = User.Identity?.Name,
+                    Details = $"{user.Prenom} {user.Nom} : {ouverts.Count} intervention(s) et {plans.Count} plan(s) préventif(s) remis à affecter"
+                });
+            }
             await _context.SaveChangesAsync();
 
             // Block the login as well and end any open session

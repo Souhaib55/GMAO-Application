@@ -11,6 +11,8 @@ Ce document liste ce qui change au déploiement de la version 2 (modules préven
    EXEC sp_configure 'min server memory (MB)', 512; RECONFIGURE;
    ```
 
+3. **Fuseau horaire du serveur** : régler le serveur (Windows ou Linux) sur l'heure de Tunis (UTC+1) et activer la synchronisation de l'heure. Les retards, les échéances du préventif et tous les horodatages utilisent l'heure du serveur de l'API et de SQL Server.
+
 ## 2. Base de données
 
 Les migrations s'appliquent automatiquement au démarrage de l'API. Elles sont **additives** : aucune table ni colonne existante n'est supprimée.
@@ -57,4 +59,4 @@ python tests/api_tests.py --base http://localhost:5000
 python tests/qa_accounts.py remove      # supprime les comptes et les données de test
 ```
 
-121 vérifications : authentification et droits, cycle de vie d'une intervention, préventif, magasin, achats, budgets, explorateur (les 51 questions), tableau de bord, Power BI, et non-régression des écrans existants.
+133 vérifications : authentification et droits, cycle de vie d'une intervention, préventif, magasin, achats, budgets, explorateur (les 51 questions), tableau de bord, planning, règles métier (remise en stock à l'annulation, état des machines, double saisie de temps), Power BI, et non-régression des écrans existants.

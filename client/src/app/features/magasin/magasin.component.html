@@ -83,7 +83,7 @@
                   <span class="sub">Seuil {{ a.seuilMinimum }}<ng-container *ngIf="a.stockMaximum"> · max {{ a.stockMaximum }}</ng-container></span>
                 </div>
               </td>
-              <td class="right num" data-label="Prix unitaire">{{ a.prixUnitaire | number:'1.3-3':'fr' }} DT</td>
+              <td class="right num" data-label="Prix unitaire">{{ a.prixUnitaire | number:'1.0-3':'fr' }} DT</td>
               <td class="right num" data-label="Valeur">{{ a.valeur | number:'1.0-0':'fr' }} DT</td>
               <td data-label="Fournisseur">{{ a.fournisseur || '—' }}</td>
             </tr>
@@ -248,7 +248,7 @@
         <div class="gm-facts">
           <div class="fact"><div class="k">Magasin</div><div class="v">{{ d.article.magasin || '—' }}</div></div>
           <div class="fact"><div class="k">Emplacement</div><div class="v">{{ d.article.emplacement || '—' }}</div></div>
-          <div class="fact"><div class="k">Prix unitaire</div><div class="v num">{{ d.article.prixUnitaire | number:'1.3-3':'fr' }} DT</div></div>
+          <div class="fact"><div class="k">Prix unitaire</div><div class="v num">{{ d.article.prixUnitaire | number:'1.0-3':'fr' }} DT</div></div>
           <div class="fact"><div class="k">Fournisseur</div><div class="v">{{ d.article.fournisseur || '—' }}</div></div>
           <div class="fact"><div class="k">Réf. fournisseur</div><div class="v">{{ d.article.referenceFournisseur || '—' }}</div></div>
           <div class="fact"><div class="k">Délai d'appro.</div><div class="v">{{ d.article.delaiApproJours ? d.article.delaiApproJours + ' j' : '—' }}</div></div>

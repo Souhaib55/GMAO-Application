@@ -304,7 +304,7 @@ export interface DonutSlice { label: string; value: number; color?: string; }
   styles: [`
     .donut { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
     svg { width: 132px; height: 132px; flex-shrink: 0; }
-    .c-val { font-size: 6.5px; font-weight: 700; fill: var(--text); font-family: var(--font-sans); }
+    .c-val { font-size: 6.5px; font-weight: 600; fill: var(--text); font-family: var(--font-sans); }
     .c-lab { font-size: 2.8px; fill: var(--text-muted); font-family: var(--font-sans); }
     .leg { flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 7px; }
     .leg div { display: flex; align-items: center; gap: 8px; font-size: 0.8125rem; color: var(--text-secondary); }

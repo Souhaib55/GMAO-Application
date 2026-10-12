@@ -272,6 +272,40 @@ def main():
     check("synthèse des achats", sup.get("/api/achats/synthese")[0] == 200)
 
     # ------------------------------------------------------------------
+    section("Règles métier")
+    check("sortie manuelle sans motif refusée", sup.post("/api/magasin/mouvements", {"idPiece": art_id, "type": "Sortie", "quantite": 1})[0] == 400)
+    check("sortie manuelle avec motif", sup.post("/api/magasin/mouvements", {"idPiece": art_id, "type": "Sortie", "quantite": 1, "motif": "Casse QA"})[0] == 200)
+
+    # A machine with no open breakdown, to observe its state
+    machine2 = None
+    for e in ref["equipements"]:
+        st, h = sup.get(f"/api/equipment/{e['id']}/historique")
+        if st == 200 and h["indicateurs"]["otOuverts"] == 0:
+            machine2 = e
+            break
+    status, ot2 = dem.post("/api/DemandeIntervention", {
+        "titre": "QA Panne moteur", "description": "Règles métier", "idTypeIntervention": corr_type,
+        "idUrgence": urgence_id, "idChaineProduction": chaine_id, "idEquipement": machine2["id"], "idPanne": panne_id})
+    ot2_id = ot2["idDemandeIntervention"]
+    _, h = sup.get(f"/api/equipment/{machine2['id']}/historique")
+    check("machine passée « En panne » à la déclaration", h["equipement"]["etat"] == "En panne", h["equipement"]["etat"])
+    sup.post(f"/api/DemandeIntervention/{ot2_id}/assign", {"technicianId": str(tech_id)})
+    tech.post(f"/api/DemandeIntervention/{ot2_id}/accept")
+    overlap = tech.post(f"/api/interventions/{ot2_id}/temps", {"debut": (debut + dt.timedelta(minutes=10)).isoformat(), "dureeMinutes": 30})
+    check("double saisie du même technicien refusée", overlap[0] == 400 and "chevauche" in str(overlap[1]), overlap)
+    check("temps se terminant dans le futur refusé", tech.post(f"/api/interventions/{ot2_id}/temps", {"debut": (dt.datetime.now() - dt.timedelta(minutes=10)).isoformat(), "dureeMinutes": 60})[0] == 400)
+    _, before = sup.get(f"/api/magasin/articles/{art_id}")
+    tech.post(f"/api/interventions/{ot2_id}/pieces", {"idPiece": art_id, "quantite": 2})
+    check("annulation par le superviseur", sup.post(f"/api/DemandeIntervention/{ot2_id}/cancel", {"reason": "QA doublon"})[0] == 200)
+    _, after = sup.get(f"/api/magasin/articles/{art_id}")
+    check("pièces remises en stock à l'annulation", after["article"]["quantite_Stock"] == before["article"]["quantite_Stock"], (before["article"]["quantite_Stock"], after["article"]["quantite_Stock"]))
+    _, h = sup.get(f"/api/equipment/{machine2['id']}/historique")
+    check("machine revenue « En service » après annulation", h["equipement"]["etat"] == "En service", h["equipement"]["etat"])
+    _, j = sup.get(f"/api/journal?entite=Intervention&entiteId={ot2_id}")
+    actions = [x["action"] for x in j["data"]]
+    check("étapes du workflow tracées au journal", all(a in actions for a in ["Déclaration", "Affectation", "Prise en charge", "Annulation"]), actions)
+
+    # ------------------------------------------------------------------
     section("Budgets et équipe")
     status, budget = sup.get(f"/api/budgets?annee={today.year}")
     check("suivi budgétaire de l'année", status == 200 and len(budget["parMois"]) == 12, budget)
@@ -317,6 +351,13 @@ def main():
     check("tableau personnel du technicien", status == 200 and mw["role"] == "Utilisateur", mw)
     status, mw = dem.get("/api/pilotage/mon-travail")
     check("tableau personnel du demandeur", status == 200 and any(o["idDemandeIntervention"] == ot_id for o in mw["ouverts"] + mw["recentes"]), mw)
+    first = today.replace(day=1)
+    status, cal = sup.get(f"/api/DemandeIntervention/calendrier?from={(first - dt.timedelta(days=6)).isoformat()}&to={(first + dt.timedelta(days=37)).isoformat()}")
+    check("planning du mois complet (plus de 100 OT possibles)", status == 200 and any(d["idDemandeIntervention"] == ot_id for d in cal["data"]), status)
+    status, cal_old = sup.get(f"/api/DemandeIntervention/calendrier?from={(today - dt.timedelta(days=300)).isoformat()}&to={(today - dt.timedelta(days=270)).isoformat()}")
+    check("planning d'un mois ancien", status == 200, status)
+    status, cal_dem = dem.get(f"/api/DemandeIntervention/calendrier?from={(first - dt.timedelta(days=6)).isoformat()}&to={(first + dt.timedelta(days=37)).isoformat()}")
+    check("planning limité aux demandes du demandeur", status == 200 and all(d["demandeursID"] == dem.me["internalId"] for d in cal_dem["data"]), status)
     status, found = sup.get(f"/api/DemandeIntervention?search=INT-{ot_id:04d}")
     check("recherche d'un OT par sa référence", status == 200 and any(d["idDemandeIntervention"] == ot_id for d in found["data"]), found)
 

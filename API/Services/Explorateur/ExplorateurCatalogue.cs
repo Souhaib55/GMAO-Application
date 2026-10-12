@@ -688,7 +688,7 @@ GROUP BY u.Prenom, u.Nom, u.Specialite ORDER BY COUNT(d.IdDemandeIntervention) D
                 "Heures saisies multipliées par le taux horaire, sur la période.",
                 "table", new[] { "periode", "chaine" }, $@"
 SELECT CONCAT(ut.Prenom, ' ', ut.Nom) AS [Technicien], CAST(SUM(t.DureeMinutes) / 60.0 AS decimal(10,1)) AS [Heures (h)],
-       CAST(MAX(COALESCE(t.TauxHoraire, ut.TauxHoraire, 0)) AS decimal(10,3)) AS [Taux horaire (DT)],
+       CAST(MAX(COALESCE(t.TauxHoraire, ut.TauxHoraire, 0)) AS decimal(10,3)) AS [Taux horaire (DT/h)],
        CAST(SUM({CoutMO}) AS decimal(14,3)) AS [Coût (DT)]
 FROM InterventionTemps t JOIN Users ut ON ut.ID = t.IdTechnicien
 JOIN DemandeInterventions d ON d.IdDemandeIntervention = t.IdDemandeIntervention

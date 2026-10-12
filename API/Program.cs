@@ -34,6 +34,7 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IJournalService, JournalService>();
 builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<IPreventifService, PreventifService>();
+builder.Services.AddScoped<IInterventionEffectsService, InterventionEffectsService>();
 builder.Services.AddScoped<IExplorateurService, ExplorateurService>();
 builder.Services.AddHostedService<PreventifHostedService>();
 builder.Services.AddScoped<DemoDataSeeder>();

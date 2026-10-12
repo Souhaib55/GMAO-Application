@@ -86,7 +86,7 @@ import { DashboardService } from '../dashboard/dashboard.service';
           </div>
           <div class="stat-content">
             <div class="stat-value">{{ stats.urgent }}</div>
-            <div class="stat-label">Urgentes</div>
+            <div class="stat-label">Urgentes en attente</div>
           </div>
         </div>
       </div>
@@ -130,9 +130,6 @@ import { DashboardService } from '../dashboard/dashboard.service';
         <table class="data-table">
           <thead>
             <tr>
-              <th class="th-checkbox">
-                <input type="checkbox" />
-              </th>
               <th class="th-sortable">
                 Titre
                 <svg class="sort-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -157,16 +154,13 @@ import { DashboardService } from '../dashboard/dashboard.service';
           </thead>
           <tbody>
             <tr *ngFor="let intervention of interventions" class="table-row">
-              <td class="td-checkbox">
-                <input type="checkbox" />
-              </td>
               <td class="td-title" data-label="Titre">
                 <div class="title-cell">
                   <strong>{{ intervention.titre }}</strong>
                   <span class="code">{{ getInterventionCode(intervention) }}</span>
                 </div>
               </td>
-              <td class="td-date" data-label="Date">{{ formatDate(intervention.dateCreation) }}</td>
+              <td class="td-date" data-label="Date">{{ intervention.dateCreation | date:'dd/MM/yyyy' }}<small>{{ intervention.dateCreation | date:'HH:mm' }}</small></td>
               <td class="td-type" data-label="Type">
                 <span class="type-badge">{{ intervention.typeIntervention?.libelle || intervention.type?.libelle || '-' }}</span>
               </td>
@@ -612,7 +606,7 @@ import { DashboardService } from '../dashboard/dashboard.service';
     .code {
       font-size: 12px;
       color: var(--gray-500);
-      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
     }
 
     .td-date {
@@ -1059,7 +1053,7 @@ import { DashboardService } from '../dashboard/dashboard.service';
     }
 
     .stats-grid .stat-value {
-      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
       font-size: 26px;
       font-weight: 500;
       line-height: 1;
@@ -1173,7 +1167,7 @@ import { DashboardService } from '../dashboard/dashboard.service';
 
     .stats-grid .stat-value,
     .stats-grid .stat-card .stat-number {
-      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
       font-size: 28px;
       font-weight: 500;
       line-height: 1;
@@ -1188,13 +1182,38 @@ import { DashboardService } from '../dashboard/dashboard.service';
     }
 
     .location-cell { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
-    .location-cell strong { font-family: var(--font-mono); font-size: 12.5px; color: var(--text); }
+    .location-cell strong { font-variant-numeric: tabular-nums; font-size: 12.5px; color: var(--text); }
     .location-cell span { color: var(--text-secondary); }
     .etat-badge.etat-realisee { background: var(--accent-50); color: var(--accent-700); }
     .etat-badge.etat-realisee .badge-dot { background: var(--accent-500); }
     .etat-badge.etat-annulee { background: var(--gray-100); color: var(--gray-600); }
     .etat-badge.etat-annulee .badge-dot { background: var(--gray-400); }
-  `]
+  
+    /* ---- 2026 table refinement: neutral, dense, readable ---- */
+    .table-wrapper { border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--card-shadow); }
+    .data-table th { font-size: 12px; font-weight: 500; color: var(--gray-500); padding: 10px 14px; text-transform: none; letter-spacing: 0; }
+    .data-table td { padding: 11px 14px; font-size: 13.5px; }
+    .td-title { min-width: 240px; max-width: 360px; }
+    .title-cell { gap: 2px; }
+    .title-cell strong { font-weight: 500; color: var(--text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.35; }
+    .code { font-family: inherit; font-variant-numeric: tabular-nums; font-size: 12px; color: var(--text-muted); }
+    .td-date { white-space: nowrap; color: var(--text-secondary); font-size: 13px; }
+    .td-date small { display: block; font-size: 11.5px; color: var(--text-muted); }
+    .type-badge { background: none; padding: 0; border-radius: 0; color: var(--text-secondary); font-size: 13px; font-weight: 400; white-space: nowrap; }
+    .location-cell strong { font-family: inherit !important; font-weight: 500; font-size: 13px !important; }
+    .location-cell span { font-size: 12px; color: var(--text-muted); }
+    .urgence-badge { padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 500; gap: 4px; }
+    .urgence-badge svg { width: 12px; height: 12px; }
+    .etat-badge { background: none !important; padding: 0; font-size: 13px; font-weight: 500; color: var(--text) !important; gap: 7px; white-space: nowrap; }
+    .badge-dot { width: 8px; height: 8px; }
+    .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--gray-100); color: var(--gray-700); font-size: 11px; font-weight: 600; }
+    .demandeur-cell { gap: 8px; font-size: 13px; }
+    .btn-action, .btn-action.btn-view, .btn-action.btn-edit, .btn-action.btn-action-danger { width: 32px; height: 32px; background: transparent; color: var(--gray-500); }
+    .btn-action svg { width: 17px; height: 17px; }
+    .btn-action.btn-view:hover, .btn-action.btn-edit:hover { background: var(--primary-50); color: var(--primary-700); }
+    .btn-action.btn-action-danger:hover { background: var(--error-light); color: var(--error); }
+    .action-buttons { gap: 2px; justify-content: flex-end; }
+`]
 })
 export class InterventionsComponent implements OnInit {
   interventions: DemandeIntervention[] = [];

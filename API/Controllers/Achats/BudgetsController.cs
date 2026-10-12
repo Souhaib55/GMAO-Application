@@ -70,13 +70,16 @@ namespace API.Controllers
 
             // Months elapsed, to compare the spend with the pro-rata budget
             var moisEcoules = year < DateTime.Today.Year ? 12 : year > DateTime.Today.Year ? 0 : DateTime.Today.Month;
+            // Share of the year elapsed, by days (mid-October is not "10 months")
+            var fractionEcoulee = year < DateTime.Today.Year ? 1m : year > DateTime.Today.Year ? 0m
+                : (decimal)DateTime.Today.DayOfYear / (DateTime.IsLeapYear(year) ? 366 : 365);
 
             var lignes = budgets
                 .OrderBy(b => Array.IndexOf(Categories, b.Categorie)).ThenBy(b => b.Chaine)
                 .Select(b =>
                 {
                     var realise = depenses.Where(d => d.Categorie == b.Categorie && (b.IdChaineProduction == null || d.Chaine == b.IdChaineProduction)).Sum(d => d.Montant);
-                    var prorata = b.Montant * moisEcoules / 12m;
+                    var prorata = b.Montant * fractionEcoulee;
                     return new
                     {
                         b.Id, b.Annee, b.Categorie, b.IdChaineProduction, b.Chaine, b.Montant, b.Notes,
@@ -113,7 +116,8 @@ namespace API.Controllers
                 budgetTotal,
                 realiseTotal = Math.Round(realiseTotal, 3),
                 tauxConsommation = budgetTotal > 0 ? Math.Round(100 * realiseTotal / budgetTotal, 1) : (decimal?)null,
-                moisEcoules
+                moisEcoules,
+                fractionEcoulee = Math.Round(fractionEcoulee, 4)
             });
         }
 

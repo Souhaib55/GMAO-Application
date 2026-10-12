@@ -166,7 +166,7 @@
                 <td><span class="title">{{ l.designation }}</span><span class="sub gm-code">{{ l.code || 'Hors catalogue' }}</span></td>
                 <td class="right num">{{ l.quantite }} {{ l.unite }}</td>
                 <td class="right num" [class.ok]="l.quantiteRecue >= l.quantite">{{ l.quantiteRecue }}</td>
-                <td class="right num">{{ l.prixUnitaire | number:'1.3-3':'fr' }}</td>
+                <td class="right num">{{ l.prixUnitaire | number:'1.0-3':'fr' }}</td>
                 <td class="right num">{{ l.montant | number:'1.3-3':'fr' }}</td>
               </tr>
             </tbody>

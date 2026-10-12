@@ -261,7 +261,7 @@ const STATUS = { A_TRAITER: 1, EN_COURS: 2, REALISEE: 3, CLOTUREE: 4, ANNULEE: 5
       text-overflow: ellipsis;
     }
 
-    .fact-value.mono { font-family: var(--font-mono); }
+    .fact-value.mono { font-variant-numeric: tabular-nums; }
     .fact-value.stop { color: var(--error); }
 
     .status-tag {
@@ -318,7 +318,7 @@ const STATUS = { A_TRAITER: 1, EN_COURS: 2, REALISEE: 3, CLOTUREE: 4, ANNULEE: 5
       background: var(--primary-50);
       color: var(--primary-700);
       font-size: 12.5px;
-      font-weight: 700;
+      font-weight: 600;
     }
 
     .form-text.impact {

@@ -27,6 +27,12 @@ export class InterventionService {
     });
   }
 
+  /** Work orders of a date range (planned date, else declaration date), for the planning. */
+  getCalendar(from: string, to: string): Observable<PagedResult<DemandeIntervention>> {
+    const params = new HttpParams().set('from', from).set('to', to);
+    return this.http.get<PagedResult<DemandeIntervention>>(`${this.apiUrl}/calendrier`, { params, withCredentials: true });
+  }
+
   getTodayCount(): Observable<number> {
     return this.http.get<number>(`${this.apiUrl}/today-count`, {
       withCredentials: true

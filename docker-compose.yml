@@ -4,6 +4,7 @@ services:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: gmao-sqlserver
     environment:
+      TZ: "Africa/Tunis"   # heure locale de SQL Server (GETDATE)
       ACCEPT_EULA: "Y"
       SA_PASSWORD: "YourStrong!Password123"
       MSSQL_PID: "Express"
@@ -29,6 +30,7 @@ services:
       dockerfile: API/Dockerfile
     container_name: gmao-backend
     environment:
+      - TZ=Africa/Tunis   # heure locale : retards, dates du jour, horodatages
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:80
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=gmao;User Id=sa;Password=YourStrong!Password123;TrustServerCertificate=True;

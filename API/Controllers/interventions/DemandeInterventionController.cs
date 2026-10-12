@@ -49,11 +49,24 @@ namespace API.Controllers
             ".zip", ".rar", ".7z"
         };
 
-        public DemandeInterventionController(StoreContext context, UserManager<AppUser> userManager, ILogger<DemandeInterventionController> logger)
+        private readonly API.Services.IInterventionEffectsService _effects;
+
+        public DemandeInterventionController(StoreContext context, UserManager<AppUser> userManager, ILogger<DemandeInterventionController> logger,
+            API.Services.IInterventionEffectsService effects)
         {
             _context = context;
             _userManager = userManager;
             _logger = logger;
+            _effects = effects;
+        }
+
+        /// <summary>Audit trail + machine state after a workflow step.</summary>
+        private async Task<ActionResult> DoneAsync(DemandeIntervention demande, UserContext user, string action, string? details = null)
+        {
+            _effects.Audit(user.Entity.ID, $"{user.Entity.Prenom} {user.Entity.Nom}", demande.IdDemandeIntervention, action, details);
+            await _context.SaveChangesAsync();
+            await _effects.SyncEquipmentStateAsync(demande.IDEquipement);
+            return Ok();
         }
 
         // ------------------------------------------------------------------
@@ -185,6 +198,28 @@ namespace API.Controllers
                 .ToListAsync();
 
             return Ok(new PagedResult<object> { Data = items, TotalCount = totalCount, Page = page, PageSize = pageSize });
+        }
+
+        /// <summary>
+        /// Work orders of a calendar range for the planning screen: planned jobs on their
+        /// planned date, others on their declaration date. Same visibility rules as the list.
+        /// </summary>
+        [HttpGet("calendrier")]
+        public async Task<ActionResult<object>> GetCalendar(DateTime from, DateTime to)
+        {
+            var user = await GetUserContextAsync();
+            if (user == null) return Unauthorized();
+            from = from.Date;
+            var end = to.Date.AddDays(1);
+            if (end <= from || (end - from).TotalDays > 120) return BadRequest(new { message = "Période invalide (120 jours au maximum)." });
+
+            var items = await ScopeToUser(_context.DemandeInterventions.Where(d => d.IsActif), user)
+                .Where(d => (d.DatePlanifiee ?? d.DateCreation) >= from && (d.DatePlanifiee ?? d.DateCreation) < end)
+                .OrderBy(d => d.DatePlanifiee ?? d.DateCreation)
+                .Take(2000)
+                .Select(Projection)
+                .ToListAsync();
+            return Ok(new { data = items, totalCount = items.Count, page = 1, pageSize = items.Count });
         }
 
         [HttpGet("today-count")]
@@ -424,6 +459,9 @@ namespace API.Controllers
 
             _context.DemandeInterventions.Add(demande);
             await _context.SaveChangesAsync();
+            _effects.Audit(user.Entity.ID, $"{user.Entity.Prenom} {user.Entity.Nom}", demande.IdDemandeIntervention, "Déclaration", demande.MachineArretee ? "Machine à l'arrêt" : null);
+            await _context.SaveChangesAsync();
+            await _effects.SyncEquipmentStateAsync(demande.IDEquipement);
             _logger.LogInformation("Intervention {Id} created by user {UserId}", demande.IdDemandeIntervention, user.Entity.ID);
 
             if (!user.IsSuperviseur)
@@ -457,6 +495,7 @@ namespace API.Controllers
             if (demande.StatusId is StatusCloturee or StatusAnnulee)
                 return BadRequest(new { message = "Une intervention clôturée ou annulée ne peut plus être modifiée." });
 
+            var machineAvant = demande.IDEquipement;
             var error = await ApplyDescriptiveFieldsAsync(demande, dto, isCreate: false);
             if (error != null) return BadRequest(new { message = error });
 
@@ -473,7 +512,9 @@ namespace API.Controllers
                 demande.ContentType = null;
             }
 
+            _effects.Audit(user.Entity.ID, $"{user.Entity.Prenom} {user.Entity.Nom}", id, "Modification de la demande");
             await _context.SaveChangesAsync();
+            await _effects.SyncEquipmentStateAsync(machineAvant, demande.IDEquipement);
             return Ok(await LoadDtoAsync(id));
         }
 
@@ -483,8 +524,14 @@ namespace API.Controllers
         {
             var demande = await _context.DemandeInterventions.FirstOrDefaultAsync(d => d.IdDemandeIntervention == id && d.IsActif);
             if (demande == null) return NotFound(new { message = "Intervention introuvable." });
+            var actor = await GetUserContextAsync();
+            await using var tx = await _context.Database.BeginTransactionAsync();
+            var rendues = await _effects.ReturnPartsAsync(id, actor?.Entity.ID, "Retour magasin (intervention supprimée)");
             demande.IsActif = false;
+            _effects.Audit(actor?.Entity.ID, actor != null ? $"{actor.Entity.Prenom} {actor.Entity.Nom}" : null, id, "Suppression", rendues > 0 ? $"{rendues} pièce(s) remise(s) en stock" : null);
             await _context.SaveChangesAsync();
+            await tx.CommitAsync();
+            await _effects.SyncEquipmentStateAsync(demande.IDEquipement);
             return NoContent();
         }
 
@@ -529,7 +576,7 @@ namespace API.Controllers
             if (previous.HasValue && previous != tech.ID)
                 await NotifyAsync(previous.Value, "Intervention réaffectée", $"L'intervention « {demande.Titre} » a été confiée à un autre technicien.", "intervention_cancelled", user.Entity.ID, id);
 
-            return Ok();
+            return await DoneAsync(demande, user, "Affectation", $"{tech.Prenom} {tech.Nom}");
         }
 
         [HttpPost("{id:int}/accept")]
@@ -556,7 +603,7 @@ namespace API.Controllers
 
             await NotifySupervisorsAsync("Intervention prise en charge", $"« {demande.Titre} » a été prise en charge par {user.Entity.Prenom} {user.Entity.Nom}.", "intervention_started", user.Entity.ID, demande.IdDemandeIntervention);
             await NotifyRequesterAsync(demande, user, "Votre demande est prise en charge", $"Un technicien intervient sur « {demande.Titre} ».", "intervention_started");
-            return Ok();
+            return await DoneAsync(demande, user, "Prise en charge");
         }
 
         [HttpPost("{id:int}/reject")]
@@ -578,7 +625,7 @@ namespace API.Controllers
             await _context.SaveChangesAsync();
 
             await NotifySupervisorsAsync("Intervention refusée", $"« {demande.Titre} » a été refusée par {user.Entity.Prenom} {user.Entity.Nom}. Motif : {dto.Reason.Trim()}", "intervention_rejected", user.Entity.ID, id);
-            return Ok();
+            return await DoneAsync(demande, user, "Refus du technicien", dto.Reason.Trim());
         }
 
         /// <summary>
@@ -607,7 +654,7 @@ namespace API.Controllers
                     await _context.SaveChangesAsync();
                     if (demande.DestinatairesID.HasValue)
                         await NotifyAsync(demande.DestinatairesID.Value, "Intervention à reprendre", $"La réalisation de « {demande.Titre} » n'a pas été validée.", "intervention_started", user.Entity.ID, id);
-                    return Ok();
+                    return await DoneAsync(demande, user, "Renvoyée au technicien");
 
                 case StatusEnCours:
                     return await AcceptAsync(demande, user);
@@ -629,7 +676,7 @@ namespace API.Controllers
                     await _context.SaveChangesAsync();
 
                     await NotifySupervisorsAsync("Intervention réalisée", $"« {demande.Titre} » est terminée et attend votre validation.", "intervention_completed", user.Entity.ID, id);
-                    return Ok();
+                    return await DoneAsync(demande, user, "Travaux réalisés", report);
 
                 case StatusCloturee:
                     if (!user.IsSuperviseur) return Forbidden("Seul un superviseur peut clôturer une intervention.");
@@ -643,7 +690,7 @@ namespace API.Controllers
                     if (demande.DestinatairesID.HasValue)
                         await NotifyAsync(demande.DestinatairesID.Value, "Intervention clôturée", $"« {demande.Titre} » a été validée et clôturée.", "intervention_closed", user.Entity.ID, id);
                     await NotifyRequesterAsync(demande, user, "Votre demande est clôturée", $"L'intervention « {demande.Titre} » est terminée et validée.", "intervention_closed");
-                    return Ok();
+                    return await DoneAsync(demande, user, "Clôture");
 
                 default:
                     return BadRequest(new { message = "Changement de statut non autorisé." });
@@ -666,9 +713,16 @@ namespace API.Controllers
             if (!canCancel) return Forbidden("Vous ne pouvez pas annuler cette intervention à ce stade.");
             if (string.IsNullOrWhiteSpace(dto.Reason)) return BadRequest(new { message = "Le motif d'annulation est obligatoire." });
 
+            // Parts already issued to this job go back to the store
+            await using var tx = await _context.Database.BeginTransactionAsync();
+            var rendues = await _effects.ReturnPartsAsync(id, user.Entity.ID, "Retour magasin (intervention annulée)");
             demande.StatusId = StatusAnnulee;
             demande.RaisonAnnulation = dto.Reason.Trim();
+            _effects.Audit(user.Entity.ID, $"{user.Entity.Prenom} {user.Entity.Nom}", id, "Annulation",
+                demande.RaisonAnnulation + (rendues > 0 ? $" — {rendues} pièce(s) remise(s) en stock" : ""));
             await _context.SaveChangesAsync();
+            await tx.CommitAsync();
+            await _effects.SyncEquipmentStateAsync(demande.IDEquipement);
 
             if (demande.DestinatairesID.HasValue && demande.DestinatairesID != user.Entity.ID)
                 await NotifyAsync(demande.DestinatairesID.Value, "Intervention annulée", $"« {demande.Titre} » a été annulée.", "intervention_cancelled", user.Entity.ID, id);
@@ -702,8 +756,7 @@ namespace API.Controllers
             // Machines: real equipment, not production lines
             var totalMachines = await _context.Equipments.CountAsync(e => !e.IsDeleted);
             var openStops = scoped.Where(d => d.MachineArretee && (d.StatusId == StatusATraiter || d.StatusId == StatusEnCours));
-            var stoppedMachines = await openStops.Where(d => d.IDEquipement != null).Select(d => d.IDEquipement).Distinct().CountAsync()
-                                + await openStops.CountAsync(d => d.IDEquipement == null);
+            var stoppedMachines = await openStops.Where(d => d.IDEquipement != null).Select(d => d.IDEquipement).Distinct().CountAsync();
             stoppedMachines = Math.Min(stoppedMachines, totalMachines);
 
             var machineStats = new
@@ -727,7 +780,9 @@ namespace API.Controllers
                 .OrderBy(d => d.year).ThenBy(d => d.month)
                 .ToListAsync();
 
+            // Open work only: an urgency counter must not grow forever with closed jobs
             var urgenceData = await scoped
+                .Where(d => d.StatusId == StatusATraiter || d.StatusId == StatusEnCours)
                 .GroupBy(d => new { d.IDUrgence, d.Urgence.Libelle })
                 .Select(g => new { id = g.Key.IDUrgence, libelle = g.Key.Libelle, count = g.Count() })
                 .ToListAsync();

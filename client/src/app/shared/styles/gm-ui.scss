@@ -139,8 +139,8 @@
   }
 
   .kpi-value {
-    font-size: 1.875rem;
-    font-weight: 700;
+    font-size: 1.75rem;
+    font-weight: 600;
     letter-spacing: -0.02em;
     line-height: 1.1;
     font-variant-numeric: tabular-nums;
@@ -253,9 +253,10 @@
 }
 
 .gm-code {
-  font-family: var(--font-mono);
   font-size: 0.78rem;
-  color: var(--text-secondary);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
@@ -492,7 +493,7 @@
 
 .gm-section-title {
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-muted);

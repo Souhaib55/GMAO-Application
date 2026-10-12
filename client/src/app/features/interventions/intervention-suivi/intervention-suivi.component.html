@@ -17,9 +17,9 @@
       <span><b>Cette intervention vous est affectée.</b> Prenez-la en charge pour saisir vos travaux.</span>
       <button class="btn btn-primary" (click)="accept()" [disabled]="busy"><app-icon name="play"></app-icon> Prendre en charge</button>
     </div>
-    <div class="workflow" *ngIf="(s.estTechnicienAffecte || s.estSuperviseur) && s.statusId === 2">
+    <div class="workflow" *ngIf="s.estTechnicienAffecte && s.statusId === 2">
       <ng-container *ngIf="!workflowOpen">
-        <span><b>Travaux en cours.</b> Une fois terminé, rédigez le compte rendu.<ng-container *ngIf="tachesRestantes > 0"> {{ tachesRestantes }} étape(s) non cochée(s).</ng-container></span>
+        <span><b>Travaux en cours.</b> Une fois terminé, rédigez le compte rendu.<ng-container *ngIf="tachesRestantes > 0"> {{ tachesRestantes }} étape(s) non cochée(s).</ng-container><ng-container *ngIf="!s.temps.length"> Pensez à saisir votre temps passé.</ng-container></span>
         <button class="btn btn-success" (click)="workflowOpen = true"><app-icon name="check"></app-icon> Terminer</button>
       </ng-container>
       <div class="finish" *ngIf="workflowOpen">

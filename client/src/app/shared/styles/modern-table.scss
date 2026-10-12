@@ -37,7 +37,7 @@
 
 .table-title {
   font-size: 28px;
-  font-weight: 800;
+  font-weight: 600;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -88,7 +88,7 @@
   border: none;
   border-radius: 10px;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -127,7 +127,7 @@
   padding: 16px 20px;
   text-align: left;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 1px;
   color: white;
@@ -161,7 +161,7 @@
   padding: 6px 14px;
   border-radius: 20px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   white-space: nowrap;
@@ -347,7 +347,7 @@
 
 .empty-title {
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 600;
   color: #374151;
   margin-bottom: 8px;
 }
@@ -400,7 +400,7 @@
 
 .status-urgent {
   color: #991b1b;
-  font-weight: 700;
+  font-weight: 600;
   animation: pulse 2s infinite;
 }
 
@@ -416,7 +416,7 @@
 /* Low stock indicator */
 .low-stock {
   color: #dc2626;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .normal-stock {
@@ -487,7 +487,7 @@
 
 .filter-title {
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
   color: #374151;
   margin-bottom: 16px;
 }

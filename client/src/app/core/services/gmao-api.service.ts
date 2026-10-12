@@ -147,7 +147,7 @@ export interface BudgetVue {
   annee: number; categories: string[]; lignes: BudgetLigne[];
   parMois: { mois: number; mainOeuvre: number; pieces: number; sousTraitance: number }[];
   parChaine: { chaineId: number | null; chaine: string; montant: number }[];
-  budgetTotal: number; realiseTotal: number; tauxConsommation: number | null; moisEcoules: number;
+  budgetTotal: number; realiseTotal: number; tauxConsommation: number | null; moisEcoules: number; fractionEcoulee: number;
 }
 
 // Techniciens

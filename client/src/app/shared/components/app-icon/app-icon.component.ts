@@ -39,7 +39,7 @@ export type AppIconName =
       <svg *ngSwitchCase="'references'" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9h18M9 9v11"/></svg>
       <svg *ngSwitchCase="'preventive'" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>
       <svg *ngSwitchCase="'purchase'" viewBox="0 0 24 24"><circle cx="8" cy="20.5" r="1.2"/><circle cx="18" cy="20.5" r="1.2"/><path d="M2 2.5h2.2l2.6 12.3a2 2 0 0 0 2 1.6h9.3a2 2 0 0 0 2-1.6L21.6 7H5.2"/></svg>
-      <svg *ngSwitchCase="'budget'" viewBox="0 0 24 24"><circle cx="8" cy="8" r="6"/><path d="M18.1 10.4A6 6 0 1 1 10.3 18"/><path d="M7 6h1v4M16.7 13.9l.7.7-2.8 2.8"/></svg>
+      <svg *ngSwitchCase="'budget'" viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h14a2 2 0 0 1 2 2v3"/><path d="M3 5v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"/><path d="M21 12h-4a2 2 0 0 0 0 4h4a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1z"/></svg>
       <svg *ngSwitchCase="'coins'" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>
       <svg *ngSwitchCase="'explorer'" viewBox="0 0 24 24"><ellipse cx="10" cy="5" rx="7" ry="2.5"/><path d="M3 5v6c0 1.4 3.1 2.5 7 2.5M17 5v4"/><path d="M3 11v6c0 1.4 3.1 2.5 7 2.5"/><circle cx="17" cy="16" r="3.2"/><path d="m19.4 18.4 2.1 2.1"/></svg>
       <svg *ngSwitchCase="'search'" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>

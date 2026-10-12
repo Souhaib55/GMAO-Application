@@ -766,7 +766,7 @@ interface CalendarDay {
     }
 
     .stats-grid .stat-value {
-      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
       font-size: 26px;
       font-weight: 500;
       line-height: 1;
@@ -895,7 +895,7 @@ interface CalendarDay {
 
     .stats-grid .stat-value,
     .stats-grid .stat-card .stat-number {
-      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
       font-size: 28px;
       font-weight: 500;
       line-height: 1;
@@ -981,8 +981,10 @@ export class PlanningComponent implements OnInit {
   loadInterventions(): void {
     this.loading = true;
     
-    // Load all interventions for the current month
-    this.interventionService.getInterventions(1, 1000).subscribe({
+    // The displayed month plus the days of the neighbouring months shown in the grid
+    const y = this.currentDate.getFullYear(), m = this.currentDate.getMonth();
+    const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    this.interventionService.getCalendar(iso(new Date(y, m, -6)), iso(new Date(y, m + 1, 7))).subscribe({
       next: (result) => {
         // Filter out interventions that were removed from calendar
         const removedIds = this.getRemovedInterventions();
@@ -1035,9 +1037,15 @@ export class PlanningComponent implements OnInit {
     }
   }
 
+  /** A planned job sits on its planned date; a breakdown on the day it was declared. */
+  planningDate(intervention: DemandeIntervention): Date {
+    const planned = (intervention as any).datePlanifiee as string | null | undefined;
+    return planned ? new Date(planned.length === 10 ? planned + 'T00:00:00' : planned) : new Date(intervention.dateCreation);
+  }
+
   getInterventionsForDay(date: Date): DemandeIntervention[] {
     return this.interventions.filter(intervention => {
-      const interventionDate = new Date(intervention.dateCreation);
+      const interventionDate = this.planningDate(intervention);
       return (
         interventionDate.getDate() === date.getDate() &&
         interventionDate.getMonth() === date.getMonth() &&
@@ -1101,7 +1109,7 @@ export class PlanningComponent implements OnInit {
 
   calculateMonthlyStats(): void {
     const monthInterventions = this.interventions.filter(intervention => {
-      const date = new Date(intervention.dateCreation);
+      const date = this.planningDate(intervention);
       return (
         date.getMonth() === this.currentDate.getMonth() &&
         date.getFullYear() === this.currentDate.getFullYear()

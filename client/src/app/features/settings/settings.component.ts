@@ -244,7 +244,7 @@ interface RoleCount {
     }
 
     .role-count {
-      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
       font-size: 28px;
       font-weight: 500;
       line-height: 1;
@@ -350,7 +350,7 @@ interface RoleCount {
     }
 
     .facts dd.mono {
-      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
       font-size: 12.5px;
     }
 

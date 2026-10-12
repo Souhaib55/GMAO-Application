@@ -34,28 +34,26 @@ import { AppIconComponent } from '../app-icon/app-icon.component';
       margin-bottom: 20px;
     }
 
+    /* Calm header: no card, no gradient, no glow — the page content carries the colour */
     .page-header-card {
       display: flex;
       align-items: center;
-      gap: 16px;
-      padding: 18px 22px;
-      background: linear-gradient(90deg, var(--surface) 55%, var(--primary-50) 100%);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      box-shadow: var(--card-shadow);
+      gap: 14px;
+      padding: 4px 0 14px;
+      border-bottom: 1px solid var(--border);
     }
 
     .ph-icon {
-      width: 48px;
-      height: 48px;
+      width: 38px;
+      height: 38px;
       flex-shrink: 0;
       display: grid;
       place-items: center;
-      border-radius: 12px;
-      background: var(--brand-gradient);
-      color: #fff;
-      font-size: 24px;
-      box-shadow: 0 6px 14px rgba(61, 96, 220, 0.25);
+      border-radius: 10px;
+      background: var(--primary-50);
+      color: var(--primary-700);
+      font-size: 19px;
+      border: 1px solid var(--primary-100);
     }
 
     .ph-text {
@@ -65,17 +63,17 @@ import { AppIconComponent } from '../app-icon/app-icon.component';
 
     .ph-title {
       margin: 0;
-      font-size: 20px;
-      font-weight: 700;
-      line-height: 1.25;
-      letter-spacing: -0.015em;
+      font-size: 1.3125rem;
+      font-weight: 600;
+      line-height: 1.3;
+      letter-spacing: -0.01em;
       color: var(--text);
     }
 
     .ph-subtitle {
-      margin: 3px 0 0;
-      font-size: 14px;
-      color: var(--text-secondary);
+      margin: 2px 0 0;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
     }
 
     .ph-actions {
@@ -92,13 +90,6 @@ import { AppIconComponent } from '../app-icon/app-icon.component';
     @media (max-width: 768px) {
       .page-header-card {
         flex-wrap: wrap;
-        padding: 16px;
-      }
-
-      .ph-icon {
-        width: 42px;
-        height: 42px;
-        font-size: 21px;
       }
 
       .ph-actions {

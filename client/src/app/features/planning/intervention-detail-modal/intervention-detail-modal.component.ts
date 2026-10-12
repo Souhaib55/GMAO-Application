@@ -223,7 +223,7 @@ interface Step {
     .header-main { flex: 1; min-width: 0; }
 
     .ref {
-      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
       font-size: 12.5px;
       color: var(--text-muted);
     }
@@ -231,7 +231,7 @@ interface Step {
     .panel-header h2 {
       margin: 4px 0 0;
       font-size: 18px;
-      font-weight: 700;
+      font-weight: 600;
       line-height: 1.3;
     }
 
@@ -324,7 +324,7 @@ interface Step {
 
     .step-label { font-size: 12px; font-weight: 600; color: var(--gray-500); }
     .stepper li.done .step-label, .stepper li.current .step-label { color: var(--text); }
-    .step-date { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+    .step-date { font-variant-numeric: tabular-nums; font-size: 11px; color: var(--text-muted); }
 
     /* Action card */
     .action-card {
@@ -340,7 +340,7 @@ interface Step {
     .action-card h3, .block h3 {
       margin: 0;
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
       color: var(--gray-500);

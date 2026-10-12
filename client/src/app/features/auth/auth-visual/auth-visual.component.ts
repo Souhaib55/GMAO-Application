@@ -1,226 +1,165 @@
 import { Component } from '@angular/core';
-import { NgFor, NgSwitch, NgSwitchCase } from '@angular/common';
-
-interface Feature {
-  icon: 'calendar' | 'machine' | 'bell' | 'history';
-  title: string;
-  text: string;
-}
+import { NgFor } from '@angular/common';
 
 /**
- * Left-hand brand panel shared by the login, forgot-password and
- * reset-password screens.
+ * Brand panel of the sign-in pages: deep navy with a fine technical grid, a short
+ * headline and a quiet preview of what the application shows (plant indicators).
+ * Purely decorative figures: no data is loaded before sign-in.
  */
 @Component({
   selector: 'app-auth-visual',
   standalone: true,
-  imports: [NgFor, NgSwitch, NgSwitchCase],
+  imports: [NgFor],
   template: `
-    <aside class="panel">
+    <aside class="panel" aria-hidden="true">
+      <div class="grid"></div>
       <div class="inner">
         <div class="brand">
-          <span class="brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L3.8 17a1.9 1.9 0 0 0 2.7 2.7l5.5-5.5a4 4 0 0 0 5.2-5.4l-2.4 2.4-2.1-.6-.6-2.1 2.5-2.2z"/></svg>
+          <span class="mark">
+            <svg viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4M12 16h4M8 11h.01M8 16h.01"/></svg>
           </span>
-          <span>
-            <span class="brand-name">Gestion Maintenance</span>
-            <span class="brand-sub">GMAO industrielle · Alcodex</span>
-          </span>
+          <span class="brand-text"><b>SIMOTEX</b><small>Gestion de maintenance</small></span>
         </div>
 
-        <span class="eyebrow">GMAO · Maintenance industrielle</span>
-        <h2 class="headline">Pilotez votre maintenance.</h2>
+        <div class="pitch">
+          <h2>Pilotez votre maintenance.</h2>
+          <p>Interventions, préventif, magasin et coûts : l'atelier en temps réel, sur un seul écran.</p>
+        </div>
 
-        <ul class="features">
-          <li class="feature" *ngFor="let f of features">
-            <span class="feature-icon" [attr.data-icon]="f.icon" [ngSwitch]="f.icon" aria-hidden="true">
-              <svg *ngSwitchCase="'calendar'" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16.5" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M9 15l2 2 4-4"/></svg>
-              <svg *ngSwitchCase="'machine'" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="12" rx="1.5"/><path d="M7 7V4h4v3M3 12h18"/><circle cx="8" cy="15.5" r="1"/><circle cx="16" cy="15.5" r="1"/></svg>
-              <svg *ngSwitchCase="'bell'" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-              <svg *ngSwitchCase="'history'" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg>
-            </span>
-            <span>
-              <span class="feature-title">{{ f.title }}</span>
-              <span class="feature-text">{{ f.text }}</span>
-            </span>
-          </li>
-        </ul>
+        <div class="preview">
+          <div class="preview-head">
+            <span>Atelier · aujourd'hui</span>
+            <span class="live"><i></i>En direct</span>
+          </div>
+          <div class="kpis">
+            <div class="kpi" *ngFor="let k of kpis">
+              <span class="k-label">{{ k.label }}</span>
+              <span class="k-value">{{ k.value }}<small>{{ k.unit }}</small></span>
+              <svg class="k-spark" viewBox="0 0 100 24" preserveAspectRatio="none"><polyline [attr.points]="k.spark"/></svg>
+            </div>
+          </div>
+          <div class="rows">
+            <div class="row" *ngFor="let r of rows">
+              <i [class]="r.tone"></i><span class="r-title">{{ r.title }}</span><span class="r-meta">{{ r.meta }}</span>
+            </div>
+          </div>
+        </div>
 
-        <p class="closing">Du signalement de la panne à la remise en service, l'activité de l'atelier se suit en un seul endroit.</p>
-        <span class="signature">Alcodex · Solution GMAO</span>
+        <footer class="foot">
+          <span>Fonctionne sur le réseau de l'usine, sans Internet</span>
+        </footer>
       </div>
     </aside>
   `,
   styles: [`
-    :host {
-      display: block;
-      height: 100%;
-    }
+    :host { display: contents; }
 
     .panel {
-      min-height: 100vh;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 48px 56px;
-      background: var(--brand-gradient);
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(120% 80% at 0% 0%, rgba(84, 120, 235, 0.35) 0%, transparent 55%),
+        radial-gradient(90% 70% at 100% 100%, rgba(37, 66, 170, 0.45) 0%, transparent 60%),
+        #101d47;
       color: #fff;
+      display: flex;
+    }
+
+    /* Fine technical grid, fading towards the bottom */
+    .grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      background-size: 32px 32px;
+      mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.5) 60%, transparent 100%);
+      -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.5) 60%, transparent 100%);
     }
 
     .inner {
-      width: 100%;
-      max-width: 580px;
-    }
-
-    .brand {
+      position: relative;
+      z-index: 1;
       display: flex;
-      align-items: center;
-      gap: 14px;
-      margin-bottom: 40px;
+      flex-direction: column;
+      gap: 40px;
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 48px 48px 36px;
     }
 
-    .brand-mark {
-      width: 48px;
-      height: 48px;
-      flex-shrink: 0;
-      display: grid;
-      place-items: center;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.14);
-      border: 1px solid rgba(255, 255, 255, 0.28);
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .mark {
+      width: 36px; height: 36px; border-radius: 9px;
+      display: grid; place-items: center;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.16);
     }
+    .mark svg { width: 19px; height: 19px; fill: none; stroke: #fff; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    .brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .brand-text b { font-size: 14px; font-weight: 600; letter-spacing: 0.12em; }
+    .brand-text small { font-size: 12px; color: rgba(255, 255, 255, 0.6); }
 
-    .brand-mark svg,
-    .feature-icon svg {
-      width: 22px;
-      height: 22px;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 1.8;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
+    .pitch { margin-top: auto; }
+    .pitch h2 { margin: 0; font-size: 34px; line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; color: #fff; }
+    .pitch p { margin: 14px 0 0; font-size: 15px; line-height: 1.55; color: rgba(255, 255, 255, 0.72); max-width: 420px; }
 
-    .brand-name {
-      display: block;
-      font-size: 19px;
-      font-weight: 600;
-      line-height: 1.25;
-    }
-
-    .brand-sub {
-      display: block;
-      font-size: 14.5px;
-      color: rgba(255, 255, 255, 0.78);
-    }
-
-    .eyebrow {
-      display: block;
-      margin-bottom: 12px;
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.62);
-    }
-
-    .headline {
-      margin: 0 0 30px;
-      font-size: 38px;
-      font-weight: 700;
-      line-height: 1.18;
-      letter-spacing: -0.02em;
-      color: #fff;
-    }
-
-    .features {
+    .preview {
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(6px);
+      padding: 16px;
       display: flex;
       flex-direction: column;
       gap: 14px;
-      margin: 0 0 30px;
-      padding: 0;
-      list-style: none;
     }
+    .preview-head { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: rgba(255, 255, 255, 0.6); }
+    .live { display: inline-flex; align-items: center; gap: 6px; }
+    .live i { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; }
 
-    .feature {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 16px 18px;
+    .kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .kpi {
       border-radius: 10px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.06);
+      padding: 10px 12px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
     }
+    .k-label { font-size: 11px; color: rgba(255, 255, 255, 0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .k-value { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    .k-value small { font-size: 11px; font-weight: 500; color: rgba(255, 255, 255, 0.6); margin-left: 2px; }
+    .k-spark { width: 100%; height: 18px; margin-top: 2px; }
+    .k-spark polyline { fill: none; stroke: #8fa8ff; stroke-width: 1.6; vector-effect: non-scaling-stroke; }
 
-    .feature-icon {
-      width: 40px;
-      height: 40px;
-      flex-shrink: 0;
-      display: grid;
-      place-items: center;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.14);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: #dbe5ff;
-    }
+    .rows { display: flex; flex-direction: column; }
+    .row { display: grid; grid-template-columns: 10px 1fr auto; gap: 10px; align-items: center; padding: 8px 2px; font-size: 12.5px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+    .row i { width: 7px; height: 7px; border-radius: 50%; }
+    .row i.bad { background: #f87171; }
+    .row i.warn { background: #fbbf24; }
+    .row i.ok { background: #4ade80; }
+    .r-title { color: rgba(255, 255, 255, 0.88); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .r-meta { color: rgba(255, 255, 255, 0.5); font-size: 11.5px; white-space: nowrap; }
 
-    .feature-icon svg {
-      width: 20px;
-      height: 20px;
-    }
+    .foot { font-size: 12px; color: rgba(255, 255, 255, 0.5); }
 
-    .feature-icon[data-icon="machine"] { color: #8ee6d6; }
-    .feature-icon[data-icon="bell"] { color: #ffd27a; }
-    .feature-icon[data-icon="history"] { color: #d6c8ff; }
-
-    .feature-title {
-      display: block;
-      font-size: 16px;
-      font-weight: 600;
-      line-height: 1.35;
-    }
-
-    .feature-text {
-      display: block;
-      margin-top: 2px;
-      font-size: 14px;
-      color: rgba(255, 255, 255, 0.78);
-    }
-
-    .closing {
-      margin: 0 0 18px;
-      padding-top: 26px;
-      border-top: 1px solid rgba(255, 255, 255, 0.2);
-      font-size: 17px;
-      line-height: 1.6;
-      color: rgba(255, 255, 255, 0.9);
-    }
-
-    .signature {
-      font-size: 12.5px;
-      font-weight: 600;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.55);
-    }
-
-    @media (max-width: 1280px) {
-      .panel {
-        padding: 40px;
-      }
-
-      .headline {
-        font-size: 32px;
-      }
-    }
+    @media (max-height: 760px) { .rows { display: none; } .inner { gap: 28px; } }
+    @media (max-width: 960px) { .panel { display: none; } }
   `]
 })
 export class AuthVisualComponent {
-  features: Feature[] = [
-    { icon: 'calendar', title: 'Planification des interventions', text: 'Affectation par technicien, par équipement et par priorité.' },
-    { icon: 'machine', title: 'Suivi du parc machines', text: 'État, criticité et historique de chaque équipement.' },
-    { icon: 'bell', title: 'Alertes en temps réel', text: 'Le superviseur est prévenu dès qu\'une intervention change d\'état.' },
-    { icon: 'history', title: 'Traçabilité complète', text: 'Chaque demande, affectation et clôture reste consultable.' }
+  readonly kpis = [
+    { label: 'Disponibilité', value: '96,4', unit: '%', spark: '0,16 15,14 30,15 45,10 60,11 75,7 100,6' },
+    { label: "Préventif à l'heure", value: '88', unit: '%', spark: '0,14 15,15 30,11 45,12 60,9 75,10 100,7' },
+    { label: 'OT ouverts', value: '12', unit: '', spark: '0,6 15,9 30,8 45,12 60,10 75,14 100,15' }
+  ];
+
+  readonly rows = [
+    { tone: 'bad', title: "Piqueuse plate — casse d'aiguille", meta: 'Couture A · 08:42' },
+    { tone: 'warn', title: 'Générateur de vapeur — purge hebdomadaire', meta: 'Préventif' },
+    { tone: 'ok', title: 'Table de coupe — lame remplacée', meta: 'Clôturée' }
   ];
 }
