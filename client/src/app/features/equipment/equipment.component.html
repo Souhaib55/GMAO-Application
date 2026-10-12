@@ -33,7 +33,7 @@
       </div>
       <div class="stat-content">
         <div class="stat-value">{{ stats.actif }}</div>
-        <div class="stat-label">Actif</div>
+        <div class="stat-label">En service</div>
       </div>
     </div>
 
@@ -47,7 +47,7 @@
       </div>
       <div class="stat-content">
         <div class="stat-value">{{ stats.critique }}</div>
-        <div class="stat-label">Critique</div>
+        <div class="stat-label">Machines critiques</div>
       </div>
     </div>
 
@@ -61,7 +61,7 @@
       </div>
       <div class="stat-content">
         <div class="stat-value">{{ stats.horsService }}</div>
-        <div class="stat-label">Hors service</div>
+        <div class="stat-label">En panne / arrêt</div>
       </div>
     </div>
   </div>
@@ -149,7 +149,7 @@
           <td class="td-etat" data-label="État">
             <span class="status-badge" [ngClass]="getEtatClass(equipment)">
               <span class="badge-dot"></span>
-              {{ equipment.etat?.nomEtat || 'Actif' }}
+              {{ equipment.etat?.nomEtat || 'Non renseigné' }}
             </span>
           </td>
           <td class="td-urgence" data-label="Criticité">

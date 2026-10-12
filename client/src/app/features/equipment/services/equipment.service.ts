@@ -28,6 +28,11 @@ export class EquipmentService {
   }
 
   /** Every active machine (id, code, name, line), optionally for one production line. */
+  /** Fleet counters over all machines. */
+  stats(): Observable<{ total: number; enService: number; enPanne: number; enMaintenance: number; critiques: number }> {
+    return this.http.get<{ total: number; enService: number; enPanne: number; enMaintenance: number; critiques: number }>(`${this.apiUrl}/stats`, { withCredentials: true });
+  }
+
   lookup(chaineId?: number | null): Observable<EquipementSummary[]> {
     let params = new HttpParams();
     if (chaineId) {

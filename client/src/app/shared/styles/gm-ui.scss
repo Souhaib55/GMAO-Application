@@ -605,3 +605,281 @@
 
   &.error { background: var(--error-dark); }
 }
+
+/* ==========================================================================
+   One look for every module
+   The older list screens (Interventions, Équipements, Pièces, Stock, Utilisateurs,
+   Référentiels, Planning) keep their markup but render exactly like the new
+   components: same KPI cards, tables, tags and icon buttons.
+   Scoped under the application shell so it outranks the per-page styles.
+   ========================================================================== */
+.layout .main-content .page-content.page-content {
+
+  /* ---- KPI cards ---- */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .stat-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 6px;
+    min-height: 0;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--card-shadow);
+    transform: none;
+    transition: none;
+
+    &:hover { transform: none; box-shadow: var(--card-shadow); }
+  }
+
+  .stat-icon,
+  .stat-icon-wrapper {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    margin: 0;
+    box-shadow: none;
+
+    svg { width: 17px; height: 17px; }
+  }
+
+  .stat-icon-wrapper .stat-icon { position: static; width: 100%; height: 100%; }
+
+  .stat-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-right: 44px;
+    min-width: 0;
+  }
+
+  .stat-label {
+    order: -1;
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .stat-value {
+    font-family: inherit;
+    font-size: 1.75rem;
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- Tables ---- */
+  .table-wrapper,
+  .table-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--card-shadow);
+    overflow-x: auto;
+  }
+
+  .data-table,
+  .users-table,
+  .items-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+
+    thead { background: var(--gray-50); border-bottom: 1px solid var(--border); }
+
+    th {
+      padding: 9px 12px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: none;
+      letter-spacing: 0;
+      white-space: nowrap;
+      background: var(--gray-50);
+    }
+
+    td {
+      padding: 10px 12px;
+      font-size: 0.8125rem;
+      color: var(--text);
+      border-bottom: 1px solid var(--gray-100);
+      vertical-align: middle;
+    }
+
+    tbody tr { transition: background-color var(--transition-speed); }
+    tbody tr:hover { background: var(--gray-50); transform: none; box-shadow: none; }
+    tbody tr:last-child td { border-bottom: 0; }
+
+    strong { font-weight: 600; }
+  }
+
+  /* Row checkboxes had no action behind them */
+  .th-checkbox,
+  .td-checkbox { display: none; }
+
+  /* ---- Tags and statuses (same as gm-tag / gm-dot) ---- */
+  .status-badge,
+  .urgence-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 22px;
+    padding: 0 9px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .status-badge.status-success { background: var(--success-light); color: var(--success-text); }
+  .status-badge.status-warning { background: var(--warning-light); color: var(--warning-text); }
+  .status-badge.status-danger { background: var(--error-light); color: var(--error-text); }
+  .status-badge.status-primary,
+  .status-badge.status-info { background: var(--primary-50); color: var(--primary-700); }
+  .status-badge.status-normal { background: var(--gray-100); color: var(--gray-700); }
+
+  .badge-dot,
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .status-badge .badge-dot,
+  .status-badge .status-dot { background: currentColor; }
+
+  .type-badge,
+  .code-badge {
+    display: inline;
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    font-family: inherit;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- Row actions (same as gm-icon-btn) ---- */
+  .btn-action,
+  .btn-action.btn-view,
+  .btn-action.btn-edit,
+  .btn-action.btn-action-danger,
+  .btn-action.btn-delete {
+    width: 30px;
+    height: 30px;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--gray-500);
+    box-shadow: none;
+
+    svg { width: 16px; height: 16px; }
+    &:hover { background: var(--gray-100); color: var(--gray-900); transform: none; }
+  }
+
+  .btn-action.btn-action-danger:hover,
+  .btn-action.btn-delete:hover { background: var(--error-light); color: var(--error); }
+
+  .action-buttons { gap: 2px; }
+
+  /* Same icon buttons on the settings lists */
+  .action-btn,
+  .action-btn.view,
+  .action-btn.edit,
+  .action-btn.delete {
+    width: 30px;
+    height: 30px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--gray-500);
+    box-shadow: none;
+
+    svg { width: 16px; height: 16px; }
+    &:hover { background: var(--gray-100); color: var(--gray-900); }
+  }
+
+  .action-btn.delete:hover { background: var(--error-light); color: var(--error); }
+
+  /* Same avatars and role tags everywhere */
+  .user-avatar,
+  .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--gray-100) !important;   /* some lists set a colour inline */
+    color: var(--gray-700) !important;
+    font-size: 11.5px;
+    font-weight: 600;
+    box-shadow: none;
+  }
+
+  .role-badge {
+    display: inline-flex;
+    align-items: center;
+    height: 22px;
+    padding: 0 9px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 0;
+  }
+
+  .stat-label { font-size: 0.8125rem; }
+
+  /* ---- Search field above the lists ---- */
+  .search-box input,
+  .search-input {
+    height: 38px;
+    border-radius: var(--radius);
+    font-size: 0.8125rem;
+  }
+
+  /* ---- Pagination ---- */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+  }
+
+  .pagination-btn {
+    height: 30px;
+    padding: 0 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+
+    &:disabled { opacity: 0.45; cursor: not-allowed; }
+    &:hover:not(:disabled) { background: var(--gray-50); }
+  }
+}

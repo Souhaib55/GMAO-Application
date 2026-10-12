@@ -561,9 +561,9 @@ input[type="password"] {
 
 .auth-top {
   justify-content: flex-start;
-  margin-bottom: 28px;
+  margin-bottom: 30px;
 
-  .logo { height: 84px; }
+  .logo { height: 112px; }
 }
 
 .form-header {
@@ -709,7 +709,7 @@ input[type="password"] {
 
 @media (max-width: 960px) {
   .auth { grid-template-columns: 1fr; }
-  .auth-top { justify-content: center; .logo { height: 72px; } }
+  .auth-top { justify-content: center; .logo { height: 92px; } }
   .form-header { text-align: center; }
   .auth-foot { text-align: center; }
 }

@@ -68,15 +68,12 @@ export class EquipmentComponent implements OnInit {
     });
   }
 
+  /** Counters over the whole fleet (the table only shows one page). */
   calculateStats(): void {
-    this.stats = {
-      actif: this.equipments.filter(e => e.etat?.nomEtat?.toLowerCase().includes('actif') || 
-             e.etat?.nomEtat?.toLowerCase().includes('bon')).length,
-      critique: this.equipments.filter(e => e.criticite?.nomCriticite?.toLowerCase().includes('critique') ||
-                e.criticite?.nomCriticite?.toLowerCase().includes('haute')).length,
-      horsService: this.equipments.filter(e => e.etat?.nomEtat?.toLowerCase().includes('hors') ||
-                   e.etat?.nomEtat?.toLowerCase().includes('panne')).length
-    };
+    this.equipmentService.stats().subscribe({
+      next: s => this.stats = { actif: s.enService, critique: s.critiques, horsService: s.enPanne },
+      error: () => {}
+    });
   }
 
   search(): void {
@@ -86,7 +83,7 @@ export class EquipmentComponent implements OnInit {
 
   getEtatClass(equipment: Equipment): string {
     const etat = equipment.etat?.nomEtat?.toLowerCase() || '';
-    if (etat.includes('actif') || etat.includes('bon')) return 'status-success';
+    if (etat.includes('service') || etat.includes('actif') || etat.includes('bon')) return 'status-success';
     if (etat.includes('maintenance')) return 'status-warning';
     if (etat.includes('hors') || etat.includes('panne')) return 'status-danger';
     return 'status-primary';
@@ -95,7 +92,7 @@ export class EquipmentComponent implements OnInit {
   getCriticiteClass(equipment: Equipment): string {
     const criticite = equipment.criticite?.nomCriticite?.toLowerCase() || '';
     if (criticite.includes('critique') || criticite.includes('haute')) return 'status-danger';
-    if (criticite.includes('moyenne') || criticite.includes('moyen')) return 'status-warning';
+    if (criticite.includes('important') || criticite.includes('moyenne') || criticite.includes('moyen')) return 'status-warning';
     if (criticite.includes('basse') || criticite.includes('faible')) return 'status-normal';
     return 'status-normal';
   }

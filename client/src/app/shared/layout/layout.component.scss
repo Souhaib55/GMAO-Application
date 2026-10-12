@@ -205,14 +205,19 @@
     }
   }
 
+  /* Selected page: soft brand tint, deep blue text — no solid fill, no glow */
   &.active {
-    background: var(--primary-600);
-    color: #fff;
+    background: #e2e9fd;
+    color: var(--primary-800);
     font-weight: 600;
-    box-shadow: 0 4px 12px rgba(61, 96, 220, 0.22);
 
     .nav-icon {
-      color: #fff;
+      color: var(--primary-700);
+    }
+
+    &:hover {
+      background: #dae3fc;
+      color: var(--primary-800);
     }
   }
 }

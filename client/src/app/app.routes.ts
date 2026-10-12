@@ -10,9 +10,7 @@ import { InterventionsComponent } from './features/interventions/interventions.c
 import { InterventionFormComponent } from './features/interventions/intervention-form/intervention-form.component';
 import { EquipmentComponent } from './features/equipment/equipment.component';
 import { EquipmentFormComponent } from './features/equipment/equipment-form/equipment-form.component';
-import { ResourcesListComponent } from './features/resources/resources-list.component';
 import { ResourceFormComponent } from './features/resources/resource-form/resource-form.component';
-import { StockListComponent } from './features/stock/stock-list.component';
 import { StockFormComponent } from './features/stock/stock-form/stock-form.component';
 import { PlanningComponent } from './features/planning/planning.component';
 import { SettingsComponent } from './features/settings/settings.component';
@@ -143,10 +141,10 @@ export const routes: Routes = [
         data: { viewMode: true }
       },
       {
+        // Old list screen replaced by the unified store (same articles, movements, thresholds)
         path: 'resources',
-        component: ResourcesListComponent,
-        canActivate: [roleGuard],
-        data: { role: 'Superviseur' }
+        redirectTo: 'magasin',
+        pathMatch: 'full'
       },
       {
         path: 'resources/new',
@@ -166,10 +164,10 @@ export const routes: Routes = [
         data: { viewMode: true }
       },
       {
+        // Old list screen replaced by the unified store (same articles, movements, thresholds)
         path: 'stock',
-        component: StockListComponent,
-        canActivate: [roleGuard],
-        data: { role: 'Superviseur' }
+        redirectTo: 'magasin',
+        pathMatch: 'full'
       },
       {
         path: 'stock/new',

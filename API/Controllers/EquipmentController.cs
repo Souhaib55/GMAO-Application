@@ -284,6 +284,24 @@ namespace API.Controllers
         /// Lightweight list for pickers (intervention form): every active machine,
         /// optionally restricted to one production line.
         /// </summary>
+        /// <summary>Fleet counters over all machines (not just the page being displayed).</summary>
+        [HttpGet("stats")]
+        public async Task<ActionResult<object>> Stats()
+        {
+            var parc = await _context.Equipments.Where(e => !e.IsDeleted)
+                .Select(e => new { Etat = e.Etat != null ? e.Etat.NomEtat : null, Criticite = e.Criticite != null ? e.Criticite.NomCriticite : null })
+                .ToListAsync();
+            static string N(string? v) => (v ?? "").ToLowerInvariant();
+            return Ok(new
+            {
+                total = parc.Count,
+                enService = parc.Count(e => N(e.Etat).Contains("service") || N(e.Etat).Contains("actif")),
+                enPanne = parc.Count(e => N(e.Etat).Contains("panne") || N(e.Etat).Contains("hors") || N(e.Etat).Contains("arr")),
+                enMaintenance = parc.Count(e => N(e.Etat).Contains("maintenance")),
+                critiques = parc.Count(e => N(e.Criticite).Contains("critique"))
+            });
+        }
+
         [HttpGet("lookup")]
         public async Task<ActionResult<IEnumerable<object>>> Lookup(int? chaineId = null)
         {
