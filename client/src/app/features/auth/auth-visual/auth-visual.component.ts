@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { NgFor, NgSwitch, NgSwitchCase } from '@angular/common';
 
 /**
- * Brand panel of the sign-in pages: light, airy background with soft blue waves,
+ * Brand panel of the sign-in pages: royal-blue gradient with quiet concentric rings,
  * a two-tone headline and three short statements with round icon chips.
  */
 @Component({
@@ -11,11 +11,9 @@ import { NgFor, NgSwitch, NgSwitchCase } from '@angular/common';
   imports: [NgFor, NgSwitch, NgSwitchCase],
   template: `
     <aside class="panel" aria-hidden="true">
-      <svg class="waves" viewBox="0 0 800 360" preserveAspectRatio="none">
-        <path d="M0 150 C 180 60, 380 250, 800 120 L 800 360 L 0 360 Z" fill="#dbe6fd"/>
-        <path d="M0 230 C 220 140, 430 330, 800 200 L 800 360 L 0 360 Z" fill="#a9c1f8"/>
-        <path d="M0 300 C 260 220, 470 380, 800 270 L 800 360 L 0 360 Z" fill="#5a83ea"/>
-      </svg>
+      <span class="ring r1"></span>
+      <span class="ring r2"></span>
+      <span class="ring r3"></span>
 
       <div class="inner">
         <div class="brand">
@@ -51,11 +49,17 @@ import { NgFor, NgSwitch, NgSwitchCase } from '@angular/common';
       position: relative;
       overflow: hidden;
       display: flex;
-      background: radial-gradient(90% 70% at 85% 25%, #e8effe 0%, transparent 60%), linear-gradient(180deg, #f8faff 0%, #eef3fe 100%);
-      color: var(--text);
+      background:
+        radial-gradient(70% 55% at 100% 0%, rgba(255, 255, 255, 0.14) 0%, transparent 60%),
+        linear-gradient(160deg, #3a62e0 0%, #2a4fd0 48%, #1f3a9e 100%);
+      color: #fff;
     }
 
-    .waves { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 42%; }
+    /* Quiet concentric rings in the lower corner: depth without imagery */
+    .ring { position: absolute; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.1); pointer-events: none; }
+    .r1 { width: 520px; height: 520px; right: -200px; bottom: -220px; }
+    .r2 { width: 380px; height: 380px; right: -130px; bottom: -150px; border-color: rgba(255, 255, 255, 0.13); }
+    .r3 { width: 240px; height: 240px; right: -60px; bottom: -80px; background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.16); }
 
     .inner {
       position: relative;
@@ -72,30 +76,31 @@ import { NgFor, NgSwitch, NgSwitchCase } from '@angular/common';
     .mark {
       width: 40px; height: 40px; border-radius: 10px;
       display: grid; place-items: center;
-      background: linear-gradient(150deg, #5379ea, #3150b8);
+      background: rgba(255, 255, 255, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.22);
     }
     .mark svg { width: 21px; height: 21px; fill: none; stroke: #fff; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
     .brand-text { display: flex; flex-direction: column; line-height: 1.25; }
-    .brand-text b { font-size: 15px; font-weight: 600; letter-spacing: 0.1em; color: #14224f; }
-    .brand-text small { font-size: 12.5px; color: var(--text-muted); }
+    .brand-text b { font-size: 15px; font-weight: 600; letter-spacing: 0.1em; }
+    .brand-text small { font-size: 12.5px; color: rgba(255, 255, 255, 0.72); }
 
-    .pitch { margin: 48px 0 auto; }
-    .pitch h2 { margin: 0; font-size: 44px; line-height: 1.12; font-weight: 600; letter-spacing: -0.02em; color: #14224f; }
-    .pitch h2 span { display: block; color: var(--primary-600); }
-    .pitch p { margin: 18px 0 0; font-size: 16px; line-height: 1.55; color: var(--text-secondary); max-width: 420px; }
+    .pitch { margin: auto 0; padding: 32px 0; }
+    .pitch h2 { margin: 0; font-size: 44px; line-height: 1.12; font-weight: 600; letter-spacing: -0.02em; color: #fff; }
+    .pitch h2 span { display: block; color: #c9d7ff; }
+    .pitch p { margin: 18px 0 0; font-size: 16px; line-height: 1.55; color: rgba(255, 255, 255, 0.8); max-width: 420px; }
 
-    ul { list-style: none; margin: 32px 0 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
-    li { display: flex; align-items: center; gap: 14px; font-size: 14.5px; color: #1f2b4d; max-width: 360px; }
+    ul { list-style: none; margin: 34px 0 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+    li { display: flex; align-items: center; gap: 14px; font-size: 14.5px; color: rgba(255, 255, 255, 0.94); max-width: 380px; }
     .chip {
       width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%;
       display: grid; place-items: center;
-      background: #fff; border: 1px solid #dbe5fb;
-      box-shadow: 0 2px 6px rgba(61, 96, 220, 0.08);
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
-    .chip svg { width: 20px; height: 20px; fill: none; stroke: var(--primary-600); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    .chip svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 
-    .foot { display: flex; align-items: center; gap: 12px; font-size: 12.5px; color: rgba(255, 255, 255, 0.9); }
-    .foot i { width: 28px; height: 1px; background: rgba(255, 255, 255, 0.8); }
+    .foot { display: flex; align-items: center; gap: 12px; font-size: 12.5px; color: rgba(255, 255, 255, 0.7); }
+    .foot i { width: 28px; height: 1px; background: rgba(255, 255, 255, 0.5); }
 
     @media (max-width: 960px) { .panel { display: none; } }
   `]
