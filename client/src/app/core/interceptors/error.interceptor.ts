@@ -4,6 +4,9 @@ import { catchError, throwError } from 'rxjs';
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   return next(req).pipe(
     catchError((error) => {
+      // 401 is handled by the auth interceptor (session check, expired session): not an error to log
+      if (error.status === 401) return throwError(() => error);
+
       let errorMessage = 'An error occurred';
 
       if (error.error instanceof ErrorEvent) {

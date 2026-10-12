@@ -162,7 +162,8 @@ namespace API.Controllers
         // ------------------------------------------------------------------
 
         [HttpGet]
-        public async Task<ActionResult<PagedResult<object>>> GetDemandeInterventions(int page = 1, int pageSize = 10, string? search = null, int? statusId = null)
+        /// <param name="vue">Optional preset used by the dashboard alerts: "ouvertes", "non-affectees", "arret".</param>
+        public async Task<ActionResult<PagedResult<object>>> GetDemandeInterventions(int page = 1, int pageSize = 10, string? search = null, int? statusId = null, string? vue = null)
         {
             var user = await GetUserContextAsync();
             if (user == null) return Unauthorized();
@@ -173,6 +174,19 @@ namespace API.Controllers
             var query = ScopeToUser(_context.DemandeInterventions.Where(d => d.IsActif), user);
 
             if (statusId.HasValue) query = query.Where(d => d.StatusId == statusId.Value);
+            switch (vue)
+            {
+                case "ouvertes":
+                    query = query.Where(d => d.StatusId == StatusATraiter || d.StatusId == StatusEnCours);
+                    break;
+                case "non-affectees":
+                    query = query.Where(d => d.StatusId == StatusATraiter && d.DestinatairesID == null);
+                    break;
+                case "arret":
+                    // Same rule as the dashboard: a stop counts only with an identified machine
+                    query = query.Where(d => (d.StatusId == StatusATraiter || d.StatusId == StatusEnCours) && d.MachineArretee && d.IDEquipement != null);
+                    break;
+            }
 
             if (!string.IsNullOrWhiteSpace(search))
             {

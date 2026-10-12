@@ -12,7 +12,7 @@ export class InterventionService {
 
   constructor(private http: HttpClient) {}
 
-  getInterventions(page: number = 1, pageSize: number = 10, search?: string): Observable<PagedResult<DemandeIntervention>> {
+  getInterventions(page: number = 1, pageSize: number = 10, search?: string, vue?: string | null): Observable<PagedResult<DemandeIntervention>> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('pageSize', pageSize.toString());
@@ -20,6 +20,7 @@ export class InterventionService {
     if (search) {
       params = params.set('search', search);
     }
+    if (vue) params = params.set('vue', vue);
 
     return this.http.get<PagedResult<DemandeIntervention>>(this.apiUrl, {
       params,

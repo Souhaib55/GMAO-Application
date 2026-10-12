@@ -42,7 +42,136 @@ import { EquipementHistoriqueComponent } from '../equipement-historique/equipeme
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, AppIconComponent, EquipementHistoriqueComponent],
   template: `
-    <div class="form-container">
+    <!-- Create / edit: side panel over the list, like every other form of the app -->
+    <ng-container *ngIf="drawer">
+      <div class="gm-backdrop" (click)="cancel()"></div>
+      <aside class="gm-drawer" role="dialog" [attr.aria-label]="formTitle">
+        <div class="gm-drawer-head">
+          <div>
+            <h2>{{ formTitle }}</h2>
+            <div class="sub">Les champs marqués * sont obligatoires. Le reste peut être complété plus tard.</div>
+          </div>
+          <button type="button" class="gm-icon-btn" (click)="cancel()" aria-label="Fermer"><app-icon name="close"></app-icon></button>
+        </div>
+
+        <form class="gm-drawer-body" [formGroup]="equipmentForm" (ngSubmit)="onSubmit()" id="equipmentForm">
+          <div class="gm-loading" *ngIf="loading"><span class="spinner"></span> Chargement…</div>
+
+          <div class="gm-section-title">Identification</div>
+          <div class="gm-form">
+            <div class="gm-field">
+              <label for="codeEquipement">Code équipement<span class="req">*</span></label>
+              <input id="codeEquipement" type="text" formControlName="codeEquipement" placeholder="Ex. PIQ-A-04">
+              <span class="hint">Le code collé sur la machine, unique dans l'usine.</span>
+              <span class="err" *ngIf="equipmentForm.get('codeEquipement')?.invalid && equipmentForm.get('codeEquipement')?.touched">Le code est requis.</span>
+            </div>
+            <div class="gm-field">
+              <label for="designation">Désignation<span class="req">*</span></label>
+              <input id="designation" type="text" formControlName="designation" placeholder="Ex. Piqueuse plate 1 aiguille">
+              <span class="err" *ngIf="equipmentForm.get('designation')?.invalid && equipmentForm.get('designation')?.touched">La désignation est requise.</span>
+            </div>
+            <div class="gm-field">
+              <label for="idFamille">Famille</label>
+              <select id="idFamille" formControlName="idFamille">
+                <option [value]="null">Choisir…</option>
+                <option *ngFor="let famille of familles" [value]="famille.idFamille">{{ famille.nomFamille }}</option>
+              </select>
+            </div>
+            <div class="gm-field">
+              <label for="idModele">Modèle</label>
+              <select id="idModele" formControlName="idModele">
+                <option [value]="null">Choisir…</option>
+                <option *ngFor="let modele of modeles" [value]="modele.idModele">{{ modele.nomModele }} {{ modele.marque ? '(' + modele.marque.nomMarque + ')' : '' }}</option>
+              </select>
+            </div>
+            <div class="gm-field">
+              <label for="idGroupe">Groupe</label>
+              <select id="idGroupe" formControlName="idGroupe">
+                <option [value]="null">Choisir…</option>
+                <option *ngFor="let groupe of groupes" [value]="groupe.idGroupe">{{ groupe.nomGroupe }}</option>
+              </select>
+            </div>
+            <div class="gm-field">
+              <label for="numeroSerie">Numéro de série</label>
+              <input id="numeroSerie" type="text" formControlName="numeroSerie">
+            </div>
+          </div>
+
+          <div class="gm-section-title">Situation dans l'atelier</div>
+          <div class="gm-form">
+            <div class="gm-field">
+              <label for="idChaineProduction">Chaîne de production</label>
+              <select id="idChaineProduction" formControlName="idChaineProduction">
+                <option [ngValue]="null">Non affectée</option>
+                <option *ngFor="let chaine of chaines" [ngValue]="chaine.idChaineProduction">{{ chaine.libelle }}</option>
+              </select>
+              <span class="hint">Les demandes d'intervention sur cette machine reprennent cette chaîne.</span>
+            </div>
+            <div class="gm-field">
+              <label for="idEtat">État</label>
+              <select id="idEtat" formControlName="idEtat">
+                <option [value]="null">Choisir…</option>
+                <option *ngFor="let etat of etats" [value]="etat.idEtat">{{ etat.nomEtat }}</option>
+              </select>
+              <span class="hint">Passe tout seul « En panne » pendant une panne déclarée.</span>
+            </div>
+            <div class="gm-field">
+              <label for="idCriticite">Criticité</label>
+              <select id="idCriticite" formControlName="idCriticite">
+                <option [value]="null">Choisir…</option>
+                <option *ngFor="let criticite of criticites" [value]="criticite.idCriticite">{{ criticite.nomCriticite }}</option>
+              </select>
+              <span class="hint">Critique : son arrêt bloque la production de la chaîne.</span>
+            </div>
+          </div>
+
+          <div class="gm-section-title">Dates et coût</div>
+          <div class="gm-form">
+            <div class="gm-field">
+              <label for="dateConstruction">Date de fabrication</label>
+              <input id="dateConstruction" type="date" formControlName="dateConstruction" [max]="dateValue('dateAchat') || today">
+            </div>
+            <div class="gm-field">
+              <label for="dateAchat">Date d'achat</label>
+              <input id="dateAchat" type="date" formControlName="dateAchat" [min]="dateValue('dateConstruction')" [max]="dateValue('dateInstallation') || today">
+            </div>
+            <div class="gm-field">
+              <label for="dateInstallation">Date d'installation</label>
+              <input id="dateInstallation" type="date" formControlName="dateInstallation" [min]="dateValue('dateAchat')" [max]="dateValue('dateMiseEnService') || today">
+            </div>
+            <div class="gm-field">
+              <label for="dateMiseEnService">Date de mise en service</label>
+              <input id="dateMiseEnService" type="date" formControlName="dateMiseEnService" [min]="dateValue('dateInstallation')" [max]="today">
+            </div>
+            <div class="gm-field">
+              <label for="coutAchat">Coût d'achat (DT)</label>
+              <input id="coutAchat" type="number" step="0.01" min="0" formControlName="coutAchat">
+              <span class="err" *ngIf="equipmentForm.get('coutAchat')?.invalid">Le coût ne peut pas être négatif.</span>
+            </div>
+            <div class="gm-field">
+              <label for="dateFinGarantie">Fin de garantie</label>
+              <input id="dateFinGarantie" type="date" formControlName="dateFinGarantie" [min]="dateValue('dateAchat')">
+              <span class="hint" *ngIf="dateValue('dateFinGarantie') as end">{{ end >= today ? "Sous garantie jusqu'au " + (end | date:'dd/MM/yyyy') : 'Garantie expirée' }}</span>
+            </div>
+          </div>
+          <div class="gm-error-box" *ngIf="equipmentForm.errors?.['chronology']"><app-icon name="alert"></app-icon>{{ equipmentForm.errors?.['chronology'] }}</div>
+
+          <div class="gm-field">
+            <label for="description">Description</label>
+            <textarea id="description" formControlName="description" rows="3" placeholder="Emplacement précis, particularités, consignes…"></textarea>
+          </div>
+        </form>
+
+        <div class="gm-drawer-foot">
+          <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="loading">Annuler</button>
+          <button type="submit" form="equipmentForm" class="btn btn-primary" [disabled]="equipmentForm.invalid || loading">
+            {{ isEditMode ? 'Enregistrer les modifications' : "Créer l'équipement" }}
+          </button>
+        </div>
+      </aside>
+    </ng-container>
+
+    <div class="form-container" *ngIf="!drawer">
       <app-page-header icon="equipment" [title]="formTitle" subtitle="Identification, état et caractéristiques de l'équipement">
         <div class="header-actions">
           <button class="btn btn-print" (click)="printForm()" *ngIf="isViewMode" title="Imprimer / Télécharger PDF">
@@ -237,6 +366,8 @@ export class EquipmentFormComponent implements OnInit {
   equipmentForm: FormGroup;
   isEditMode = false;
   isViewMode = false;
+  /** Create / edit opened as a side panel over the list (child route of /equipment). */
+  drawer = false;
   equipmentId?: number;
   onglet: 'fiche' | 'historique' | 'documents' = 'fiche';
 
@@ -297,6 +428,7 @@ export class EquipmentFormComponent implements OnInit {
     
     // Check if view mode from route data
     this.isViewMode = this.route.snapshot.data['viewMode'] === true;
+    this.drawer = this.route.snapshot.data['drawer'] === true;
     const onglet = this.route.snapshot.queryParamMap.get('onglet');
     if (onglet === 'historique' || onglet === 'documents') this.onglet = onglet;
 

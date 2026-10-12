@@ -19,20 +19,20 @@
   <ng-container *ngIf="vue as v">
     <div class="gm-kpis">
       <div class="gm-kpi">
-        <div class="kpi-top"><span class="kpi-label">Budget {{ v.annee }}</span><span class="kpi-icon t-info"><app-icon name="budget"></app-icon></span></div>
+        <div class="kpi-top"><span class="kpi-label">Budget {{ v.annee }}<app-help text="Montant total prévu pour la maintenance cette année, toutes catégories et chaînes confondues."></app-help></span><span class="kpi-icon t-info"><app-icon name="budget"></app-icon></span></div>
         <div class="kpi-value">{{ v.budgetTotal | number:'1.0-0':'fr' }}<small>DT</small></div>
       </div>
       <div class="gm-kpi">
-        <div class="kpi-top"><span class="kpi-label">Dépensé</span><span class="kpi-icon" [ngClass]="(v.tauxConsommation ?? 0) > 100 ? 't-bad' : 't-ok'"><app-icon name="coins"></app-icon></span></div>
+        <div class="kpi-top"><span class="kpi-label">Dépensé<app-help text="Coût réel depuis janvier : main-d'œuvre, pièces sorties du magasin et sous-traitance."></app-help></span><span class="kpi-icon" [ngClass]="(v.tauxConsommation ?? 0) > 100 ? 't-bad' : 't-ok'"><app-icon name="coins"></app-icon></span></div>
         <div class="kpi-value">{{ v.realiseTotal | number:'1.0-0':'fr' }}<small>DT</small></div>
         <div class="kpi-foot"><span class="kpi-hint">{{ v.tauxConsommation !== null ? (v.tauxConsommation | number:'1.0-0':'fr') + ' % du budget' : 'Aucun budget défini' }}</span></div>
       </div>
       <div class="gm-kpi">
-        <div class="kpi-top"><span class="kpi-label">Reste disponible</span><span class="kpi-icon t-info"><app-icon name="gauge"></app-icon></span></div>
+        <div class="kpi-top"><span class="kpi-label">Reste disponible<app-help text="Budget de l'année moins ce qui est déjà dépensé. En rouge si le budget est dépassé."></app-help></span><span class="kpi-icon t-info"><app-icon name="gauge"></app-icon></span></div>
         <div class="kpi-value" [class.neg]="v.budgetTotal - v.realiseTotal < 0">{{ v.budgetTotal - v.realiseTotal | number:'1.0-0':'fr' }}<small>DT</small></div>
       </div>
       <div class="gm-kpi">
-        <div class="kpi-top"><span class="kpi-label">Projection fin d'année</span><span class="kpi-icon" [ngClass]="projection !== null && v.budgetTotal && projection > v.budgetTotal ? 't-warn' : 't-ok'"><app-icon name="chart"></app-icon></span></div>
+        <div class="kpi-top"><span class="kpi-label">Projection fin d'année<app-help text="Estimation de la dépense au 31 décembre si l'on continue à dépenser au même rythme qu'aujourd'hui."></app-help></span><span class="kpi-icon" [ngClass]="projection !== null && v.budgetTotal && projection > v.budgetTotal ? 't-warn' : 't-ok'"><app-icon name="chart"></app-icon></span></div>
         <div class="kpi-value">{{ projection !== null ? (projection | number:'1.0-0':'fr') : '—' }}<small *ngIf="projection !== null">DT</small></div>
         <div class="kpi-foot"><span class="kpi-hint">Au rythme actuel des dépenses</span></div>
       </div>

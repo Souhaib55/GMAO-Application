@@ -1,3 +1,4 @@
+import { HelpTipComponent } from '../../shared/components/help-tip/help-tip.component';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -14,7 +15,7 @@ const MOIS = ['janv', 'févr', 'mars', 'avr', 'mai', 'juin', 'juil', 'août', 's
 @Component({
   selector: 'app-budgets',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, AppIconComponent, GmColumnChartComponent, GmBarListComponent],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, AppIconComponent, GmColumnChartComponent, GmBarListComponent, HelpTipComponent],
   templateUrl: './budgets.component.html',
   styleUrls: ['./budgets.component.scss']
 })

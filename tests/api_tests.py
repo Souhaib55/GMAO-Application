@@ -219,6 +219,8 @@ def main():
     check("checklist du plan copiée dans l'OT", [t["libelle"] for t in suivi_pm["taches"]] == plan_body["taches"], suivi_pm["taches"])
     _, again = sup.post("/api/preventif/generer")
     check("génération idempotente (pas de doublon)", all(g["planId"] != plan["id"] for g in again["generes"]), again)
+    early = sup.post(f"/api/preventif/plans/{plan['id']}/generer")
+    check("génération anticipée refusée tant que l'OT du plan est ouvert", early[0] == 400 and "encore ouvert" in str(early[1]), early)
     check("le technicien affecté voit l'OT préventif", tech.get(f"/api/DemandeIntervention/{histo[0]['idDemandeIntervention']}")[0] == 200)
     status, cal = sup.get(f"/api/preventif/calendrier?from={today.isoformat()}&to={(today + dt.timedelta(days=60)).isoformat()}")
     check("calendrier : OT + prévisions", status == 200 and sum(1 for c in cal if c.get("planId") == plan["id"]) >= 4, len(cal) if isinstance(cal, list) else cal)
@@ -341,6 +343,12 @@ def main():
 
     # ------------------------------------------------------------------
     section("Tableau de bord")
+    _, na = sup.get("/api/DemandeIntervention?page=1&pageSize=100&vue=non-affectees")
+    check("liste filtrée « sans technicien »", all(x["statusId"] == 1 and not x.get("destinataire") for x in na["data"]), [x["idDemandeIntervention"] for x in na["data"] if x.get("destinataire")])
+    _, ouv = sup.get("/api/DemandeIntervention?page=1&pageSize=100&vue=ouvertes")
+    check("liste filtrée « ouvertes »", all(x["statusId"] in (1, 2) for x in ouv["data"]), ouv["totalCount"])
+    _, arr = sup.get("/api/DemandeIntervention?page=1&pageSize=100&vue=arret")
+    check("liste filtrée « machines à l'arrêt »", all(x["machineArretee"] and x.get("idEquipement") and x["statusId"] in (1, 2) for x in arr["data"]), arr["totalCount"])
     for days in (7, 30, 90, 365):
         status, pil = sup.get(f"/api/pilotage?days={days}")
         check(f"pilotage {days} j", status == 200 and 0 <= pil["courant"]["disponibilite"] <= 100 and (pil["courant"]["mtbf"] is None or pil["courant"]["mtbf"] >= 0), status)

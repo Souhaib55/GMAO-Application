@@ -34,7 +34,7 @@
         <!-- Key figures -->
         <div class="gm-kpis kpis-6">
           <div class="gm-kpi">
-            <div class="kpi-top"><span class="kpi-label">Disponibilité du parc</span><span class="kpi-icon" [ngClass]="dispoTone(d.courant.disponibilite)"><app-icon name="gauge"></app-icon></span></div>
+            <div class="kpi-top"><span class="kpi-label">Disponibilité du parc<app-help text="Part du temps où les machines ont pu produire sur la période. 100 % = aucune machine arrêtée par une panne. Seules les pannes sur une machine identifiée sont comptées."></app-help></span><span class="kpi-icon" [ngClass]="dispoTone(d.courant.disponibilite)"><app-icon name="gauge"></app-icon></span></div>
             <div class="kpi-value">{{ d.courant.disponibilite | number:'1.1-1':'fr' }}<small>%</small></div>
             <div class="kpi-foot">
               <span class="gm-delta" *ngIf="delta(d.courant.disponibilite, d.precedent.disponibilite, true, 'pt') as x" [ngClass]="x.tone">{{ x.text }}</span>
@@ -42,7 +42,7 @@
             </div>
           </div>
           <div class="gm-kpi">
-            <div class="kpi-top"><span class="kpi-label">Heures d'arrêt</span><span class="kpi-icon t-bad"><app-icon name="alert"></app-icon></span></div>
+            <div class="kpi-top"><span class="kpi-label">Heures d'arrêt<app-help text="Total des heures pendant lesquelles des machines étaient arrêtées par une panne, de la déclaration jusqu'à la réparation."></app-help></span><span class="kpi-icon t-bad"><app-icon name="alert"></app-icon></span></div>
             <div class="kpi-value">{{ d.courant.heuresArret | number:'1.0-0':'fr' }}<small>h</small></div>
             <div class="kpi-foot">
               <span class="kpi-hint">{{ d.courant.pannes }} panne{{ d.courant.pannes > 1 ? 's' : '' }} déclarée{{ d.courant.pannes > 1 ? 's' : '' }}</span>
@@ -50,7 +50,7 @@
             </div>
           </div>
           <div class="gm-kpi">
-            <div class="kpi-top"><span class="kpi-label">Temps moyen de réparation</span><span class="kpi-icon t-info"><app-icon name="clock"></app-icon></span></div>
+            <div class="kpi-top"><span class="kpi-label">Temps moyen de réparation<app-help text="MTTR : durée moyenne d'une réparation, du début du travail du technicien jusqu'à la fin. Plus il est court, mieux c'est. MTBF : temps moyen de bon fonctionnement entre deux pannes. Plus il est long, mieux c'est."></app-help></span><span class="kpi-icon t-info"><app-icon name="clock"></app-icon></span></div>
             <div class="kpi-value">{{ d.courant.mttr !== null ? (d.courant.mttr | number:'1.1-1':'fr') : '—' }}<small *ngIf="d.courant.mttr !== null">h</small></div>
             <div class="kpi-foot">
               <span class="kpi-hint" title="Temps moyen entre deux pannes">MTBF {{ d.courant.mtbf !== null ? (d.courant.mtbf | number:'1.0-0':'fr') + ' h' : '—' }}</span>
@@ -58,20 +58,20 @@
             </div>
           </div>
           <a class="gm-kpi clickable" routerLink="/preventif">
-            <div class="kpi-top"><span class="kpi-label">Respect du préventif</span><span class="kpi-icon" [ngClass]="respectTone(d.courant.respectPreventif)"><app-icon name="preventive"></app-icon></span></div>
+            <div class="kpi-top"><span class="kpi-label">Respect du préventif<app-help text="Part des entretiens planifiés réalisés à temps, c'est-à-dire au plus 2 jours après la date prévue. L'objectif est d'au moins 90 %."></app-help></span><span class="kpi-icon" [ngClass]="respectTone(d.courant.respectPreventif)"><app-icon name="preventive"></app-icon></span></div>
             <div class="kpi-value">{{ d.courant.respectPreventif !== null ? (d.courant.respectPreventif | number:'1.0-0':'fr') : '—' }}<small *ngIf="d.courant.respectPreventif !== null">%</small></div>
             <div class="kpi-foot">
               <span class="kpi-hint">{{ d.courant.preventifsDus }} échéances · objectif 90 %</span>
               <span class="gm-delta" *ngIf="delta(d.courant.respectPreventif, d.precedent.respectPreventif, true, 'pt') as x" [ngClass]="x.tone">{{ x.text.replace(' vs période préc.', '') }}</span>
             </div>
           </a>
-          <a class="gm-kpi clickable" routerLink="/interventions">
-            <div class="kpi-top"><span class="kpi-label">Interventions ouvertes</span><span class="kpi-icon" [ngClass]="d.enRetard ? 't-warn' : 't-ok'"><app-icon name="interventions"></app-icon></span></div>
+          <a class="gm-kpi clickable" routerLink="/interventions" [queryParams]="{ vue: 'ouvertes' }">
+            <div class="kpi-top"><span class="kpi-label">Interventions ouvertes<app-help text="Demandes pas encore terminées (à traiter ou en cours). « En retard » : préventif dont la date est dépassée, ou panne ouverte depuis plus de 48 h."></app-help></span><span class="kpi-icon" [ngClass]="d.enRetard ? 't-warn' : 't-ok'"><app-icon name="interventions"></app-icon></span></div>
             <div class="kpi-value">{{ d.backlog }}</div>
             <div class="kpi-foot"><span class="kpi-hint"><b [class.bad]="d.enRetard">{{ d.enRetard }} en retard</b> · {{ d.courant.realisees }} réalisées sur la période</span></div>
           </a>
           <a class="gm-kpi clickable" routerLink="/budgets">
-            <div class="kpi-top"><span class="kpi-label">Coût de maintenance</span><span class="kpi-icon t-info"><app-icon name="budget"></app-icon></span></div>
+            <div class="kpi-top"><span class="kpi-label">Coût de maintenance<app-help text="Main-d'œuvre (heures saisies × taux horaire) + pièces sorties du magasin + sous-traitance, sur la période. La barre compare au budget prévu."></app-help></span><span class="kpi-icon t-info"><app-icon name="budget"></app-icon></span></div>
             <div class="kpi-value">{{ d.cout.total | number:'1.0-0':'fr' }}<small>DT</small></div>
             <div class="kpi-foot budget-foot" *ngIf="budgetRatio !== null; else noBudget">
               <div class="gm-progress" [ngClass]="budgetRatio > 100 ? 'bad' : budgetRatio > 90 ? 'warn' : 'ok'"><span [style.width.%]="budgetRatio > 100 ? 100 : budgetRatio"></span></div>
@@ -85,7 +85,7 @@
         <div class="gm-grid">
           <div class="gm-card span-5">
             <div class="gm-card-head">
-              <div><h3>À traiter maintenant</h3><div class="sub">Machines arrêtées, préventifs en retard, demandes sans technicien</div></div>
+              <div><h3>À traiter maintenant<app-help text="Ce qui demande une action rapide : machines arrêtées, entretiens en retard et demandes qui n'ont pas encore de technicien. Cliquez une ligne pour ouvrir l'intervention."></app-help></h3><div class="sub">Machines arrêtées, préventifs en retard, demandes sans technicien</div></div>
               <a class="btn btn-secondary btn-sm" routerLink="/planning">Planning</a>
             </div>
             <div class="gm-card-body flush">
@@ -98,28 +98,28 @@
             </div>
           </div>
           <div class="gm-card span-7">
-            <div class="gm-card-head"><div><h3>Interventions déclarées et réalisées</h3><div class="sub">{{ periodLabel }} · un écart durable fait grossir le backlog</div></div></div>
+            <div class="gm-card-head"><div><h3>Interventions déclarées et réalisées<app-help text="Comparez les deux courbes : si les demandes déclarées restent au-dessus des réalisées, le travail en attente augmente."></app-help></h3><div class="sub">{{ periodLabel }} · un écart durable fait grossir le backlog</div></div></div>
             <div class="gm-card-body"><gm-line-chart [labels]="trend.labels" [series]="trend.series"></gm-line-chart></div>
           </div>
 
           <!-- Where and why -->
           <div class="gm-card span-4">
-            <div class="gm-card-head"><div><h3>Heures d'arrêt par chaîne</h3><div class="sub">Cliquez une chaîne pour filtrer le tableau</div></div></div>
+            <div class="gm-card-head"><div><h3>Heures d'arrêt par chaîne<app-help text="Les chaînes où les pannes ont le plus arrêté la production. La plus longue barre est la chaîne à améliorer en premier."></app-help></h3><div class="sub">Cliquez une chaîne pour filtrer le tableau</div></div></div>
             <div class="gm-card-body"><gm-bar-list [items]="arretChaines" format="hours" [clickable]="!chaineId" (pick)="filterChaine($event)"></gm-bar-list></div>
           </div>
           <div class="gm-card span-4">
-            <div class="gm-card-head"><div><h3>Pannes les plus fréquentes</h3><div class="sub">Nombre de pannes par type</div></div></div>
+            <div class="gm-card-head"><div><h3>Pannes les plus fréquentes<app-help text="Les types de panne qui reviennent le plus souvent. Agir sur les premiers évite la majorité des pannes."></app-help></h3><div class="sub">Nombre de pannes par type</div></div></div>
             <div class="gm-card-body"><gm-bar-list [items]="paretoBars"></gm-bar-list></div>
           </div>
           <div class="gm-card span-4">
-            <div class="gm-card-head"><div><h3>Répartition des coûts</h3><div class="sub">{{ d.partPreventif !== null ? 'Préventif : ' + (d.partPreventif | number:'1.0-0':'fr') + ' % des heures' : periodLabel }}</div></div></div>
+            <div class="gm-card-head"><div><h3>Répartition des coûts<app-help text="D'où vient l'argent dépensé : main-d'œuvre, pièces ou sous-traitance. Le centre affiche le total en milliers de DT."></app-help></h3><div class="sub">{{ d.partPreventif !== null ? 'Préventif : ' + (d.partPreventif | number:'1.0-0':'fr') + ' % des heures' : periodLabel }}</div></div></div>
             <div class="gm-card-body"><gm-donut [slices]="coutSlices" [center]="(d.cout.total / 1000 | number:'1.0-1':'fr') + ' k'" centerLabel="DT"></gm-donut></div>
           </div>
 
           <!-- Worst actors + alerts -->
           <div class="gm-card span-7">
             <div class="gm-card-head">
-              <div><h3>Machines les plus pénalisantes</h3><div class="sub">Classées par heures d'arrêt sur la période</div></div>
+              <div><h3>Machines les plus pénalisantes<app-help text="Les machines qui ont causé le plus d'heures d'arrêt. Cliquez une machine pour voir son historique de pannes."></app-help></h3><div class="sub">Classées par heures d'arrêt sur la période</div></div>
               <a class="btn btn-secondary btn-sm" routerLink="/explorateur">Analyser</a>
             </div>
             <div class="gm-card-body flush">
@@ -138,14 +138,14 @@
             </div>
           </div>
           <div class="gm-card span-5">
-            <div class="gm-card-head"><div><h3>Alertes</h3><div class="sub">Points qui demandent une décision</div></div></div>
+            <div class="gm-card-head"><div><h3>Alertes<app-help text="Chaque ligne en couleur demande une décision. Cliquez-la pour ouvrir la liste concernée."></app-help></h3><div class="sub">Points qui demandent une décision</div></div></div>
             <div class="gm-card-body alerts">
-              <a class="alert-row" routerLink="/planning" [class.on]="d.alertes.machinesArretees"><app-icon name="alert"></app-icon><span>Machines à l'arrêt</span><b>{{ d.alertes.machinesArretees }}</b></a>
-              <a class="alert-row" routerLink="/planning" [class.on]="d.alertes.nonAffectees"><app-icon name="users"></app-icon><span>Demandes sans technicien</span><b>{{ d.alertes.nonAffectees }}</b></a>
+              <a class="alert-row" routerLink="/interventions" [queryParams]="{ vue: 'arret' }" [class.on]="d.alertes.machinesArretees"><app-icon name="alert"></app-icon><span>Machines à l'arrêt</span><b>{{ d.alertes.machinesArretees }}</b></a>
+              <a class="alert-row" routerLink="/interventions" [queryParams]="{ vue: 'non-affectees' }" [class.on]="d.alertes.nonAffectees"><app-icon name="users"></app-icon><span>Demandes sans technicien</span><b>{{ d.alertes.nonAffectees }}</b></a>
               <a class="alert-row" routerLink="/preventif" [class.on]="d.alertes.preventifsEnRetard"><app-icon name="preventive"></app-icon><span>Préventifs en retard</span><b>{{ d.alertes.preventifsEnRetard }}</b></a>
               <a class="alert-row" routerLink="/magasin" [queryParams]="{ vue: 'reappro' }" [class.on]="d.alertes.stockRupture + d.alertes.stockSousSeuil"><app-icon name="stock"></app-icon><span>Articles en rupture / sous le seuil</span><b>{{ d.alertes.stockRupture }} / {{ d.alertes.stockSousSeuil }}</b></a>
               <a class="alert-row" routerLink="/achats" [class.on]="d.alertes.commandesEnRetard"><app-icon name="truck"></app-icon><span>Commandes en retard de livraison</span><b>{{ d.alertes.commandesEnRetard }}</b></a>
-              <a class="alert-row" routerLink="/achats" [class.on]="d.alertes.demandesAchat"><app-icon name="purchase"></app-icon><span>Demandes d'achat à valider</span><b>{{ d.alertes.demandesAchat }}</b></a>
+              <a class="alert-row" routerLink="/achats" [queryParams]="{ vue: 'demandes', statut: 'Soumise' }" [class.on]="d.alertes.demandesAchat"><app-icon name="purchase"></app-icon><span>Demandes d'achat à valider</span><b>{{ d.alertes.demandesAchat }}</b></a>
             </div>
           </div>
         </div>
@@ -162,27 +162,32 @@
         <div class="gm-kpi">
           <div class="kpi-top"><span class="kpi-label">{{ isTechnicien ? 'En cours' : 'Prises en charge' }}</span><span class="kpi-icon t-warn"><app-icon name="play"></app-icon></span></div>
           <div class="kpi-value">{{ w.enCours }}</div>
+          <div class="kpi-foot"><span class="kpi-hint">{{ isTechnicien ? 'Interventions que vous avez démarrées' : 'Un technicien travaille sur ces demandes' }}</span></div>
         </div>
         <div class="gm-kpi">
           <div class="kpi-top"><span class="kpi-label">{{ isTechnicien ? 'À démarrer' : 'En attente' }}</span><span class="kpi-icon t-info"><app-icon name="interventions"></app-icon></span></div>
           <div class="kpi-value">{{ w.aTraiter }}</div>
+          <div class="kpi-foot"><span class="kpi-hint">{{ isTechnicien ? 'Affectées à vous, pas encore commencées' : 'Pas encore commencées par un technicien' }}</span></div>
         </div>
         <div class="gm-kpi" *ngIf="isTechnicien">
-          <div class="kpi-top"><span class="kpi-label">Prévues aujourd'hui</span><span class="kpi-icon t-info"><app-icon name="calendar"></app-icon></span></div>
+          <div class="kpi-top"><span class="kpi-label">Prévues aujourd'hui<app-help text="Interventions planifiées pour aujourd'hui. « En retard » : la date prévue est passée et le travail n'est pas terminé."></app-help></span><span class="kpi-icon t-info"><app-icon name="calendar"></app-icon></span></div>
           <div class="kpi-value">{{ w.aujourdhui }}</div>
           <div class="kpi-foot"><span class="kpi-hint" [class.bad]="w.enRetard">{{ w.enRetard }} en retard</span></div>
         </div>
         <div class="gm-kpi" *ngIf="isTechnicien">
           <div class="kpi-top"><span class="kpi-label">Heures cette semaine</span><span class="kpi-icon t-ok"><app-icon name="clock"></app-icon></span></div>
           <div class="kpi-value">{{ w.heuresSemaine | number:'1.0-1':'fr' }}<small>h</small></div>
+          <div class="kpi-foot"><span class="kpi-hint">Temps que vous avez saisi depuis lundi</span></div>
         </div>
         <div class="gm-kpi" *ngIf="!isTechnicien">
           <div class="kpi-top"><span class="kpi-label">Réalisées, à valider</span><span class="kpi-icon t-ok"><app-icon name="check"></app-icon></span></div>
           <div class="kpi-value">{{ w.aValider }}</div>
+          <div class="kpi-foot"><span class="kpi-hint">Travaux terminés, le superviseur doit les valider</span></div>
         </div>
         <div class="gm-kpi">
           <div class="kpi-top"><span class="kpi-label">Réalisées sur 30 jours</span><span class="kpi-icon t-ok"><app-icon name="check"></app-icon></span></div>
           <div class="kpi-value">{{ w.realiseesMois }}</div>
+          <div class="kpi-foot"><span class="kpi-hint">Travaux terminés ces 30 derniers jours</span></div>
         </div>
       </div>
 

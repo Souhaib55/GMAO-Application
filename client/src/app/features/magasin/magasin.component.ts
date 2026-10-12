@@ -1,3 +1,4 @@
+import { HelpTipComponent } from '../../shared/components/help-tip/help-tip.component';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -10,14 +11,14 @@ import {
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { AppIconComponent } from '../../shared/components/app-icon/app-icon.component';
 import { GmColumnChartComponent, Series } from '../../shared/components/charts/gm-charts';
-import { errorMessage, exportCsv, fmtDate, fmtDateTime, fmtMoney, fmtMonth, isoDate, otCode } from '../../shared/utils/gm-format';
+import { debouncer, errorMessage, exportCsv, fmtDate, fmtDateTime, fmtMoney, fmtMonth, isoDate, otCode } from '../../shared/utils/gm-format';
 
 type Tab = 'articles' | 'mouvements' | 'reappro' | 'magasins';
 
 @Component({
   selector: 'app-magasin',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent, AppIconComponent, GmColumnChartComponent],
+  imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent, AppIconComponent, GmColumnChartComponent, HelpTipComponent],
   templateUrl: './magasin.component.html',
   styleUrls: ['./magasin.component.scss']
 })
@@ -107,6 +108,13 @@ export class MagasinComponent implements OnInit {
 
   loadSynthese(): void {
     this.api.getMagasinSynthese().subscribe({ next: s => this.synthese = s, error: () => {} });
+  }
+
+  private readonly debounce = debouncer();
+
+  /** Search as you type (Enter still searches immediately). */
+  searchSoon(list: 'articles' | 'mouvements'): void {
+    this.debounce(() => list === 'articles' ? this.loadArticles() : this.loadMouvements());
   }
 
   loadArticles(page = 1): void {

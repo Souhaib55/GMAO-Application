@@ -134,7 +134,12 @@ export class LayoutComponent implements OnInit, OnDestroy {
     private http: HttpClient
   ) {}
 
+  /** Reference time for "Il y a …" labels, refreshed every 30 s (stable between change-detection passes). */
+  private now = Date.now();
+  private clock?: ReturnType<typeof setInterval>;
+
   ngOnInit(): void {
+    this.clock = setInterval(() => this.now = Date.now(), 30000);
     this.subscriptions.push(
       this.search$.pipe(
         map(t => t.trim()),
@@ -179,6 +184,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    clearInterval(this.clock);
     this.subscriptions.forEach(sub => sub.unsubscribe());
     this.notificationService.stopPolling();
   }
@@ -363,7 +369,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   }
 
   getTimeAgo(date: Date | string): string {
-    const now = new Date();
+    const now = new Date(this.now);
     let createdAt: Date;
     
     // Handle string date input and ensure proper parsing

@@ -11,6 +11,8 @@ import { EquipmentService } from '../../equipment/services/equipment.service';
 import { DemandeIntervention, EquipementSummary, InterventionDto } from '../../../core/models';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { InterventionSuiviComponent } from '../intervention-suivi/intervention-suivi.component';
+import { InterventionActionsComponent } from '../intervention-actions/intervention-actions.component';
+import { AppIconComponent } from '../../../shared/components/app-icon/app-icon.component';
 
 /** Statuses of the maintenance workflow (server-side ids). */
 const STATUS = { A_TRAITER: 1, EN_COURS: 2, REALISEE: 3, CLOTUREE: 4, ANNULEE: 5 };
@@ -18,9 +20,114 @@ const STATUS = { A_TRAITER: 1, EN_COURS: 2, REALISEE: 3, CLOTUREE: 4, ANNULEE: 5
 @Component({
   selector: 'app-intervention-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, InterventionSuiviComponent],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, InterventionSuiviComponent, InterventionActionsComponent, AppIconComponent],
   template: `
-    <div class="form-container" [class.view-mode]="isViewMode">
+    <!-- Create / edit: side panel over the list, like every other form of the app -->
+    <ng-container *ngIf="drawer">
+      <div class="gm-backdrop" (click)="cancel()"></div>
+      <aside class="gm-drawer" role="dialog" [attr.aria-label]="formTitle">
+        <div class="gm-drawer-head">
+          <div>
+            <h2>{{ formTitle }}<span class="gm-code" *ngIf="intervention"> · {{ reference }}</span></h2>
+            <div class="sub">{{ formSubtitle }}</div>
+          </div>
+          <button type="button" class="gm-icon-btn" (click)="cancel()" aria-label="Fermer"><app-icon name="close"></app-icon></button>
+        </div>
+
+        <form class="gm-drawer-body" [formGroup]="interventionForm" (ngSubmit)="onSubmit()" id="interventionForm">
+          <div class="gm-note" *ngIf="lockReason"><app-icon name="info"></app-icon>{{ lockReason }}</div>
+          <div class="gm-loading" *ngIf="loading"><span class="spinner"></span> Chargement…</div>
+
+          <div class="gm-section-title">1 · Où se trouve le problème ?</div>
+          <div class="gm-form">
+            <div class="gm-field">
+              <label for="idChaineProduction">Chaîne de production<span class="req" *ngIf="!isViewMode">*</span></label>
+              <select id="idChaineProduction" formControlName="idChaineProduction">
+                <option [ngValue]="null">Choisir la chaîne</option>
+                <option *ngFor="let chaine of chainesProduction" [ngValue]="chaine.idChaineProduction">{{ chaine.libelle }}</option>
+              </select>
+              <span class="err" *ngIf="invalid('idChaineProduction')">Indiquez la chaîne concernée.</span>
+            </div>
+            <div class="gm-field">
+              <label for="idEquipement">Machine concernée</label>
+              <select id="idEquipement" formControlName="idEquipement">
+                <option [ngValue]="null">{{ availableMachines.length ? 'Toute la chaîne / machine non identifiée' : 'Aucune machine enregistrée pour cette chaîne' }}</option>
+                <option *ngFor="let m of availableMachines" [ngValue]="m.idEquipement">{{ m.codeEquipement }} — {{ m.designation }}</option>
+              </select>
+              <span class="hint">Si vous choisissez la machine, sa chaîne est remplie toute seule.</span>
+            </div>
+          </div>
+
+          <div class="gm-section-title">2 · De quoi s'agit-il ?</div>
+          <div class="gm-form">
+            <div class="gm-field">
+              <label for="idTypeIntervention">Type d'intervention<span class="req" *ngIf="!isViewMode">*</span></label>
+              <select id="idTypeIntervention" formControlName="idTypeIntervention">
+                <option [ngValue]="null">Choisir le type</option>
+                <option *ngFor="let type of typesIntervention" [ngValue]="type.idTypeIntervention">{{ type.libelle }}</option>
+              </select>
+              <span class="hint" *ngIf="selectedType">{{ isPreventive ? "Entretien planifié : la production n'est pas arrêtée." : "Panne : la machine est comptée à l'arrêt jusqu'à la réparation." }}</span>
+              <span class="err" *ngIf="invalid('idTypeIntervention')">Choisissez le type d'intervention.</span>
+            </div>
+            <div class="gm-field" *ngIf="!isPreventive">
+              <label for="idPanne">Type de panne<span class="req" *ngIf="!isViewMode">*</span></label>
+              <select id="idPanne" formControlName="idPanne">
+                <option [ngValue]="null">Choisir le type de panne</option>
+                <option *ngFor="let panne of pannes" [ngValue]="panne.idPanne">{{ panne.libelle }}</option>
+              </select>
+              <span class="err" *ngIf="invalid('idPanne')">Le type de panne est obligatoire pour une panne.</span>
+            </div>
+            <div class="gm-field full">
+              <label>Urgence<span class="req" *ngIf="!isViewMode">*</span></label>
+              <div class="chip-group" role="radiogroup">
+                <label class="chip" *ngFor="let urgence of urgences" [attr.data-level]="urgenceLevel(urgence.libelle)"
+                       [class.selected]="interventionForm.get('idUrgence')?.value === urgence.idUrgence">
+                  <input type="radio" formControlName="idUrgence" [value]="urgence.idUrgence" />
+                  {{ urgence.libelle }}
+                </label>
+              </div>
+              <span class="hint">Haute : la production est bloquée. Normale : à traiter dans la journée. Basse : peut attendre.</span>
+              <span class="err" *ngIf="invalid('idUrgence')">Indiquez le niveau d'urgence.</span>
+            </div>
+            <div class="gm-field full">
+              <label for="titre">Titre<span class="req" *ngIf="!isViewMode">*</span></label>
+              <input id="titre" type="text" formControlName="titre" maxlength="100" placeholder="Ex. : Fuite d'huile sous le carter de la presse P-12">
+              <span class="err" *ngIf="invalid('titre')">Un titre de 3 caractères minimum est requis.</span>
+            </div>
+            <div class="gm-field full">
+              <label for="description">Description du problème</label>
+              <textarea id="description" formControlName="description" rows="4" maxlength="2000"
+                        placeholder="Ce que vous avez constaté, depuis quand, dans quelles conditions…"></textarea>
+              <span class="hint" *ngIf="!isViewMode">{{ (interventionForm.value.description || '').length }} / 2000 caractères</span>
+            </div>
+          </div>
+
+          <div class="gm-section-title">3 · Pièce jointe (facultatif)</div>
+          <div class="gm-field" *ngIf="!isViewMode">
+            <input id="file" type="file" (change)="onFileSelected($event)" [accept]="allowedExtensions.join(',')">
+            <span class="hint">Une photo de la panne aide le technicien. PDF, Office, images ou archives, 10 Mo maximum.</span>
+          </div>
+          <div class="file-preview existing-file" *ngIf="existingFileName && !selectedFile">
+            <div class="file-info"><app-icon name="file"></app-icon><span>{{ existingFileName }}</span></div>
+            <button type="button" class="btn-remove" (click)="removeExistingFile()" title="Retirer la pièce jointe" *ngIf="!isViewMode"><app-icon name="close"></app-icon></button>
+          </div>
+          <div class="file-preview" *ngIf="selectedFile">
+            <div class="file-info"><app-icon name="file"></app-icon><span>{{ selectedFile.name }}</span></div>
+            <button type="button" class="btn-remove" (click)="removeFile()" title="Retirer"><app-icon name="close"></app-icon></button>
+          </div>
+        </form>
+
+        <div class="gm-drawer-foot">
+          <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="saving">{{ isViewMode ? 'Fermer' : 'Annuler' }}</button>
+          <button type="submit" form="interventionForm" class="btn btn-primary" *ngIf="!isViewMode" [disabled]="saving || loading">
+            <span class="spinner spinner-sm" *ngIf="saving"></span>
+            {{ isEditMode ? 'Enregistrer les modifications' : "Déclarer l'intervention" }}
+          </button>
+        </div>
+      </aside>
+    </ng-container>
+
+    <div class="form-container" [class.view-mode]="isViewMode" *ngIf="!drawer">
       <app-page-header icon="interventions" [title]="formTitle" [subtitle]="formSubtitle">
         <div class="header-actions">
           <button class="btn btn-print" (click)="printForm()" *ngIf="isViewMode" title="Imprimer / Télécharger PDF">
@@ -71,6 +178,12 @@ const STATUS = { A_TRAITER: 1, EN_COURS: 2, REALISEE: 3, CLOTUREE: 4, ANNULEE: 5
           <span class="fact-value" [class.stop]="intervention.machineArretee">{{ intervention.machineArretee ? 'Oui' : 'Non' }}</span>
         </div>
       </section>
+
+      <!-- Next workflow step for the current user (assign, accept, complete, validate, cancel) -->
+      <app-intervention-actions class="actions-block" *ngIf="intervention && isViewMode"
+                                [intervention]="intervention"
+                                (updated)="loadIntervention(intervention!.idDemandeIntervention)"
+                                (released)="cancel()"></app-intervention-actions>
 
       <div class="lock-banner" *ngIf="lockReason && !isViewModeFromRoute">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
@@ -222,6 +335,8 @@ const STATUS = { A_TRAITER: 1, EN_COURS: 2, REALISEE: 3, CLOTUREE: 4, ANNULEE: 5
     .header-actions { display: flex; gap: 12px; align-items: center; }
 
     .suivi-block { display: block; margin-top: 16px; }
+    .actions-block { margin-bottom: 16px; }
+    @media print { .actions-block { display: none; } }
     @media print { .suivi-block { break-before: page; } }
 
     .facts-card {
@@ -442,6 +557,8 @@ export class InterventionFormComponent implements OnInit, OnDestroy {
   isEditMode = false;
   isViewMode = false;
   isViewModeFromRoute = false;
+  /** Create / edit opened as a side panel over the list (child route of /interventions). */
+  drawer = false;
   interventionId?: number;
   intervention?: DemandeIntervention;
   lockReason: string | null = null;
@@ -519,6 +636,7 @@ export class InterventionFormComponent implements OnInit, OnDestroy {
     this.watchBusinessRules();
 
     this.isViewModeFromRoute = this.route.snapshot.data['viewMode'] === true;
+    this.drawer = this.route.snapshot.data['drawer'] === true;
     this.isViewMode = this.isViewModeFromRoute;
 
     const id = this.route.snapshot.paramMap.get('id');

@@ -59,4 +59,18 @@ python tests/api_tests.py --base http://localhost:5000
 python tests/qa_accounts.py remove      # supprime les comptes et les données de test
 ```
 
-133 vérifications : authentification et droits, cycle de vie d'une intervention, préventif, magasin, achats, budgets, explorateur (les 51 questions), tableau de bord, planning, règles métier (remise en stock à l'annulation, état des machines, double saisie de temps), Power BI, et non-régression des écrans existants.
+137 vérifications : authentification et droits, cycle de vie d'une intervention, préventif, magasin, achats, budgets, explorateur (les 51 questions), tableau de bord, planning, règles métier (remise en stock à l'annulation, état des machines, double saisie de temps), Power BI, et non-régression des écrans existants.
+
+### Tests de l'interface (navigateur)
+
+Ils pilotent l'application comme un utilisateur, dans Microsoft Edge en mode invisible. Prérequis : l'API sur le port 5000, l'interface sur le port 4200 et les données de démonstration chargées.
+
+```
+node tests/e2e/pages.mjs      # chaque page de chaque rôle s'ouvre sans erreur, accès interdits respectés
+node tests/e2e/workflow.mjs   # déclaration → affectation → refus → prise en charge → temps, pièce → réalisation → renvoi → clôture, puis CRUD superviseur
+node tests/e2e/modules.mjs    # préventif, magasin (mouvements, réapprovisionnement), achats (DA → BC → réception → stock)
+node tests/e2e/admin.mjs      # équipements, utilisateurs, référentiels, budgets, techniciens, explorateur, alertes du tableau de bord, droits du demandeur
+sqlcmd -S <serveur> -d gmao -I -f 65001 -i tests/e2e/cleanup.sql   # supprime les données créées par ces tests
+```
+
+Les captures des vérifications en échec sont enregistrées dans `tests/e2e/captures/`. Ces tests créent des données : ne pas les lancer sur la base de production.

@@ -1,3 +1,4 @@
+import { HelpTipComponent } from '../../../shared/components/help-tip/help-tip.component';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -9,7 +10,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 @Component({
   selector: 'app-user-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, HelpTipComponent],
   template: `
     <div class="users-container">
       <!-- Header -->
@@ -56,7 +57,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
           </div>
           <div class="stat-content">
             <span class="stat-number">{{ getUsersByRole('Superviseur').length }}</span>
-            <span class="stat-label">Superviseurs</span>
+            <span class="stat-label">Superviseurs<app-help text="Responsables de la maintenance : ils affectent les interventions, valident les travaux et gèrent tous les modules."></app-help></span>
           </div>
         </div>
         <div class="stat-card demandeur">
@@ -67,7 +68,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
           </div>
           <div class="stat-content">
             <span class="stat-number">{{ getUsersByRole('Demandeur').length }}</span>
-            <span class="stat-label">Demandeurs</span>
+            <span class="stat-label">Demandeurs<app-help text="Chefs de chaîne : ils déclarent les pannes et suivent leurs demandes."></app-help></span>
           </div>
         </div>
         <div class="stat-card utilisateur">
@@ -79,7 +80,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
           </div>
           <div class="stat-content">
             <span class="stat-number">{{ getUsersByRole('Utilisateur').length }}</span>
-            <span class="stat-label">Utilisateurs</span>
+            <span class="stat-label">Utilisateurs<app-help text="Techniciens de maintenance : ils réalisent les interventions qui leur sont affectées."></app-help></span>
           </div>
         </div>
       </div>
@@ -1335,7 +1336,6 @@ export class UserManagementComponent implements OnInit {
     this.userService.getRoles().subscribe({
       next: (roles) => {
         this.roles = roles;
-        console.log('Loaded roles from DB:', this.roles);
       },
       error: (err) => {
         console.error('Error loading roles, using defaults:', err);
@@ -1445,7 +1445,6 @@ export class UserManagementComponent implements OnInit {
         isActif: true
       };
 
-      console.log('Updating user with data:', updateData);
 
       this.userService.updateUser(this.editingUser.id, updateData).subscribe({
         next: (updatedUser) => {
@@ -1487,7 +1486,6 @@ export class UserManagementComponent implements OnInit {
         roleId: roleIdNum
       };
 
-      console.log('Creating user with data:', createData);
       
       this.userService.createUser(createData).subscribe({
         next: () => {
@@ -1497,8 +1495,6 @@ export class UserManagementComponent implements OnInit {
           this.loadUsers();
         },
         error: (err) => {
-          console.log('Full error:', err);
-          console.log('Error body:', err.error);
           let errorMsg = 'Erreur lors de la création';
           if (err.error?.errors) {
             // Handle validation errors from ASP.NET

@@ -12,34 +12,6 @@
   <div class="gm-error-box" *ngIf="error"><app-icon name="alert"></app-icon>{{ error }}</div>
 
   <ng-container *ngIf="suivi as s">
-    <!-- Next step of the work order -->
-    <div class="workflow" *ngIf="s.estTechnicienAffecte && s.statusId === 1">
-      <span><b>Cette intervention vous est affectée.</b> Prenez-la en charge pour saisir vos travaux.</span>
-      <button class="btn btn-primary" (click)="accept()" [disabled]="busy"><app-icon name="play"></app-icon> Prendre en charge</button>
-    </div>
-    <div class="workflow" *ngIf="s.estTechnicienAffecte && s.statusId === 2">
-      <ng-container *ngIf="!workflowOpen">
-        <span><b>Travaux en cours.</b> Une fois terminé, rédigez le compte rendu.<ng-container *ngIf="tachesRestantes > 0"> {{ tachesRestantes }} étape(s) non cochée(s).</ng-container><ng-container *ngIf="!s.temps.length"> Pensez à saisir votre temps passé.</ng-container></span>
-        <button class="btn btn-success" (click)="workflowOpen = true"><app-icon name="check"></app-icon> Terminer</button>
-      </ng-container>
-      <div class="finish" *ngIf="workflowOpen">
-        <label>Compte rendu d'intervention <span class="req">*</span></label>
-        <textarea rows="3" [(ngModel)]="compteRendu" placeholder="Travaux réalisés, état de la machine, recommandations…"></textarea>
-        <div class="finish-actions">
-          <small [class.ok]="compteRendu.trim().length >= 10">{{ compteRendu.trim().length }} / 10 caractères minimum</small>
-          <button class="btn btn-secondary btn-sm" (click)="workflowOpen = false">Annuler</button>
-          <button class="btn btn-success btn-sm" (click)="complete()" [disabled]="busy || compteRendu.trim().length < 10">Marquer comme réalisée</button>
-        </div>
-      </div>
-    </div>
-    <div class="workflow" *ngIf="s.estSuperviseur && s.statusId === 3">
-      <span><b>Travaux réalisés.</b> Vérifiez le compte rendu et le suivi, puis clôturez.</span>
-      <div class="gm-inline">
-        <button class="btn btn-secondary" (click)="reopen()" [disabled]="busy">Renvoyer au technicien</button>
-        <button class="btn btn-success" (click)="close()" [disabled]="busy"><app-icon name="check"></app-icon> Valider et clôturer</button>
-      </div>
-    </div>
-
     <!-- Cost -->
     <div class="cost">
       <div><span class="k">Main-d'œuvre</span><b class="num">{{ s.cout.mainOeuvre | number:'1.0-0':'fr' }} DT</b><small>{{ s.cout.heures | number:'1.0-1':'fr' }} h</small></div>

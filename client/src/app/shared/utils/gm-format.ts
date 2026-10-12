@@ -133,3 +133,9 @@ export const STATUTS_OT: { [id: number]: { label: string; dot: string } } = {
   4: { label: 'Clôturée', dot: 'd-done' },
   5: { label: 'Annulée', dot: 'd-muted' }
 };
+
+/** Runs the last call only, `ms` after the user stops typing (search-as-you-type). */
+export function debouncer(ms = 300): (run: () => void) => void {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  return run => { clearTimeout(timer); timer = setTimeout(run, ms); };
+}

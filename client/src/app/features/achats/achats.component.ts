@@ -1,3 +1,4 @@
+import { HelpTipComponent } from '../../shared/components/help-tip/help-tip.component';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -9,7 +10,7 @@ import {
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { AppIconComponent } from '../../shared/components/app-icon/app-icon.component';
 import { ArticlePickerComponent } from '../../shared/components/article-picker/article-picker.component';
-import { errorMessage, exportCsv, fmtDate, fmtDateTime, isoDate, otCode } from '../../shared/utils/gm-format';
+import { debouncer, errorMessage, exportCsv, fmtDate, fmtDateTime, isoDate, otCode } from '../../shared/utils/gm-format';
 
 type Tab = 'commandes' | 'demandes' | 'fournisseurs';
 
@@ -18,7 +19,7 @@ interface EditLine { idPiece: number | null; designation: string; quantite: numb
 @Component({
   selector: 'app-achats',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent, AppIconComponent, ArticlePickerComponent],
+  imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent, AppIconComponent, ArticlePickerComponent, HelpTipComponent],
   templateUrl: './achats.component.html',
   styleUrls: ['./achats.component.scss']
 })
@@ -68,6 +69,8 @@ export class AchatsComponent implements OnInit {
     if (!this.isSuperviseur) this.tab = 'demandes';
     const vue = this.route.snapshot.queryParamMap.get('vue') as Tab | null;
     if (vue && (this.isSuperviseur || vue === 'demandes')) this.tab = vue;
+    const statut = this.route.snapshot.queryParamMap.get('statut');
+    if (statut && this.tab === 'demandes') this.daStatut = statut;
     this.refresh();
     const bc = Number(this.route.snapshot.queryParamMap.get('bc'));
     if (bc && this.isSuperviseur) this.openDetail(bc);
@@ -88,6 +91,13 @@ export class AchatsComponent implements OnInit {
   }
 
   // ------------------------------------------------------------------ Orders
+
+  private readonly debounce = debouncer();
+
+  /** Search as you type (Enter still searches immediately). */
+  searchSoon(list: 'commandes' | 'fournisseurs'): void {
+    this.debounce(() => list === 'commandes' ? this.loadCommandes() : this.loadFournisseurs());
+  }
 
   loadCommandes(): void {
     this.cmdLoading = true;

@@ -43,7 +43,7 @@ namespace API.Controllers
                         d.StatusId <= StatusEnCours && d.DatePlanifiee != null && d.DatePlanifiee < today),
                     Realisees = _context.DemandeInterventions.Count(d => d.IsActif && d.DestinatairesID == u.ID &&
                         d.DateRealisation >= depuis && (d.StatusId == StatusRealisee || d.StatusId == StatusCloturee)),
-                    MinutesSaisies = _context.InterventionTemps.Where(t => t.IdTechnicien == u.ID && t.Debut >= depuis).Sum(t => (int?)t.DureeMinutes) ?? 0,
+                    MinutesSaisies = _context.InterventionTemps.Where(t => t.IdTechnicien == u.ID && t.DemandeIntervention.IsActif && t.Debut >= depuis).Sum(t => (int?)t.DureeMinutes) ?? 0,
                     // Hours already planned for open jobs (estimate)
                     MinutesPlanifiees = _context.DemandeInterventions.Where(d => d.IsActif && d.DestinatairesID == u.ID && d.StatusId <= StatusEnCours)
                         .Sum(d => (int?)d.DureeEstimeeMinutes) ?? 0

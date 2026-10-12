@@ -5,27 +5,27 @@
 
   <div class="gm-kpis" *ngIf="synthese">
     <div class="gm-kpi">
-      <div class="kpi-top"><span class="kpi-label">Valeur du stock</span><span class="kpi-icon t-info"><app-icon name="coins"></app-icon></span></div>
+      <div class="kpi-top"><span class="kpi-label">Valeur du stock<app-help text="Ce que vaut tout le stock du magasin : quantité de chaque article × son prix unitaire."></app-help></span><span class="kpi-icon t-info"><app-icon name="coins"></app-icon></span></div>
       <div class="kpi-value">{{ synthese.valeur | number:'1.0-0':'fr' }}<small>DT</small></div>
       <div class="kpi-foot"><span class="kpi-hint">{{ synthese.articles }} articles actifs</span></div>
     </div>
     <button class="gm-kpi clickable" (click)="setTab('articles'); setNiveau('rupture')">
-      <div class="kpi-top"><span class="kpi-label">En rupture</span><span class="kpi-icon" [ngClass]="synthese.ruptures ? 't-bad' : 't-ok'"><app-icon name="alert"></app-icon></span></div>
+      <div class="kpi-top"><span class="kpi-label">En rupture<app-help text="Articles suivis dont il ne reste plus rien en stock. Cliquez pour les afficher."></app-help></span><span class="kpi-icon" [ngClass]="synthese.ruptures ? 't-bad' : 't-ok'"><app-icon name="alert"></app-icon></span></div>
       <div class="kpi-value">{{ synthese.ruptures }}</div>
       <div class="kpi-foot"><span class="kpi-hint">Articles à zéro</span></div>
     </button>
     <button class="gm-kpi clickable" (click)="setTab('reappro')">
-      <div class="kpi-top"><span class="kpi-label">Sous le seuil</span><span class="kpi-icon" [ngClass]="synthese.sousSeuil ? 't-warn' : 't-ok'"><app-icon name="truck"></app-icon></span></div>
+      <div class="kpi-top"><span class="kpi-label">Sous le seuil<app-help text="Articles dont la quantité est passée sous le seuil minimum fixé : il faut en recommander. Cliquez pour voir les quantités conseillées."></app-help></span><span class="kpi-icon" [ngClass]="synthese.sousSeuil ? 't-warn' : 't-ok'"><app-icon name="truck"></app-icon></span></div>
       <div class="kpi-value">{{ synthese.sousSeuil }}</div>
       <div class="kpi-foot"><span class="kpi-hint">À réapprovisionner</span></div>
     </button>
     <div class="gm-kpi">
-      <div class="kpi-top"><span class="kpi-label">Sorties sur 30 jours</span><span class="kpi-icon t-info"><app-icon name="move"></app-icon></span></div>
+      <div class="kpi-top"><span class="kpi-label">Sorties sur 30 jours<app-help text="Valeur des pièces sorties du magasin ces 30 derniers jours (pour des interventions ou d'autres besoins)."></app-help></span><span class="kpi-icon t-info"><app-icon name="move"></app-icon></span></div>
       <div class="kpi-value">{{ synthese.sorties30 | number:'1.0-0':'fr' }}<small>DT</small></div>
       <div class="kpi-foot"><span class="kpi-hint">Entrées : {{ synthese.entrees30 | number:'1.0-0':'fr' }} DT</span></div>
     </div>
     <div class="gm-kpi">
-      <div class="kpi-top"><span class="kpi-label">Stock dormant</span><span class="kpi-icon t-neutral"><app-icon name="clock"></app-icon></span></div>
+      <div class="kpi-top"><span class="kpi-label">Stock dormant<app-help text="Valeur des articles en stock qui ne sont jamais sortis depuis 12 mois. Argent immobilisé : à vérifier."></app-help></span><span class="kpi-icon t-neutral"><app-icon name="clock"></app-icon></span></div>
       <div class="kpi-value">{{ synthese.valeurDormante | number:'1.0-0':'fr' }}<small>DT</small></div>
       <div class="kpi-foot"><span class="kpi-hint">Aucune sortie depuis 12 mois</span></div>
     </div>
@@ -42,7 +42,7 @@
   <ng-container *ngIf="tab === 'articles'">
     <div class="gm-filters">
       <span class="gm-search"><app-icon name="search"></app-icon>
-        <input type="search" placeholder="Code, désignation, emplacement…" [(ngModel)]="search" (keyup.enter)="loadArticles()" (search)="loadArticles()">
+        <input type="search" placeholder="Code, désignation, emplacement…" [(ngModel)]="search" (ngModelChange)="searchSoon('articles')" (keyup.enter)="loadArticles()" (search)="loadArticles()">
       </span>
       <select [(ngModel)]="type" (ngModelChange)="loadArticles()" aria-label="Type">
         <option value="">Tous les types</option>
@@ -104,7 +104,7 @@
   <ng-container *ngIf="tab === 'mouvements'">
     <div class="gm-filters">
       <span class="gm-search"><app-icon name="search"></app-icon>
-        <input type="search" placeholder="Article, motif…" [(ngModel)]="mvSearch" (keyup.enter)="loadMouvements()" (search)="loadMouvements()">
+        <input type="search" placeholder="Article, motif…" [(ngModel)]="mvSearch" (ngModelChange)="searchSoon('mouvements')" (keyup.enter)="loadMouvements()" (search)="loadMouvements()">
       </span>
       <select [(ngModel)]="mvType" (ngModelChange)="loadMouvements()" aria-label="Type">
         <option value="">Tous les mouvements</option>

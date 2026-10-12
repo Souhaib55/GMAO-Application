@@ -1,3 +1,4 @@
+import { HelpTipComponent } from '../../shared/components/help-tip/help-tip.component';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -44,7 +45,7 @@ interface MonTravail {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent, AppIconComponent, GmBarListComponent, GmDonutComponent, GmLineChartComponent],
+  imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent, AppIconComponent, GmBarListComponent, GmDonutComponent, GmLineChartComponent, HelpTipComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })

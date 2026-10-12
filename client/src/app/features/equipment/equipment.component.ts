@@ -1,19 +1,25 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { debouncer } from '../../shared/utils/gm-format';
 import { FormsModule } from '@angular/forms';
 import { EquipmentService } from './services/equipment.service';
 import { Equipment, PagedResult, UserInfo } from '../../core/models';
 import { NotificationService } from '../../core/services/notification.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { AppIconComponent } from '../../shared/components/app-icon/app-icon.component';
 
 @Component({
   selector: 'app-equipment',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, PageHeaderComponent],
+  imports: [CommonModule, RouterModule, FormsModule, PageHeaderComponent, AppIconComponent],
   templateUrl: './equipment.component.html',
-  styleUrls: ['../../shared/styles/crud-table-design.scss']
+  styles: [`
+    .count { font-size: 0.8125rem; color: var(--text-muted); }
+    .row-actions { display: inline-flex; gap: 2px; justify-content: flex-end; }
+  `]
 })
 export class EquipmentComponent implements OnInit {
   equipments: Equipment[] = [];
@@ -25,6 +31,7 @@ export class EquipmentComponent implements OnInit {
   currentUser: UserInfo | null = null;
 
   stats = {
+    total: 0,
     actif: 0,
     critique: 0,
     horsService: 0
@@ -55,7 +62,9 @@ export class EquipmentComponent implements OnInit {
 
   loadEquipments(): void {
     this.loading = true;
-    this.equipmentService.getEquipments(this.currentPage, this.pageSize, this.searchTerm).subscribe({
+    // Only the latest request counts: an older, slower answer must not overwrite the list
+    this.listSub?.unsubscribe();
+    this.listSub = this.equipmentService.getEquipments(this.currentPage, this.pageSize, this.searchTerm).subscribe({
       next: (result: PagedResult<Equipment>) => {
         this.equipments = result.data;
         this.totalCount = result.totalCount;
@@ -71,30 +80,39 @@ export class EquipmentComponent implements OnInit {
   /** Counters over the whole fleet (the table only shows one page). */
   calculateStats(): void {
     this.equipmentService.stats().subscribe({
-      next: s => this.stats = { actif: s.enService, critique: s.critiques, horsService: s.enPanne },
+      next: s => this.stats = { total: s.total, actif: s.enService, critique: s.critiques, horsService: s.enPanne },
       error: () => {}
     });
   }
 
+  private listSub?: Subscription;
+  private readonly debounce = debouncer();
+
   search(): void {
-    this.currentPage = 1;
+    this.debounce(() => {
+      this.currentPage = 1;
+      this.loadEquipments();
+    });
+  }
+
+  /** The list and its counters are refreshed when the side panel closes (after a save or not). */
+  onFormClosed(): void {
     this.loadEquipments();
   }
 
   getEtatClass(equipment: Equipment): string {
     const etat = equipment.etat?.nomEtat?.toLowerCase() || '';
-    if (etat.includes('service') || etat.includes('actif') || etat.includes('bon')) return 'status-success';
-    if (etat.includes('maintenance')) return 'status-warning';
-    if (etat.includes('hors') || etat.includes('panne')) return 'status-danger';
-    return 'status-primary';
+    if (etat.includes('hors') || etat.includes('panne')) return 'd-bad';
+    if (etat.includes('maintenance')) return 'd-warn';
+    if (etat.includes('service') || etat.includes('actif') || etat.includes('bon')) return 'd-ok';
+    return 'd-muted';
   }
 
   getCriticiteClass(equipment: Equipment): string {
     const criticite = equipment.criticite?.nomCriticite?.toLowerCase() || '';
-    if (criticite.includes('critique') || criticite.includes('haute')) return 'status-danger';
-    if (criticite.includes('important') || criticite.includes('moyenne') || criticite.includes('moyen')) return 'status-warning';
-    if (criticite.includes('basse') || criticite.includes('faible')) return 'status-normal';
-    return 'status-normal';
+    if (criticite.includes('critique') || criticite.includes('haute')) return 't-bad';
+    if (criticite.includes('important') || criticite.includes('moyenne') || criticite.includes('moyen')) return 't-warn';
+    return 't-neutral';
   }
 
   nextPage(): void {

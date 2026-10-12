@@ -1,3 +1,4 @@
+import { HelpTipComponent } from '../../../shared/components/help-tip/help-tip.component';
 import { Component, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -11,7 +12,7 @@ import { STATUTS_OT, errorMessage, exportCsv, fmtDate, fmtHours, otCode, relativ
 @Component({
   selector: 'app-equipement-historique',
   standalone: true,
-  imports: [CommonModule, RouterModule, AppIconComponent, GmBarListComponent],
+  imports: [CommonModule, RouterModule, AppIconComponent, GmBarListComponent, HelpTipComponent],
   template: `
     <div class="gm-loading" *ngIf="loading"><span class="spinner"></span> Chargement de l'historique…</div>
     <div class="gm-error-box" *ngIf="error"><app-icon name="alert"></app-icon>{{ error }}</div>
@@ -20,22 +21,22 @@ import { STATUTS_OT, errorMessage, exportCsv, fmtDate, fmtHours, otCode, relativ
       <ng-container *ngIf="mode === 'historique'">
         <div class="gm-kpis">
           <div class="gm-kpi">
-            <div class="kpi-top"><span class="kpi-label">Disponibilité (12 mois)</span><span class="kpi-icon" [ngClass]="d.indicateurs.disponibilite >= 98 ? 't-ok' : d.indicateurs.disponibilite >= 95 ? 't-warn' : 't-bad'"><app-icon name="gauge"></app-icon></span></div>
+            <div class="kpi-top"><span class="kpi-label">Disponibilité (12 mois)<app-help text="Part du temps où cette machine a pu produire sur les 12 derniers mois. 100 % = jamais arrêtée par une panne."></app-help></span><span class="kpi-icon" [ngClass]="d.indicateurs.disponibilite >= 98 ? 't-ok' : d.indicateurs.disponibilite >= 95 ? 't-warn' : 't-bad'"><app-icon name="gauge"></app-icon></span></div>
             <div class="kpi-value">{{ d.indicateurs.disponibilite | number:'1.1-1':'fr' }}<small>%</small></div>
             <div class="kpi-foot"><span class="kpi-hint">{{ fmtHours(d.indicateurs.heuresArret) }} d'arrêt</span></div>
           </div>
           <div class="gm-kpi">
-            <div class="kpi-top"><span class="kpi-label">Pannes (12 mois)</span><span class="kpi-icon t-bad"><app-icon name="alert"></app-icon></span></div>
+            <div class="kpi-top"><span class="kpi-label">Pannes (12 mois)<app-help text="Nombre de pannes déclarées sur cette machine pendant les 12 derniers mois."></app-help></span><span class="kpi-icon t-bad"><app-icon name="alert"></app-icon></span></div>
             <div class="kpi-value">{{ d.indicateurs.pannes12Mois }}</div>
             <div class="kpi-foot"><span class="kpi-hint">Dernière : {{ d.indicateurs.dernierepanne ? relativeDays(d.indicateurs.dernierepanne) : 'aucune' }}</span></div>
           </div>
           <div class="gm-kpi">
-            <div class="kpi-top"><span class="kpi-label">MTBF / MTTR</span><span class="kpi-icon t-info"><app-icon name="clock"></app-icon></span></div>
+            <div class="kpi-top"><span class="kpi-label">MTBF / MTTR<app-help text="MTBF (le grand chiffre) : temps moyen de bon fonctionnement entre deux pannes, plus il est long mieux c'est. Réparation moyenne (MTTR) : durée moyenne d'une réparation."></app-help></span><span class="kpi-icon t-info"><app-icon name="clock"></app-icon></span></div>
             <div class="kpi-value">{{ d.indicateurs.mtbfHeures !== null ? (d.indicateurs.mtbfHeures | number:'1.0-0':'fr') : '—' }}<small>h</small></div>
             <div class="kpi-foot"><span class="kpi-hint">Réparation moyenne : {{ d.indicateurs.mttrHeures !== null ? fmtHours(d.indicateurs.mttrHeures) : '—' }}</span></div>
           </div>
           <div class="gm-kpi">
-            <div class="kpi-top"><span class="kpi-label">Coût de maintenance</span><span class="kpi-icon t-info"><app-icon name="coins"></app-icon></span></div>
+            <div class="kpi-top"><span class="kpi-label">Coût de maintenance<app-help text="Main-d'œuvre + pièces + sous-traitance dépensées pour cette machine sur 12 mois."></app-help></span><span class="kpi-icon t-info"><app-icon name="coins"></app-icon></span></div>
             <div class="kpi-value">{{ d.indicateurs.cout12Mois | number:'1.0-0':'fr' }}<small>DT</small></div>
             <div class="kpi-foot"><span class="kpi-hint">12 mois · {{ d.indicateurs.coutTotal | number:'1.0-0':'fr' }} DT depuis l'origine</span></div>
           </div>

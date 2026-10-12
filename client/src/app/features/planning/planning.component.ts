@@ -1,3 +1,4 @@
+import { HelpTipComponent } from '../../shared/components/help-tip/help-tip.component';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -16,7 +17,7 @@ interface CalendarDay {
 @Component({
   selector: 'app-planning',
   standalone: true,
-  imports: [CommonModule, RouterModule, InterventionDetailModalComponent, PageHeaderComponent],
+  imports: [CommonModule, RouterModule, InterventionDetailModalComponent, PageHeaderComponent, HelpTipComponent],
   template: `
     <div class="planning-container">
       <!-- Header with Title -->
@@ -36,7 +37,7 @@ interface CalendarDay {
             </svg>
           </div>
           <div class="stat-content">
-            <div class="stat-label">Total</div>
+            <div class="stat-label">Total<app-help text="Toutes les interventions prévues ce mois-ci (date planifiée, sinon date de déclaration)."></app-help></div>
             <div class="stat-value">{{ monthlyStats.total }}</div>
           </div>
         </div>
@@ -49,7 +50,7 @@ interface CalendarDay {
             </svg>
           </div>
           <div class="stat-content">
-            <div class="stat-label">Nouveau</div>
+            <div class="stat-label">Nouveau<app-help text="Interventions du mois à traiter : le travail n'a pas encore commencé."></app-help></div>
             <div class="stat-value">{{ monthlyStats.nouveau }}</div>
           </div>
         </div>
@@ -61,7 +62,7 @@ interface CalendarDay {
             </svg>
           </div>
           <div class="stat-content">
-            <div class="stat-label">En cours</div>
+            <div class="stat-label">En cours<app-help text="Interventions du mois sur lesquelles un technicien travaille."></app-help></div>
             <div class="stat-value">{{ monthlyStats.enCours }}</div>
           </div>
         </div>
@@ -74,7 +75,7 @@ interface CalendarDay {
             </svg>
           </div>
           <div class="stat-content">
-            <div class="stat-label">Terminé</div>
+            <div class="stat-label">Terminé<app-help text="Interventions du mois réalisées ou clôturées."></app-help></div>
             <div class="stat-value">{{ monthlyStats.termine }}</div>
           </div>
         </div>
@@ -162,6 +163,31 @@ interface CalendarDay {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div class="day-overlay" *ngIf="dayDetail" (click)="dayDetail = null">
+      <div class="day-panel" role="dialog" (click)="$event.stopPropagation()">
+        <div class="day-panel-head">
+          <div>
+            <h3>{{ dayDetail.date | date:'EEEE d MMMM yyyy':'':'fr' }}</h3>
+            <p>{{ dayDetail.items.length }} intervention{{ dayDetail.items.length > 1 ? 's' : '' }}</p>
+          </div>
+          <button class="day-close" (click)="dayDetail = null" title="Fermer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <ul class="day-list">
+          <li *ngFor="let i of dayDetail.items" (click)="openFromDayList(i)"
+              [ngClass]="'status-' + getStatusClass(i)">
+            <span class="intervention-dot"></span>
+            <div class="day-item-main">
+              <b>{{ i.titre }}</b>
+              <small>{{ i.equipement?.designation || 'Sans équipement' }}</small>
+            </div>
+            <span class="day-item-status">{{ i.status?.statut }}</span>
+          </li>
+        </ul>
       </div>
     </div>
 
@@ -606,6 +632,45 @@ interface CalendarDay {
       color: var(--gray-600);
     }
 
+    /* Day list opened from the "+N" badge */
+    .day-overlay {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(15, 23, 42, 0.4);
+      display: grid; place-items: center; padding: 16px;
+    }
+    .day-panel {
+      width: 100%; max-width: 460px; max-height: 80vh;
+      display: flex; flex-direction: column;
+      background: #fff; border-radius: 12px;
+      box-shadow: 0 20px 48px -12px rgba(15, 23, 42, 0.35);
+    }
+    .day-panel-head {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      padding: 18px 20px 14px; border-bottom: 1px solid var(--gray-200);
+    }
+    .day-panel-head h3 { margin: 0; font-size: 16px; font-weight: 600; color: var(--text); text-transform: capitalize; }
+    .day-panel-head p { margin: 2px 0 0; font-size: 13px; color: var(--text-secondary); }
+    .day-close {
+      width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--gray-200);
+      background: #fff; color: var(--gray-500); display: grid; place-items: center; cursor: pointer;
+    }
+    .day-close:hover { background: var(--gray-50); color: var(--gray-700); }
+    .day-list { list-style: none; margin: 0; padding: 8px; overflow-y: auto; }
+    .day-list li {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px; border-radius: 8px; cursor: pointer;
+    }
+    .day-list li:hover { background: var(--gray-50); }
+    .day-item-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .day-item-main b { font-size: 14px; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .day-item-main small { font-size: 12.5px; color: var(--text-secondary); }
+    .day-item-status { font-size: 12px; font-weight: 500; white-space: nowrap; }
+    .day-list li.status-a-traiter { color: var(--primary-600); }
+    .day-list li.status-en-cours { color: var(--warning); }
+    .day-list li.status-realisee { color: var(--accent-600); }
+    .day-list li.status-cloturee { color: var(--success); }
+    .day-list li.status-annulee { color: var(--error); }
+
     /* Loading State */
     .loading-state {
       background: white;
@@ -921,6 +986,7 @@ export class PlanningComponent implements OnInit {
   interventions: DemandeIntervention[] = [];
   loading = false;
   selectedIntervention: DemandeIntervention | null = null;
+  dayDetail: { date: Date; items: DemandeIntervention[] } | null = null;
   private readonly REMOVED_KEY = 'calendar_removed_interventions';
 
   monthlyStats = {
@@ -968,14 +1034,18 @@ export class PlanningComponent implements OnInit {
     this.selectedIntervention = null;
   }
 
+  /** A workflow step was done in the panel: the panel stays open (it reloads itself), the calendar refreshes. */
   onInterventionUpdated(): void {
-    this.closeInterventionDetail();
     this.loadInterventions();
   }
 
   showAllInterventionsForDay(date: Date): void {
-    // Could implement a day detail view showing all interventions
-    console.log('Show all interventions for:', date);
+    this.dayDetail = { date, items: this.getInterventionsForDay(date) };
+  }
+
+  openFromDayList(intervention: DemandeIntervention): void {
+    this.dayDetail = null;
+    this.openInterventionDetail(intervention);
   }
 
   loadInterventions(): void {
@@ -1051,7 +1121,7 @@ export class PlanningComponent implements OnInit {
         interventionDate.getMonth() === date.getMonth() &&
         interventionDate.getFullYear() === date.getFullYear()
       );
-    }).slice(0, 3); // Show max 3 interventions
+    }); // the cell shows two, the "+N" badge opens the full list
   }
 
   getStatusClass(intervention: DemandeIntervention): string {

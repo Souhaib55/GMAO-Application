@@ -101,44 +101,34 @@ export const routes: Routes = [
         data: { role: ['Superviseur', 'Utilisateur'] }
       },
       {
-        path: 'interventions',
-        component: InterventionsComponent
-      },
-      {
-        path: 'interventions/new',
-        component: InterventionFormComponent
-      },
-      {
-        path: 'interventions/edit/:id',
-        component: InterventionFormComponent
-      },
-      {
+        // The record page (follow-up, history) stays a full page
         path: 'interventions/view/:id',
         component: InterventionFormComponent,
+        data: { viewMode: true }
+      },
+      {
+        // Create / edit open as a side panel over the list
+        path: 'interventions',
+        component: InterventionsComponent,
+        children: [
+          { path: 'new', component: InterventionFormComponent, data: { drawer: true } },
+          { path: 'edit/:id', component: InterventionFormComponent, data: { drawer: true } }
+        ]
+      },
+      {
+        path: 'equipment/view/:id',
+        component: EquipmentFormComponent,
         data: { viewMode: true }
       },
       {
         path: 'equipment',
         component: EquipmentComponent,
         canActivate: [roleGuard],
-        data: { role: ['Superviseur', 'Utilisateur'] }
-      },
-      {
-        path: 'equipment/new',
-        component: EquipmentFormComponent,
-        canActivate: [roleGuard],
-        data: { role: 'Superviseur' }
-      },
-      {
-        path: 'equipment/edit/:id',
-        component: EquipmentFormComponent,
-        canActivate: [roleGuard],
-        data: { role: 'Superviseur' }
-      },
-      {
-        path: 'equipment/view/:id',
-        component: EquipmentFormComponent,
-        data: { viewMode: true }
+        data: { role: ['Superviseur', 'Utilisateur'] },
+        children: [
+          { path: 'new', component: EquipmentFormComponent, canActivate: [roleGuard], data: { role: 'Superviseur', drawer: true } },
+          { path: 'edit/:id', component: EquipmentFormComponent, canActivate: [roleGuard], data: { role: 'Superviseur', drawer: true } }
+        ]
       },
       {
         // Old list screen replaced by the unified store (same articles, movements, thresholds)

@@ -5,7 +5,7 @@ import { RouterModule } from '@angular/router';
 import { GmaoApiService, JournalRow } from '../../../core/services/gmao-api.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { AppIconComponent } from '../../../shared/components/app-icon/app-icon.component';
-import { errorMessage, exportCsv, fmtDateTime, isoDate, otCode } from '../../../shared/utils/gm-format';
+import { debouncer, errorMessage, exportCsv, fmtDateTime, isoDate, otCode } from '../../../shared/utils/gm-format';
 
 /** Audit trail: every change recorded by the modules, read-only. */
 @Component({
@@ -20,7 +20,7 @@ import { errorMessage, exportCsv, fmtDateTime, isoDate, otCode } from '../../../
 
       <div class="gm-filters">
         <span class="gm-search"><app-icon name="search"></app-icon>
-          <input type="search" placeholder="Action, détail, utilisateur…" [(ngModel)]="search" (keyup.enter)="load(1)" (search)="load(1)">
+          <input type="search" placeholder="Action, détail, utilisateur…" [(ngModel)]="search" (ngModelChange)="searchSoon()" (keyup.enter)="load(1)" (search)="load(1)">
         </span>
         <select [(ngModel)]="entite" (ngModelChange)="load(1)" aria-label="Objet">
           <option value="">Tous les objets</option>
@@ -84,6 +84,13 @@ export class JournalComponent implements OnInit {
   constructor(private api: GmaoApiService) {}
 
   ngOnInit(): void { this.load(1); }
+
+  private readonly debounce = debouncer();
+
+  /** Search as you type (Enter still searches immediately). */
+  searchSoon(): void {
+    this.debounce(() => this.load(1));
+  }
 
   load(page: number): void {
     this.page = page;

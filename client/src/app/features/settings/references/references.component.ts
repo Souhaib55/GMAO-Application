@@ -75,7 +75,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
           </div>
           <button class="btn-new" (click)="openCreateModal()">
             <span class="btn-icon">+</span>
-            AJOUTER
+            Ajouter
           </button>
         </div>
 
@@ -1057,8 +1057,9 @@ export class ReferencesComponent implements OnInit {
   modules = [
     { key: 'equipment', label: 'Équipement', icon: 'cog' },
     { key: 'interventions', label: 'Interventions', icon: 'wrench' },
-    { key: 'resources', label: 'Ressources', icon: 'box' },
-    { key: 'stock', label: 'Stock', icon: 'warehouse' }
+    // Lists used by the Magasin article form. The old "Stock" lists (entities, statuses, suppliers)
+    // were replaced by Magasin > Magasins and Achats > Fournisseurs, so they are not offered here.
+    { key: 'resources', label: 'Magasin', icon: 'box' }
   ];
 
   selectedModule = 'equipment';

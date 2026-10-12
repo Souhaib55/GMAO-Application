@@ -190,7 +190,7 @@ namespace API.Controllers
 
             // A technician cannot be in two places at once
             var chevauchement = await _context.InterventionTemps.AsNoTracking()
-                .Where(t => t.IdTechnicien == tech.ID && t.Debut < fin && (t.Fin ?? t.Debut.AddMinutes(t.DureeMinutes)) > dto.Debut)
+                .Where(t => t.IdTechnicien == tech.ID && t.DemandeIntervention.IsActif && t.Debut < fin && (t.Fin ?? t.Debut.AddMinutes(t.DureeMinutes)) > dto.Debut)
                 .Select(t => new { t.IdDemandeIntervention, t.Debut })
                 .FirstOrDefaultAsync();
             if (chevauchement != null)

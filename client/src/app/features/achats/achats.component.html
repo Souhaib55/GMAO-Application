@@ -7,22 +7,22 @@
 
   <div class="gm-kpis" *ngIf="isSuperviseur && synthese as s">
     <div class="gm-kpi">
-      <div class="kpi-top"><span class="kpi-label">Engagé depuis janvier</span><span class="kpi-icon t-info"><app-icon name="coins"></app-icon></span></div>
+      <div class="kpi-top"><span class="kpi-label">Engagé depuis janvier<app-help text="Montant total des bons de commande envoyés aux fournisseurs depuis le 1er janvier, reçus ou non."></app-help></span><span class="kpi-icon t-info"><app-icon name="coins"></app-icon></span></div>
       <div class="kpi-value">{{ s.engageAnnee | number:'1.0-0':'fr' }}<small>DT</small></div>
       <div class="kpi-foot"><span class="kpi-hint">Commandes envoyées et reçues</span></div>
     </div>
     <div class="gm-kpi">
-      <div class="kpi-top"><span class="kpi-label">À recevoir</span><span class="kpi-icon t-info"><app-icon name="truck"></app-icon></span></div>
+      <div class="kpi-top"><span class="kpi-label">À recevoir<app-help text="Montant des marchandises commandées pas encore livrées. « En retard » : la date de livraison prévue est dépassée."></app-help></span><span class="kpi-icon t-info"><app-icon name="truck"></app-icon></span></div>
       <div class="kpi-value">{{ s.enAttente | number:'1.0-0':'fr' }}<small>DT</small></div>
       <div class="kpi-foot"><span class="kpi-hint" [class.bad]="s.enRetard">{{ s.enRetard }} commande{{ s.enRetard > 1 ? 's' : '' }} en retard</span></div>
     </div>
     <button class="gm-kpi clickable" (click)="daStatut = 'Soumise'; setTab('demandes')">
-      <div class="kpi-top"><span class="kpi-label">Demandes à valider</span><span class="kpi-icon" [ngClass]="s.daEnAttente ? 't-warn' : 't-ok'"><app-icon name="check"></app-icon></span></div>
+      <div class="kpi-top"><span class="kpi-label">Demandes à valider<app-help text="Demandes d'achat faites par les techniciens qui attendent votre accord. Une fois approuvée, une demande peut être commandée."></app-help></span><span class="kpi-icon" [ngClass]="s.daEnAttente ? 't-warn' : 't-ok'"><app-icon name="check"></app-icon></span></div>
       <div class="kpi-value">{{ s.daEnAttente }}</div>
       <div class="kpi-foot"><span class="kpi-hint">{{ s.daApprouvees }} approuvée{{ s.daApprouvees > 1 ? 's' : '' }} à commander</span></div>
     </button>
     <button class="gm-kpi clickable" (click)="cmdStatut = 'Brouillon'; setTab('commandes')">
-      <div class="kpi-top"><span class="kpi-label">Brouillons</span><span class="kpi-icon t-neutral"><app-icon name="edit"></app-icon></span></div>
+      <div class="kpi-top"><span class="kpi-label">Brouillons<app-help text="Bons de commande préparés mais pas encore envoyés au fournisseur."></app-help></span><span class="kpi-icon t-neutral"><app-icon name="edit"></app-icon></span></div>
       <div class="kpi-value">{{ s.brouillons }}</div>
       <div class="kpi-foot"><span class="kpi-hint">Bons de commande à finaliser</span></div>
     </button>
@@ -38,7 +38,7 @@
   <ng-container *ngIf="tab === 'commandes'">
     <div class="gm-filters">
       <span class="gm-search"><app-icon name="search"></app-icon>
-        <input type="search" placeholder="Numéro, fournisseur, article…" [(ngModel)]="cmdSearch" (keyup.enter)="loadCommandes()" (search)="loadCommandes()">
+        <input type="search" placeholder="Numéro, fournisseur, article…" [(ngModel)]="cmdSearch" (ngModelChange)="searchSoon('commandes')" (keyup.enter)="loadCommandes()" (search)="loadCommandes()">
       </span>
       <select [(ngModel)]="cmdStatut" (ngModelChange)="loadCommandes()" aria-label="Statut">
         <option value="">Tous les statuts</option>
@@ -110,7 +110,7 @@
   <ng-container *ngIf="tab === 'fournisseurs'">
     <div class="gm-filters">
       <span class="gm-search"><app-icon name="search"></app-icon>
-        <input type="search" placeholder="Nom, code, contact…" [(ngModel)]="frnSearch" (keyup.enter)="loadFournisseurs()" (search)="loadFournisseurs()">
+        <input type="search" placeholder="Nom, code, contact…" [(ngModel)]="frnSearch" (ngModelChange)="searchSoon('fournisseurs')" (keyup.enter)="loadFournisseurs()" (search)="loadFournisseurs()">
       </span>
       <span class="spacer"></span>
       <button class="btn btn-secondary btn-sm" (click)="openFournisseur()"><app-icon name="plus"></app-icon> Nouveau fournisseur</button>

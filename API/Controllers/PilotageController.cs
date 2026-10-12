@@ -276,7 +276,7 @@ namespace API.Controllers
                 .ToListAsync();
 
             var minutesSemaine = user.IsTechnicien
-                ? await _context.InterventionTemps.Where(t => t.IdTechnicien == user.Id && t.Debut >= weekStart).SumAsync(t => (int?)t.DureeMinutes) ?? 0
+                ? await _context.InterventionTemps.Where(t => t.IdTechnicien == user.Id && t.DemandeIntervention.IsActif && t.Debut >= weekStart).SumAsync(t => (int?)t.DureeMinutes) ?? 0
                 : 0;
             var realiseesMois = await mine.CountAsync(d => d.DateRealisation >= today.AddDays(-30));
             var recentes = await mine.Where(d => d.StatusId >= StatusRealisee)

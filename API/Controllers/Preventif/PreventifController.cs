@@ -258,6 +258,15 @@ namespace API.Controllers
             var user = await _currentUser.GetAsync();
             if (!await _context.PlansPreventifs.AnyAsync(p => p.Id == id && p.IsActif))
                 return BadRequest(new { message = "Le plan est introuvable ou suspendu." });
+            // Generating early must not pile up future work orders while the current one is still open
+            var ouvert = await _context.DemandeInterventions.AsNoTracking()
+                .Where(d => d.IdPlanPreventif == id && d.IsActif &&
+                            (d.StatusId == DemandeInterventionController.StatusATraiter || d.StatusId == DemandeInterventionController.StatusEnCours))
+                .OrderBy(d => d.DatePlanifiee)
+                .Select(d => new { d.IdDemandeIntervention, d.DatePlanifiee })
+                .FirstOrDefaultAsync();
+            if (ouvert != null)
+                return BadRequest(new { message = $"L'ordre de travail INT-{ouvert.IdDemandeIntervention:0000} (prévu le {ouvert.DatePlanifiee:dd/MM/yyyy}) est encore ouvert pour ce plan. Réalisez-le avant d'en générer un nouveau." });
             var results = await _preventif.GenerateDueAsync(id, force: true, actor: user);
             return Ok(new { generes = results });
         }

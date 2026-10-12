@@ -1,3 +1,4 @@
+import { HelpTipComponent } from '../../shared/components/help-tip/help-tip.component';
 import { Component, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -12,7 +13,7 @@ import {
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { AppIconComponent } from '../../shared/components/app-icon/app-icon.component';
 import {
-  STATUTS_OT, daysFromToday, errorMessage, exportCsv, fmtDate, fmtMinutes, fmtPercent, isoDate, otCode, parseDate, relativeDays
+  STATUTS_OT, daysFromToday, debouncer, errorMessage, exportCsv, fmtDate, fmtMinutes, fmtPercent, isoDate, otCode, parseDate, relativeDays
 } from '../../shared/utils/gm-format';
 
 interface DayCell { date: Date; iso: string; inMonth: boolean; today: boolean; events: CalendarEvent[]; }
@@ -27,7 +28,7 @@ const FREQUENCES = [
 @Component({
   selector: 'app-preventif',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent, AppIconComponent],
+  imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent, AppIconComponent, HelpTipComponent],
   templateUrl: './preventif.component.html',
   styleUrls: ['./preventif.component.scss']
 })
@@ -38,6 +39,8 @@ export class PreventifComponent implements OnInit {
 
   isSuperviseur = false;
   tab: 'plans' | 'calendrier' = 'plans';
+  /** Day of the month grid showing all its events (time value), 0 when none. */
+  expandedDay = 0;
 
   // Data
   plans: PlanRow[] = [];
@@ -108,6 +111,13 @@ export class PreventifComponent implements OnInit {
   }
 
   // ------------------------------------------------------------------ Loading
+
+  private readonly debounce = debouncer();
+
+  /** Search as you type (Enter still searches immediately). */
+  searchSoon(): void {
+    this.debounce(() => this.load());
+  }
 
   load(): void {
     this.loading = true;
