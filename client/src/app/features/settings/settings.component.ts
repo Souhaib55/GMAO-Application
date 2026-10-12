@@ -78,6 +78,24 @@ interface RoleCount {
         </section>
       </div>
 
+      <!-- Module administration -->
+      <section class="panel admin">
+        <div class="panel-head">
+          <span class="chip tone-blue"><app-icon name="settings"></app-icon></span>
+          <div class="panel-titles">
+            <h2>Administration des modules</h2>
+            <p>Réglages du magasin, des achats, du préventif et du reporting, et traçabilité des actions.</p>
+          </div>
+        </div>
+        <div class="admin-grid">
+          <a class="admin-tile" *ngFor="let t of adminTiles" [routerLink]="t.route" [queryParams]="t.query">
+            <span class="admin-icon"><app-icon [name]="t.icon"></app-icon></span>
+            <span class="admin-text"><b>{{ t.label }}</b><small>{{ t.description }}</small></span>
+            <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+          </a>
+        </div>
+      </section>
+
       <!-- Reference data -->
       <section class="panel references">
         <div class="panel-head">
@@ -115,6 +133,15 @@ interface RoleCount {
     </div>
   `,
   styles: [`
+    .admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; padding: 0 20px 20px; }
+    .admin-tile { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; color: inherit; text-decoration: none; transition: border-color .15s, box-shadow .15s; }
+    .admin-tile:hover { border-color: var(--primary-200); box-shadow: var(--card-shadow-hover); color: inherit; }
+    .admin-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--primary-50); color: var(--primary-600); display: grid; place-items: center; font-size: 18px; flex-shrink: 0; }
+    .admin-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .admin-text b { font-size: 0.875rem; font-weight: 600; }
+    .admin-text small { font-size: 0.75rem; color: var(--text-muted); }
+    .admin-tile svg { width: 16px; height: 16px; fill: none; stroke: var(--gray-400); stroke-width: 2; }
+
     .settings-page {
       display: flex;
       flex-direction: column;
@@ -480,6 +507,16 @@ interface RoleCount {
   `]
 })
 export class SettingsComponent implements OnInit {
+  readonly adminTiles = [
+    { icon: 'warehouse', label: 'Magasins et emplacements', description: 'Lieux de stockage des articles', route: '/magasin', query: { vue: 'magasins' } },
+    { icon: 'truck', label: 'Fournisseurs', description: 'Coordonnées, délais et ponctualité', route: '/achats', query: { vue: 'fournisseurs' } },
+    { icon: 'team', label: 'Techniciens et taux horaires', description: "Spécialités et coût de la main-d'œuvre", route: '/techniciens', query: null },
+    { icon: 'preventive', label: 'Plans de maintenance préventive', description: 'Gammes, fréquences et affectations', route: '/preventif', query: null },
+    { icon: 'budget', label: 'Budgets annuels', description: 'Enveloppes par catégorie de dépense', route: '/budgets', query: null },
+    { icon: 'reports', label: 'Rapports Power BI', description: 'Liens des tableaux de bord publiés', route: '/rapports', query: null },
+    { icon: 'journal', label: "Journal d'activité", description: 'Qui a fait quoi, et quand', route: '/settings/journal', query: null }
+  ];
+
   currentUser: UserInfo | null = null;
   referenceModules: ReferenceModule[] = [];
   roleCounts: RoleCount[] = [

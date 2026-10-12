@@ -1,0 +1,156 @@
+<div class="gm-page">
+  <app-page-header icon="explorer" title="Explorateur de données"
+                   subtitle="Choisissez une question : la réponse est calculée sur les données réelles, en lecture seule.">
+  </app-page-header>
+
+  <div class="gm-error-box" *ngIf="error"><app-icon name="alert"></app-icon>{{ error }}</div>
+
+  <div class="explorer" *ngIf="catalogue">
+    <!-- ============================================================ Questions -->
+    <aside class="catalogue">
+      <div class="search-box">
+        <app-icon name="search"></app-icon>
+        <input type="search" [(ngModel)]="search" placeholder="Rechercher une question : panne, coût, stock…" aria-label="Rechercher une question">
+      </div>
+
+      <nav class="sections" *ngIf="!search.trim()">
+        <button [class.on]="section === null" (click)="pickSection(null)"><app-icon name="hash"></app-icon><span>Questions fréquentes</span></button>
+        <button *ngFor="let s of catalogue.sections" [class.on]="section === s.id" (click)="pickSection(s.id)">
+          <app-icon [name]="s.icone"></app-icon><span>{{ s.libelle }}</span><em>{{ count(s.id) }}</em>
+        </button>
+      </nav>
+
+      <div class="q-title">{{ listTitle }}</div>
+      <div class="questions">
+        <button class="q" *ngFor="let q of visibleQuestions" [class.on]="question?.id === q.id" (click)="select(q)">
+          <span class="q-text">{{ q.question }}</span>
+          <span class="q-meta"><app-icon [name]="sectionIcon(q.section)"></app-icon>{{ sectionLabel(q.section) }}
+            <em class="rendu">{{ q.rendu === 'chiffre' ? 'Chiffres clés' : q.rendu === 'barres' ? 'Classement' : q.rendu === 'ligne' ? 'Évolution' : 'Liste' }}</em>
+          </span>
+        </button>
+        <div class="gm-empty" *ngIf="!visibleQuestions.length"><app-icon name="search"></app-icon><strong>Aucune question</strong><span>Essayez d'autres mots : « arrêt », « coût », « fournisseur »…</span></div>
+      </div>
+    </aside>
+
+    <!-- ============================================================ Answer -->
+    <section class="result-pane">
+      <div class="welcome" *ngIf="!question">
+        <app-icon name="explorer"></app-icon>
+        <h2>Que voulez-vous savoir ?</h2>
+        <p>{{ catalogue.questions.length }} questions métier sur les interventions, les machines, le préventif, le magasin, les achats, l'équipe et les coûts.
+          Chaque réponse est calculée à la demande sur les données actuelles, sans rien modifier.</p>
+        <div class="start-grid">
+          <button *ngFor="let s of catalogue.sections" (click)="pickSection(s.id)">
+            <app-icon [name]="s.icone"></app-icon><b>{{ s.libelle }}</b><small>{{ count(s.id) }} questions</small>
+          </button>
+        </div>
+      </div>
+
+      <ng-container *ngIf="question as q">
+        <div class="gm-card">
+          <div class="gm-card-head">
+            <div>
+              <div class="crumb"><app-icon [name]="sectionIcon(q.section)"></app-icon>{{ sectionLabel(q.section) }}</div>
+              <h3 class="question">{{ q.question }}</h3>
+              <div class="sub">{{ q.description }}</div>
+            </div>
+          </div>
+
+          <!-- Parameters -->
+          <div class="params" *ngIf="q.parametres.length">
+            <ng-container *ngIf="uses('periode')">
+              <div class="gm-seg">
+                <button [class.on]="preset === 30" (click)="setPreset(30)">30 j</button>
+                <button [class.on]="preset === 90" (click)="setPreset(90)">90 j</button>
+                <button [class.on]="preset === 365" (click)="setPreset(365)">12 mois</button>
+                <button [class.on]="preset === 0" (click)="preset = 0">Dates</button>
+              </div>
+              <ng-container *ngIf="preset === 0">
+                <input type="date" [(ngModel)]="params.debut" aria-label="Du" (change)="run()">
+                <input type="date" [(ngModel)]="params.fin" aria-label="Au" (change)="run()">
+              </ng-container>
+            </ng-container>
+            <select *ngIf="uses('chaine')" [(ngModel)]="params.chaine" (ngModelChange)="run()" aria-label="Chaîne">
+              <option [ngValue]="null">Toutes les chaînes</option>
+              <option *ngFor="let c of listes?.chaines" [ngValue]="c.id">{{ c.libelle }}</option>
+            </select>
+            <select *ngIf="uses('equipement')" [(ngModel)]="params.equipement" (ngModelChange)="run()" aria-label="Machine" [class.req]="required('equipement') && !params.equipement">
+              <option [ngValue]="null">{{ required('equipement') ? 'Choisir une machine…' : 'Toutes les machines' }}</option>
+              <option *ngFor="let e of listes?.equipements" [ngValue]="e.id">{{ e.libelle }}</option>
+            </select>
+            <select *ngIf="uses('technicien')" [(ngModel)]="params.technicien" (ngModelChange)="run()" aria-label="Technicien">
+              <option [ngValue]="null">Tous les techniciens</option>
+              <option *ngFor="let t of listes?.techniciens" [ngValue]="t.id">{{ t.libelle }}</option>
+            </select>
+            <select *ngIf="uses('article')" [(ngModel)]="params.article" (ngModelChange)="run()" aria-label="Article" [class.req]="required('article') && !params.article">
+              <option [ngValue]="null">{{ required('article') ? 'Choisir un article…' : 'Tous les articles' }}</option>
+              <option *ngFor="let a of listes?.articles" [ngValue]="a.id">{{ a.libelle }}</option>
+            </select>
+            <select *ngIf="uses('fournisseur')" [(ngModel)]="params.fournisseur" (ngModelChange)="run()" aria-label="Fournisseur">
+              <option [ngValue]="null">Tous les fournisseurs</option>
+              <option *ngFor="let f of listes?.fournisseurs" [ngValue]="f.id">{{ f.libelle }}</option>
+            </select>
+            <select *ngIf="uses('annee')" [(ngModel)]="params.annee" (ngModelChange)="run()" aria-label="Année">
+              <option *ngFor="let y of years" [ngValue]="y">{{ y }}</option>
+            </select>
+            <select *ngIf="uses('top')" [(ngModel)]="params.top" (ngModelChange)="run()" aria-label="Nombre de lignes">
+              <option [ngValue]="5">Top 5</option>
+              <option [ngValue]="10">Top 10</option>
+              <option [ngValue]="20">Top 20</option>
+              <option [ngValue]="50">Top 50</option>
+            </select>
+          </div>
+
+          <div class="gm-card-body answer">
+            <div class="gm-loading" *ngIf="running && !result"><span class="spinner"></span> Calcul en cours…</div>
+            <div class="gm-note" *ngIf="runError"><app-icon name="info"></app-icon>{{ runError }}</div>
+
+            <ng-container *ngIf="result as r">
+              <div [class.refreshing]="running">
+                <div class="answer-bar">
+                  <span class="muted small">{{ paramSummary }}</span>
+                  <span class="spacer"></span>
+                  <div class="gm-seg" *ngIf="r.rendu === 'barres' || r.rendu === 'ligne'">
+                    <button [class.on]="view === 'graphique'" (click)="view = 'graphique'"><app-icon name="chart"></app-icon> Graphique</button>
+                    <button [class.on]="view === 'table'" (click)="view = 'table'"><app-icon name="table"></app-icon> Tableau</button>
+                  </div>
+                  <button class="btn btn-secondary btn-sm" (click)="export()" [disabled]="!r.lignes.length"><app-icon name="download"></app-icon> Exporter</button>
+                </div>
+
+                <div class="gm-empty" *ngIf="!r.lignes.length"><app-icon name="check"></app-icon><strong>Aucun résultat</strong><span>Rien ne correspond à ces critères sur la période.</span></div>
+
+                <ng-container *ngIf="r.lignes.length">
+                  <!-- Key figures -->
+                  <div class="figures" *ngIf="r.rendu === 'chiffre'">
+                    <div class="figure" *ngFor="let f of figures"><span>{{ f.label }}</span><b>{{ f.value }}</b></div>
+                  </div>
+
+                  <gm-bar-list *ngIf="r.rendu === 'barres' && view === 'graphique'" [items]="bars" [format]="barFormat"></gm-bar-list>
+                  <gm-line-chart *ngIf="r.rendu === 'ligne' && view === 'graphique'" [labels]="line.labels" [series]="line.series" [format]="line.format"></gm-line-chart>
+
+                  <div class="gm-table-wrap" *ngIf="r.rendu === 'table' || view === 'table'">
+                    <table class="gm-table responsive">
+                      <thead><tr><th *ngFor="let c of r.colonnes" [class.right]="isRight(c)">{{ c.libelle }}</th></tr></thead>
+                      <tbody>
+                        <tr *ngFor="let l of r.lignes">
+                          <td *ngFor="let c of r.colonnes; let i = index" [class.right]="isRight(c)" [class.num]="isRight(c)" [class.primary]="i === 0" [attr.data-label]="c.libelle">{{ format(l[i], c) }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </ng-container>
+
+                <div class="answer-foot">
+                  <span>{{ r.lignes.length }} ligne{{ r.lignes.length > 1 ? 's' : '' }}{{ r.tronque ? ' (limité à 1000)' : '' }}</span>
+                  <span>Calculé en {{ r.dureeMs }} ms sur les données actuelles · lecture seule</span>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+      </ng-container>
+    </section>
+  </div>
+
+  <div class="gm-loading" *ngIf="loadingCatalogue"><span class="spinner"></span> Chargement des questions…</div>
+</div>

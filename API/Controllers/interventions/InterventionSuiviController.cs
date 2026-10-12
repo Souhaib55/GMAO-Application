@@ -139,6 +139,10 @@ namespace API.Controllers
                 taches,
                 cout = await ComputeCostAsync(_context, id),
                 journal,
+                demande.StatusId,
+                estTechnicienAffecte = demande.DestinatairesID == user!.Id && user.IsTechnicien,
+                estSuperviseur = user.IsSuperviseur,
+                compteRendu = demande.CompteRendu,
                 peutSaisir = WriteDenied(demande, user!) == null,
                 peutPlanifier = user!.IsSuperviseur && demande.StatusId is not (StatusCloturee or StatusAnnulee)
             });

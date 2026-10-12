@@ -166,6 +166,7 @@ export interface SuiviIntervention {
   cout: { mainOeuvre: number; pieces: number; externe: number; total: number; heures: number };
   journal: { date: string; utilisateurNom: string | null; action: string; details: string | null }[];
   peutSaisir: boolean; peutPlanifier: boolean;
+  statusId: number; estTechnicienAffecte: boolean; estSuperviseur: boolean; compteRendu: string | null;
 }
 
 export interface PieceJointeRow { id: number; nomFichier: string; contentType: string; taille: number; dateAjout: string; }
@@ -339,6 +340,12 @@ export class GmaoApiService {
   deleteTache(id: number, tacheId: number): Observable<any> { return this.http.delete(`${this.api}/interventions/${id}/taches/${tacheId}`); }
   saveAnalyse(id: number, p: { cause: string | null; remede: string | null; coutExterne: number | null; datePlanifiee?: string | null; dureeEstimeeMinutes?: number | null }): Observable<any> {
     return this.http.put(`${this.api}/interventions/${id}/analyse`, p);
+  }
+
+  // Workflow actions (existing endpoints of the work-order controller)
+  acceptIntervention(id: number): Observable<any> { return this.http.post(`${this.api}/DemandeIntervention/${id}/accept`, {}); }
+  setInterventionStatus(id: number, statusId: number, compteRendu?: string | null): Observable<any> {
+    return this.http.patch(`${this.api}/DemandeIntervention/${id}/status`, { statusId, compteRendu });
   }
 
   // Pièces jointes

@@ -1,0 +1,96 @@
+<div class="gm-page">
+  <app-page-header icon="budget" title="Budgets de maintenance" subtitle="Budget annuel par nature de dépense, comparé au coût réel des interventions.">
+    <button class="btn btn-secondary" (click)="export()" [disabled]="!vue"><app-icon name="download"></app-icon> Exporter</button>
+    <button class="btn btn-primary" (click)="openDialog()"><app-icon name="plus"></app-icon> Ligne de budget</button>
+  </app-page-header>
+
+  <div class="gm-filters">
+    <app-icon name="calendar"></app-icon>
+    <div class="gm-seg">
+      <button *ngFor="let y of years" [class.on]="annee === y" (click)="annee = y; load()">{{ y }}</button>
+    </div>
+    <span class="spacer"></span>
+    <span class="muted small" *ngIf="vue">{{ vue.moisEcoules }} mois écoulé{{ vue.moisEcoules > 1 ? 's' : '' }} sur 12</span>
+  </div>
+
+  <div class="gm-error-box" *ngIf="error"><app-icon name="alert"></app-icon>{{ error }}</div>
+  <div class="gm-loading" *ngIf="loading && !vue"><span class="spinner"></span></div>
+
+  <ng-container *ngIf="vue as v">
+    <div class="gm-kpis">
+      <div class="gm-kpi">
+        <div class="kpi-top"><span class="kpi-label">Budget {{ v.annee }}</span><span class="kpi-icon t-info"><app-icon name="budget"></app-icon></span></div>
+        <div class="kpi-value">{{ v.budgetTotal | number:'1.0-0':'fr' }}<small>DT</small></div>
+      </div>
+      <div class="gm-kpi">
+        <div class="kpi-top"><span class="kpi-label">Dépensé</span><span class="kpi-icon" [ngClass]="(v.tauxConsommation ?? 0) > 100 ? 't-bad' : 't-ok'"><app-icon name="coins"></app-icon></span></div>
+        <div class="kpi-value">{{ v.realiseTotal | number:'1.0-0':'fr' }}<small>DT</small></div>
+        <div class="kpi-foot"><span class="kpi-hint">{{ v.tauxConsommation !== null ? (v.tauxConsommation | number:'1.0-0':'fr') + ' % du budget' : 'Aucun budget défini' }}</span></div>
+      </div>
+      <div class="gm-kpi">
+        <div class="kpi-top"><span class="kpi-label">Reste disponible</span><span class="kpi-icon t-info"><app-icon name="gauge"></app-icon></span></div>
+        <div class="kpi-value" [class.neg]="v.budgetTotal - v.realiseTotal < 0">{{ v.budgetTotal - v.realiseTotal | number:'1.0-0':'fr' }}<small>DT</small></div>
+      </div>
+      <div class="gm-kpi">
+        <div class="kpi-top"><span class="kpi-label">Projection fin d'année</span><span class="kpi-icon" [ngClass]="projection !== null && v.budgetTotal && projection > v.budgetTotal ? 't-warn' : 't-ok'"><app-icon name="chart"></app-icon></span></div>
+        <div class="kpi-value">{{ projection !== null ? (projection | number:'1.0-0':'fr') : '—' }}<small *ngIf="projection !== null">DT</small></div>
+        <div class="kpi-foot"><span class="kpi-hint">Au rythme actuel des dépenses</span></div>
+      </div>
+    </div>
+
+    <div class="gm-grid">
+      <div class="gm-card span-7">
+        <div class="gm-card-head"><div><h3>Suivi par catégorie</h3><div class="sub">Le repère vertical indique le budget à consommer à ce jour</div></div></div>
+        <div class="gm-card-body">
+          <div class="gm-empty" *ngIf="!v.lignes.length"><app-icon name="budget"></app-icon><strong>Aucun budget pour {{ v.annee }}</strong><span>Ajoutez une ligne par catégorie de dépense.</span>
+            <button class="btn btn-primary btn-sm mt-1" (click)="openDialog()"><app-icon name="plus"></app-icon> Ligne de budget</button></div>
+          <button class="bl" *ngFor="let l of v.lignes" (click)="openDialog(l)">
+            <div class="bl-top">
+              <b>{{ l.categorie }}<span class="muted" *ngIf="l.chaine"> · {{ l.chaine }}</span></b>
+              <span class="num"><b>{{ l.realise | number:'1.0-0':'fr' }}</b> / {{ l.montant | number:'1.0-0':'fr' }} DT</span>
+            </div>
+            <div class="bl-bar">
+              <div class="gm-progress" [ngClass]="tone(l)"><span [style.width.%]="pct(l)"></span></div>
+              <i class="pace" [style.left.%]="prorataPct(l)" title="Budget à consommer à ce jour"></i>
+            </div>
+            <div class="bl-foot">
+              <span class="gm-tag" [ngClass]="'t-' + tone(l)">{{ statusText(l) }}</span>
+              <span class="muted">{{ l.taux !== null ? (l.taux | number:'1.0-0':'fr') + ' % consommé' : '' }} · écart au rythme {{ l.ecart >= 0 ? '+' : '' }}{{ l.ecart | number:'1.0-0':'fr' }} DT</span>
+            </div>
+          </button>
+        </div>
+      </div>
+      <div class="gm-card span-5">
+        <div class="gm-card-head"><div><h3>Dépenses par chaîne</h3><div class="sub">Coût réel des interventions de l'année</div></div></div>
+        <div class="gm-card-body"><gm-bar-list [items]="chainBars" format="money"></gm-bar-list></div>
+      </div>
+      <div class="gm-card span-12">
+        <div class="gm-card-head"><div><h3>Dépenses mensuelles</h3><div class="sub">La ligne pointillée représente le budget mensuel moyen</div></div></div>
+        <div class="gm-card-body"><gm-column-chart [labels]="monthly.labels" [series]="monthly.series" format="money" [target]="monthly.target" targetLabel="Budget mensuel moyen"></gm-column-chart></div>
+      </div>
+    </div>
+  </ng-container>
+</div>
+
+<ng-container *ngIf="dialog as d">
+  <div class="gm-backdrop" (click)="dialog = null"></div>
+  <div class="gm-dialog" role="dialog">
+    <div class="gm-drawer-head"><h2>{{ d.id ? 'Modifier le budget' : 'Nouvelle ligne de budget' }} {{ annee }}</h2></div>
+    <div class="gm-drawer-body">
+      <div class="gm-error-box" *ngIf="formError"><app-icon name="alert"></app-icon>{{ formError }}</div>
+      <div class="gm-form">
+        <div class="gm-field"><label>Catégorie</label><select [(ngModel)]="d.categorie"><option *ngFor="let c of vue?.categories" [value]="c">{{ c }}</option></select></div>
+        <div class="gm-field"><label>Périmètre</label><select [(ngModel)]="d.idChaineProduction"><option [ngValue]="null">Toute l'usine</option><option *ngFor="let c of chaines" [ngValue]="c.id">{{ c.libelle }}</option></select></div>
+        <div class="gm-field"><label>Montant annuel (DT)</label><input type="number" min="0" step="100" [(ngModel)]="d.montant"></div>
+        <div class="gm-field"><label>Notes</label><input maxlength="500" [(ngModel)]="d.notes"></div>
+      </div>
+    </div>
+    <div class="gm-drawer-foot">
+      <button class="btn btn-secondary" *ngIf="d.id" (click)="remove()" style="margin-right: auto">Supprimer</button>
+      <button class="btn btn-secondary" (click)="dialog = null">Annuler</button>
+      <button class="btn btn-primary" (click)="save()">Enregistrer</button>
+    </div>
+  </div>
+</ng-container>
+
+<div class="gm-toast" *ngIf="toast"><app-icon name="check"></app-icon>{{ toast }}</div>

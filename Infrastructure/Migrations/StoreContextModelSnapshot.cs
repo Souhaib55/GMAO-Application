@@ -1705,7 +1705,7 @@ namespace Infrastructure.Migrations
                             Id = 1,
                             Description = "Nouvelle demande d'intervention",
                             IsActif = true,
-                            Statut = "A traiter"
+                            Statut = "À traiter"
                         },
                         new
                         {
@@ -1726,7 +1726,7 @@ namespace Infrastructure.Migrations
                             Id = 4,
                             Description = "Intervention validée par le superviseur",
                             IsActif = true,
-                            Statut = "Cloturée"
+                            Statut = "Clôturée"
                         },
                         new
                         {

@@ -224,3 +224,21 @@
   box-shadow: var(--shadow-lg);
   &.error { background: var(--error-dark); }
 }
+
+.workflow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--primary-50);
+  border: 1px solid var(--primary-100);
+  font-size: 0.8125rem;
+  color: var(--primary-900);
+
+  .btn { min-height: 40px; }
+  .finish { width: 100%; display: flex; flex-direction: column; gap: 8px; label { margin: 0; font-weight: 600; } .req { color: var(--error); } }
+  .finish-actions { display: flex; align-items: center; gap: 8px; justify-content: flex-end; flex-wrap: wrap; small { margin-right: auto; color: var(--text-muted); &.ok { color: var(--success); } } }
+}

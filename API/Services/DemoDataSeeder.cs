@@ -572,7 +572,9 @@ namespace API.Services
 
                         if (ot.DatePriseEnCharge.HasValue)
                         {
-                            var end = ot.DateRealisation ?? now;
+                            // Jobs still in progress (waiting for parts…) only log the time actually worked
+                            var end = ot.DateRealisation ?? ot.DatePriseEnCharge.Value.AddMinutes(Math.Min(repairMinutes, 150));
+                            if (end > now) end = now;
                             var minutes = (int)Math.Max(5, (end - ot.DatePriseEnCharge.Value).TotalMinutes);
                             ot.Temps.Add(new InterventionTemps
                             {

@@ -121,6 +121,37 @@ export class InterventionSuiviComponent implements OnChanges, OnDestroy {
     setTimeout(() => { if (this.message === message) this.message = ''; }, 4000);
   }
 
+  // ------------------------------------------------------------------ Workflow (so the work-order page works on its own, e.g. on a phone)
+
+  compteRendu = '';
+  workflowOpen = false;
+
+  accept(): void {
+    this.busy = true;
+    this.api.acceptIntervention(this.interventionId).subscribe({ next: () => this.done('Intervention prise en charge : vous pouvez saisir vos travaux.'), error: err => this.fail(err) });
+  }
+
+  complete(): void {
+    if (this.compteRendu.trim().length < 10) { this.flash('Le compte rendu doit faire au moins 10 caractères.', true); return; }
+    this.busy = true;
+    this.api.setInterventionStatus(this.interventionId, 3, this.compteRendu.trim()).subscribe({
+      next: () => { this.workflowOpen = false; this.done('Intervention marquée comme réalisée. Le superviseur va la valider.'); },
+      error: err => this.fail(err)
+    });
+  }
+
+  close(): void {
+    this.busy = true;
+    this.api.setInterventionStatus(this.interventionId, 4).subscribe({ next: () => this.done('Intervention clôturée.'), error: err => this.fail(err) });
+  }
+
+  reopen(): void {
+    this.busy = true;
+    this.api.setInterventionStatus(this.interventionId, 2).subscribe({ next: () => this.done('Intervention renvoyée au technicien.'), error: err => this.fail(err) });
+  }
+
+  get tachesRestantes(): number { return (this.suivi?.taches.length ?? 0) - this.tachesFaites; }
+
   // ------------------------------------------------------------------ Checklist
 
   get tachesFaites(): number { return this.suivi?.taches.filter(t => t.fait).length ?? 0; }

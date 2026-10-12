@@ -1,0 +1,26 @@
+.small { font-size: 0.8rem; }
+.neg { color: var(--error) !important; }
+
+.bl {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 10px;
+  border: 0;
+  border-bottom: 1px solid var(--gray-100);
+  background: none;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border-radius: var(--radius);
+
+  &:last-child { border-bottom: 0; }
+  &:hover { background: var(--gray-50); }
+
+  .bl-top { display: flex; justify-content: space-between; gap: 10px; font-size: 0.875rem; }
+  .bl-bar { position: relative; .gm-progress { height: 10px; } }
+  .pace { position: absolute; top: -3px; width: 2px; height: 16px; background: var(--gray-800); border-radius: 1px; }
+  .bl-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 0.75rem; }
+}

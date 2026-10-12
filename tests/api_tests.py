@@ -306,6 +306,21 @@ def main():
     check("période inversée refusée", sup.post("/api/explorateur/executer/int-volume", {"debut": "2026-05-01", "fin": "2026-01-01"})[0] == 400)
 
     # ------------------------------------------------------------------
+    section("Tableau de bord")
+    for days in (7, 30, 90, 365):
+        status, pil = sup.get(f"/api/pilotage?days={days}")
+        check(f"pilotage {days} j", status == 200 and 0 <= pil["courant"]["disponibilite"] <= 100 and (pil["courant"]["mtbf"] is None or pil["courant"]["mtbf"] >= 0), status)
+    status, pil = sup.get(f"/api/pilotage?days=90&equipementId={machine['id']}")
+    check("pilotage filtré sur une machine", status == 200 and pil["periode"]["machines"] == 1, pil.get("periode") if isinstance(pil, dict) else pil)
+    check("pilotage réservé au superviseur", tech.get("/api/pilotage")[0] == 403)
+    status, mw = tech.get("/api/pilotage/mon-travail")
+    check("tableau personnel du technicien", status == 200 and mw["role"] == "Utilisateur", mw)
+    status, mw = dem.get("/api/pilotage/mon-travail")
+    check("tableau personnel du demandeur", status == 200 and any(o["idDemandeIntervention"] == ot_id for o in mw["ouverts"] + mw["recentes"]), mw)
+    status, found = sup.get(f"/api/DemandeIntervention?search=INT-{ot_id:04d}")
+    check("recherche d'un OT par sa référence", status == 200 and any(d["idDemandeIntervention"] == ot_id for d in found["data"]), found)
+
+    # ------------------------------------------------------------------
     section("Rapports Power BI")
     _, previous = sup.get("/api/parametres/powerbi")
     check("lien hors Power BI refusé", sup.put("/api/parametres/powerbi", [{"titre": "QA", "url": "https://evil.example.com/x"}])[0] == 400)

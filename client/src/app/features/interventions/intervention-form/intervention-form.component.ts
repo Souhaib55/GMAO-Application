@@ -214,7 +214,8 @@ const STATUS = { A_TRAITER: 1, EN_COURS: 2, REALISEE: 3, CLOTUREE: 4, ANNULEE: 5
 
       <!-- Execution record: time, parts, checklist, analysis, cost, documents -->
       <app-intervention-suivi class="suivi-block" *ngIf="intervention?.idDemandeIntervention"
-                              [interventionId]="intervention!.idDemandeIntervention" [version]="intervention?.statusId"></app-intervention-suivi>
+                              [interventionId]="intervention!.idDemandeIntervention" [version]="intervention?.statusId"
+                              (changed)="loadIntervention(intervention!.idDemandeIntervention)"></app-intervention-suivi>
     </div>
   `,
   styles: [`

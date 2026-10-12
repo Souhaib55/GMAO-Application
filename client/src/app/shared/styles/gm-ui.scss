@@ -100,6 +100,11 @@
   gap: 14px;
 }
 
+@media (max-width: 560px) {
+  .gm-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .gm-kpi { padding: 12px; .kpi-value { font-size: 1.5rem; } .kpi-icon { width: 30px; height: 30px; font-size: 15px; } .kpi-hint { font-size: 0.7rem; } }
+}
+
 .gm-kpi {
   position: relative;
   display: flex;

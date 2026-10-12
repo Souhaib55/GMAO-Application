@@ -1,0 +1,344 @@
+<div class="gm-page">
+  <app-page-header icon="purchase" title="Achats"
+                   [subtitle]="isSuperviseur ? 'Demandes d\'achat, bons de commande, réceptions et fournisseurs.' : 'Demandez l\'achat d\'une pièce absente du magasin.'">
+    <button class="btn btn-secondary" (click)="newDemande()"><app-icon name="plus"></app-icon> Demande d'achat</button>
+    <button class="btn btn-primary" *ngIf="isSuperviseur" (click)="newCommande()"><app-icon name="plus"></app-icon> Bon de commande</button>
+  </app-page-header>
+
+  <div class="gm-kpis" *ngIf="isSuperviseur && synthese as s">
+    <div class="gm-kpi">
+      <div class="kpi-top"><span class="kpi-label">Engagé depuis janvier</span><span class="kpi-icon t-info"><app-icon name="coins"></app-icon></span></div>
+      <div class="kpi-value">{{ s.engageAnnee | number:'1.0-0':'fr' }}<small>DT</small></div>
+      <div class="kpi-foot"><span class="kpi-hint">Commandes envoyées et reçues</span></div>
+    </div>
+    <div class="gm-kpi">
+      <div class="kpi-top"><span class="kpi-label">À recevoir</span><span class="kpi-icon t-info"><app-icon name="truck"></app-icon></span></div>
+      <div class="kpi-value">{{ s.enAttente | number:'1.0-0':'fr' }}<small>DT</small></div>
+      <div class="kpi-foot"><span class="kpi-hint" [class.bad]="s.enRetard">{{ s.enRetard }} commande{{ s.enRetard > 1 ? 's' : '' }} en retard</span></div>
+    </div>
+    <button class="gm-kpi clickable" (click)="daStatut = 'Soumise'; setTab('demandes')">
+      <div class="kpi-top"><span class="kpi-label">Demandes à valider</span><span class="kpi-icon" [ngClass]="s.daEnAttente ? 't-warn' : 't-ok'"><app-icon name="check"></app-icon></span></div>
+      <div class="kpi-value">{{ s.daEnAttente }}</div>
+      <div class="kpi-foot"><span class="kpi-hint">{{ s.daApprouvees }} approuvée{{ s.daApprouvees > 1 ? 's' : '' }} à commander</span></div>
+    </button>
+    <button class="gm-kpi clickable" (click)="cmdStatut = 'Brouillon'; setTab('commandes')">
+      <div class="kpi-top"><span class="kpi-label">Brouillons</span><span class="kpi-icon t-neutral"><app-icon name="edit"></app-icon></span></div>
+      <div class="kpi-value">{{ s.brouillons }}</div>
+      <div class="kpi-foot"><span class="kpi-hint">Bons de commande à finaliser</span></div>
+    </button>
+  </div>
+
+  <div class="gm-tabs">
+    <button *ngIf="isSuperviseur" [class.on]="tab === 'commandes'" (click)="setTab('commandes')"><app-icon name="file"></app-icon> Bons de commande</button>
+    <button [class.on]="tab === 'demandes'" (click)="setTab('demandes')"><app-icon name="purchase"></app-icon> Demandes d'achat <span class="count" *ngIf="synthese?.daEnAttente">{{ synthese?.daEnAttente }}</span></button>
+    <button *ngIf="isSuperviseur" [class.on]="tab === 'fournisseurs'" (click)="setTab('fournisseurs')"><app-icon name="truck"></app-icon> Fournisseurs</button>
+  </div>
+
+  <!-- ============================================================ Orders -->
+  <ng-container *ngIf="tab === 'commandes'">
+    <div class="gm-filters">
+      <span class="gm-search"><app-icon name="search"></app-icon>
+        <input type="search" placeholder="Numéro, fournisseur, article…" [(ngModel)]="cmdSearch" (keyup.enter)="loadCommandes()" (search)="loadCommandes()">
+      </span>
+      <select [(ngModel)]="cmdStatut" (ngModelChange)="loadCommandes()" aria-label="Statut">
+        <option value="">Tous les statuts</option>
+        <option *ngFor="let s of statutsBc" [value]="s">{{ s }}</option>
+      </select>
+      <span class="spacer"></span>
+      <button class="btn btn-secondary btn-sm" (click)="exportCommandes()" [disabled]="!commandes.length"><app-icon name="download"></app-icon> Exporter</button>
+    </div>
+    <div class="gm-card">
+      <div class="gm-loading" *ngIf="cmdLoading"><span class="spinner"></span></div>
+      <div class="gm-empty" *ngIf="!cmdLoading && !commandes.length"><app-icon name="file"></app-icon><strong>Aucun bon de commande</strong></div>
+      <div class="gm-table-wrap" *ngIf="!cmdLoading && commandes.length">
+        <table class="gm-table responsive">
+          <thead><tr><th>Commande</th><th>Fournisseur</th><th>Livraison prévue</th><th>Statut</th><th class="right">Montant</th><th>Réception</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let c of commandes" class="clickable" (click)="openDetail(c.id)">
+              <td class="primary" data-label="Commande"><span class="title gm-code strong">{{ c.numero }}</span><span class="sub">{{ fmtDate(c.dateCommande) }} · {{ c.nbLignes }} ligne{{ c.nbLignes > 1 ? 's' : '' }}{{ c.demandeAchat ? ' · ' + c.demandeAchat : '' }}</span></td>
+              <td data-label="Fournisseur">{{ c.fournisseur }}</td>
+              <td data-label="Livraison"><span [class.late]="isLate(c)">{{ fmtDate(c.dateLivraisonPrevue) }}</span><span class="sub late" *ngIf="isLate(c)">En retard</span></td>
+              <td data-label="Statut"><span class="gm-tag" [ngClass]="statutTone(c.statut)">{{ c.statut }}</span></td>
+              <td class="right num" data-label="Montant">{{ c.montant | number:'1.0-0':'fr' }} DT</td>
+              <td data-label="Réception"><div class="recu" *ngIf="c.statut !== 'Brouillon' && c.statut !== 'Annulé'"><div class="gm-progress ok"><span [style.width.%]="recuPct(c)"></span></div><small>{{ recuPct(c) }} %</small></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ============================================================ Requests -->
+  <ng-container *ngIf="tab === 'demandes'">
+    <div class="gm-filters">
+      <div class="gm-seg">
+        <button [class.on]="daStatut === ''" (click)="daStatut = ''; loadDemandes()">Toutes</button>
+        <button [class.on]="daStatut === 'Soumise'" (click)="daStatut = 'Soumise'; loadDemandes()">À valider</button>
+        <button [class.on]="daStatut === 'Approuvée'" (click)="daStatut = 'Approuvée'; loadDemandes()">Approuvées</button>
+        <button [class.on]="daStatut === 'Commandée'" (click)="daStatut = 'Commandée'; loadDemandes()">Commandées</button>
+      </div>
+    </div>
+    <div class="gm-card">
+      <div class="gm-loading" *ngIf="daLoading"><span class="spinner"></span></div>
+      <div class="gm-empty" *ngIf="!daLoading && !demandes.length"><app-icon name="purchase"></app-icon><strong>Aucune demande d'achat</strong><span>Une pièce manque au magasin ? Créez une demande : le superviseur la validera.</span></div>
+      <div class="da" *ngFor="let d of demandes">
+        <div class="da-head">
+          <div>
+            <div class="gm-inline"><span class="gm-code strong">{{ d.numero }}</span><span class="gm-tag" [ngClass]="daTone(d.statut)">{{ d.statut }}</span></div>
+            <div class="sub">{{ d.demandeur }} · {{ fmtDateTime(d.dateDemande) }}</div>
+          </div>
+          <div class="da-actions">
+            <b class="num">{{ d.montantEstime | number:'1.0-0':'fr' }} DT</b>
+            <ng-container *ngIf="isSuperviseur && d.statut === 'Soumise'">
+              <button class="btn btn-secondary btn-sm" (click)="openDecision(d, false)">Refuser</button>
+              <button class="btn btn-primary btn-sm" (click)="openDecision(d, true)">Approuver</button>
+            </ng-container>
+            <button class="btn btn-primary btn-sm" *ngIf="isSuperviseur && d.statut === 'Approuvée'" (click)="newCommande(d)"><app-icon name="file"></app-icon> Commander</button>
+            <button class="btn btn-secondary btn-sm" *ngIf="isSuperviseur && d.bonCommande" (click)="setTab('commandes'); openDetail(d.bonCommande.id)">{{ d.bonCommande.numero }}</button>
+          </div>
+        </div>
+        <p class="motif" *ngIf="d.motif">{{ d.motif }}</p>
+        <ul class="da-lines">
+          <li *ngFor="let l of d.lignes"><span>{{ l.quantite }} ×</span> {{ l.designation }} <small class="muted" *ngIf="l.code">{{ l.code }}</small></li>
+        </ul>
+        <p class="decision" *ngIf="d.commentaireDecision"><app-icon name="info"></app-icon>{{ d.commentaireDecision }}</p>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ============================================================ Suppliers -->
+  <ng-container *ngIf="tab === 'fournisseurs'">
+    <div class="gm-filters">
+      <span class="gm-search"><app-icon name="search"></app-icon>
+        <input type="search" placeholder="Nom, code, contact…" [(ngModel)]="frnSearch" (keyup.enter)="loadFournisseurs()" (search)="loadFournisseurs()">
+      </span>
+      <span class="spacer"></span>
+      <button class="btn btn-secondary btn-sm" (click)="openFournisseur()"><app-icon name="plus"></app-icon> Nouveau fournisseur</button>
+    </div>
+    <div class="gm-card">
+      <div class="gm-table-wrap">
+        <table class="gm-table responsive">
+          <thead><tr><th>Fournisseur</th><th>Contact</th><th class="right">Délai</th><th class="right">Achats 12 mois</th><th class="right">En cours</th><th>Ponctualité</th><th></th></tr></thead>
+          <tbody>
+            <tr *ngFor="let f of fournisseurs" [class.inactive]="!f.isActif">
+              <td class="primary" data-label="Fournisseur"><span class="title">{{ f.nom }}</span><span class="sub"><span class="gm-code">{{ f.code }}</span> · {{ f.articles }} article{{ f.articles > 1 ? 's' : '' }}</span></td>
+              <td data-label="Contact"><span class="title">{{ f.contact || '—' }}</span><span class="sub">{{ f.telephone }} {{ f.email }}</span></td>
+              <td class="right" data-label="Délai">{{ f.delaiLivraisonJours ? f.delaiLivraisonJours + ' j' : '—' }}</td>
+              <td class="right num" data-label="Achats 12 mois">{{ f.achats12Mois | number:'1.0-0':'fr' }} DT</td>
+              <td class="right num" data-label="En cours">{{ f.commandesEnCours }}</td>
+              <td data-label="Ponctualité"><span class="gm-tag" [ngClass]="ponctualiteTone(f)">{{ ponctualite(f) }}</span> <small class="muted" *ngIf="f.livraisons">sur {{ f.livraisons }}</small></td>
+              <td class="right"><button class="gm-icon-btn" title="Modifier" (click)="openFournisseur(f)"><app-icon name="edit"></app-icon></button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
+</div>
+
+<!-- ============================================================ Order detail -->
+<ng-container *ngIf="detail || detailLoading">
+  <div class="gm-backdrop" (click)="closeDetail()"></div>
+  <aside class="gm-drawer wide" role="dialog" aria-label="Bon de commande">
+    <div class="gm-loading" *ngIf="detailLoading"><span class="spinner"></span></div>
+    <ng-container *ngIf="detail as d">
+      <div class="gm-drawer-head">
+        <div>
+          <div class="gm-inline"><span class="gm-code strong">{{ d.bc.numero }}</span><span class="gm-tag" [ngClass]="statutTone(d.bc.statut)">{{ d.bc.statut }}</span><span class="gm-tag t-bad" *ngIf="isLate(d.bc)">Livraison en retard</span></div>
+          <h2>{{ d.bc.fournisseur.nom }}</h2>
+          <div class="sub">{{ d.bc.fournisseur.contact }} {{ d.bc.fournisseur.telephone }} {{ d.bc.fournisseur.email }}</div>
+        </div>
+        <button class="gm-icon-btn" (click)="closeDetail()" aria-label="Fermer"><app-icon name="close"></app-icon></button>
+      </div>
+      <div class="gm-drawer-body">
+        <div class="gm-facts">
+          <div class="fact"><div class="k">Commandé le</div><div class="v">{{ fmtDate(d.bc.dateCommande) }}</div></div>
+          <div class="fact"><div class="k">Livraison prévue</div><div class="v">{{ fmtDate(d.bc.dateLivraisonPrevue) }}</div></div>
+          <div class="fact"><div class="k">Reçu le</div><div class="v">{{ fmtDate(d.bc.dateReceptionComplete) }}</div></div>
+          <div class="fact"><div class="k">Demande d'achat</div><div class="v">{{ d.bc.demandeAchat || '—' }}</div></div>
+          <div class="fact"><div class="k">Montant</div><div class="v num"><b>{{ d.montant | number:'1.3-3':'fr' }} DT</b></div></div>
+        </div>
+        <div class="gm-table-wrap bordered">
+          <table class="gm-table">
+            <thead><tr><th>Article</th><th class="right">Commandé</th><th class="right">Reçu</th><th class="right">Prix unit.</th><th class="right">Montant</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let l of d.bc.lignes">
+                <td><span class="title">{{ l.designation }}</span><span class="sub gm-code">{{ l.code || 'Hors catalogue' }}</span></td>
+                <td class="right num">{{ l.quantite }} {{ l.unite }}</td>
+                <td class="right num" [class.ok]="l.quantiteRecue >= l.quantite">{{ l.quantiteRecue }}</td>
+                <td class="right num">{{ l.prixUnitaire | number:'1.3-3':'fr' }}</td>
+                <td class="right num">{{ l.montant | number:'1.3-3':'fr' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="notes" *ngIf="d.bc.notes">{{ d.bc.notes }}</p>
+        <div *ngIf="d.bc.receptions.length">
+          <div class="gm-section-title">Réceptions</div>
+          <ul class="receptions">
+            <li *ngFor="let r of d.bc.receptions"><span>{{ fmtDateTime(r.date) }}</span><b>+{{ r.quantite }}</b> {{ r.designation }} <small class="muted">{{ r.utilisateur }}</small></li>
+          </ul>
+        </div>
+      </div>
+      <div class="gm-drawer-foot">
+        <button class="btn btn-secondary" (click)="printBc()"><app-icon name="file"></app-icon> Imprimer</button>
+        <button class="btn btn-secondary" *ngIf="d.bc.statut === 'Brouillon' || d.bc.statut === 'Envoyé'" (click)="formError = ''; cancelDialog = { commentaire: '' }">Annuler la commande</button>
+        <button class="btn btn-secondary" *ngIf="d.bc.statut === 'Brouillon'" (click)="editCommande()"><app-icon name="edit"></app-icon> Modifier</button>
+        <button class="btn btn-primary" *ngIf="d.bc.statut === 'Brouillon'" (click)="send()"><app-icon name="arrow-right"></app-icon> Envoyer</button>
+        <button class="btn btn-primary" *ngIf="d.bc.statut === 'Envoyé' || d.bc.statut === 'Partiellement reçu'" (click)="openReception()"><app-icon name="download"></app-icon> Réceptionner</button>
+      </div>
+    </ng-container>
+  </aside>
+</ng-container>
+
+<!-- ============================================================ Order editor -->
+<ng-container *ngIf="editor as e">
+  <div class="gm-backdrop" style="z-index: 1010" (click)="editor = null"></div>
+  <aside class="gm-drawer wide" style="z-index: 1011" role="dialog">
+    <div class="gm-drawer-head">
+      <div><h2>{{ e.id ? 'Modifier le bon de commande' : 'Nouveau bon de commande' }}</h2><div class="sub">Les articles du catalogue entreront en stock à la réception.</div></div>
+      <button class="gm-icon-btn" (click)="editor = null" aria-label="Fermer"><app-icon name="close"></app-icon></button>
+    </div>
+    <div class="gm-drawer-body">
+      <div class="gm-error-box" *ngIf="formError"><app-icon name="alert"></app-icon>{{ formError }}</div>
+      <div class="gm-form">
+        <div class="gm-field"><label>Fournisseur<span class="req">*</span></label>
+          <select [(ngModel)]="e.idFournisseur"><option [ngValue]="null" disabled>Choisir…</option><option *ngFor="let f of fournisseurs" [ngValue]="f.id">{{ f.nom }}</option></select>
+        </div>
+        <div class="gm-field"><label>Livraison souhaitée</label><input type="date" [(ngModel)]="e.dateLivraisonPrevue"><span class="hint">Vide : calculée avec le délai du fournisseur.</span></div>
+        <div class="gm-field full"><label>Notes</label><input maxlength="1000" [(ngModel)]="e.notes"></div>
+      </div>
+      <div>
+        <div class="gm-section-title">Lignes</div>
+        <div class="lines">
+          <div class="line head"><span>Article</span><span>Quantité</span><span>Prix unitaire (DT)</span><span>Montant</span><span></span></div>
+          <div class="line" *ngFor="let l of e.lignes; let i = index">
+            <gm-article-picker [text]="l.designation" (textChange)="typedLine(l, $event)" (picked)="pickLine(l, $event)"></gm-article-picker>
+            <input type="number" min="1" [(ngModel)]="l.quantite" aria-label="Quantité">
+            <input type="number" min="0" step="0.001" [(ngModel)]="l.prix" aria-label="Prix unitaire">
+            <span class="num amount">{{ (l.quantite || 0) * (l.prix || 0) | number:'1.3-3':'fr' }}</span>
+            <button type="button" class="gm-icon-btn danger" (click)="removeLine(e.lignes, i)" title="Supprimer"><app-icon name="trash"></app-icon></button>
+            <small class="catalog" [class.free]="!l.idPiece">{{ l.idPiece ? 'Article du magasin' : 'Hors catalogue (ne crée pas de stock)' }}</small>
+          </div>
+        </div>
+        <div class="lines-foot">
+          <button type="button" class="btn btn-secondary btn-sm" (click)="addLine(e.lignes)"><app-icon name="plus"></app-icon> Ajouter une ligne</button>
+          <b class="num">Total : {{ total(e.lignes) | number:'1.3-3':'fr' }} DT</b>
+        </div>
+      </div>
+    </div>
+    <div class="gm-drawer-foot">
+      <button class="btn btn-secondary" (click)="editor = null">Annuler</button>
+      <button class="btn btn-secondary" (click)="saveCommande(false)" [disabled]="saving">Enregistrer le brouillon</button>
+      <button class="btn btn-primary" (click)="saveCommande(true)" [disabled]="saving">Enregistrer et envoyer</button>
+    </div>
+  </aside>
+</ng-container>
+
+<!-- ============================================================ Purchase request editor -->
+<ng-container *ngIf="daEditor as e">
+  <div class="gm-backdrop" (click)="daEditor = null"></div>
+  <aside class="gm-drawer" role="dialog">
+    <div class="gm-drawer-head">
+      <div><h2>Nouvelle demande d'achat</h2><div class="sub">Le superviseur l'approuvera avant de passer commande.</div></div>
+      <button class="gm-icon-btn" (click)="daEditor = null" aria-label="Fermer"><app-icon name="close"></app-icon></button>
+    </div>
+    <div class="gm-drawer-body">
+      <div class="gm-error-box" *ngIf="formError"><app-icon name="alert"></app-icon>{{ formError }}</div>
+      <div class="gm-field"><label>Motif</label><textarea rows="3" maxlength="1000" [(ngModel)]="e.motif" placeholder="Pourquoi cet achat ? Machine concernée, urgence…"></textarea></div>
+      <div>
+        <div class="gm-section-title">Articles demandés</div>
+        <div class="lines da-edit">
+          <div class="line" *ngFor="let l of e.lignes; let i = index">
+            <gm-article-picker [text]="l.designation" (textChange)="typedLine(l, $event)" (picked)="pickLine(l, $event)"></gm-article-picker>
+            <input type="number" min="1" [(ngModel)]="l.quantite" aria-label="Quantité">
+            <input type="number" min="0" step="0.001" [(ngModel)]="l.prix" placeholder="Prix estimé" aria-label="Prix estimé">
+            <button type="button" class="gm-icon-btn danger" (click)="removeLine(e.lignes, i)" title="Supprimer"><app-icon name="trash"></app-icon></button>
+          </div>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm mt-1" (click)="addLine(e.lignes)"><app-icon name="plus"></app-icon> Ajouter un article</button>
+      </div>
+    </div>
+    <div class="gm-drawer-foot">
+      <button class="btn btn-secondary" (click)="daEditor = null">Annuler</button>
+      <button class="btn btn-primary" (click)="saveDemande()" [disabled]="saving">Soumettre</button>
+    </div>
+  </aside>
+</ng-container>
+
+<!-- ============================================================ Dialogs -->
+<ng-container *ngIf="reception as r">
+  <div class="gm-backdrop" style="z-index: 1010" (click)="reception = null"></div>
+  <div class="gm-dialog" style="z-index: 1011; width: min(620px, calc(100vw - 24px))" role="dialog">
+    <div class="gm-drawer-head"><h2>Réception de marchandise</h2></div>
+    <div class="gm-drawer-body">
+      <div class="gm-error-box" *ngIf="formError"><app-icon name="alert"></app-icon>{{ formError }}</div>
+      <div class="gm-field"><label>N° du bon de livraison</label><input maxlength="50" [(ngModel)]="r.bonLivraison" placeholder="Facultatif"></div>
+      <div class="recv" *ngFor="let l of r.lignes">
+        <span class="recv-name">{{ l.designation }}<small>Reste à recevoir : {{ l.reste }} {{ l.unite }}</small></span>
+        <input type="number" min="0" [max]="l.reste" [(ngModel)]="l.quantite" aria-label="Quantité reçue">
+      </div>
+    </div>
+    <div class="gm-drawer-foot">
+      <button class="btn btn-secondary" (click)="reception = null">Annuler</button>
+      <button class="btn btn-primary" (click)="saveReception()" [disabled]="saving">Valider la réception</button>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="cancelDialog as c">
+  <div class="gm-backdrop" style="z-index: 1010" (click)="cancelDialog = null"></div>
+  <div class="gm-dialog" style="z-index: 1011" role="dialog">
+    <div class="gm-drawer-head"><h2>Annuler la commande</h2></div>
+    <div class="gm-drawer-body">
+      <div class="gm-error-box" *ngIf="formError"><app-icon name="alert"></app-icon>{{ formError }}</div>
+      <div class="gm-field"><label>Motif<span class="req">*</span></label><input maxlength="300" [(ngModel)]="c.commentaire"></div>
+    </div>
+    <div class="gm-drawer-foot">
+      <button class="btn btn-secondary" (click)="cancelDialog = null">Retour</button>
+      <button class="btn btn-danger" (click)="confirmCancel()">Annuler la commande</button>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="decision as d">
+  <div class="gm-backdrop" (click)="decision = null"></div>
+  <div class="gm-dialog" role="dialog">
+    <div class="gm-drawer-head"><h2>{{ d.approuver ? 'Approuver' : 'Refuser' }} {{ d.da.numero }}</h2></div>
+    <div class="gm-drawer-body">
+      <div class="gm-error-box" *ngIf="formError"><app-icon name="alert"></app-icon>{{ formError }}</div>
+      <div class="gm-field"><label>Commentaire{{ d.approuver ? '' : ' *' }}</label><textarea rows="3" maxlength="500" [(ngModel)]="d.commentaire"></textarea></div>
+    </div>
+    <div class="gm-drawer-foot">
+      <button class="btn btn-secondary" (click)="decision = null">Retour</button>
+      <button class="btn" [ngClass]="d.approuver ? 'btn-primary' : 'btn-danger'" (click)="saveDecision()">{{ d.approuver ? 'Approuver' : 'Refuser' }}</button>
+    </div>
+  </div>
+</ng-container>
+
+<ng-container *ngIf="frnDialog as f">
+  <div class="gm-backdrop" (click)="frnDialog = null"></div>
+  <div class="gm-dialog" style="width: min(620px, calc(100vw - 24px))" role="dialog">
+    <div class="gm-drawer-head"><h2>{{ f.id ? 'Modifier le fournisseur' : 'Nouveau fournisseur' }}</h2></div>
+    <div class="gm-drawer-body">
+      <div class="gm-error-box" *ngIf="formError"><app-icon name="alert"></app-icon>{{ formError }}</div>
+      <div class="gm-form">
+        <div class="gm-field full"><label>Nom<span class="req">*</span></label><input maxlength="150" [(ngModel)]="f.nom"></div>
+        <div class="gm-field"><label>Code</label><input maxlength="20" [(ngModel)]="f.code" placeholder="Automatique si vide"></div>
+        <div class="gm-field"><label>Délai de livraison (jours)</label><input type="number" min="0" [(ngModel)]="f.delaiLivraisonJours"></div>
+        <div class="gm-field"><label>Contact</label><input maxlength="100" [(ngModel)]="f.contact"></div>
+        <div class="gm-field"><label>Téléphone</label><input maxlength="30" [(ngModel)]="f.telephone"></div>
+        <div class="gm-field"><label>E-mail</label><input type="email" maxlength="150" [(ngModel)]="f.email"></div>
+        <div class="gm-field"><label>Adresse</label><input maxlength="255" [(ngModel)]="f.adresse"></div>
+        <div class="gm-field full"><label>Notes</label><textarea rows="2" maxlength="1000" [(ngModel)]="f.notes"></textarea></div>
+      </div>
+      <label class="check-row"><input type="checkbox" [(ngModel)]="f.isActif"> Fournisseur actif</label>
+    </div>
+    <div class="gm-drawer-foot">
+      <button class="btn btn-secondary" (click)="frnDialog = null">Annuler</button>
+      <button class="btn btn-primary" (click)="saveFournisseur()">Enregistrer</button>
+    </div>
+  </div>
+</ng-container>
+
+<div class="gm-toast" *ngIf="toast" [class.error]="toastError"><app-icon [name]="toastError ? 'alert' : 'check'"></app-icon>{{ toast }}</div>

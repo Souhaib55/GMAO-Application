@@ -33,11 +33,14 @@ function chronologyValidator(group: AbstractControl): ValidationErrors | null {
 }
 import { NotificationService } from '../../../core/services/notification.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { AuthService } from '../../../core/services/auth.service';
+import { AppIconComponent } from '../../../shared/components/app-icon/app-icon.component';
+import { EquipementHistoriqueComponent } from '../equipement-historique/equipement-historique.component';
 
 @Component({
   selector: 'app-equipment-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, AppIconComponent, EquipementHistoriqueComponent],
   template: `
     <div class="form-container">
       <app-page-header icon="equipment" [title]="formTitle" subtitle="Identification, état et caractéristiques de l'équipement">
@@ -54,7 +57,16 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
         </div>
       </app-page-header>
 
-      <form [formGroup]="equipmentForm" (ngSubmit)="onSubmit()" class="card">
+      <!-- A machine record has three views: its data, its maintenance history, its documents -->
+      <div class="gm-tabs eq-tabs" *ngIf="isViewMode && equipmentId && canSeeHistory">
+        <button [class.on]="onglet === 'fiche'" (click)="setOnglet('fiche')"><app-icon name="equipment"></app-icon> Fiche</button>
+        <button [class.on]="onglet === 'historique'" (click)="setOnglet('historique')"><app-icon name="history"></app-icon> Historique et fiabilité</button>
+        <button [class.on]="onglet === 'documents'" (click)="setOnglet('documents')"><app-icon name="file"></app-icon> Documents</button>
+      </div>
+
+      <app-equipement-historique *ngIf="isViewMode && equipmentId && onglet !== 'fiche'" [equipementId]="equipmentId" [mode]="onglet === 'documents' ? 'documents' : 'historique'"></app-equipement-historique>
+
+      <form [formGroup]="equipmentForm" (ngSubmit)="onSubmit()" class="card" [hidden]="isViewMode && onglet !== 'fiche'">
         <div class="card-body">
           <div class="form-grid">
             <div class="form-group">
@@ -212,7 +224,8 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
       </form>
     </div>
   `,
-  styleUrls: ['../../../shared/styles/modern-form-design.scss']
+  styleUrls: ['../../../shared/styles/modern-form-design.scss'],
+  styles: [`.eq-tabs { margin-bottom: 16px; } app-equipement-historique { margin-bottom: 16px; }`]
 
 })
 export class EquipmentFormComponent implements OnInit {
@@ -225,6 +238,15 @@ export class EquipmentFormComponent implements OnInit {
   isEditMode = false;
   isViewMode = false;
   equipmentId?: number;
+  onglet: 'fiche' | 'historique' | 'documents' = 'fiche';
+
+  /** Requesters only see the machine data; history and documents are for maintenance staff. */
+  get canSeeHistory(): boolean { return this.auth.getCurrentUser()?.role !== 'Demandeur'; }
+
+  setOnglet(o: 'fiche' | 'historique' | 'documents'): void {
+    this.onglet = o;
+    this.router.navigate([], { queryParams: { onglet: o === 'fiche' ? null : o }, replaceUrl: true });
+  }
   loading = false;
 
   // Reference data
@@ -247,7 +269,8 @@ export class EquipmentFormComponent implements OnInit {
     private referenceDataService: ReferenceDataService,
     private notificationService: NotificationService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private auth: AuthService
   ) {
     this.equipmentForm = this.fb.group({
       codeEquipement: ['', Validators.required],
@@ -274,6 +297,8 @@ export class EquipmentFormComponent implements OnInit {
     
     // Check if view mode from route data
     this.isViewMode = this.route.snapshot.data['viewMode'] === true;
+    const onglet = this.route.snapshot.queryParamMap.get('onglet');
+    if (onglet === 'historique' || onglet === 'documents') this.onglet = onglet;
 
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {

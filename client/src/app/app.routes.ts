@@ -21,6 +21,11 @@ import { ReferencesComponent } from './features/settings/references/references.c
 import { RapportsComponent } from './features/rapports/rapports.component';
 import { PreventifComponent } from './features/preventif/preventif.component';
 import { MagasinComponent } from './features/magasin/magasin.component';
+import { ExplorateurComponent } from './features/explorateur/explorateur.component';
+import { AchatsComponent } from './features/achats/achats.component';
+import { BudgetsComponent } from './features/budgets/budgets.component';
+import { TechniciensComponent } from './features/techniciens/techniciens.component';
+import { JournalComponent } from './features/settings/journal/journal.component';
 
 export const routes: Routes = [
   {
@@ -54,6 +59,30 @@ export const routes: Routes = [
         path: 'chat',
         redirectTo: 'explorateur',
         pathMatch: 'full'
+      },
+      {
+        path: 'achats',
+        component: AchatsComponent,
+        canActivate: [roleGuard],
+        data: { role: ['Superviseur', 'Utilisateur'] }
+      },
+      {
+        path: 'budgets',
+        component: BudgetsComponent,
+        canActivate: [roleGuard],
+        data: { role: 'Superviseur' }
+      },
+      {
+        path: 'techniciens',
+        component: TechniciensComponent,
+        canActivate: [roleGuard],
+        data: { role: 'Superviseur' }
+      },
+      {
+        path: 'explorateur',
+        component: ExplorateurComponent,
+        canActivate: [roleGuard],
+        data: { role: 'Superviseur' }
       },
       {
         path: 'magasin',
@@ -168,6 +197,12 @@ export const routes: Routes = [
       {
         path: 'settings/users',
         component: UserManagementComponent,
+        canActivate: [roleGuard],
+        data: { role: 'Superviseur' }
+      },
+      {
+        path: 'settings/journal',
+        component: JournalComponent,
         canActivate: [roleGuard],
         data: { role: 'Superviseur' }
       },

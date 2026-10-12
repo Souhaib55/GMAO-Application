@@ -32,6 +32,10 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:80
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=gmao;User Id=sa;Password=YourStrong!Password123;TrustServerCertificate=True;
+      # Explorateur de données : compte SQL en lecture seule (voir database/explorateur-lecture-seule.sql)
+      # - ConnectionStrings__Explorateur=Server=sqlserver;Database=gmao;User Id=gmao_lecture;Password=<mot de passe>;TrustServerCertificate=True;
+      # Données de démonstration (une seule fois, jamais en production réelle)
+      # - DemoData__Seed=true
       - ChatbotService__Url=http://chatbot:5002
     # The browser reaches the API through nginx (/api); no direct LAN access
     ports:
