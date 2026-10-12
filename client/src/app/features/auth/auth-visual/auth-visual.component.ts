@@ -14,7 +14,7 @@ import { NgFor, NgSwitch, NgSwitchCase } from '@angular/common';
       <div class="inner">
         <div class="brand">
           <span class="mark">
-            <svg viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4M12 16h4M8 11h.01M8 16h.01"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           </span>
           <span class="brand-text"><b>SIMOTEX</b><small>Gestion de maintenance</small></span>
         </div>
@@ -62,17 +62,18 @@ import { NgFor, NgSwitch, NgSwitchCase } from '@angular/common';
       padding: 48px 52px 36px;
     }
 
-    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand { display: flex; align-items: center; gap: 14px; }
     .mark {
-      width: 40px; height: 40px; border-radius: 10px;
+      width: 50px; height: 50px; flex-shrink: 0; border-radius: 13px;
       display: grid; place-items: center;
-      background: rgba(255, 255, 255, 0.16);
-      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.08));
+      border: 1px solid rgba(255, 255, 255, 0.32);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 10px 24px -8px rgba(10, 25, 80, 0.6);
     }
-    .mark svg { width: 21px; height: 21px; fill: none; stroke: #fff; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-    .brand-text { display: flex; flex-direction: column; line-height: 1.25; }
-    .brand-text b { font-size: 15px; font-weight: 600; letter-spacing: 0.1em; }
-    .brand-text small { font-size: 12.5px; color: rgba(255, 255, 255, 0.72); }
+    .mark svg { width: 24px; height: 24px; fill: none; stroke: #fff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .brand-text { display: flex; flex-direction: column; gap: 3px; padding-left: 14px; border-left: 1px solid rgba(255, 255, 255, 0.28); }
+    .brand-text b { font-size: 17px; line-height: 1.1; font-weight: 700; letter-spacing: 0.16em; color: #fff; }
+    .brand-text small { font-size: 12px; line-height: 1.2; letter-spacing: 0.02em; color: #c9d7ff; }
 
     .pitch { margin: auto 0; padding: 32px 0; }
     .pitch h2 { margin: 0; font-size: 44px; line-height: 1.12; font-weight: 600; letter-spacing: -0.02em; color: #fff; }
