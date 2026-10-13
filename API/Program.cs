@@ -62,7 +62,13 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddDbContext<StoreContext>(opt =>
 {
-    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    // "Database:CompatibilityLevel" = 120 on a SQL Server 2014 host: EF Core then writes
+    // queries without the 2016+ functions (OPENJSON for lists...). Unset = latest syntax.
+    var compatibilityLevel = builder.Configuration.GetValue<int?>("Database:CompatibilityLevel");
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), sql =>
+    {
+        if (compatibilityLevel.HasValue) sql.UseCompatibilityLevel(compatibilityLevel.Value);
+    });
 });
 
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
