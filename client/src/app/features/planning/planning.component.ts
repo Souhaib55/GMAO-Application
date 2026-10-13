@@ -1,4 +1,3 @@
-import { HelpTipComponent } from '../../shared/components/help-tip/help-tip.component';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -17,7 +16,7 @@ interface CalendarDay {
 @Component({
   selector: 'app-planning',
   standalone: true,
-  imports: [CommonModule, RouterModule, InterventionDetailModalComponent, PageHeaderComponent, HelpTipComponent],
+  imports: [CommonModule, RouterModule, InterventionDetailModalComponent, PageHeaderComponent],
   template: `
     <div class="planning-container">
       <!-- Header with Title -->
@@ -37,7 +36,7 @@ interface CalendarDay {
             </svg>
           </div>
           <div class="stat-content">
-            <div class="stat-label">Total<app-help text="Toutes les interventions prévues ce mois-ci (date planifiée, sinon date de déclaration)."></app-help></div>
+            <div class="stat-label">Total</div>
             <div class="stat-value">{{ monthlyStats.total }}</div>
           </div>
         </div>
@@ -50,7 +49,7 @@ interface CalendarDay {
             </svg>
           </div>
           <div class="stat-content">
-            <div class="stat-label">Nouveau<app-help text="Interventions du mois à traiter : le travail n'a pas encore commencé."></app-help></div>
+            <div class="stat-label">Nouveau</div>
             <div class="stat-value">{{ monthlyStats.nouveau }}</div>
           </div>
         </div>
@@ -62,7 +61,7 @@ interface CalendarDay {
             </svg>
           </div>
           <div class="stat-content">
-            <div class="stat-label">En cours<app-help text="Interventions du mois sur lesquelles un technicien travaille."></app-help></div>
+            <div class="stat-label">En cours</div>
             <div class="stat-value">{{ monthlyStats.enCours }}</div>
           </div>
         </div>
@@ -75,7 +74,7 @@ interface CalendarDay {
             </svg>
           </div>
           <div class="stat-content">
-            <div class="stat-label">Terminé<app-help text="Interventions du mois réalisées ou clôturées."></app-help></div>
+            <div class="stat-label">Terminé</div>
             <div class="stat-value">{{ monthlyStats.termine }}</div>
           </div>
         </div>

@@ -17,7 +17,9 @@ namespace API.Controllers
         private const long MaxFileSize = 10 * 1024 * 1024;
         private static readonly string[] AllowedExtensions =
         {
-            ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".txt", ".csv", ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".zip", ".dwg"
+            ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".txt", ".csv", ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".zip", ".dwg",
+            // Photos taken on phones or saved from Windows (the picker offers every image type)
+            ".jfif", ".heic", ".heif", ".avif", ".tif", ".tiff"
         };
         private static readonly string[] Entites = { PieceJointe.EntiteEquipement, PieceJointe.EntiteIntervention, PieceJointe.EntiteBonCommande };
 

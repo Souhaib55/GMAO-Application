@@ -155,6 +155,7 @@
           <input type="file" (change)="onFile($event)" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip" capture="environment" hidden>
         </label>
       </div>
+      <app-intervention-photos [interventionId]="interventionId" [refresh]="fichiers.length"></app-intervention-photos>
       <div class="files" *ngIf="fichiers.length; else noFile">
         <div class="file" *ngFor="let f of fichiers">
           <app-icon [name]="fileIcon(f)"></app-icon>

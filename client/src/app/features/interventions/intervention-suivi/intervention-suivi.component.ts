@@ -6,6 +6,7 @@ import { catchError, debounceTime, distinctUntilChanged, switchMap } from 'rxjs/
 import { AuthService } from '../../../core/services/auth.service';
 import { ArticleRow, GmaoApiService, PieceJointeRow, SuiviIntervention, TechnicienRow } from '../../../core/services/gmao-api.service';
 import { AppIconComponent } from '../../../shared/components/app-icon/app-icon.component';
+import { InterventionPhotosComponent } from '../intervention-photos/intervention-photos.component';
 import { errorMessage, fmtDate, fmtDateTime, fmtMinutes, isoDate, isoDateTimeLocal, saveBlob } from '../../../shared/utils/gm-format';
 
 /**
@@ -18,7 +19,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
 @Component({
   selector: 'app-intervention-suivi',
   standalone: true,
-  imports: [CommonModule, FormsModule, AppIconComponent],
+  imports: [CommonModule, FormsModule, AppIconComponent, InterventionPhotosComponent],
   templateUrl: './intervention-suivi.component.html',
   styleUrls: ['./intervention-suivi.component.scss']
 })

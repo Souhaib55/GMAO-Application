@@ -1,4 +1,3 @@
-import { HelpTipComponent } from '../../shared/components/help-tip/help-tip.component';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -19,7 +18,7 @@ interface EditLine { idPiece: number | null; designation: string; quantite: numb
 @Component({
   selector: 'app-achats',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent, AppIconComponent, ArticlePickerComponent, HelpTipComponent],
+  imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent, AppIconComponent, ArticlePickerComponent],
   templateUrl: './achats.component.html',
   styleUrls: ['./achats.component.scss']
 })

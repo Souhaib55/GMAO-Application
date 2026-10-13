@@ -1,0 +1,1164 @@
+% =============================================================================
+%  SIMOTEX GMAO -- Guide complet de l'application
+%  Compiler avec pdfLaTeX (par défaut sur Overleaf) -- deux fois pour la table des matières.
+% =============================================================================
+\documentclass[11pt,a4paper]{article}
+
+% ---------------------------------------------------------------- Langue, encodage, police
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[default]{lato}
+\usepackage{textcomp}
+\usepackage{amsmath,amssymb}
+\usepackage{microtype}
+
+% ---------------------------------------------------------------- Mise en page
+\usepackage[a4paper,top=24mm,bottom=24mm,left=22mm,right=22mm,headheight=14pt]{geometry}
+\usepackage{setspace}
+\setstretch{1.12}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+
+% ---------------------------------------------------------------- Couleurs (palette de l'application)
+\usepackage[table]{xcolor}
+\definecolor{navy}{HTML}{13254B}
+\definecolor{brandblue}{HTML}{2F5BD3}
+\definecolor{burgundy}{HTML}{8C1C2B}
+\definecolor{softblue}{HTML}{EEF3FD}
+\definecolor{bubble}{HTML}{E3ECFB}
+\definecolor{rowbg}{HTML}{F5F8FD}
+\definecolor{muted}{HTML}{5D6A80}
+\definecolor{okgreen}{HTML}{1F8A4C}
+\definecolor{warnorange}{HTML}{C9730A}
+\definecolor{badred}{HTML}{C0392B}
+\definecolor{coral}{HTML}{D9603B}
+\definecolor{codebg}{HTML}{F4F6FA}
+
+% ---------------------------------------------------------------- Paquets
+\usepackage{tabularx,xltabular,booktabs,array}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage[most]{tcolorbox}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc,babel}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\hypersetup{colorlinks=true,linkcolor=navy,urlcolor=brandblue,pdftitle={SIMOTEX GMAO - Guide complet},pdfauthor={SIMOTEX}}
+
+% ---------------------------------------------------------------- Titres
+\titleformat{\part}[display]{\centering\color{navy}}{\large\scshape\color{burgundy}Partie \thepart}{6pt}{\Huge\bfseries}
+\titleformat{\section}{\Large\bfseries\color{navy}}{\color{burgundy}\thesection}{0.8em}{}[{\color{burgundy}\titlerule[1.2pt]}]
+\titleformat{\subsection}{\large\bfseries\color{navy}}{\color{burgundy}\thesubsection}{0.7em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{brandblue}}{}{0em}{}
+\titlespacing*{\section}{0pt}{18pt}{10pt}
+\titlespacing*{\subsection}{0pt}{14pt}{6pt}
+
+% ---------------------------------------------------------------- En-tête / pied de page
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{muted}SIMOTEX \textperiodcentered{} GMAO}
+\fancyhead[R]{\small\color{muted}\nouppercase{\leftmark}}
+\fancyfoot[C]{\small\color{muted}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{bubble}\leaders\hrule height \headrulewidth\hfill}}
+\renewcommand{\sectionmark}[1]{\markboth{\thesection.\ #1}{}}
+
+% ---------------------------------------------------------------- Listes
+\setlist{itemsep=2pt,topsep=4pt,leftmargin=1.4em}
+\setlist[itemize]{label={\color{burgundy}\small$\blacktriangleright$}}
+
+% ---------------------------------------------------------------- Tableaux
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\renewcommand{\arraystretch}{1.35}
+\newcommand{\thead}[1]{\textcolor{white}{\bfseries #1}}
+\newcommand{\headrow}{\rowcolor{navy}}
+\newenvironment{gtable}[1]
+  {\rowcolors{2}{rowbg}{white}\small\xltabular{\linewidth}{#1}}
+  {\endxltabular}
+
+% ---------------------------------------------------------------- Styles en ligne
+\newcommand{\ui}[1]{\textbf{\textcolor{navy}{#1}}}          % libellé à l'écran
+\newcommand{\code}[1]{\texttt{\small #1}}                   % code, noms de fichiers
+\newcommand{\status}[2]{\tikz[baseline=(s.base)]\node[fill=#1!15,text=#1!80!black,rounded corners=2pt,inner sep=2.2pt,font=\small\bfseries](s){#2};}
+\newcommand{\unite}[1]{\textbf{\textcolor{burgundy}{#1}}}
+
+% ---------------------------------------------------------------- Encadrés
+\tcbset{enhanced,boxrule=0pt,arc=3pt,left=10pt,right=10pt,top=7pt,bottom=7pt,before skip=8pt,after skip=10pt}
+\newtcolorbox{note}[1][Bon à savoir]{colback=softblue,borderline west={3pt}{0pt}{brandblue},
+  fonttitle=\bfseries\small,coltitle=brandblue,title=#1,attach title to upper={\par\smallskip},colframe=softblue}
+\newtcolorbox{retenir}[1][À retenir]{colback=burgundy!4,borderline west={3pt}{0pt}{burgundy},
+  fonttitle=\bfseries\small,coltitle=burgundy,title=#1,attach title to upper={\par\smallskip},colframe=burgundy!4}
+\newtcolorbox{formule}[1][Comment c'est calculé]{colback=white,colframe=bubble,boxrule=1pt,
+  borderline west={3pt}{0pt}{navy},fonttitle=\bfseries\small,coltitle=navy,title=#1,attach title to upper={\par\smallskip}}
+\newtcolorbox{exemple}{colback=okgreen!5,borderline west={3pt}{0pt}{okgreen},colframe=okgreen!5,
+  fonttitle=\bfseries\small,coltitle=okgreen,title=Exemple,attach title to upper={\par\smallskip}}
+
+% ---------------------------------------------------------------- Code
+\lstset{basicstyle=\ttfamily\small,backgroundcolor=\color{codebg},frame=none,xleftmargin=6pt,xrightmargin=6pt,
+  aboveskip=8pt,belowskip=8pt,columns=fullflexible,keepspaces=true,showstringspaces=false,
+  keywordstyle=\color{brandblue}\bfseries,commentstyle=\color{muted}\itshape,stringstyle=\color{burgundy}}
+
+% ---------------------------------------------------------------- Styles TikZ
+\tikzset{
+  box/.style={draw=#1,fill=#1!10,rounded corners=4pt,minimum height=9mm,minimum width=24mm,align=center,font=\small\bfseries,text=navy,line width=0.8pt},
+  box/.default=brandblue,
+  layer/.style={draw=navy!60,fill=softblue,rounded corners=5pt,text width=0.8\linewidth,minimum height=13mm,inner sep=6pt,align=center,font=\small,text=navy,line width=0.7pt},
+  arr/.style={-{Stealth[length=2.6mm]},line width=0.9pt,color=navy!70},
+  lab/.style={font=\scriptsize,text=muted,align=center}
+}
+
+% =============================================================================
+\begin{document}
+
+% ---------------------------------------------------------------- Page de garde
+\begin{titlepage}
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture,overlay]
+  \fill[softblue] (current page.north west) rectangle ([yshift=-11cm]current page.north east);
+  \fill[burgundy] ([xshift=2.2cm,yshift=-3.4cm]current page.north west) rectangle ++(0.12,-2.2);
+  \node[anchor=north west,text=navy,font=\fontsize{30}{34}\selectfont\bfseries,align=left] at ([xshift=2.6cm,yshift=-3.3cm]current page.north west) {SIMOTEX};
+  \node[anchor=north west,text=muted,font=\Large,align=left] at ([xshift=2.62cm,yshift=-4.6cm]current page.north west) {Gestion de maintenance (GMAO)};
+  \node[anchor=north west,text=navy,font=\fontsize{24}{30}\selectfont\bfseries,align=left] at ([xshift=2.2cm,yshift=-7.0cm]current page.north west) {Guide complet de l'application};
+  \fill[burgundy] ([xshift=2.2cm,yshift=-8.6cm]current page.north west) rectangle ++(1.4,-0.09);
+  \node[anchor=north west,text=muted,font=\large,align=left,text width=15cm] at ([xshift=2.2cm,yshift=-9.0cm]current page.north west)
+    {Chaque module, chaque indicateur et sa méthode de calcul,\\ le circuit des interventions et l'architecture technique.};
+\end{tikzpicture}
+
+\vspace*{11.5cm}
+\begin{center}
+\begin{minipage}{0.84\linewidth}
+\begin{tcolorbox}[colback=white,colframe=bubble,boxrule=1pt,arc=4pt]
+\textbf{\textcolor{navy}{Comment lire ce guide}}\par\smallskip
+La \textbf{partie A} présente l'application du point de vue de ses utilisateurs : les rôles, la vie d'une intervention, chaque module et chaque indicateur, avec des exemples chiffrés.\par
+La \textbf{partie B} explique comment l'application est construite : architecture, technologies, sécurité et tests. Chaque terme technique y est défini simplement.\par\smallskip
+{\small\color{muted}Les libellés de l'application sont repris tels qu'ils apparaissent à l'écran.}
+\end{tcolorbox}
+\end{minipage}
+\end{center}
+\vfill
+{\centering\small\color{muted}SIMOTEX \textperiodcentered{} Service maintenance \textperiodcentered{} Version 2.0\par}
+\end{titlepage}
+
+\tableofcontents
+\clearpage
+
+% =============================================================================
+\part{Utiliser et comprendre l'application}
+% =============================================================================
+
+\section{La GMAO en une minute}
+
+\textbf{GMAO} signifie \emph{Gestion de Maintenance Assistée par Ordinateur} (en anglais : CMMS).
+
+Dans une usine textile, les machines (machines à coudre, tables de coupe, fers à repasser, compresseurs\ldots) tombent en panne ou doivent être entretenues régulièrement. Sans logiciel, les pannes sont signalées par téléphone, personne ne sait qui travaille sur quoi, les pièces de rechange manquent sans prévenir et personne ne peut dire combien coûte réellement la maintenance.
+
+La GMAO répond à quatre questions :
+
+\begin{gtable}{Y L{5.8cm}}
+\headrow \thead{Question} & \thead{Où dans l'application} \\
+Qu'est-ce qui est en panne en ce moment, et qui s'en occupe ? & Interventions, Planning, Tableau de bord \\
+Quel entretien faut-il faire, et quand ? & Maintenance préventive \\
+Avons-nous les pièces, et que faut-il commander ? & Magasin, Achats \\
+Combien coûte la maintenance, et est-ce qu'elle s'améliore ? & Tableau de bord, Budgets, Explorateur, Rapports \\
+\end{gtable}
+
+% -----------------------------------------------------------------------------
+\section{Unités et abréviations}
+
+\begin{gtable}{L{2.4cm} Y L{5.4cm}}
+\headrow \thead{Vous voyez} & \thead{Cela signifie} & \thead{Exemple} \\
+\unite{h} & heures & «~253~h~» d'arrêt = 253 heures d'arrêt machine au total \\
+\unite{min} & minutes & une saisie de temps de 45~min \\
+\unite{j} & jours & «~dans 6~j~» ; le choix de période 7~j / 30~j / 90~j / 12~mois \\
+\unite{DT} & \textbf{Dinar tunisien}, la monnaie. Tous les montants de l'application sont en DT. & «~Coût de maintenance 4\,008~DT~» \\
+\unite{DT/h} & \textbf{dinars par heure} : le coût d'une heure de travail d'un technicien (\emph{taux horaire}). C'est ce qui transforme les heures de travail en argent. & 12,5~DT/h $\times$ 2~h de travail = 25~DT de main-d'\oe uvre \\
+\unite{k DT} & milliers de dinars & «~4,0~k~» dans le graphique des coûts = 4\,000~DT \\
+\unite{\%} & pourcentage & disponibilité de 99~\% \\
+\unite{pt} & \textbf{point} de pourcentage : l'écart entre deux pourcentages & de 98~\% à 99~\% = «~+1~pt~» (et non «~+1~\%~») \\
+\unite{OT} & \emph{Ordre de Travail} = une intervention & \\
+\unite{INT-0042} & référence de l'intervention n°~42 & \\
+\unite{PM-0004} & code du plan préventif n°~4 & \\
+\unite{DA-2026-0007} & \emph{Demande d'Achat} n°~7 de 2026 & \\
+\unite{BC-2026-0055} & \emph{Bon de Commande} n°~55 de 2026 & \\
+\unite{MTTR} & \emph{Mean Time To Repair} : temps moyen de réparation & voir section~\ref{sec:glossaire} \\
+\unite{MTBF} & \emph{Mean Time Between Failures} : temps moyen de bon fonctionnement entre deux pannes & voir section~\ref{sec:glossaire} \\
+\end{gtable}
+
+\begin{note}[Format des nombres]
+Les nombres suivent le format français : virgule pour les décimales (12,5) et espace pour les milliers (4\,008).
+\end{note}
+
+% -----------------------------------------------------------------------------
+\section{Les trois rôles}
+
+Chaque compte a un seul rôle. Le menu, les pages et les boutons s'adaptent à ce rôle, et le serveur revérifie le rôle à chaque action : masquer un bouton n'est donc jamais la seule protection.
+
+\begin{gtable}{L{2.8cm} L{2.8cm} Y Y}
+\headrow \thead{Rôle} & \thead{Qui chez SIMOTEX} & \thead{Ce qu'il fait} & \thead{Ce qu'il voit} \\
+\ui{Superviseur} & Responsable maintenance & Affecte le travail, valide les travaux terminés, gère les plans, le magasin, les achats, les budgets, les comptes et les paramètres & Tout \\
+\ui{Utilisateur} = \ui{Technicien} & Techniciens de maintenance & Accepte ou refuse ses interventions, saisit son temps et ses pièces, rédige le compte rendu, déclare le travail terminé, demande des achats & Ses interventions et son planning ; le préventif et les équipements (lecture) ; le magasin ; ses demandes d'achat \\
+\ui{Demandeur} & Chefs de chaîne de production & Déclare les pannes et les demandes, suit leur avancement & Ses propres demandes et son tableau de bord personnel \\
+\end{gtable}
+
+\begin{note}
+Le rôle technicien s'appelle «~Utilisateur~» dans la base de données pour des raisons historiques. À l'écran, il est présenté comme «~Techniciens (rôle Utilisateur)~».
+\end{note}
+
+% -----------------------------------------------------------------------------
+\section{Le circuit d'une intervention}\label{sec:circuit}
+
+C'est le c\oe ur de l'application. Une intervention (OT) passe toujours par ces \textbf{statuts} :
+
+\begin{center}
+\begin{tikzpicture}[node distance=9mm and 11mm]
+  \node[box=brandblue] (a) {1\quad À traiter};
+  \node[box=warnorange, right=of a] (b) {2\quad En cours};
+  \node[box=coral, right=of b] (c) {3\quad Réalisée};
+  \node[box=okgreen, right=of c] (d) {4\quad Clôturée};
+  \node[box=badred, below=13mm of b] (e) {5\quad Annulée};
+  \draw[arr] (a) -- node[lab,above]{accepter} (b);
+  \draw[arr] (b) -- node[lab,above]{terminer} (c);
+  \draw[arr] (c) -- node[lab,above]{valider} (d);
+  \draw[arr,color=burgundy] (c.north) to[bend right=40] node[lab,above]{renvoyer au technicien} (b.north);
+  \draw[arr,color=badred!70] (a.south) |- node[lab,pos=0.75,below]{annuler (possible jusqu'à la clôture)} (e.west);
+\end{tikzpicture}
+\end{center}
+
+\subsection{Étape par étape}
+
+\begin{gtable}{L{0.5cm} L{2.3cm} Y L{1.9cm} Y}
+\headrow \thead{N°} & \thead{Qui} & \thead{Action dans l'application} & \thead{Statut après} & \thead{Ce qui se passe automatiquement} \\
+1 & Demandeur (ou Superviseur) & \ui{Déclarer une panne / Nouvelle intervention} : chaîne, machine, type, type de panne, urgence, titre, description, photo facultative & \status{brandblue}{À traiter} & Les superviseurs sont prévenus. Pour une panne, la machine passe \ui{En panne}. Journal : «~Déclaration~». \\
+2 & Superviseur & Fiche de l'intervention, carte «~À faire~» : \ui{Affecter un technicien} & À traiter (affectée) & Le technicien est prévenu. Journal : «~Affectation~». \\
+3a & Technicien & \ui{Accepter et démarrer} & \status{warnorange}{En cours} & Les superviseurs et le demandeur sont prévenus. Le chronomètre de réparation démarre (il sert au MTTR). \\
+3b & Technicien & ou \ui{Refuser} avec un motif (indisponible, compétence, pièce manquante\ldots) & retour à À traiter, sans technicien & Les superviseurs sont prévenus avec le motif et réaffectent. \\
+4 & Technicien & Dans le \ui{Suivi des travaux} : saisit son temps, sort des pièces du magasin, coche les étapes, indique la cause et le remède & En cours & Chaque pièce sortie quitte le stock immédiatement. Coût de main-d'\oe uvre = temps $\times$ taux horaire. \\
+5 & Technicien & \ui{Marquer comme réalisée} avec un \textbf{compte rendu} (10 caractères minimum) & \status{coral}{Réalisée} & Les superviseurs reçoivent «~attend votre validation~». La machine redevient \ui{En service}. \\
+6a & Superviseur & Lit le compte rendu, puis \ui{Valider et clôturer} & \status{okgreen}{Clôturée} & Le technicien et le demandeur sont prévenus. L'intervention est verrouillée. \\
+6b & Superviseur & ou \ui{Renvoyer au technicien} & retour à En cours & Le technicien est prévenu : «~à reprendre~». \\
+-- & Superviseur (à tout moment) ou Demandeur (avant le début des travaux) & \ui{Annuler cette intervention} avec un motif & \status{badred}{Annulée} & Les pièces déjà sorties \textbf{reviennent en stock} ; l'état de la machine est recalculé. \\
+\end{gtable}
+
+\subsection{Les règles que l'application fait respecter}
+
+\begin{retenir}[Règles de fonctionnement]
+\begin{itemize}
+  \item Seul le \textbf{technicien affecté} peut démarrer et terminer une intervention ; seul un \textbf{superviseur} peut la clôturer.
+  \item Le compte rendu est \textbf{obligatoire} pour terminer.
+  \item Un demandeur ne peut modifier ou annuler sa demande \textbf{qu'avant} qu'un technicien la démarre.
+  \item Une saisie de temps ne peut pas se terminer dans le futur, et un technicien \textbf{ne peut pas saisir deux périodes qui se chevauchent}.
+  \item Supprimer une intervention (superviseur uniquement) remet aussi ses pièces en stock. L'annulation est préférable car elle garde une trace.
+  \item Chaque étape est inscrite dans le \ui{Journal d'activité} (qui, quoi, quand).
+  \item Chaque suppression demande une confirmation dans une fenêtre de l'application.
+\end{itemize}
+\end{retenir}
+
+\subsection{L'état des machines}
+
+\begin{itemize}
+  \item Une \textbf{panne} (tout type autre que «~préventive~») sur une machine identifiée met la machine \ui{En panne} tant que l'intervention est ouverte.
+  \item Quand il ne reste plus de panne ouverte sur la machine (terminée, clôturée ou annulée), elle redevient \ui{En service}.
+  \item Un entretien préventif \textbf{n'arrête pas} la machine.
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Tableau de bord}
+
+Le tableau de bord est différent pour chaque rôle.
+
+\subsection{Tableau de bord du superviseur (« Pilotage de la maintenance »)}
+
+\textbf{Filtres en haut de page} :
+\begin{itemize}
+  \item \ui{Période} : 7~j, 30~j, 90~j, 12~mois ;
+  \item \ui{Chaîne} : une chaîne de production ou toutes ;
+  \item \ui{Équipement} : une machine ou toutes ;
+  \item \ui{Exporter} : télécharge les chiffres en fichier CSV, qui s'ouvre dans Excel.
+\end{itemize}
+
+Chaque chiffre est comparé à la \textbf{période précédente de même durée} (par exemple les 30 derniers jours contre les 30 jours d'avant). Le petit badge coloré montre l'évolution : \textcolor{okgreen}{\textbf{vert = mieux}}, \textcolor{badred}{\textbf{rouge = moins bien}}.
+
+\subsubsection{Les six indicateurs clés}
+
+\begin{gtable}{L{3.3cm} L{3.6cm} Y}
+\headrow \thead{Carte} & \thead{Ce qu'elle indique} & \thead{Comment c'est calculé} \\
+\ui{Disponibilité du parc} & Le \% du temps où les machines \textbf{pouvaient produire} & $1 - \text{heures d'arrêt} \div (\text{machines} \times \text{heures de la période})$. Seules les pannes sur une \textbf{machine identifiée} sont comptées. \\
+\ui{Heures d'arrêt} & Le total des heures où des machines étaient \textbf{arrêtées} par une panne & Pour chaque panne : de la \textbf{déclaration} jusqu'à la \textbf{réparation} (ou jusqu'à maintenant si elle est encore ouverte), comptées seulement dans la période. Le sous-titre donne le nombre de pannes. \\
+\ui{Temps moyen de réparation} (MTTR) & Combien de temps dure une réparation en moyenne & Moyenne de (fin de réparation $-$ début du travail) pour les pannes \textbf{réparées} dans la période. Plus c'est court, mieux c'est. \\
+\quad $\hookrightarrow$ \ui{MTBF} & Le temps de bon fonctionnement entre deux pannes & $(\text{machines} \times \text{heures} - \text{heures d'arrêt}) \div \text{pannes déclarées}$. Plus c'est long, mieux c'est. \\
+\ui{Respect du préventif} & L'entretien planifié est-il fait à temps ? & Entretiens \textbf{prévus} dans la période et réalisés \textbf{au plus 2 jours} après leur date, divisés par le nombre d'entretiens prévus. Objectif : \textbf{90~\%}. \\
+\ui{Interventions ouvertes} & Le travail en attente (non terminé) & Interventions À traiter ou En cours. \textbf{«~En retard~»} = préventifs ouverts dont la date est dépassée + pannes ouvertes depuis plus de 48~h. \\
+\ui{Coût de maintenance} & Ce qu'a coûté la maintenance sur la période & \textbf{Main-d'\oe uvre} (heures saisies $\times$ taux horaire en DT/h) + \textbf{pièces} (quantité $\times$ prix unitaire au moment de la sortie) + \textbf{sous-traitance}. La barre compare ce coût au budget de la période. \\
+\end{gtable}
+
+\begin{formule}[Disponibilité -- exemple chiffré]
+\[
+\text{Disponibilité} = 1 - \frac{\text{heures d'arrêt}}{\text{machines} \times \text{heures de la période}}
+\]
+38 machines $\times$ 30 jours $\times$ 24~h = 27\,360 heures-machine. Avec 253~h d'arrêt :
+\quad $1 - 253 / 27\,360 = 0{,}991$ \quad $\Rightarrow$ \quad \textbf{99,1~\%}.
+\end{formule}
+
+\subsubsection{Les cartes en dessous}
+
+\begin{gtable}{L{4.3cm} Y}
+\headrow \thead{Carte} & \thead{Signification} \\
+\ui{À traiter maintenant} & La liste des actions : machines arrêtées, préventifs en retard, demandes sans technicien. L'étiquette de couleur dit pourquoi ; la colonne de droite dit depuis quand. Un clic ouvre l'intervention. \\
+\ui{Interventions déclarées et réalisées} & Deux courbes : demandes déclarées et demandes terminées. Si «~déclarées~» reste au-dessus de «~réalisées~», le travail en attente augmente. \\
+\ui{Heures d'arrêt par chaîne} & Les chaînes qui ont perdu le plus d'heures. Un clic sur une chaîne filtre tout le tableau de bord. \\
+\ui{Pannes les plus fréquentes} & Le classement des types de panne (Pareto). Traiter les 2 ou 3 premières causes supprime en général la plupart des pannes. \\
+\ui{Répartition des coûts} & Un graphique en anneau : main-d'\oe uvre / pièces / sous-traitance. Au centre : le total en milliers de DT. Sous-titre : la part du préventif dans les heures de travail. \\
+\ui{Machines les plus pénalisantes} & Les machines qui ont le plus arrêté la production : nombre de pannes et heures d'arrêt. Un clic ouvre l'historique de la machine. \\
+\ui{Alertes} & Les points qui demandent une décision : machines à l'arrêt, demandes sans technicien, préventifs en retard, articles en rupture ou sous le seuil, livraisons en retard, demandes d'achat à valider. Chaque ligne ouvre la liste concernée, déjà filtrée. \\
+\end{gtable}
+
+\subsection{Tableau de bord du technicien (« Votre journée de travail »)}
+
+\begin{gtable}{L{4.3cm} Y}
+\headrow \thead{Carte} & \thead{Signification} \\
+\ui{En cours} & Les interventions que le technicien a démarrées \\
+\ui{À démarrer} & Affectées à lui, pas encore commencées \\
+\ui{Prévues aujourd'hui} & Planifiées pour aujourd'hui ; «~en retard~» = date prévue dépassée et travail non terminé \\
+\ui{Heures cette semaine} & Le temps qu'il a saisi depuis lundi \\
+\ui{Réalisées sur 30 jours} & Les travaux qu'il a terminés ces 30 derniers jours \\
+\ui{Mes interventions} & Ses interventions ouvertes, machines arrêtées et urgences en premier. Étiquettes : «~Arrêt~», «~Préventif~», urgence. \\
+\end{gtable}
+
+\subsection{Tableau de bord du demandeur (« Suivi de vos demandes »)}
+
+\begin{gtable}{L{4.3cm} Y}
+\headrow \thead{Carte} & \thead{Signification} \\
+\ui{Prises en charge} & Ses demandes sur lesquelles un technicien travaille \\
+\ui{En attente} & Pas encore commencées \\
+\ui{Réalisées, à valider} & Travaux terminés, en attente de la validation du superviseur \\
+\ui{Réalisées sur 30 jours} & Terminées ces 30 derniers jours \\
+\ui{Mes demandes en cours} & Ses demandes ouvertes, avec leur statut et le technicien \\
+\end{gtable}
+
+% -----------------------------------------------------------------------------
+\section{Planning}
+
+\textbf{Pour qui :} Superviseur et Technicien (un technicien ne voit que ses propres travaux).
+
+\textbf{Ce qu'il montre :} un \textbf{calendrier mensuel} des interventions.
+
+\begin{itemize}
+  \item Chaque intervention est placée à sa \textbf{date planifiée} (préventifs, ou date fixée par le superviseur) ; sinon à sa \textbf{date de déclaration} (pannes).
+  \item Chaque étiquette a la couleur de son statut : \status{brandblue}{À traiter} \status{warnorange}{En cours} \status{coral}{Réalisée} \status{okgreen}{Clôturée} \status{badred}{Annulée}
+  \item Un jour affiche deux interventions ; s'il y en a plus, \ui{+N} ouvre la liste complète du jour.
+  \item Un clic sur une intervention ouvre le \textbf{panneau latéral} :
+    \begin{itemize}
+      \item le statut et la frise (Déclarée $\rightarrow$ Affectée $\rightarrow$ En cours $\rightarrow$ Réalisée $\rightarrow$ Clôturée, avec les dates) ;
+      \item la carte \ui{À faire} (prochaine action pour l'utilisateur connecté) ;
+      \item le \textbf{compte rendu} du technicien ;
+      \item le \ui{Suivi des travaux} ;
+      \item les détails et la pièce jointe ;
+      \item \ui{Ouvrir la fiche} pour la page complète.
+    \end{itemize}
+  \item Les interventions clôturées ou annulées peuvent être masquées du calendrier (petite croix). Cela ne les masque que dans ce navigateur ; rien n'est supprimé.
+\end{itemize}
+
+\textbf{Compteurs en haut (mois affiché) :}
+\begin{itemize}
+  \item \ui{Total} ;
+  \item \ui{Nouveau} (= à traiter) ;
+  \item \ui{En cours} ;
+  \item \ui{Terminé} (= réalisées + clôturées).
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Interventions}
+
+\textbf{Pour qui :} tout le monde. Un demandeur ne voit que ses propres demandes ; un technicien voit celles qui lui sont affectées.
+
+\subsection{La liste}
+
+\begin{gtable}{L{4.3cm} Y}
+\headrow \thead{Indicateur} & \thead{Signification} \\
+\ui{À traiter} & Déclarées, le travail n'a pas commencé \\
+\ui{En cours} & Un technicien y travaille \\
+\ui{Réalisées / clôturées} & Terminées, validées ou en attente de validation \\
+\ui{Urgentes en attente} & Urgence haute, pas encore terminées : à traiter en premier \\
+\ui{Total} & Toutes les demandes, annulées comprises \\
+\end{gtable}
+
+\begin{itemize}
+  \item \textbf{Recherche} par titre, référence («~INT-0042~» ou simplement «~42~»), machine ou chaîne ; elle filtre au fur et à mesure de la saisie.
+  \item \textbf{Filtre actif} : en venant d'une alerte du tableau de bord (par exemple «~Demandes sans technicien~»), la liste est déjà filtrée ; la croix retire le filtre.
+  \item \textbf{Colonnes} : intervention (titre + référence), date et heure de déclaration, type, machine et chaîne, étiquette d'\textbf{urgence} (rouge = Haute), pastille de \textbf{statut}, demandeur.
+  \item \textbf{Actions} :
+    \begin{itemize}
+      \item \emph{œil} : ouvrir la fiche ;
+      \item \emph{crayon} : modifier, seulement tant que c'est autorisé ;
+      \item \emph{corbeille} : supprimer, superviseur uniquement, toujours avec confirmation.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Créer ou modifier (panneau latéral)}
+
+\ui{Nouvelle intervention} ouvre un panneau à droite, en trois parties :
+\begin{enumerate}
+  \item \ui{Où se trouve le problème ?} -- chaîne et machine (choisir la machine remplit la chaîne toute seule).
+  \item \ui{De quoi s'agit-il ?}
+    \begin{itemize}
+      \item \textbf{Type} : panne ou entretien préventif.
+      \item \textbf{Type de panne} : obligatoire seulement pour une panne.
+      \item \textbf{Urgence} : Haute = la production est bloquée ; Normale = à traiter dans la journée ; Basse = peut attendre.
+      \item \textbf{Titre} et \textbf{description}.
+    \end{itemize}
+  \item \ui{Pièce jointe} -- une photo ou un document, 10~Mo maximum.
+\end{enumerate}
+
+\subsection{La fiche d'une intervention}
+
+\begin{itemize}
+  \item \textbf{Informations en tête} : référence, date de déclaration, demandeur, statut, technicien, date planifiée, arrêt machine.
+  \item \textbf{Carte «~À faire~»} : la prochaine action du circuit pour la personne qui regarde (voir section~\ref{sec:circuit}).
+  \item \ui{Suivi des travaux} :
+    \begin{itemize}
+      \item \textbf{Coût} : main-d'\oe uvre (DT et heures), pièces (DT et nombre de lignes), externe (sous-traitance), \textbf{total} ;
+      \item \textbf{Contrôles et étapes} : la liste à cocher, reprise du plan préventif ;
+      \item \textbf{Temps passé} : les saisies de temps (début, durée, commentaire) ; le superviseur peut saisir pour n'importe quel technicien ;
+      \item \textbf{Pièces consommées} : pièces sorties du magasin ; retirer une ligne remet la pièce en stock ;
+      \item \textbf{Analyse} : cause, remède, coût externe (DT), date planifiée, durée estimée ;
+      \item \textbf{Documents}.
+    \end{itemize}
+  \item \ui{Imprimer} : imprimer la fiche ou l'enregistrer en PDF.
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Maintenance préventive}
+
+\textbf{Principe :} au lieu d'attendre les pannes, on entretient les machines régulièrement (nettoyage, graissage, contrôles\ldots). Un \textbf{plan} décrit un entretien répétitif sur une machine.
+
+\subsection{Contenu d'un plan}
+
+\begin{gtable}{L{4.6cm} Y}
+\headrow \thead{Champ} & \thead{Signification} \\
+\ui{Intitulé} & par exemple «~Nettoyage et lubrification hebdomadaire~» \\
+\ui{Machine} & La machine à entretenir \\
+\ui{Fréquence} & Tous les N jours / semaines / mois / ans (par exemple toutes les 2 semaines) \\
+\ui{Durée estimée} & Sert au planning et à la charge des techniciens \\
+\ui{Première / Prochaine échéance} & La prochaine date prévue \\
+\ui{Générer l'OT (jours avant)} & Combien de jours \textbf{avant} l'échéance l'ordre de travail est créé (par exemple 3) \\
+\ui{Technicien responsable} & Qui reçoit l'ordre de travail automatiquement \\
+\ui{Consignes} & Sécurité, outillage\ldots \\
+\ui{Étapes} & La liste à cocher recopiée dans chaque ordre de travail \\
+\end{gtable}
+
+\subsection{Création automatique des ordres de travail}
+
+\begin{itemize}
+  \item Une tâche tourne \textbf{toutes les heures} sur le serveur. Pour chaque plan actif dont l'échéance est proche, elle crée l'intervention, déjà \textbf{affectée} au technicien du plan, avec sa liste d'étapes. Le technicien est prévenu.
+  \item Un plan n'a \textbf{jamais} deux ordres de travail pour la même échéance.
+  \item Une échéance qui tombe un \textbf{dimanche} est planifiée le \textbf{lundi}.
+  \item Si le serveur a été arrêté, les échéances manquées ne sont pas toutes créées d'un coup : on passe directement à la dernière.
+  \item \ui{Générer les OT dus} lance cette création tout de suite.
+  \item \ui{Générer le prochain OT maintenant} (bouton lecture sur un plan) crée l'ordre suivant en avance. C'est \textbf{refusé tant que l'ordre en cours du plan n'est pas terminé}, pour ne pas accumuler des travaux futurs.
+  \item \ui{Suspendre / Réactiver} : un plan suspendu ne crée rien.
+\end{itemize}
+
+\subsection{Indicateurs}
+
+\begin{gtable}{L{4.3cm} Y}
+\headrow \thead{Indicateur} & \thead{Signification et calcul} \\
+\ui{Respect du préventif} & Sur les 90 derniers jours : entretiens prévus réalisés \textbf{au plus 2 jours} après leur date, divisés par les entretiens prévus. Sous-titre : «~X à l'heure sur Y échéances~». \\
+\ui{Préventifs en retard} & Date prévue dépassée, travail non réalisé \\
+\ui{À réaliser sous 7 jours} & Ordres de travail déjà créés pour la semaine à venir \\
+\ui{Couverture du parc} & Machines ayant au moins un plan actif, divisées par toutes les machines. Une machine sans plan n'est réparée qu'après une panne. \\
+\end{gtable}
+
+\textbf{Onglets :}
+\begin{itemize}
+  \item \ui{Plans} : la liste, avec la prochaine échéance, le technicien et le statut du dernier ordre de travail.
+  \item \ui{Calendrier} :
+    \begin{itemize}
+      \item les ordres de travail déjà créés (en plein) ;
+      \item les prévisions des prochaines échéances (en clair) ;
+      \item «~+ N autres~» déplie un jour chargé.
+    \end{itemize}
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Équipements}
+
+\textbf{Pour qui :} Superviseur (accès complet), Technicien (lecture).
+
+\subsection{Liste et indicateurs}
+
+\begin{gtable}{L{4.3cm} Y}
+\headrow \thead{Indicateur} & \thead{Signification} \\
+\ui{Machines du parc} & Toutes les machines enregistrées \\
+\ui{En service} & Fonctionnent normalement \\
+\ui{En panne / arrêt} & Une panne déclarée n'est pas encore réparée \\
+\ui{Machines critiques} & Machines dont l'arrêt bloque la production : à surveiller en priorité \\
+\end{gtable}
+
+Colonnes :
+\begin{itemize}
+  \item machine (nom + code), modèle, chaîne ;
+  \item \textbf{état} : pastille verte = en service, rouge = en panne, orange = maintenance ;
+  \item étiquette de \textbf{criticité} : Critique / Important / Standard.
+\end{itemize}
+
+\subsection{Créer ou modifier (panneau latéral)}
+
+\begin{itemize}
+  \item \ui{Identification} : code (l'étiquette collée sur la machine, unique), désignation, famille, modèle, groupe, numéro de série.
+  \item \ui{Situation dans l'atelier} : chaîne, état, criticité.
+  \item \ui{Dates et coût} :
+    \begin{itemize}
+      \item dates de fabrication, d'achat, d'installation et de mise en service ;
+      \item coût d'achat (DT) et fin de garantie ;
+      \item l'application vérifie l'ordre des dates, refuse les dates dans le futur et indique si la machine est encore sous garantie.
+    \end{itemize}
+\end{itemize}
+
+\subsection{La fiche d'une machine}
+
+\begin{itemize}
+  \item \ui{Fiche} : les données.
+  \item \ui{Historique et fiabilité} : les indicateurs de cette machine sur 12 mois, toutes ses interventions (filtre Toutes / Pannes / Préventif) et les pièces consommées :
+    \begin{itemize}
+      \item \textbf{Disponibilité (12 mois)} : même formule que le tableau de bord, pour cette machine seulement ;
+      \item \textbf{Pannes (12 mois)} : nombre de pannes et date de la dernière ;
+      \item \textbf{MTBF / MTTR} : le grand chiffre est le MTBF en heures, la ligne dessous le temps moyen de réparation ;
+      \item \textbf{Coût de maintenance} : main-d'\oe uvre + pièces + sous-traitance sur 12 mois et depuis l'origine.
+    \end{itemize}
+  \item \ui{Documents} : notices, photos, certificats.
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Techniciens}
+
+\textbf{Pour qui :} Superviseur. Une carte par technicien :
+
+\begin{gtable}{L{4.3cm} Y}
+\headrow \thead{Élément} & \thead{Signification} \\
+\ui{Charge actuelle} & Interventions ouvertes qui lui sont affectées (À traiter + En cours) et le \textbf{nombre d'heures estimé} de ce travail \\
+\ui{En cours / À démarrer} & Répartition de cette charge \\
+\ui{En retard} & Ses interventions dont la date prévue est dépassée \\
+\ui{Réalisées} & Terminées pendant la période choisie (7~j / 30~j / 90~j / 12~mois) \\
+\ui{Heures saisies} & Heures qu'il a saisies pendant la période \\
+\ui{Taux horaire (DT/h)} & Le coût d'une heure de son travail. \textbf{C'est lui qui transforme les heures en argent} dans tous les calculs de coût. Modifiable avec le crayon. \\
+\end{gtable}
+
+\begin{exemple}
+Le taux de Mohamed est de 12,5~DT/h. Il saisit 3~h~12~min (soit 3,2~h) sur une intervention :
+coût de main-d'\oe uvre = 12,5 $\times$ 3,2 = \textbf{40~DT}.
+\end{exemple}
+
+\begin{note}
+Le taux horaire en vigueur est recopié sur chaque saisie de temps au moment où elle est enregistrée : changer un taux plus tard ne modifie pas les coûts passés.
+\end{note}
+
+% -----------------------------------------------------------------------------
+\section{Magasin}
+
+\textbf{Pour qui :} Superviseur (gestion), Technicien (consultation, et sortie de pièces via les interventions). Le magasin contient des \textbf{articles} : pièces de rechange, consommables, outillage.
+
+\subsection{Indicateurs}
+
+\begin{gtable}{L{4.3cm} Y}
+\headrow \thead{Indicateur} & \thead{Signification et calcul} \\
+\ui{Valeur du stock} & $\sum$ (quantité $\times$ prix unitaire) de tous les articles actifs, en DT \\
+\ui{En rupture} & Articles suivis dont il ne reste \textbf{plus rien} en stock (un clic les affiche) \\
+\ui{Sous le seuil} & Quantité $\leq$ \textbf{seuil minimum} : à recommander (un clic ouvre le réapprovisionnement) \\
+\ui{Sorties sur 30 jours} & Valeur (DT) des pièces sorties du magasin ces 30 derniers jours ; sous-titre : les entrées \\
+\ui{Stock dormant} & Valeur des articles en stock qui \textbf{ne sont jamais sortis} depuis 12 mois : de l'argent qui dort sur les étagères \\
+\end{gtable}
+
+\textbf{Niveau de stock d'un article :}
+\begin{itemize}
+  \item \status{badred}{Rupture} : plus rien en stock ;
+  \item \status{warnorange}{Sous le seuil} : quantité $\leq$ seuil ;
+  \item \status{okgreen}{Disponible} : au-dessus du seuil ;
+  \item \textbf{Non suivi} : pas de seuil défini et rien en stock.
+\end{itemize}
+Un article avec un \textbf{seuil égal à 0} n'est pas suivi et ne déclenche jamais d'alerte.
+
+\subsection{Onglets}
+
+\begin{itemize}
+  \item \ui{Articles} : liste, recherche, filtres (type, magasin, niveau), export CSV.
+    \begin{itemize}
+      \item Un clic sur un article ouvre son panneau : stock, valeur, consommation, couverture en mois, mouvements.
+      \item \ui{Entrée} : réception de marchandise, avec un prix.
+      \item \ui{Sortie} : sortie de marchandise. Une sortie manuelle non liée à une intervention \textbf{exige un motif}.
+      \item \ui{Inventaire} : corriger la quantité réelle comptée, avec un motif.
+      \item On \textbf{ne peut pas sortir plus que le stock}.
+    \end{itemize}
+  \item \ui{Mouvements} : l'historique complet des entrées et sorties (date, type, quantité, stock après, motif, OT ou bon de commande lié, utilisateur).
+  \item \ui{Réapprovisionnement} : les articles sous leur seuil, avec une \textbf{quantité conseillée}. On coche les lignes puis \ui{Créer les bons de commande} : un bon de commande brouillon est créé par fournisseur.
+  \item \ui{Magasins} : les lieux de stockage.
+\end{itemize}
+
+\begin{formule}[Quantité conseillée à commander]
+\[
+\text{Quantité conseillée} = \text{cible} - \text{stock actuel} - \text{quantité déjà en commande}
+\]
+où la \emph{cible} est le \textbf{stock maximum} s'il est défini, sinon $2 \times$ le seuil.
+\end{formule}
+
+\begin{note}
+Les pièces sorties pour une intervention quittent le stock \textbf{immédiatement}, à leur prix unitaire du moment, et ce prix est figé dans le coût de l'intervention.
+\end{note}
+
+% -----------------------------------------------------------------------------
+\section{Achats}
+
+\textbf{Pour qui :} Superviseur (tout), Technicien (demandes d'achat uniquement).
+
+\subsection{Le circuit des achats}
+
+\begin{center}
+\begin{tikzpicture}[node distance=5mm and 6mm, every node/.style={font=\small}]
+  \node[box=brandblue,minimum width=25mm] (da) {Demande\\d'achat (DA)};
+  \node[box=warnorange,minimum width=25mm,right=of da] (ap) {Approuver /\\Rejeter};
+  \node[box=navy,minimum width=25mm,right=of ap] (bc) {Bon de\\commande (BC)};
+  \node[box=coral,minimum width=22mm,right=of bc] (rc) {Réception};
+  \node[box=okgreen,minimum width=20mm,right=of rc] (st) {Stock +};
+  \draw[arr] (da) -- (ap); \draw[arr] (ap) -- (bc); \draw[arr] (bc) -- (rc); \draw[arr] (rc) -- (st);
+  \node[lab,below=1mm of da] {Soumise};
+  \node[lab,below=1mm of ap] {Approuvée / Rejetée};
+  \node[lab,below=1mm of bc] {Brouillon $\rightarrow$ Envoyé};
+  \node[lab,below=1mm of rc] {Partiellement reçu\\/ Reçu};
+  \node[lab,below=1mm of st] {Magasin};
+\end{tikzpicture}
+\end{center}
+
+\begin{enumerate}
+  \item \textbf{Demande d'achat (DA)} : un technicien demande des pièces (du catalogue, ou «~hors catalogue~») avec un motif. Les superviseurs sont prévenus.
+  \item Le superviseur \textbf{approuve} ou \textbf{rejette} avec un commentaire ; le demandeur est prévenu.
+  \item \ui{Commander} : à partir d'une DA approuvée, le superviseur crée un \textbf{bon de commande (BC)} :
+    \begin{itemize}
+      \item fournisseur ;
+      \item date de livraison prévue (calculée avec le délai du fournisseur si elle est vide) ;
+      \item lignes et prix.
+    \end{itemize}
+    Il est enregistré en \emph{Brouillon} ou \emph{Envoyé}, et la DA passe «~Commandée~».
+  \item \ui{Réception} : à l'arrivée de la marchandise, le superviseur saisit les quantités reçues (et le n° du bon de livraison). Les articles du catalogue \textbf{entrent automatiquement en stock}. Livraison partielle $\rightarrow$ «~Partiellement reçu~» ; complète $\rightarrow$ «~Reçu~».
+  \item Un bon de commande peut être \textbf{annulé}, avec un motif.
+\end{enumerate}
+
+\subsection{Indicateurs (superviseur)}
+
+\begin{gtable}{L{4.3cm} Y}
+\headrow \thead{Indicateur} & \thead{Signification} \\
+\ui{Engagé depuis janvier} & Total des bons de commande envoyés depuis le 1\up{er} janvier, reçus ou non \\
+\ui{À recevoir} & Valeur des marchandises commandées pas encore livrées ; «~en retard~» = date de livraison prévue dépassée \\
+\ui{Demandes à valider} & DA qui attendent votre accord ; sous-titre : DA approuvées pas encore commandées \\
+\ui{Brouillons} & Bons de commande préparés mais pas encore envoyés \\
+\end{gtable}
+
+L'onglet \ui{Fournisseurs} liste les fournisseurs (contact, délai de livraison en jours, ponctualité).
+
+% -----------------------------------------------------------------------------
+\section{Budgets}
+
+\textbf{Pour qui :} Superviseur. Un budget est un montant en DT par \textbf{année}, par \textbf{catégorie}, et éventuellement par \textbf{chaîne}. Les trois catégories correspondent aux trois parties du coût : \ui{Main-d'\oe uvre}, \ui{Pièces}, \ui{Sous-traitance}. Une seule ligne par année + catégorie + périmètre (un doublon est refusé).
+
+\begin{gtable}{L{4.3cm} Y}
+\headrow \thead{Indicateur} & \thead{Calcul} \\
+\ui{Budget (année)} & Somme de toutes les lignes de budget de l'année \\
+\ui{Dépensé} & Coût réel depuis janvier : main-d'\oe uvre + pièces + sous-traitance ; sous-titre : \% du budget \\
+\ui{Reste disponible} & Budget $-$ dépensé (en rouge si négatif) \\
+\ui{Projection fin d'année} & $\text{dépensé} \div \text{part de l'année écoulée}$ \\
+\end{gtable}
+
+\begin{formule}[Prorata, écart et projection]
+\textbf{Prorata} (ce qui aurait dû être dépensé à ce jour) $= \text{budget} \times \text{part de l'année écoulée}$.\par
+\textbf{Écart} $= \text{prorata} - \text{dépensé}$ : positif = en dessous du budget, négatif = au-dessus.\par
+\textbf{Projection} $= \text{dépensé} \div \text{part de l'année écoulée}$.
+\end{formule}
+
+\begin{exemple}
+Au 1\up{er} juillet, environ 50~\% de l'année est écoulée. 15\,000~DT dépensés $\Rightarrow$ projection de fin d'année $\approx 15\,000 \div 0{,}5 = 30\,000$~DT.
+\end{exemple}
+
+% -----------------------------------------------------------------------------
+\section{Explorateur de données}
+
+\textbf{Pour qui :} Superviseur.
+
+\textbf{Ce que c'est :} une bibliothèque d'une cinquantaine de \textbf{questions toutes prêtes}, réparties en sept thèmes :
+\begin{itemize}
+  \item Interventions ;
+  \item Équipements ;
+  \item Préventif ;
+  \item Magasin ;
+  \item Achats ;
+  \item Techniciens ;
+  \item Coûts et budgets.
+\end{itemize}
+
+\textbf{Exemples :}
+\begin{itemize}
+  \item «~Machines avec le plus d'arrêts~» ;
+  \item «~Coût de maintenance par mois~» ;
+  \item «~Heures par technicien~» ;
+  \item «~Articles les plus consommés~».
+\end{itemize}
+
+\textbf{Utilisation :}
+\begin{itemize}
+  \item choisir une question ;
+  \item régler ses paramètres : période, chaîne, machine, technicien, article, fournisseur, année, top N ;
+  \item cliquer sur \ui{Exécuter}. Le résultat s'affiche en chiffre, tableau, barres ou courbe, et s'exporte en CSV.
+\end{itemize}
+
+\begin{retenir}[Pourquoi c'est sûr, et pourquoi ce n'est pas de l'« IA »]
+Les questions sont fixes et écrites à l'avance, et elles ne font que \textbf{lire} les données. Rien de ce que tape l'utilisateur ne devient une commande de base de données, et chaque requête s'exécute dans une transaction toujours annulée à la fin : elle ne peut donc rien modifier.
+\end{retenir}
+
+% -----------------------------------------------------------------------------
+\section{Rapports (Power BI)}
+
+Affiche les tableaux de bord \textbf{Power BI} publiés par SIMOTEX. Le superviseur enregistre les liens une seule fois dans \ui{Gérer les rapports}.
+
+\begin{itemize}
+  \item Lien sécurisé («~Incorporer $\rightarrow$ Site web ou portail~») : chaque utilisateur se connecte avec son compte Power BI.
+  \item Lien «~Publier sur le web~» : public, à réserver aux données non confidentielles.
+  \item \textbf{Power BI a besoin d'Internet.} C'est la seule partie de la GMAO qui en a besoin ; sans Internet, la page l'indique et tout le reste continue de fonctionner.
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Paramètres, journal et notifications}
+
+\subsection{Paramètres (Superviseur)}
+
+\begin{itemize}
+  \item \ui{Utilisateurs et rôles} :
+    \begin{itemize}
+      \item nombre de comptes par rôle ;
+      \item \ui{Gérer les utilisateurs} : créer un compte (nom, e-mail, mot de passe, rôle), le modifier ou le supprimer ;
+      \item un compte supprimé ne peut plus se connecter, et ses interventions ouvertes repassent «~à affecter~».
+    \end{itemize}
+  \item \textbf{Votre compte} : nom, e-mail, rôle, version de l'application.
+  \item \ui{Administration des modules} : raccourcis vers les magasins, les fournisseurs, les techniciens et leurs taux, les plans préventifs, les budgets, Power BI, le journal.
+  \item \ui{Données de référence} : les \textbf{listes de choix} des formulaires ; une modification est reprise partout.
+    \begin{itemize}
+      \item \emph{Équipements} : criticité, état, famille, groupe, marque, modèle ;
+      \item \emph{Interventions} : état, type, urgence, \textbf{chaînes de production}, types de panne ;
+      \item \emph{Magasin} : familles de pièces, constructeurs, criticité des pièces.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Journal d'activité}
+
+Qui a fait quoi, et quand : déclarations, affectations, acceptations, refus, réalisations, clôtures, annulations, suppressions, mouvements de stock, création des préventifs\ldots{} Il se filtre et s'exporte.
+
+\subsection{Notifications (la cloche)}
+
+Envoyées automatiquement ; le chiffre sur la cloche indique les notifications non lues.
+
+\begin{gtable}{Y L{6.4cm}}
+\headrow \thead{Événement} & \thead{Qui est prévenu} \\
+Nouvelle demande déclarée & Les superviseurs \\
+Intervention affectée / réaffectée & Le technicien (et le précédent) \\
+Intervention démarrée & Les superviseurs + le demandeur \\
+Intervention refusée (avec motif) & Les superviseurs \\
+Intervention réalisée & Les superviseurs («~attend votre validation~») \\
+Renvoyée au technicien & Le technicien \\
+Intervention clôturée & Le technicien + le demandeur \\
+Intervention annulée & Technicien / superviseurs / demandeur selon le cas \\
+Ordre de travail préventif créé & Le technicien du plan \\
+Nouvelle demande d'achat / décision & Les superviseurs / le demandeur \\
+\end{gtable}
+
+% -----------------------------------------------------------------------------
+\section{Comment les modules s'alimentent entre eux}
+
+\begin{center}
+\begin{tikzpicture}[node distance=10mm and 12mm]
+  \node[box=navy,minimum width=34mm,minimum height=11mm] (int) {INTERVENTIONS};
+  \node[box=brandblue,above=of int] (prev) {Préventif (plans)};
+  \node[box=muted,left=16mm of int] (dem) {Demandeur};
+  \node[box=brandblue,right=16mm of int] (tech) {Techniciens};
+  \node[box=okgreen,below left=12mm and 2mm of int] (eq) {Équipements\\(état)};
+  \node[box=warnorange,below right=12mm and 2mm of int] (mag) {Magasin};
+  \node[box=coral,right=14mm of mag] (ach) {Achats};
+  \node[box=burgundy,below=36mm of int,minimum width=52mm] (cout) {Coût = main-d'\oe uvre + pièces + sous-traitance};
+  \node[box=navy,below=8mm of cout,minimum width=86mm] (out) {Budgets \textperiodcentered{} Tableau de bord \textperiodcentered{} Explorateur \textperiodcentered{} Power BI};
+
+  \draw[arr] (prev) -- node[lab,right]{crée les OT} (int);
+  \draw[arr] (dem) -- node[lab,above]{déclare} (int);
+  \draw[arr,{Stealth[length=2.6mm]}-{Stealth[length=2.6mm]}] (int) -- node[lab,above]{affecte / réalise} (tech);
+  \draw[arr] (int) -- node[lab,left]{en panne /\\en service} (eq);
+  \draw[arr] (int) -- node[lab,right]{pièces sorties} (mag);
+  \draw[arr] (mag) -- node[lab,above]{sous le seuil} (ach);
+  \draw[arr] (ach.north) to[bend right=35] node[lab,above]{réception = stock +} (mag.north east);
+  \draw[arr] (tech.south) |- node[lab,pos=0.25,right]{temps $\times$ DT/h} (cout.east);
+  \draw[arr] (mag) -- node[lab,right,pos=0.4]{pièces (DT)} (cout);
+  \draw[arr] (cout) -- (out);
+\end{tikzpicture}
+\end{center}
+
+Chaque action est aussi inscrite dans le \ui{Journal d'activité} et déclenche les \ui{Notifications} utiles.
+
+% -----------------------------------------------------------------------------
+\section{Récapitulatif de tous les indicateurs}\label{sec:glossaire}
+
+\begin{gtable}{L{3.4cm} Y L{4.2cm}}
+\headrow \thead{Indicateur} & \thead{Formule} & \thead{Comment le lire} \\
+Heures d'arrêt & $\sum$ sur les pannes avec machine : (réparation ou maintenant) $-$ déclaration, limité à la période & Heures de production perdues \\
+Disponibilité & $1 - \text{heures d'arrêt} \div (\text{machines} \times 24\,\text{h} \times \text{jours})$ & Plus c'est haut, mieux c'est \\
+MTTR & moyenne de (fin $-$ début du travail) des pannes réparées dans la période & Plus c'est bas, mieux c'est \\
+MTBF & $(\text{machines} \times \text{heures} - \text{heures d'arrêt}) \div \text{pannes déclarées}$ & Plus c'est haut, mieux c'est \\
+Respect du préventif & entretiens faits avec au plus 2 jours de retard $\div$ entretiens prévus & Objectif $\geq 90$~\% \\
+Couverture du parc & machines avec au moins 1 plan actif $\div$ machines & Plus c'est haut, mieux c'est \\
+Travail en attente & interventions ouvertes (À traiter + En cours) & Doit rester stable ou baisser \\
+En retard (tableau de bord) & préventif ouvert dont la date est passée + panne ouverte depuis plus de 48~h & Doit être à 0 \\
+Coût main-d'\oe uvre & $\sum \text{minutes} \div 60 \times \text{taux horaire (DT/h)}$ & En DT \\
+Coût des pièces & $\sum \text{quantité} \times \text{prix unitaire à la sortie}$ & En DT \\
+Coût de maintenance & main-d'\oe uvre + pièces + sous-traitance & En DT \\
+Valeur du stock & $\sum \text{quantité} \times \text{prix unitaire}$ & En DT \\
+Stock dormant & valeur des articles en stock sans aucune sortie depuis 12 mois & Argent immobilisé \\
+Quantité conseillée & (stock maximum, ou $2 \times$ seuil) $-$ stock $-$ déjà commandé & Quantité à acheter \\
+Prorata budgétaire & budget $\times$ part de l'année écoulée & Ce qui devrait être dépensé à ce jour \\
+Projection fin d'année & dépensé $\div$ part de l'année écoulée & Dépense attendue au 31 décembre \\
+Évolution & valeur actuelle $-$ valeur de la période précédente («~pt~» pour les pourcentages) & Vert = mieux \\
+\end{gtable}
+
+% -----------------------------------------------------------------------------
+\section{Questions fréquentes}
+
+\begin{retenir}[« Pourquoi la disponibilité est-elle si élevée alors qu'il y a eu beaucoup de pannes ? »]
+La disponibilité est calculée sur \textbf{toutes} les machines et sur \textbf{24 heures par jour}. Avec 38 machines, une machine arrêtée toute une journée représente 24~h sur 912 heures-machine ce jour-là (environ 2,6~\%). Pour voir l'impact réel, regarder \ui{Heures d'arrêt} et \ui{Machines les plus pénalisantes}.
+\end{retenir}
+
+\begin{retenir}[« Pourquoi une panne sur toute la chaîne ne compte-t-elle pas dans la disponibilité ? »]
+Parce que l'arrêt ne peut pas être attribué à une machine précise. Il faut encourager les demandeurs à choisir la machine.
+\end{retenir}
+
+\begin{retenir}[« D'où vient le coût de main-d'œuvre ? »]
+Du temps saisi par les techniciens multiplié par leur taux horaire (page Techniciens). Si aucun temps n'est saisi, le coût de main-d'\oe uvre est nul.
+\end{retenir}
+
+\begin{retenir}[« Un technicien peut-il clôturer son propre travail ? »]
+Non. Il le déclare «~Réalisée~» ; seul un superviseur le valide et le clôture.
+\end{retenir}
+
+\begin{retenir}[« Que se passe-t-il si un technicien est absent ? »]
+Le superviseur réaffecte depuis la fiche de l'intervention. Si un compte est supprimé, son travail en cours repasse «~à affecter~».
+\end{retenir}
+
+\begin{retenir}[« L'application fonctionne-t-elle sans Internet ? »]
+Oui, tout sauf la page Power BI. Les polices et les icônes sont intégrées à l'application.
+\end{retenir}
+
+\begin{retenir}[« Les données sont-elles protégées ? »]
+\begin{itemize}
+  \item Chaque action exige une connexion et est vérifiée par le serveur.
+  \item Chaque action est inscrite au journal.
+  \item Les mots de passe sont stockés sous forme chiffrée irréversible (hachage).
+  \item Cinq tentatives de connexion échouées bloquent le compte pendant 15 minutes.
+\end{itemize}
+\end{retenir}
+
+% =============================================================================
+\part{Partie technique}
+% =============================================================================
+
+\section{Vue d'ensemble de l'architecture}
+
+\begin{center}
+\begin{tikzpicture}[node distance=7mm]
+  \node[layer] (b) {\textbf{Navigateur} (PC, tablette, téléphone)\\ Application Angular -- HTML, CSS et TypeScript compilé en JavaScript};
+  \node[layer,below=of b,fill=bubble] (n) {\textbf{nginx} -- serveur web et proxy inverse\\ sert les fichiers Angular et transmet \code{/api/...} à l'API};
+  \node[layer,below=of n] (a) {\textbf{API ASP.NET Core} (.NET 9, C\#)\\ Contrôleurs $\rightarrow$ Services (règles métier) $\rightarrow$ Entity Framework Core \quad + tâche de fond (préventif, toutes les heures)};
+  \node[layer,below=of a,fill=bubble] (d) {\textbf{SQL Server} -- base de données «~gmao~»\\ utilisateurs, interventions, machines, articles, mouvements, plans, achats\ldots};
+  \draw[arr,{Stealth[length=2.6mm]}-{Stealth[length=2.6mm]}] (b) -- node[lab,right]{HTTP + JSON, cookie de session} (n);
+  \draw[arr,{Stealth[length=2.6mm]}-{Stealth[length=2.6mm]}] (n) -- (a);
+  \draw[arr,{Stealth[length=2.6mm]}-{Stealth[length=2.6mm]}] (a) -- node[lab,right]{SQL} (d);
+\end{tikzpicture}
+\end{center}
+
+C'est une \textbf{architecture en trois couches} (ou trois tiers) :
+\begin{itemize}
+  \item \textbf{présentation} : Angular, dans le navigateur ;
+  \item \textbf{logique métier} : l'API ;
+  \item \textbf{données} : SQL Server.
+\end{itemize}
+Le navigateur ne parle jamais directement à la base de données : il passe toujours par l'API, qui vérifie qui vous êtes et ce que vous avez le droit de faire.
+
+% -----------------------------------------------------------------------------
+\section{Technologies utilisées et vocabulaire}
+
+\begin{gtable}{L{2.0cm} L{3.7cm} Y}
+\headrow \thead{Couche} & \thead{Technologie} & \thead{En termes simples} \\
+Interface & \textbf{Angular 16} & Framework de Google pour les applications «~monopage~» : la page ne se recharge jamais entièrement, Angular remplace seulement les composants. \\
+ & \textbf{TypeScript 5} & JavaScript avec des types (on déclare que \code{id} est un nombre) : les erreurs sont détectées dès la compilation. \\
+ & \textbf{RxJS} & Bibliothèque de flux asynchrones («~Observables~») : un appel au serveur renvoie un Observable auquel on s'abonne (\code{subscribe}). \\
+ & \textbf{SCSS} & CSS avec variables et imbrication. \\
+ & \textbf{Composants autonomes} & Chaque composant déclare lui-même ce qu'il utilise (pas de gros module central). \\
+ & \textbf{@fontsource} & Les polices sont intégrées à l'application : pas de Google Fonts, fonctionne sans Internet. \\
+Serveur & \textbf{.NET 9 / ASP.NET Core} & Framework de Microsoft pour les serveurs web, en langage \textbf{C\#}. \\
+ & \textbf{API web / REST} & Le serveur expose des adresses («~points d'accès~») comme \code{GET /api/demandeintervention/42} qui renvoient du \textbf{JSON}. \\
+ & \textbf{Entity Framework Core 9} & Un \textbf{ORM} : on écrit des classes C\# et des requêtes LINQ, EF les traduit en SQL. \\
+ & \textbf{LINQ} & Syntaxe de requête du C\#, par exemple \code{context.Equipments.Where(e => !e.IsDeleted)}. \\
+ & \textbf{ASP.NET Core Identity} & Le système intégré de comptes, mots de passe et rôles (hachage, blocage, cookies). \\
+Base de données & \textbf{SQL Server (Express)} & La base de données relationnelle de Microsoft. \\
+ & \textbf{Migrations} & Scripts versionnés qui créent ou modifient les tables ; appliqués automatiquement au démarrage. \\
+Infrastructure & \textbf{nginx} & Serveur web ; sert les fichiers Angular et transmet \code{/api} au serveur (\textbf{proxy inverse}). \\
+ & \textbf{Docker} & Emballage facultatif de chaque partie dans un conteneur (non nécessaire pour une installation manuelle). \\
+Rapports & \textbf{Power BI} & Outil de Microsoft pour les rapports, intégré dans un cadre. \\
+Tests & \textbf{Python}, \textbf{Node.js + Edge sans fenêtre} & Voir section~\ref{sec:tests}. \\
+\end{gtable}
+
+% -----------------------------------------------------------------------------
+\section{Le serveur : projets, contrôleurs, services}
+
+La solution C\# (\code{gmao.sln}) est découpée en \textbf{trois projets}. Ce découpage s'appelle une architecture \emph{en couches} (ou \emph{clean architecture}) :
+
+\begin{gtable}{L{2.7cm} L{4cm} Y}
+\headrow \thead{Projet} & \thead{Rôle} & \thead{Contenu} \\
+\textbf{Core} & Le métier : ce que l'entreprise \emph{manipule} & Les \textbf{entités}, c'est-à-dire des classes C\# liées aux tables : \code{DemandeIntervention}, \code{Equipment}, \code{Piece}, \code{PlanPreventif}, \code{BonCommande}, \code{Budget}, \code{Users}\ldots \\
+\textbf{Infrastructure} & Le stockage des données & \code{StoreContext} (le \textbf{DbContext} d'EF, la porte d'entrée de la base), les configurations (clés, relations, données par défaut), les \textbf{migrations} \\
+\textbf{API} & Le dialogue avec l'extérieur & Les \textbf{contrôleurs}, les \textbf{services}, les DTO, la sécurité, \code{Program.cs} (démarrage) \\
+\end{gtable}
+
+\subsection{Les contrôleurs}
+
+Un \textbf{contrôleur} est une classe C\# dont les méthodes répondent aux requêtes HTTP. Par exemple, cette méthode répond à \code{POST /api/DemandeIntervention/42/assign} :
+
+\begin{lstlisting}[language={[Sharp]C}]
+[HttpPost("{id}/assign")]
+[Authorize(Roles = "Superviseur")]
+public async Task<IActionResult> Assign(int id, AssignDto dto) { ... }
+\end{lstlisting}
+
+\begin{gtable}{L{5.7cm} Y}
+\headrow \thead{Contrôleur} & \thead{Points d'accès pour} \\
+\code{AccountController} & connexion, déconnexion, utilisateur connecté (\code{user-info}), création de compte, mot de passe oublié \\
+\code{UsersController} & liste, modification, suppression des comptes (libère le travail en cours), liste des techniciens, rôles \\
+\code{DemandeInterventionController} & interventions : liste (recherche, filtres \code{vue=}), création, modification, suppression, affectation, acceptation, refus, changements de statut, annulation, calendrier, statistiques, téléchargement de fichier \\
+\code{InterventionSuiviController} & suivi des travaux : étapes, temps, pièces, analyse, coût \\
+\code{PilotageController} & tableau de bord du superviseur (tous les indicateurs) et tableau de bord personnel \\
+\code{PreventifController} & plans, calendrier, indicateurs, création des ordres de travail \\
+\code{EquipmentController}, \code{EquipementHistoriqueController} & machines, indicateurs et historique d'une machine \\
+\code{MagasinController}, \code{FournisseursController} & articles, mouvements, réapprovisionnement, magasins, fournisseurs \\
+\code{AchatsController}, \code{BudgetsController} & demandes d'achat, bons de commande, réceptions, budgets \\
+\code{TechniciensController} & charge de l'équipe et taux horaires \\
+\code{ExplorateurController} & catalogue des questions et exécution \\
+\code{JournalController}, \code{NotificationController}, \code{PiecesJointesController}, \code{ParametresController} & journal, notifications, pièces jointes, paramètres (liens Power BI) \\
+Contrôleurs de référence (\code{PanneController}, \code{UrgenceController}, \code{ChaineProductionController}\ldots) & les listes de choix \\
+\end{gtable}
+
+\subsection{Les services}
+
+Un \textbf{service} est une classe qui regroupe une logique utilisée à plusieurs endroits. Les services sont déclarés dans \code{Program.cs} et fournis automatiquement aux contrôleurs par \textbf{injection de dépendances} : un contrôleur demande \code{IStockService} dans son constructeur, et ASP.NET le lui donne.
+
+\begin{gtable}{L{5.7cm} Y}
+\headrow \thead{Service} & \thead{Ce qu'il fait} \\
+\code{InterventionEffectsService} & Les effets du circuit : machines \emph{En panne / En service}, remise en stock des pièces à l'annulation ou à la suppression, traces au journal \\
+\code{StockService} & Chaque mouvement de stock (entrée, sortie, inventaire) avec le «~stock après~» et les contrôles (pas de stock négatif) \\
+\code{PreventifService} + \code{PreventifHostedService} & Création des ordres de travail à partir des plans, et la tâche de fond horaire \\
+\code{JournalService} & Écrit le journal d'activité \\
+\code{CurrentUserService} & «~Qui appelle ?~» : identifiant, rôle, technicien ou non \\
+\code{ExplorateurService} + \code{ExplorateurCatalogue} & Les questions en lecture seule et leur exécution sécurisée \\
+\code{EmailService} & Les e-mails (mot de passe oublié) \\
+\code{DemoDataSeeder} & Les données de démonstration facultatives (usine textile) \\
+\end{gtable}
+
+\begin{note}[Durée de vie]
+\textbf{Scoped} (\code{AddScoped}) signifie une instance par requête HTTP ; un \textbf{hosted service} tourne en arrière-plan pendant toute la vie du serveur.
+\end{note}
+
+\subsection{Les DTO}
+
+Un \textbf{DTO} (\emph{Data Transfer Object}) est une petite classe qui décrit le JSON reçu ou envoyé par l'API, par exemple \code{InterventionDto} = les champs du formulaire de déclaration. Il sépare le «~contrat~» de l'API des entités de la base.
+
+% -----------------------------------------------------------------------------
+\section{L'interface : structure, services, gardes, intercepteurs}
+
+\begin{lstlisting}
+client/src/app/
+|-- core/               la "plomberie" partagee, chargee une seule fois
+|   |-- services/       authentification, appels a l'API, notifications, confirmation
+|   |-- guards/         auth.guard (connecte ?), role.guard (bon role ?)
+|   |-- interceptors/   auth (401 -> retour a la connexion), error (journalisation)
+|   `-- models/         descriptions TypeScript des donnees
+|-- shared/             elements d'interface reutilisables
+|   |-- layout/         barre laterale, barre du haut, cloche, recherche globale (Ctrl K)
+|   |-- components/     en-tete de page, icones, graphiques, boite de confirmation
+|   |-- styles/         gm-ui.scss : le systeme de design (cartes, tableaux, panneaux)
+|   `-- utils/          formats (dates, DT, minutes), export CSV, anti-rebond
+|-- features/           un dossier par module (dashboard, interventions, planning,
+|                       preventif, equipment, techniciens, magasin, achats, budgets,
+|                       explorateur, rapports, settings, auth...)
+`-- app.routes.ts       correspondance adresse -> page, avec les gardes
+\end{lstlisting}
+
+\begin{gtable}{L{3.7cm} Y}
+\headrow \thead{Terme} & \thead{Signification} \\
+\textbf{Composant} & Un morceau d'écran : une classe TypeScript + un modèle HTML + des styles. \code{InterventionsComponent} est la page de liste. \\
+\textbf{Liaison de données} & \code{\{\{ valeur \}\}} affiche une donnée ; \code{[disabled]="busy"} lie une propriété ; \code{(click)="save()"} lie un événement ; \code{*ngIf} / \code{*ngFor} affichent sous condition ou répètent. \\
+\textbf{Service} (Angular) & Une classe partagée par plusieurs composants, par exemple \code{InterventionService} (appels au serveur) ou \code{AuthService} (utilisateur connecté), injectée comme côté serveur. \\
+\textbf{Routage} & \code{app.routes.ts} relie les adresses aux pages. \code{interventions/new} est une \textbf{route enfant} de \code{interventions} : c'est pour cela que le formulaire s'ouvre en panneau par-dessus la liste. \\
+\textbf{Garde} (guard) & Un contrôle avant d'entrer sur une page : \code{authGuard} (non connecté $\rightarrow$ connexion), \code{roleGuard} (mauvais rôle $\rightarrow$ tableau de bord). \\
+\textbf{Intercepteur} & Du code qui voit passer chaque appel au serveur. \code{authInterceptor} : en cas de \textbf{401} (session expirée), il déconnecte et renvoie à la connexion. \code{errorInterceptor} : journalise les erreurs. \\
+\textbf{Observable / subscribe} & \code{this.api.getX().subscribe(data => ...)} : l'appel part, et la fonction reçoit les données à l'arrivée. \\
+\textbf{Formulaires réactifs} & Formulaires décrits dans le code (\code{FormGroup}, \code{Validators.required}) avec leurs messages d'erreur. \\
+\textbf{Anti-rebond} (debounce) & Attendre 300~ms après la dernière touche avant de lancer une recherche, au lieu d'une requête par touche. \\
+\end{gtable}
+
+% -----------------------------------------------------------------------------
+\section{Sécurité}
+
+\begin{itemize}
+  \item \textbf{Authentification} :
+    \begin{itemize}
+      \item e-mail + mot de passe, vérifiés par ASP.NET Identity ;
+      \item les mots de passe sont \textbf{hachés}, jamais stockés en clair ;
+      \item le serveur répond avec un \textbf{cookie HttpOnly} \code{gmao.session}, illisible par JavaScript (protection contre le vol par XSS) ;
+      \item la session dure 12~h et se prolonge tant que l'utilisateur est actif.
+    \end{itemize}
+  \item \textbf{Autorisations} :
+    \begin{itemize}
+      \item une \textbf{règle par défaut} : chaque point d'accès exige un utilisateur connecté, sauf exception explicite ;
+      \item des \textbf{rôles} sur les points d'accès (\code{[Authorize(Roles = "Superviseur")]}) et l'attribut \code{SupervisorWrites} (lecture pour tous, écriture pour les superviseurs) ;
+      \item un \textbf{filtrage des données} côté serveur : un demandeur ne reçoit que ses demandes, un technicien que son travail.
+    \end{itemize}
+  \item \textbf{Blocage} : 5 échecs de connexion $\rightarrow$ compte bloqué 15 minutes.
+  \item \textbf{Limitation de débit} : au plus 10 tentatives de connexion par minute et par adresse IP.
+  \item \textbf{Comptes désactivés ou supprimés} : refusés à la connexion, et leurs sessions ouvertes sont coupées à l'appel suivant.
+  \item \textbf{CORS} : seule l'adresse de l'application Angular peut appeler l'API (en développement).
+  \item \textbf{Explorateur} : SQL fixe, paramètres uniquement, transaction toujours annulée ; compte de base de données en lecture seule possible.
+  \item \textbf{Traçabilité} : le journal enregistre chaque action importante.
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Le parcours d'une requête, du clic à la base de données}
+
+Exemple : le superviseur clique sur \ui{Affecter}.
+
+\begin{enumerate}
+  \item \textbf{Angular} : \code{InterventionActionsComponent.assignTechnician()} appelle \code{InterventionService.assignTechnician(id, techId)}.
+  \item Ce service envoie \code{POST /api/demandeintervention/42/assign} avec le corps \code{\{ "technicianId": "15" \}} ; le navigateur ajoute le cookie de session automatiquement.
+  \item \textbf{nginx} transmet \code{/api/...} à l'API.
+  \item \textbf{La chaîne de traitement d'ASP.NET Core} (middlewares) :
+    \begin{itemize}
+      \item en-têtes du proxy $\rightarrow$ CORS ;
+      \item \textbf{authentification} : lit le cookie et identifie l'utilisateur ;
+      \item \textbf{autorisation} : vérifie le rôle Superviseur ;
+      \item aiguillage vers la méthode du contrôleur.
+    \end{itemize}
+  \item \textbf{\code{DemandeInterventionController.Assign}} :
+    \begin{itemize}
+      \item charge l'intervention avec \textbf{EF Core} ;
+      \item vérifie les règles métier (le statut le permet, le technicien existe et est actif) ;
+      \item enregistre le technicien et la date, écrit le journal et la notification ;
+      \item \code{SaveChangesAsync()} : EF génère le SQL \code{UPDATE} / \code{INSERT} et l'exécute dans \textbf{SQL Server}.
+    \end{itemize}
+  \item L'API répond \textbf{200 OK} avec du JSON.
+  \item \textbf{Angular} affiche un message de succès et recharge l'intervention : l'étape «~Affectée~» s'allume.
+  \item Peu après, la cloche du technicien affiche la nouvelle notification (l'application vérifie régulièrement).
+\end{enumerate}
+
+\begin{lstlisting}[language={[Sharp]C}]
+// EF Core : du C# qui devient du SQL
+var demande = await _context.DemandeInterventions
+    .FirstOrDefaultAsync(d => d.IdDemandeIntervention == id && d.IsActif);
+demande.DestinatairesID = technicien.ID;
+demande.DateAssignation = DateTime.Now;
+await _context.SaveChangesAsync();   // -> UPDATE DemandeInterventions SET ...
+\end{lstlisting}
+
+% -----------------------------------------------------------------------------
+\section{Base de données et migrations}
+
+\begin{itemize}
+  \item Une base SQL Server : \code{gmao}.
+  \item Tables principales :
+    \begin{itemize}
+      \item \code{DemandeInterventions} ;
+      \item \code{InterventionTemps}, \code{InterventionPieces}, \code{InterventionTaches} ;
+      \item \code{Equipments} ;
+      \item \code{Pieces} (articles), \code{MouvementsStock}, \code{Magasins}, \code{Fournisseurs} ;
+      \item \code{PlansPreventifs}, \code{PlanPreventifTaches} ;
+      \item \code{DemandesAchat}, \code{BonsCommande} et leurs lignes ;
+      \item \code{Budgets} ;
+      \item \code{JournalActivites}, \code{Notifications}, \code{PiecesJointes} ;
+      \item \code{Users} et les tables d'Identity (\code{AspNetUsers}, \code{AspNetRoles}\ldots) ;
+      \item les listes de référence.
+    \end{itemize}
+  \item Les \textbf{migrations} (par exemple \code{GmaoModulesPro}, \code{AccentsStatuts}) s'appliquent automatiquement au démarrage de l'API (\code{MigrateAsync}). Elles ne font qu'ajouter : les données existantes sont conservées.
+  \item \textbf{Suppression logique} : supprimer une intervention ou une machine positionne \code{IsActif = false} ou \code{IsDeleted = true} au lieu d'effacer la ligne, pour que l'historique et les indicateurs restent justes.
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Tâches de fond}
+
+\code{PreventifHostedService} démarre avec l'API, attend 30 secondes, puis crée les ordres de travail préventifs \textbf{toutes les heures}. Le navigateur, lui, rafraîchit régulièrement les notifications.
+
+% -----------------------------------------------------------------------------
+\section{Tests}\label{sec:tests}
+
+\begin{gtable}{L{3.4cm} L{3.5cm} Y}
+\headrow \thead{Série} & \thead{Outil} & \thead{Ce qui est vérifié} \\
+\code{tests/api\_tests.py} & Python, appels HTTP & \textbf{137} vérifications : authentification et droits, cycle de vie d'une intervention, préventif, magasin, achats, budgets, toutes les questions de l'explorateur, tableau de bord, planning, règles métier, Power BI, non-régression \\
+\code{tests/e2e/*.mjs} & Node.js qui pilote \textbf{Microsoft Edge sans fenêtre} via le \textbf{Chrome DevTools Protocol} & Clique sur les vrais écrans comme un utilisateur : chaque page de chaque rôle, le circuit complet, préventif / magasin / achats, équipements, comptes, listes de référence, budgets, liens du tableau de bord \\
+\code{tests/e2e/cleanup.sql} & SQL & Supprime les données créées par les tests dans le navigateur \\
+\end{gtable}
+
+\begin{note}
+\textbf{Sans fenêtre} (headless) = le navigateur tourne sans s'afficher. \textbf{CDP} = le protocole des outils de développement du navigateur ; il permet à un script de cliquer, saisir et lire la page.
+\end{note}
+
+% -----------------------------------------------------------------------------
+\section{Déploiement}
+
+La procédure détaillée est dans \code{DEPLOIEMENT-VERSION-2.md}. En résumé :
+\begin{enumerate}
+  \item \textbf{Sauvegarder} la base de données.
+  \item Compiler l'API (\code{dotnet publish}) et l'interface (\code{ng build}).
+  \item Configurer la chaîne de connexion et régler le fuseau horaire du serveur sur Tunis.
+  \item Servir l'interface avec nginx, en transmettant \code{/api} à l'API.
+  \item Démarrer l'API : les migrations s'appliquent d'elles-mêmes.
+  \item Charger éventuellement les données de démonstration, puis les supprimer avec \code{database/demo-cleanup.sql} avant l'utilisation réelle.
+\end{enumerate}
+
+% -----------------------------------------------------------------------------
+\section{Glossaire technique}
+
+\begin{gtable}{L{3.7cm} Y}
+\headrow \thead{Terme} & \thead{Signification} \\
+API & Interface de programmation : l'ensemble des adresses que l'interface appelle \\
+REST & Style d'API qui utilise des adresses et des verbes HTTP : GET lit, POST crée ou agit, PUT/PATCH modifie, DELETE supprime \\
+JSON & Format texte pour les données : \code{\{ "titre": "Fuite", "statusId": 1 \}} \\
+Code HTTP & 200 OK, 204 OK sans contenu, 400 requête invalide, 401 non connecté, 403 interdit, 404 introuvable, 429 trop de requêtes, 500 erreur serveur \\
+Point d'accès (endpoint) & Une adresse + un verbe, par exemple \code{GET /api/pilotage?days=30} \\
+ORM & Outil qui fait le lien entre objets C\# et tables SQL (EF Core) \\
+DbContext & La porte d'entrée d'EF vers la base (\code{StoreContext}) \\
+Entité & Une classe C\# enregistrée dans une table \\
+Migration & Une modification versionnée de la structure de la base \\
+Injection de dépendances & Le framework crée et fournit les services dont une classe a besoin \\
+Middleware & Les étapes par lesquelles passe chaque requête (authentification, CORS, journalisation\ldots) \\
+Cookie (HttpOnly) & Petite valeur gardée par le navigateur et envoyée à chaque requête ; HttpOnly = illisible par JavaScript \\
+Hachage & Transformation à sens unique d'un mot de passe ; on ne peut pas revenir en arrière \\
+CORS & Règle du navigateur qui définit quels sites peuvent appeler une API \\
+Proxy inverse & Un serveur (nginx) qui reçoit les requêtes et les transmet à un autre serveur \\
+SPA (monopage) & Application d'une seule page HTML dont le framework remplace les vues \\
+Composant / modèle & Morceau d'écran Angular / son HTML \\
+Observable & Un flux de valeurs asynchrone (RxJS) \\
+Garde / intercepteur & Contrôle Angular avant une page / crochet sur chaque appel au serveur \\
+Anti-rebond & Attendre une pause avant d'agir (recherche pendant la saisie) \\
+CSV & Valeurs séparées par un délimiteur (ici le point-virgule) ; s'ouvre dans Excel \\
+Suppression logique & Marquer comme supprimé au lieu d'effacer \\
+Idempotent & L'exécuter deux fois donne le même résultat (la création des préventifs ne crée jamais de doublon) \\
+Transaction / annulation & Un groupe de modifications appliquées toutes ensemble, ou annulées toutes ensemble \\
+Navigateur sans fenêtre / CDP & Un navigateur qui ne s'affiche pas / le protocole qui permet de le piloter par un script \\
+CI/CD & Chaînes automatiques de compilation, de test et de mise en production (pas encore en place ; les tests sont prêts) \\
+\end{gtable}
+
+\vspace{1cm}
+\begin{center}
+{\color{burgundy}\rule{2cm}{1pt}}\par\smallskip
+{\small\color{muted}SIMOTEX \textperiodcentered{} GMAO \textperiodcentered{} Service maintenance}
+\end{center}
+
+\end{document}

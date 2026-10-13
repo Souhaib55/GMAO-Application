@@ -1,4 +1,3 @@
-import { HelpTipComponent } from '../../shared/components/help-tip/help-tip.component';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -18,7 +17,7 @@ type Tab = 'articles' | 'mouvements' | 'reappro' | 'magasins';
 @Component({
   selector: 'app-magasin',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent, AppIconComponent, GmColumnChartComponent, HelpTipComponent],
+  imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent, AppIconComponent, GmColumnChartComponent],
   templateUrl: './magasin.component.html',
   styleUrls: ['./magasin.component.scss']
 })

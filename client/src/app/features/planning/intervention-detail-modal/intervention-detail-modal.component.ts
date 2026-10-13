@@ -20,10 +20,11 @@ interface Step {
  * Side panel of the planning: what has to be done next on a work order,
  * for the current user, followed by the work order details.
  */
+import { InterventionPhotosComponent } from '../../interventions/intervention-photos/intervention-photos.component';
 @Component({
   selector: 'app-intervention-detail-modal',
   standalone: true,
-  imports: [CommonModule, InterventionSuiviComponent, InterventionActionsComponent],
+  imports: [CommonModule, InterventionSuiviComponent, InterventionActionsComponent, InterventionPhotosComponent],
   template: `
     <div class="overlay" (click)="close()">
       <aside class="panel" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
@@ -61,6 +62,7 @@ interface Step {
           <section class="block" *ngIf="intervention.compteRendu">
             <h3>Compte rendu du technicien</h3>
             <p class="text report">{{ intervention.compteRendu }}</p>
+            <app-intervention-photos [interventionId]="intervention.idDemandeIntervention" [refresh]="status"></app-intervention-photos>
           </section>
 
           <!-- Work record, where the technician already is -->
@@ -93,7 +95,7 @@ interface Step {
           </section>
 
           <section class="block" *ngIf="intervention.fileName">
-            <h3>Pièce jointe</h3>
+            <h3>Pièce jointe de la demande</h3>
             <button class="file" (click)="downloadFile()">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
               {{ intervention.fileName }}

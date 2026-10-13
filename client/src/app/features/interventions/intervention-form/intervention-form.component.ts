@@ -17,10 +17,11 @@ import { AppIconComponent } from '../../../shared/components/app-icon/app-icon.c
 /** Statuses of the maintenance workflow (server-side ids). */
 const STATUS = { A_TRAITER: 1, EN_COURS: 2, REALISEE: 3, CLOTUREE: 4, ANNULEE: 5 };
 
+import { InterventionPhotosComponent } from '../intervention-photos/intervention-photos.component';
 @Component({
   selector: 'app-intervention-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, InterventionSuiviComponent, InterventionActionsComponent, AppIconComponent],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, InterventionSuiviComponent, InterventionActionsComponent, AppIconComponent, InterventionPhotosComponent],
   template: `
     <!-- Create / edit: side panel over the list, like every other form of the app -->
     <ng-container *ngIf="drawer">
@@ -275,11 +276,12 @@ const STATUS = { A_TRAITER: 1, EN_COURS: 2, REALISEE: 3, CLOTUREE: 4, ANNULEE: 5
           <div class="form-section" *ngIf="intervention?.compteRendu">
             <h3 class="section-title"><span class="step">✓</span> Compte rendu du technicien</h3>
             <p class="report">{{ intervention?.compteRendu }}</p>
+            <app-intervention-photos [interventionId]="intervention!.idDemandeIntervention" [refresh]="intervention?.statusId"></app-intervention-photos>
           </div>
 
           <!-- 3. Attachment -->
           <div class="form-section">
-            <h3 class="section-title"><span class="step">3</span> Pièce jointe</h3>
+            <h3 class="section-title"><span class="step">3</span> Pièce jointe de la demande</h3>
             <div class="form-group" *ngIf="!isViewMode">
               <input id="file" type="file" (change)="onFileSelected($event)" [accept]="allowedExtensions.join(',')" />
               <small class="form-text">Photo de la panne, document… PDF, Office, images ou archives, 10 Mo maximum.</small>
@@ -568,7 +570,7 @@ export class InterventionFormComponent implements OnInit, OnDestroy {
   existingFileName?: string;
   removeExistingFileFlag = false;
 
-  readonly allowedExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.txt', '.csv', '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.zip', '.rar', '.7z'];
+  readonly allowedExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.txt', '.csv', '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.jfif', '.heic', '.heif', '.avif', '.tif', '.tiff', '.zip', '.rar', '.7z'];
 
   typesIntervention: TypeIntervention[] = [];
   urgences: Urgence[] = [];

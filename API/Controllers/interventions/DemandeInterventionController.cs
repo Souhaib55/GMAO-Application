@@ -45,7 +45,7 @@ namespace API.Controllers
         private static readonly string[] AllowedExtensions =
         {
             ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".txt", ".csv",
-            ".jpg", ".jpeg", ".png", ".gif", ".bmp",
+            ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".jfif", ".heic", ".heif", ".avif", ".tif", ".tiff",
             ".zip", ".rar", ".7z"
         };
 

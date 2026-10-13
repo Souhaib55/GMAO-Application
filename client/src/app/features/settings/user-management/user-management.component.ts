@@ -1,4 +1,3 @@
-import { HelpTipComponent } from '../../../shared/components/help-tip/help-tip.component';
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -12,7 +11,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
 @Component({
   selector: 'app-user-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, HelpTipComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent],
   template: `
     <div class="users-container">
       <!-- Header -->
@@ -59,7 +58,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
           </div>
           <div class="stat-content">
             <span class="stat-number">{{ getUsersByRole('Superviseur').length }}</span>
-            <span class="stat-label">Superviseurs<app-help text="Responsables de la maintenance : ils affectent les interventions, valident les travaux et gèrent tous les modules."></app-help></span>
+            <span class="stat-label">Superviseurs</span>
           </div>
         </div>
         <div class="stat-card demandeur">
@@ -70,7 +69,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
           </div>
           <div class="stat-content">
             <span class="stat-number">{{ getUsersByRole('Demandeur').length }}</span>
-            <span class="stat-label">Demandeurs<app-help text="Chefs de chaîne : ils déclarent les pannes et suivent leurs demandes."></app-help></span>
+            <span class="stat-label">Demandeurs</span>
           </div>
         </div>
         <div class="stat-card utilisateur">
@@ -82,7 +81,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
           </div>
           <div class="stat-content">
             <span class="stat-number">{{ getUsersByRole('Utilisateur').length }}</span>
-            <span class="stat-label">Utilisateurs<app-help text="Techniciens de maintenance : ils réalisent les interventions qui leur sont affectées."></app-help></span>
+            <span class="stat-label">Utilisateurs</span>
           </div>
         </div>
       </div>

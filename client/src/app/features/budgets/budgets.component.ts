@@ -1,4 +1,3 @@
-import { HelpTipComponent } from '../../shared/components/help-tip/help-tip.component';
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -17,7 +16,7 @@ import { ConfirmService } from '../../core/services/confirm.service';
 @Component({
   selector: 'app-budgets',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, AppIconComponent, GmColumnChartComponent, GmBarListComponent, HelpTipComponent],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, AppIconComponent, GmColumnChartComponent, GmBarListComponent],
   templateUrl: './budgets.component.html',
   styleUrls: ['./budgets.component.scss']
 })

@@ -1,4 +1,3 @@
-import { HelpTipComponent } from '../../shared/components/help-tip/help-tip.component';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -11,7 +10,7 @@ import { errorMessage, exportCsv } from '../../shared/utils/gm-format';
 @Component({
   selector: 'app-techniciens',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent, AppIconComponent, HelpTipComponent],
+  imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent, AppIconComponent],
   template: `
     <div class="gm-page">
       <app-page-header icon="team" title="Techniciens" subtitle="Charge de travail de l'équipe, temps saisi et taux horaires pour le calcul des coûts.">
@@ -39,16 +38,16 @@ import { errorMessage, exportCsv } from '../../shared/utils/gm-format';
             <button class="gm-icon-btn" title="Modifier le profil" (click)="edit(t)"><app-icon name="edit"></app-icon></button>
           </div>
           <div class="load">
-            <div class="load-top"><span>Charge actuelle<app-help text="Interventions ouvertes affectées à ce technicien et la durée estimée de ce travail."></app-help></span><b>{{ t.charge }} OT<ng-container *ngIf="t.heuresPlanifiees"> · {{ t.heuresPlanifiees | number:'1.0-1':'fr' }} h prévues</ng-container></b></div>
+            <div class="load-top"><span>Charge actuelle</span><b>{{ t.charge }} OT<ng-container *ngIf="t.heuresPlanifiees"> · {{ t.heuresPlanifiees | number:'1.0-1':'fr' }} h prévues</ng-container></b></div>
             <div class="gm-progress" [ngClass]="t.charge > maxCharge * 0.8 ? 'bad' : t.charge > maxCharge * 0.5 ? 'warn' : 'ok'"><span [style.width.%]="maxCharge ? (t.charge / maxCharge) * 100 : 0"></span></div>
           </div>
           <div class="stats">
             <div><span>En cours</span><b>{{ t.enCours }}</b></div>
             <div><span>À démarrer</span><b>{{ t.aFaire }}</b></div>
-            <div><span>En retard<app-help text="Interventions de ce technicien dont la date prévue est dépassée."></app-help></span><b [class.bad]="t.enRetard">{{ t.enRetard }}</b></div>
+            <div><span>En retard</span><b [class.bad]="t.enRetard">{{ t.enRetard }}</b></div>
             <div><span>Réalisées</span><b>{{ t.realisees }}</b></div>
-            <div><span>Heures saisies<app-help text="Temps de travail saisi par ce technicien sur la période choisie en haut de la page."></app-help></span><b>{{ t.heuresSaisies | number:'1.0-1':'fr' }}</b></div>
-            <div><span>Taux horaire<app-help text="Coût d'une heure de travail de ce technicien, utilisé pour calculer le coût de main-d'œuvre."></app-help></span><b>{{ t.tauxHoraire !== null ? (t.tauxHoraire | number:'1.0-3':'fr') + ' DT/h' : '—' }}</b></div>
+            <div><span>Heures saisies</span><b>{{ t.heuresSaisies | number:'1.0-1':'fr' }}</b></div>
+            <div><span>Taux horaire</span><b>{{ t.tauxHoraire !== null ? (t.tauxHoraire | number:'1.0-3':'fr') + ' DT/h' : '—' }}</b></div>
           </div>
           <div class="contact muted">{{ t.telephone || 'Téléphone non renseigné' }} · {{ t.email }}</div>
         </div>

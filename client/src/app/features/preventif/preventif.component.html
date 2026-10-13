@@ -12,22 +12,22 @@
   <!-- Indicators -->
   <div class="gm-kpis" *ngIf="stats">
     <div class="gm-kpi">
-      <div class="kpi-top"><span class="kpi-label">Respect du préventif<app-help text="Part des entretiens dont la date est passée qui ont été faits à temps (au plus 2 jours après la date prévue), sur les 90 derniers jours."></app-help></span><span class="kpi-icon" [ngClass]="tauxTone(stats.tauxRespect)"><app-icon name="preventive"></app-icon></span></div>
+      <div class="kpi-top"><span class="kpi-label">Respect du préventif</span><span class="kpi-icon" [ngClass]="tauxTone(stats.tauxRespect)"><app-icon name="preventive"></app-icon></span></div>
       <div class="kpi-value">{{ stats.tauxRespect !== null ? (stats.tauxRespect | number:'1.0-1':'fr') : '—' }}<small *ngIf="stats.tauxRespect !== null">%</small></div>
       <div class="kpi-foot"><span class="kpi-hint">{{ stats.aLHeure }} à l'heure sur {{ stats.dus }} échéances (90 j, tolérance {{ stats.toleranceJours }} j)</span></div>
     </div>
     <div class="gm-kpi">
-      <div class="kpi-top"><span class="kpi-label">Préventifs en retard<app-help text="Entretiens dont la date prévue est dépassée et qui ne sont pas encore réalisés. À rattraper en priorité."></app-help></span><span class="kpi-icon" [ngClass]="stats.enRetard ? 't-bad' : 't-ok'"><app-icon name="alert"></app-icon></span></div>
+      <div class="kpi-top"><span class="kpi-label">Préventifs en retard</span><span class="kpi-icon" [ngClass]="stats.enRetard ? 't-bad' : 't-ok'"><app-icon name="alert"></app-icon></span></div>
       <div class="kpi-value">{{ stats.enRetard }}</div>
       <div class="kpi-foot"><span class="kpi-hint">Date prévue dépassée, travail non réalisé</span></div>
     </div>
     <div class="gm-kpi">
-      <div class="kpi-top"><span class="kpi-label">À réaliser sous 7 jours<app-help text="Entretiens prévus dans la semaine qui arrive. Leur ordre de travail est déjà créé."></app-help></span><span class="kpi-icon t-info"><app-icon name="calendar"></app-icon></span></div>
+      <div class="kpi-top"><span class="kpi-label">À réaliser sous 7 jours</span><span class="kpi-icon t-info"><app-icon name="calendar"></app-icon></span></div>
       <div class="kpi-value">{{ stats.aVenir7 }}</div>
       <div class="kpi-foot"><span class="kpi-hint">Ordres de travail déjà générés</span></div>
     </div>
     <div class="gm-kpi">
-      <div class="kpi-top"><span class="kpi-label">Couverture du parc<app-help text="Part des machines qui ont au moins un plan d'entretien actif. Une machine sans plan n'est entretenue qu'après une panne."></app-help></span><span class="kpi-icon t-info"><app-icon name="equipment"></app-icon></span></div>
+      <div class="kpi-top"><span class="kpi-label">Couverture du parc</span><span class="kpi-icon t-info"><app-icon name="equipment"></app-icon></span></div>
       <div class="kpi-value">{{ stats.couverture !== null ? (stats.couverture | number:'1.0-0':'fr') : '—' }}<small>%</small></div>
       <div class="kpi-foot"><span class="kpi-hint">{{ stats.equipementsCouverts }} machines sur {{ stats.equipements }} · {{ stats.plansActifs }} plans actifs</span></div>
     </div>
