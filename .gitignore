@@ -491,4 +491,5 @@ appsettings.Local.json
 appsettings.*.Local.json
 
 # Angular build copied into the API at deployment
-API/wwwroot/
+API/wwwroot/*
+!API/wwwroot/.gitkeep
