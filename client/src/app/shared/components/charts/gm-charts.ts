@@ -35,6 +35,7 @@ export interface BarItem { label: string; value: number; sub?: string; tone?: 'o
 
 @Component({
   selector: 'gm-bar-list',
+  host: { class: 'gm-bar-list' },
   standalone: true,
   imports: [NgFor, NgIf],
   template: `
@@ -83,6 +84,7 @@ export interface Series { name: string; values: (number | null)[]; color?: strin
 
 @Component({
   selector: 'gm-line-chart',
+  host: { class: 'gm-line-chart' },
   standalone: true,
   imports: [NgFor, NgIf],
   template: `
@@ -195,6 +197,7 @@ export class GmLineChartComponent implements OnChanges {
 
 @Component({
   selector: 'gm-column-chart',
+  host: { class: 'gm-column-chart' },
   standalone: true,
   imports: [NgFor, NgIf],
   template: `
@@ -284,6 +287,7 @@ export interface DonutSlice { label: string; value: number; color?: string; }
 
 @Component({
   selector: 'gm-donut',
+  host: { class: 'gm-donut' },
   standalone: true,
   imports: [NgFor, NgIf],
   template: `
@@ -338,6 +342,7 @@ export class GmDonutComponent implements OnChanges {
 
 @Component({
   selector: 'gm-sparkline',
+  host: { class: 'gm-sparkline' },
   standalone: true,
   imports: [NgIf, NgStyle],
   template: `
