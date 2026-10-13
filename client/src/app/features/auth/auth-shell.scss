@@ -716,3 +716,8 @@ input[type="password"] {
 
 .eyebrow { display: none; }
 .input-with-icon input, .form-group input { border-radius: 10px; }
+
+/* Navy titles on the form side, matching the brand panel */
+.form-header h1 { color: #13254b; font-weight: 700; font-size: 28px; }
+.form-group label, .label-row label { color: #13254b; }
+.access-note svg { stroke: var(--primary-600); }

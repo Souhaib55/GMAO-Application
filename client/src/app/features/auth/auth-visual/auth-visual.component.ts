@@ -2,8 +2,8 @@ import { Component } from '@angular/core';
 import { NgFor, NgSwitch, NgSwitchCase } from '@angular/common';
 
 /**
- * Brand panel of the sign-in pages: royal-blue gradient with quiet concentric rings,
- * a two-tone headline and three short statements with round icon chips.
+ * Brand panel of the sign-in pages: light blue background, navy wordmark with the
+ * SIMOTEX red accent, a two-line headline and three statements in round icon bubbles.
  */
 @Component({
   selector: 'app-auth-visual',
@@ -11,30 +11,48 @@ import { NgFor, NgSwitch, NgSwitchCase } from '@angular/common';
   imports: [NgFor, NgSwitch, NgSwitchCase],
   template: `
     <aside class="panel" aria-hidden="true">
+      <!-- Quiet line decoration -->
+      <svg class="deco" viewBox="0 0 420 400" aria-hidden="true">
+        <defs><linearGradient id="decoFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9d8f0" stop-opacity="0"/><stop offset="0.35" stop-color="#c9d8f0"/></linearGradient></defs>
+        <line x1="22" y1="0" x2="22" y2="400" stroke="url(#decoFade)" />
+        <line x1="22" y1="350" x2="400" y2="350" class="fade" />
+        <circle class="dot" cx="22" cy="130" r="3.5" />
+        <circle class="dot" cx="22" cy="330" r="3.5" />
+        <circle class="dot" cx="280" cy="350" r="3.5" />
+      </svg>
+
       <div class="inner">
         <div class="brand">
-          <span class="mark">
-            <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          </span>
-          <span class="brand-text"><b>SIMOTEX</b><small>Gestion de maintenance</small></span>
+          <i class="bar"></i>
+          <span><b>SIMOTEX</b><small>Gestion de maintenance</small></span>
         </div>
 
         <div class="pitch">
-          <h2>Pilotez votre <span>maintenance.</span></h2>
-          <p>Toute l'activité de l'atelier, de la demande d'intervention à la clôture.</p>
+          <h2>La maintenance,<br>en toute maîtrise.</h2>
+          <i class="rule"></i>
+          <p>Centralisez vos interventions, vos équipements et vos opérations.</p>
+
           <ul>
             <li *ngFor="let p of points">
-              <span class="chip" [ngSwitch]="p.icon" [style.--c]="p.color">
-                <svg *ngSwitchCase="'clock'" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2.5h5"/></svg>
-                <svg *ngSwitchCase="'calendar'" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16.5" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M7.5 13.5h3M13.5 13.5h3M7.5 17h3"/></svg>
-                <svg *ngSwitchCase="'chart'" viewBox="0 0 24 24"><path d="M4 20h16M7 20v-6M12 20V9M17 20v-9"/></svg>
+              <span class="bubble" [ngSwitch]="p.icon">
+                <svg *ngSwitchCase="'clipboard'" viewBox="0 0 24 24">
+                  <rect x="5" y="4" width="14" height="17" rx="2" /><rect x="9" y="2.5" width="6" height="3" rx="1" />
+                  <path d="M8.5 10.5l1.2 1.2 2-2M8.5 15.5l1.2 1.2 2-2" class="accent" /><path d="M13.5 11h2.5M13.5 16h2.5" />
+                </svg>
+                <svg *ngSwitchCase="'calendar'" viewBox="0 0 24 24">
+                  <path d="M11 20H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3" /><path d="M3 10h16M7.5 3v4M14.5 3v4" />
+                  <circle cx="17" cy="17" r="4.2" class="accent" /><path d="M17 15v2.2l1.4 1" class="accent" />
+                </svg>
+                <svg *ngSwitchCase="'stock'" viewBox="0 0 24 24">
+                  <ellipse cx="10" cy="5.5" rx="6.5" ry="2.5" /><path d="M3.5 5.5v11c0 1.4 2.9 2.5 6.5 2.5M16.5 5.5v4.5" />
+                  <path d="M3.5 11c0 1.4 2.9 2.5 6.5 2.5" />
+                  <circle cx="17" cy="17" r="4.2" class="accent" /><path d="M18.3 15.4c-.3-.4-.8-.6-1.3-.6-.8 0-1.4.4-1.4 1s.6.8 1.4 1 1.4.5 1.4 1.1-.6 1-1.4 1c-.6 0-1.1-.2-1.4-.6M17 14v.8M17 19.2v.8" class="accent" />
+                </svg>
               </span>
               <span class="txt"><b>{{ p.text }}</b><small>{{ p.sub }}</small></span>
             </li>
           </ul>
         </div>
-
-        <footer class="foot"><i></i>SIMOTEX · Service maintenance</footer>
       </div>
     </aside>
   `,
@@ -46,10 +64,18 @@ import { NgFor, NgSwitch, NgSwitchCase } from '@angular/common';
       overflow: hidden;
       display: flex;
       background:
-        radial-gradient(70% 55% at 100% 0%, rgba(255, 255, 255, 0.14) 0%, transparent 60%),
-        linear-gradient(160deg, #3a62e0 0%, #2a4fd0 48%, #1f3a9e 100%);
-      color: #fff;
+        radial-gradient(85% 60% at 100% 0%, rgba(120, 170, 240, 0.32) 0%, transparent 65%),
+        radial-gradient(70% 55% at 0% 100%, rgba(150, 190, 245, 0.30) 0%, transparent 70%),
+        linear-gradient(165deg, #dbe9fb 0%, #e6f0fc 50%, #eef5fd 100%);
+      color: #13254b;
+      border-right: 1px solid #d3e1f5;
     }
+
+    .deco { position: absolute; left: 0; bottom: 0; width: 420px; height: 400px; pointer-events: none; }
+    .deco line, .deco path { fill: none; stroke: #b4c9ea; stroke-width: 1; }
+    .deco .fade { stroke: #d6e2f4; }
+    .deco line[stroke] { stroke-width: 1; }
+    .deco .dot { fill: #6b93e0; stroke: none; }
 
     .inner {
       position: relative;
@@ -59,50 +85,41 @@ import { NgFor, NgSwitch, NgSwitchCase } from '@angular/common';
       width: 100%;
       max-width: 560px;
       margin: 0 auto;
-      padding: 48px 52px 36px;
+      padding: 52px 64px 40px 72px;
     }
 
-    .brand { display: flex; align-items: center; gap: 14px; }
-    .mark {
-      width: 50px; height: 50px; flex-shrink: 0; border-radius: 13px;
+    .brand { display: flex; align-items: stretch; gap: 18px; }
+    .brand .bar { width: 3px; border-radius: 2px; background: #b3152d; }
+    .brand span { display: flex; flex-direction: column; line-height: 1.15; }
+    .brand b { font-size: 27px; font-weight: 500; letter-spacing: 0.2em; color: #13254b; }
+    .brand small { font-size: 14.5px; color: #4f5d75; margin-top: 3px; letter-spacing: 0.01em; }
+
+    .pitch { margin: auto 0; padding: 36px 0; }
+    .pitch h2 { margin: 0; font-size: 40px; line-height: 1.17; font-weight: 700; letter-spacing: -0.02em; color: #13254b; }
+    .rule { display: block; width: 36px; height: 3px; border-radius: 2px; background: #b3152d; margin: 26px 0 22px; }
+    .pitch p { margin: 0; font-size: 17px; line-height: 1.6; color: #4f5d75; max-width: 380px; }
+
+    ul { list-style: none; margin: 40px 0 0; padding: 0 0 0 12px; display: flex; flex-direction: column; gap: 22px; }
+    li { display: flex; align-items: center; gap: 24px; }
+    .bubble {
+      width: 56px; height: 56px; flex-shrink: 0; border-radius: 50%;
       display: grid; place-items: center;
-      background: linear-gradient(145deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.08));
-      border: 1px solid rgba(255, 255, 255, 0.32);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 10px 24px -8px rgba(10, 25, 80, 0.6);
+      background: rgba(255, 255, 255, 0.75);
+      box-shadow: 0 2px 8px -2px rgba(30, 70, 140, 0.12);
     }
-    .mark svg { width: 24px; height: 24px; fill: none; stroke: #fff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-    .brand-text { display: flex; flex-direction: column; gap: 3px; padding-left: 14px; border-left: 1px solid rgba(255, 255, 255, 0.28); }
-    .brand-text b { font-size: 17px; line-height: 1.1; font-weight: 700; letter-spacing: 0.16em; color: #fff; }
-    .brand-text small { font-size: 12px; line-height: 1.2; letter-spacing: 0.02em; color: #c9d7ff; }
-
-    .pitch { margin: auto 0; padding: 32px 0; }
-    .pitch h2 { margin: 0; font-size: 44px; line-height: 1.12; font-weight: 600; letter-spacing: -0.02em; color: #fff; }
-    .pitch h2 span { display: block; color: #c9d7ff; }
-    .pitch p { margin: 18px 0 0; font-size: 16px; line-height: 1.55; color: rgba(255, 255, 255, 0.8); max-width: 420px; }
-
-    ul { list-style: none; margin: 34px 0 0; padding: 0; display: flex; flex-direction: column; gap: 18px; }
-    li { display: flex; align-items: center; gap: 14px; max-width: 400px; }
-    .chip {
-      width: 44px; height: 44px; flex-shrink: 0; border-radius: 12px;
-      display: grid; place-items: center;
-      background: color-mix(in srgb, var(--c) 18%, transparent);
-      border: 1px solid color-mix(in srgb, var(--c) 40%, transparent);
-    }
-    .chip svg { width: 20px; height: 20px; fill: none; stroke: var(--c); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-    .txt { display: flex; flex-direction: column; gap: 2px; }
-    .txt b { font-size: 14.5px; font-weight: 600; color: #fff; }
-    .txt small { font-size: 12.5px; color: rgba(255, 255, 255, 0.68); }
-
-    .foot { display: flex; align-items: center; gap: 12px; font-size: 12.5px; color: rgba(255, 255, 255, 0.7); }
-    .foot i { width: 28px; height: 1px; background: rgba(255, 255, 255, 0.5); }
+    .bubble svg { width: 28px; height: 28px; fill: none; stroke: #13254b; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+    .bubble svg .accent { stroke: #b3152d; }
+    .txt { display: flex; flex-direction: column; gap: 4px; }
+    .txt b { font-size: 15.5px; font-weight: 600; color: #13254b; }
+    .txt small { font-size: 13px; color: #5d6a80; }
 
     @media (max-width: 960px) { .panel { display: none; } }
   `]
 })
 export class AuthVisualComponent {
   readonly points = [
-    { icon: 'clock', color: '#fbbf24', text: 'Interventions suivies de bout en bout', sub: 'De la déclaration de panne à la clôture validée' },
-    { icon: 'calendar', color: '#34d399', text: 'Maintenance préventive automatique', sub: 'Plans récurrents et ordres de travail générés à temps' },
-    { icon: 'chart', color: '#7dd3fc', text: 'Stock, achats et coûts sous contrôle', sub: 'Réapprovisionnement, commandes et suivi budgétaire' }
+    { icon: 'clipboard', text: 'Suivi des interventions', sub: 'De la demande à la clôture' },
+    { icon: 'calendar', text: 'Maintenance préventive', sub: 'Planifiez et anticipez les pannes' },
+    { icon: 'stock', text: 'Stocks et coûts maîtrisés', sub: 'Gardez le contrôle des pièces et budgets' }
   ];
 }

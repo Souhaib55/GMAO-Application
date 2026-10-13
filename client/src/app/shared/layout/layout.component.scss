@@ -105,17 +105,18 @@
 }
 
 .brand-mark {
-  width: 34px;
-  height: 34px;
+  width: 42px;
+  height: 42px;
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  border-radius: 9px;
-  background: var(--brand-gradient);
-  color: #fff;
-  box-shadow: 0 4px 10px rgba(61, 96, 220, 0.25);
+  border-radius: 50%;
+  background: #e3ecfb;
+  box-shadow: 0 2px 8px -2px rgba(30, 70, 140, 0.15);
 
-  font-size: 19px;
+  /* Same drawing as the sign-in page: navy outline, SIMOTEX red checks */
+  svg { width: 24px; height: 24px; fill: none; stroke: #13254b; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  svg .accent { stroke: #b3152d; }
 }
 
 .brand-text {
