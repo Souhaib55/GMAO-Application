@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -6,6 +6,8 @@ import { StockService } from './services/stock.service';
 import { Stock, PagedResult } from '../../core/models';
 import { NotificationService } from '../../core/services/notification.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+
+import { ConfirmService } from '../../core/services/confirm.service';
 
 @Component({
   selector: 'app-stock',
@@ -15,6 +17,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
   styleUrls: ['../../shared/styles/crud-table-design.scss']
 })
 export class StockListComponent implements OnInit {
+  private readonly confirmDialog = inject(ConfirmService);
   // Component stays the same - only template changes
   stocks: Stock[] = [];
   loading = true;
@@ -82,8 +85,8 @@ export class StockListComponent implements OnInit {
     }
   }
 
-  deleteStock(id: number): void {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce stock ?')) {
+  async deleteStock(id: number): Promise<void> {
+    if (await this.confirmDialog.ask({ title: 'Supprimer ce stock ?' })) {
       this.stockService.deleteStock(id).subscribe({
         next: () => {
           this.notificationService.success('Succès', 'Stock supprimé avec succès');

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -11,6 +11,8 @@ import { AuthService } from '../../core/services/auth.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { AppIconComponent } from '../../shared/components/app-icon/app-icon.component';
 
+import { ConfirmService } from '../../core/services/confirm.service';
+
 @Component({
   selector: 'app-equipment',
   standalone: true,
@@ -22,6 +24,7 @@ import { AppIconComponent } from '../../shared/components/app-icon/app-icon.comp
   `]
 })
 export class EquipmentComponent implements OnInit {
+  private readonly confirmDialog = inject(ConfirmService);
   equipments: Equipment[] = [];
   loading = true;
   searchTerm = '';
@@ -133,8 +136,8 @@ export class EquipmentComponent implements OnInit {
     return Math.ceil(this.totalCount / this.pageSize);
   }
 
-  deleteEquipment(id: number): void {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cet équipement ?')) {
+  async deleteEquipment(id: number): Promise<void> {
+    if (await this.confirmDialog.ask({ title: 'Supprimer cet équipement ?', message: 'Il ne sera plus proposé dans les demandes d\'intervention. Son historique est conservé.' })) {
       this.equipmentService.deleteEquipment(id).subscribe({
         next: () => {
           this.notificationService.success('Succès', 'Équipement supprimé avec succès');

@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -11,6 +11,8 @@ import { NotificationService } from '../../core/services/notification.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { DashboardService } from '../dashboard/dashboard.service';
+
+import { ConfirmService } from '../../core/services/confirm.service';
 
 @Component({
   selector: 'app-interventions',
@@ -137,6 +139,7 @@ import { DashboardService } from '../dashboard/dashboard.service';
   `]
 })
 export class InterventionsComponent implements OnInit, OnDestroy {
+  private readonly confirmDialog = inject(ConfirmService);
   interventions: DemandeIntervention[] = [];
   loading = true;
   searchTerm = '';
@@ -338,8 +341,8 @@ export class InterventionsComponent implements OnInit, OnDestroy {
     return Math.ceil(this.totalCount / this.pageSize);
   }
 
-  deleteIntervention(id: number): void {
-    if (confirm('Voulez-vous vraiment supprimer cette intervention ?')) {
+  async deleteIntervention(id: number): Promise<void> {
+    if (await this.confirmDialog.ask({ title: 'Supprimer cette intervention ?', message: 'Les pièces sorties pour elle seront remises en stock. Pour garder une trace, préférez l\'annulation.' })) {
       this.interventionService.deleteIntervention(id).subscribe({
         next: () => {
           this.notificationService.success('Succès', 'Intervention supprimée avec succès');

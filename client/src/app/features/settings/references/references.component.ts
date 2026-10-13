@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -7,6 +7,8 @@ import { ReferenceManagementService, ReferenceCategory } from '../services/refer
 import { NotificationService } from '../../../core/services/notification.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { AppIconComponent } from '../../../shared/components/app-icon/app-icon.component';
+
+import { ConfirmService } from '../../../core/services/confirm.service';
 
 @Component({
   selector: 'app-references',
@@ -102,20 +104,6 @@ import { AppIconComponent } from '../../../shared/components/app-icon/app-icon.c
         </div>
       </ng-container>
 
-      <!-- Delete confirmation -->
-      <ng-container *ngIf="showDeleteModal">
-        <div class="gm-backdrop" (click)="closeDeleteModal()"></div>
-        <div class="gm-dialog" role="alertdialog">
-          <div class="gm-drawer-head"><h2>Supprimer « {{ getItemName(itemToDelete) }} » ?</h2></div>
-          <div class="gm-drawer-body">
-            <p class="confirm-text">Cet élément ne sera plus proposé dans les formulaires. Cette action est définitive.</p>
-          </div>
-          <div class="gm-drawer-foot">
-            <button type="button" class="btn btn-secondary" (click)="closeDeleteModal()">Annuler</button>
-            <button type="button" class="btn btn-danger" (click)="deleteItem()" [disabled]="submitting">{{ submitting ? 'Suppression…' : 'Supprimer' }}</button>
-          </div>
-        </div>
-      </ng-container>
     </div>
   `,
   styles: [`
@@ -184,6 +172,7 @@ import { AppIconComponent } from '../../../shared/components/app-icon/app-icon.c
   `]
 })
 export class ReferencesComponent implements OnInit {
+  private readonly confirmDialog = inject(ConfirmService);
   modules = [
     { key: 'equipment', label: 'Équipements', icon: 'equipment' },
     { key: 'interventions', label: 'Interventions', icon: 'interventions' },
@@ -373,9 +362,14 @@ export class ReferencesComponent implements OnInit {
     }
   }
 
-  confirmDelete(item: any): void {
+  async confirmDelete(item: any): Promise<void> {
+    const ok = await this.confirmDialog.ask({
+      title: `Supprimer « ${this.getItemName(item)} » ?`,
+      message: 'Cet élément ne sera plus proposé dans les formulaires.'
+    });
+    if (!ok) return;
     this.itemToDelete = item;
-    this.showDeleteModal = true;
+    this.deleteItem();
   }
 
   closeDeleteModal(): void {

@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule, registerLocaleData } from '@angular/common';
+import { ConfirmDialogComponent } from '../components/confirm-dialog/confirm-dialog.component';
 import localeFr from '@angular/common/locales/fr';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -40,7 +41,7 @@ interface SearchHit {
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, AppIconComponent],
+  imports: [CommonModule, RouterModule, FormsModule, AppIconComponent, ConfirmDialogComponent],
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.scss']
 })

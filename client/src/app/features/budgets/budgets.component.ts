@@ -1,5 +1,5 @@
 import { HelpTipComponent } from '../../shared/components/help-tip/help-tip.component';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -12,6 +12,8 @@ import { errorMessage, exportCsv } from '../../shared/utils/gm-format';
 
 const MOIS = ['janv', 'févr', 'mars', 'avr', 'mai', 'juin', 'juil', 'août', 'sept', 'oct', 'nov', 'déc'];
 
+import { ConfirmService } from '../../core/services/confirm.service';
+
 @Component({
   selector: 'app-budgets',
   standalone: true,
@@ -20,6 +22,7 @@ const MOIS = ['janv', 'févr', 'mars', 'avr', 'mai', 'juin', 'juil', 'août', 's
   styleUrls: ['./budgets.component.scss']
 })
 export class BudgetsComponent implements OnInit {
+  private readonly confirmDialog = inject(ConfirmService);
   annee = new Date().getFullYear();
   vue: BudgetVue | null = null;
   loading = true;
@@ -108,9 +111,9 @@ export class BudgetsComponent implements OnInit {
     });
   }
 
-  remove(): void {
+  async remove(): Promise<void> {
     const d = this.dialog;
-    if (!d?.id || !confirm('Supprimer cette ligne de budget ?')) return;
+    if (!d?.id || !(await this.confirmDialog.ask({ title: 'Supprimer cette ligne de budget ?', message: 'Le montant prévu pour cette catégorie ne sera plus suivi.' }))) return;
     this.api.deleteBudget(d.id).subscribe({
       next: () => { this.dialog = null; this.flash('Ligne supprimée.'); this.load(); },
       error: err => this.formError = errorMessage(err)

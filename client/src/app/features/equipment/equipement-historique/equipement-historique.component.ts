@@ -1,5 +1,5 @@
 import { HelpTipComponent } from '../../../shared/components/help-tip/help-tip.component';
-import { Component, Input, OnChanges } from '@angular/core';
+import { Component, Input, OnChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -9,6 +9,9 @@ import { BarItem, GmBarListComponent } from '../../../shared/components/charts/g
 import { STATUTS_OT, errorMessage, exportCsv, fmtDate, fmtHours, otCode, relativeDays, saveBlob } from '../../../shared/utils/gm-format';
 
 /** 360° view of a machine: reliability, every work order, preventive plans, parts, cost, documents. */
+import { NotificationService } from '../../../core/services/notification.service';
+import { ConfirmService } from '../../../core/services/confirm.service';
+
 @Component({
   selector: 'app-equipement-historique',
   standalone: true,
@@ -148,6 +151,8 @@ import { STATUTS_OT, errorMessage, exportCsv, fmtDate, fmtHours, otCode, relativ
   `]
 })
 export class EquipementHistoriqueComponent implements OnChanges {
+  private readonly confirmDialog = inject(ConfirmService);
+  private readonly notifications = inject(NotificationService);
   @Input() equipementId!: number;
   @Input() mode: 'historique' | 'documents' = 'historique';
   filtre: 'tout' | 'pannes' | 'preventif' = 'tout';
@@ -203,7 +208,7 @@ export class EquipementHistoriqueComponent implements OnChanges {
     this.uploading = true;
     this.api.uploadPieceJointe('Equipement', this.equipementId, file).subscribe({
       next: () => { this.uploading = false; this.loadDocs(); },
-      error: err => { this.uploading = false; alert(errorMessage(err)); }
+      error: err => { this.uploading = false; this.notifications.error('Envoi impossible', errorMessage(err)); }
     });
   }
 
@@ -211,9 +216,9 @@ export class EquipementHistoriqueComponent implements OnChanges {
     this.api.downloadPieceJointe(f.id).subscribe(b => saveBlob(b, f.nomFichier));
   }
 
-  remove(f: PieceJointeRow): void {
-    if (!confirm(`Supprimer « ${f.nomFichier} » ?`)) return;
-    this.api.deletePieceJointe(f.id).subscribe({ next: () => this.loadDocs(), error: err => alert(errorMessage(err)) });
+  async remove(f: PieceJointeRow): Promise<void> {
+    if (!(await this.confirmDialog.ask({ title: `Supprimer « ${f.nomFichier} » ?`, message: 'Le document sera retiré de la fiche de la machine.' }))) return;
+    this.api.deletePieceJointe(f.id).subscribe({ next: () => this.loadDocs(), error: err => this.notifications.error('Suppression impossible', errorMessage(err)) });
   }
 
   size(b: number): string { return b > 1048576 ? `${(b / 1048576).toFixed(1)} Mo` : `${Math.max(1, Math.round(b / 1024))} Ko`; }

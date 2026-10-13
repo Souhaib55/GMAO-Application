@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, Subscription, of } from 'rxjs';
@@ -13,6 +13,8 @@ import { errorMessage, fmtDate, fmtDateTime, fmtMinutes, isoDate, isoDateTimeLoc
  * store, failure analysis, cost and documents. Used on the work-order page and in
  * the planning panel, so technicians record their work where they already are.
  */
+import { ConfirmService } from '../../../core/services/confirm.service';
+
 @Component({
   selector: 'app-intervention-suivi',
   standalone: true,
@@ -21,6 +23,7 @@ import { errorMessage, fmtDate, fmtDateTime, fmtMinutes, isoDate, isoDateTimeLoc
   styleUrls: ['./intervention-suivi.component.scss']
 })
 export class InterventionSuiviComponent implements OnChanges, OnDestroy {
+  private readonly confirmDialog = inject(ConfirmService);
   @Input() interventionId!: number;
   /** Changes when the parent reloads the work order (status change…), to refresh the follow-up. */
   @Input() version: any;
@@ -160,8 +163,8 @@ export class InterventionSuiviComponent implements OnChanges, OnDestroy {
     }).subscribe({ next: () => { this.tempsOpen = false; this.done('Temps enregistré.'); }, error: err => this.fail(err) });
   }
 
-  deleteTemps(id: number): void {
-    if (!confirm('Supprimer cette saisie de temps ?')) return;
+  async deleteTemps(id: number): Promise<void> {
+    if (!(await this.confirmDialog.ask({ title: 'Supprimer cette saisie de temps ?', message: 'Le coût de main-d\'œuvre de l\'intervention sera recalculé.' }))) return;
     this.api.deleteTemps(this.interventionId, id).subscribe({ next: () => this.done('Saisie supprimée.'), error: err => this.fail(err) });
   }
 
@@ -194,8 +197,8 @@ export class InterventionSuiviComponent implements OnChanges, OnDestroy {
     });
   }
 
-  deletePiece(id: number): void {
-    if (!confirm('Retirer cette pièce ? Elle sera remise en stock.')) return;
+  async deletePiece(id: number): Promise<void> {
+    if (!(await this.confirmDialog.ask({ title: 'Retirer cette pièce de l\'intervention ?', message: 'Elle sera remise en stock au magasin.', confirmText: 'Retirer' }))) return;
     this.api.deletePiece(this.interventionId, id).subscribe({ next: () => this.done('Pièce retournée au magasin.'), error: err => this.fail(err) });
   }
 
@@ -231,8 +234,8 @@ export class InterventionSuiviComponent implements OnChanges, OnDestroy {
     this.api.downloadPieceJointe(f.id).subscribe({ next: blob => saveBlob(blob, f.nomFichier), error: err => this.fail(err) });
   }
 
-  deleteFichier(f: PieceJointeRow): void {
-    if (!confirm(`Supprimer « ${f.nomFichier} » ?`)) return;
+  async deleteFichier(f: PieceJointeRow): Promise<void> {
+    if (!(await this.confirmDialog.ask({ title: `Supprimer « ${f.nomFichier} » ?`, message: 'Le document sera retiré de l\'intervention.' }))) return;
     this.api.deletePieceJointe(f.id).subscribe({ next: () => this.done('Document supprimé.'), error: err => this.fail(err) });
   }
 

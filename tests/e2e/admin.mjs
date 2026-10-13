@@ -61,6 +61,8 @@ try {
     await goto(b, '/equipment');
     await fill('.gm-filters input[type=search]', EQ); await sleep(600); await idle(b, 800);
     const r = await rowAction(EQ, 'button[title=Supprimer]'); if (r !== 'ok') return r;
+    await sleep(400);
+    if (await ev(b, `__t.clickSel('.cd-box .btn-danger')`) !== 'ok') return 'confirmation dialog not shown';
     await idle(b, 1200);
     const list = await ev(b, api('/Equipment?page=1&pageSize=5&search=' + EQ));
     return !((list.data || list.items || list).some?.(x => x.codeEquipement === EQ)) || 'still listed';
@@ -109,7 +111,7 @@ try {
     await fill('.search-box input, input[placeholder^="Rechercher un utilisateur"]', EMAIL); await idle(b, 600);
     let r = await rowAction(EMAIL, '.action-btn.delete'); if (r !== 'ok') return r;
     await idle(b, 500);
-    r = await ev(b, `__t.clickSel('.modal-overlay .btn-danger')`); if (r !== 'ok') return r;
+    r = await ev(b, `__t.clickSel('.cd-box .btn-danger')`); if (r !== 'ok') return r;
     await idle(b, 1200);
     if ((await text()).includes(EMAIL)) return 'still listed';
     if (!otForNewTech) return true;
@@ -131,7 +133,7 @@ try {
     r = await ev(b, `(() => { const li = [...document.querySelectorAll('.item-list li')].find(x => x.innerText.includes(${JSON.stringify(REF)})); if (!li) return 'row'; li.querySelector('button[title=Supprimer]').click(); return 'ok'; })()`);
     if (r !== 'ok') return r;
     await idle(b, 400);
-    await ev(b, `__t.clickSel('.gm-dialog .btn-danger')`); await idle(b, 1000);
+    await ev(b, `__t.clickSel('.cd-box .btn-danger')`); await idle(b, 1000);
     return !(await text()).includes(REF) || 'not deleted';
   });
 
@@ -187,6 +189,7 @@ try {
 
   await check(b, 'Tableau de bord: alerte « sans technicien » ouvre la liste filtrée', async () => {
     await goto(b, '/dashboard');
+    for (let i = 0; i < 40 && !(await ev(b, `!!document.querySelector('a.alert-row')`)); i++) await sleep(250);
     const r = await ev(b, `(() => { const a = [...document.querySelectorAll('a.alert-row')].find(x => x.innerText.includes('sans technicien')); if (!a) return 'no alert link'; a.click(); return 'ok'; })()`);
     if (r !== 'ok') return r;
     await idle(b, 1200);

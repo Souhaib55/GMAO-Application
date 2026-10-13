@@ -1,11 +1,13 @@
 import { HelpTipComponent } from '../../../shared/components/help-tip/help-tip.component';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UserManagementService, User, Role, CreateUserDto, UpdateUserDto } from '../services/user-management.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+
+import { ConfirmService } from '../../../core/services/confirm.service';
 
 @Component({
   selector: 'app-user-management',
@@ -252,24 +254,6 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
         </div>
       </div>
 
-      <!-- Delete Confirmation Modal -->
-      <div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeDeleteModal()">
-        <div class="modal delete-modal" (click)="$event.stopPropagation()">
-          <div class="modal-header delete">
-            <h2>Confirmer la suppression</h2>
-          </div>
-          <div class="modal-body">
-            <p>Êtes-vous sûr de vouloir supprimer l'utilisateur <strong>{{ userToDelete?.prenom }} {{ userToDelete?.nom }}</strong> ?</p>
-            <p class="warning-text">Cette action désactivera le compte utilisateur.</p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn-secondary" (click)="closeDeleteModal()">Annuler</button>
-            <button type="button" class="btn-danger" (click)="deleteUser()" [disabled]="submitting">
-              {{ submitting ? 'Suppression...' : 'Supprimer' }}
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   `,
   styles: [`
@@ -1278,6 +1262,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
   `]
 })
 export class UserManagementComponent implements OnInit {
+  private readonly confirmDialog = inject(ConfirmService);
   users: User[] = [];
   filteredUsers: User[] = [];
   roles: Role[] = [];
@@ -1512,9 +1497,14 @@ export class UserManagementComponent implements OnInit {
     }
   }
 
-  confirmDelete(user: User): void {
+  async confirmDelete(user: User): Promise<void> {
+    const ok = await this.confirmDialog.ask({
+      title: `Supprimer le compte de ${user.prenom ?? ''} ${user.nom ?? ''} ?`.replace(/\s+/g, ' '),
+      message: "La personne ne pourra plus se connecter. Ses interventions ouvertes seront remises à affecter ; l'historique est conservé."
+    });
+    if (!ok) return;
     this.userToDelete = user;
-    this.showDeleteModal = true;
+    this.deleteUser();
   }
 
   closeDeleteModal(): void {

@@ -1,10 +1,12 @@
-import { Component, OnInit, ElementRef, ViewChild, OnDestroy } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GmaoChatService, ChatConversation } from './services/gmao-chat.service';
 import { ChatMessage } from '../../core/models';
 import { Subscription } from 'rxjs';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+
+import { ConfirmService } from '../../core/services/confirm.service';
 
 @Component({
   selector: 'app-chat',
@@ -14,6 +16,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
   styleUrls: ['./chat.component.scss']
 })
 export class ChatComponent implements OnInit, OnDestroy {
+  private readonly confirmDialog = inject(ConfirmService);
   @ViewChild('messagesContainer') messagesContainer!: ElementRef;
   @ViewChild('inputField') inputField!: ElementRef;
 
@@ -126,14 +129,14 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.closeContextMenu();
   }
 
-  clearAllHistory(): void {
-    if (confirm('Êtes-vous sûr de vouloir supprimer TOUTES les conversations ?')) {
+  async clearAllHistory(): Promise<void> {
+    if (await this.confirmDialog.ask({ title: 'Supprimer toutes les conversations ?', message: 'L\'historique complet sera effacé.' })) {
       this.chatService.clearAllHistory();
     }
   }
 
-  clearHistory(): void {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette conversation ?')) {
+  async clearHistory(): Promise<void> {
+    if (await this.confirmDialog.ask({ title: 'Supprimer cette conversation ?' })) {
       this.chatService.clearHistory();
     }
   }

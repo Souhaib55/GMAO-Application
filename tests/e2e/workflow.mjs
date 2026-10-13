@@ -121,7 +121,7 @@ try {
     let r = await click('Sortir du magasin', 'app-intervention-suivi button'); if (r !== 'ok') return r;
     // pick any article in stock
     const arts = await ev(b, api('/magasin/articles?page=1&pageSize=50'));
-    const a = (arts.data || []).find(x => x.quantite_Stock >= 2);
+    const a = (arts.data || []).find(x => x.quantite_Stock >= 2 && !/["«»]/.test(x.designation));
     if (!a) return 'no article in stock: ' + JSON.stringify(arts).slice(0, 150);
     articleId = a.idPiece; stockBefore = a.quantite_Stock;
     await ev(b, `__t.fill('app-intervention-suivi input[placeholder^="Rechercher"]', ${JSON.stringify(a.codePiece)})`);
@@ -233,7 +233,8 @@ try {
     if (r !== 'ok') return r;
     await idle(b, 800);
     // custom confirm dialog?
-    await ev(b, `__t.click('Supprimer', '.modal button, .dialog button, .confirm button, [role=dialog] button')`);
+    await sleep(400);
+    if (await ev(b, `__t.clickSel('.cd-box .btn-danger')`) !== 'ok') return 'confirmation dialog not shown';
     await idle(b, 1200);
     const st = await state(id2);
     return st.status === 404 || 'still exists: ' + JSON.stringify(st).slice(0, 120);

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -6,6 +6,8 @@ import { ResourceService } from './services/resource.service';
 import { Piece, PagedResult } from '../../core/models';
 import { NotificationService } from '../../core/services/notification.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+
+import { ConfirmService } from '../../core/services/confirm.service';
 
 @Component({
   selector: 'app-resources',
@@ -15,6 +17,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
   styleUrls: ['../../shared/styles/crud-table-design.scss']
 })
 export class ResourcesListComponent implements OnInit {
+  private readonly confirmDialog = inject(ConfirmService);
   pieces: Piece[] = [];
   loading = true;
   searchTerm = '';
@@ -82,8 +85,8 @@ export class ResourcesListComponent implements OnInit {
     }
   }
 
-  deletePiece(id: number): void {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette pièce ?')) {
+  async deletePiece(id: number): Promise<void> {
+    if (await this.confirmDialog.ask({ title: 'Supprimer cette pièce ?' })) {
       this.resourceService.deletePiece(id).subscribe({
         next: () => {
           this.notificationService.success('Succès', 'Pièce supprimée avec succès');
