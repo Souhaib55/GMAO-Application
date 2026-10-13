@@ -10,6 +10,12 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Server secrets (connection string, SMTP...) live in appsettings.Local.json, never in Git.
+// Environment variables and the command line are re-added after it so they keep precedence.
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+builder.Configuration.AddEnvironmentVariables();
+builder.Configuration.AddCommandLine(args);
+
 // Configure file upload size limits (10MB max)
 builder.Services.Configure<FormOptions>(options =>
 {
@@ -196,6 +202,11 @@ app.Use(async (context, next) =>
     await next();
 });
 
+// The Angular client is served by the API itself (wwwroot), before authentication:
+// the application files are public, the data behind /api is not.
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseCors("AngularCorsPolicy");
 app.UseRateLimiter();
 
@@ -203,5 +214,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Angular routes (/dashboard, /interventions/...) are resolved by the client: any URL that is
+// neither a file nor an API call returns index.html. Anonymous, or the sign-in page itself would be refused.
+app.MapFallbackToFile("{*path:nonfile:regex(^(?!api/).*$)}", "index.html").AllowAnonymous();
 
 app.Run();

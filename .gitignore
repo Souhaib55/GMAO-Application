@@ -485,3 +485,10 @@ $RECYCLE.BIN/
 API/appsettings.json
 client/angular.json
 client/angular.json
+
+# Server secrets (connection string, SMTP): created by hand on each server, never committed
+appsettings.Local.json
+appsettings.*.Local.json
+
+# Angular build copied into the API at deployment
+API/wwwroot/
