@@ -9,6 +9,11 @@
 @import './app/shared/styles/gm-ui.scss';
 
 :root {
+  /* SIMOTEX brand: burgundy of the logo, used as a fine accent next to the blue */
+  --burgundy: #8c1c2b;
+  --burgundy-50: #f6e9eb;
+  --navy: #13254b;
+
   /* Typography */
   --font-sans: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;

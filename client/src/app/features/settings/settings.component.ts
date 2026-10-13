@@ -19,6 +19,7 @@ interface ReferenceModule {
 
 interface RoleCount {
   role: string;
+  label: string;
   description: string;
   tone: 'blue' | 'amber' | 'green';
   count: number;
@@ -29,102 +30,92 @@ interface RoleCount {
   standalone: true,
   imports: [CommonModule, RouterModule, PageHeaderComponent, AppIconComponent],
   template: `
-    <div class="settings-page">
-      <app-page-header
-        icon="settings"
-        title="Paramètres"
-        subtitle="Comptes, droits d'accès et listes de référence utilisées dans l'application">
+    <div class="gm-page">
+      <app-page-header icon="settings" title="Paramètres"
+                       subtitle="Comptes et droits d'accès, réglages des modules et listes de choix utilisées dans l'application.">
       </app-page-header>
 
-      <div class="top-grid">
+      <div class="hub-top">
         <!-- Users & access -->
-        <section class="panel users">
-          <div class="panel-head">
-            <span class="chip tone-blue"><app-icon name="users"></app-icon></span>
-            <div class="panel-titles">
-              <h2>Utilisateurs et accès</h2>
-              <p>Créez les comptes, attribuez les rôles et désactivez les accès.</p>
+        <section class="gm-card users">
+          <div class="sec-head">
+            <span class="bubble"><app-icon name="users"></app-icon></span>
+            <div class="sec-titles">
+              <span class="eyebrow">Accès</span>
+              <h2>Utilisateurs et rôles</h2>
+              <p>Créez les comptes, attribuez un rôle à chacun et désactivez les accès qui ne servent plus.</p>
             </div>
             <a routerLink="/settings/users" class="btn btn-primary btn-sm">Gérer les utilisateurs</a>
           </div>
-
-          <div class="role-grid">
-            <div class="role-tile total">
-              <span class="role-name">Comptes actifs</span>
-              <span class="role-count">{{ usersLoading ? '–' : totalUsers }}</span>
-              <span class="role-desc">Tous rôles confondus</span>
+          <div class="role-strip">
+            <div class="role total">
+              <span class="k">Comptes</span>
+              <b>{{ usersLoading ? '–' : totalUsers }}</b>
+              <small>Tous rôles confondus</small>
             </div>
-            <div class="role-tile" *ngFor="let r of roleCounts" [ngClass]="'tone-' + r.tone">
-              <span class="role-name">{{ r.role }}</span>
-              <span class="role-count">{{ usersLoading ? '–' : r.count }}</span>
-              <span class="role-desc">{{ r.description }}</span>
+            <div class="role" *ngFor="let r of roleCounts">
+              <span class="k"><i [ngClass]="'dot-' + r.tone"></i>{{ r.label }}</span>
+              <b>{{ usersLoading ? '–' : r.count }}</b>
+              <small>{{ r.description }}</small>
             </div>
           </div>
         </section>
 
         <!-- Signed-in account -->
-        <section class="panel account" *ngIf="currentUser">
-          <div class="account-banner"></div>
-          <div class="account-body">
-            <span class="account-avatar">{{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}</span>
-            <div class="account-name">{{ currentUser.firstName }} {{ currentUser.lastName }}</div>
-            <div class="account-email">{{ currentUser.email }}</div>
-            <span class="role-pill">{{ currentUser.role }}</span>
+        <section class="gm-card account" *ngIf="currentUser">
+          <div class="acc-top">
+            <span class="acc-avatar">{{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}</span>
+            <div class="acc-id">
+              <b>{{ currentUser.firstName }} {{ currentUser.lastName }}</b>
+              <small>{{ currentUser.email }}</small>
+            </div>
           </div>
           <dl class="facts">
+            <div><dt>Rôle</dt><dd><span class="role-pill">{{ currentUser.role }}</span></dd></div>
             <div><dt>Application</dt><dd>SIMOTEX · GMAO</dd></div>
-            <div><dt>Version</dt><dd class="mono">v2.0</dd></div>
+            <div><dt>Version</dt><dd>2.0</dd></div>
           </dl>
         </section>
       </div>
 
       <!-- Module administration -->
-      <section class="panel admin">
-        <div class="panel-head">
-          <span class="chip tone-blue"><app-icon name="settings"></app-icon></span>
-          <div class="panel-titles">
-            <h2>Administration des modules</h2>
-            <p>Réglages du magasin, des achats, du préventif et du reporting, et traçabilité des actions.</p>
-          </div>
+      <section class="hub-section">
+        <div class="hub-title">
+          <span class="eyebrow">Modules</span>
+          <h2>Administration des modules</h2>
+          <p>Les réglages de chaque module : lieux de stockage, fournisseurs, équipe, plans d'entretien, budgets, rapports et journal.</p>
         </div>
         <div class="admin-grid">
           <a class="admin-tile" *ngFor="let t of adminTiles" [routerLink]="t.route" [queryParams]="t.query">
-            <span class="admin-icon"><app-icon [name]="t.icon"></app-icon></span>
+            <span class="bubble"><app-icon [name]="t.icon"></app-icon></span>
             <span class="admin-text"><b>{{ t.label }}</b><small>{{ t.description }}</small></span>
-            <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+            <app-icon name="chevron-right" class="chev"></app-icon>
           </a>
         </div>
       </section>
 
       <!-- Reference data -->
-      <section class="panel references">
-        <div class="panel-head">
-          <span class="chip tone-blue"><app-icon name="references"></app-icon></span>
-          <div class="panel-titles">
+      <section class="hub-section">
+        <div class="hub-title with-action">
+          <div>
+            <span class="eyebrow">Listes</span>
             <h2>Données de référence</h2>
-            <p>Les listes proposées dans les formulaires. Choisissez une liste pour la modifier.</p>
+            <p>Les listes de choix proposées dans les formulaires : types, états, familles, urgences… Cliquez une liste pour la modifier.</p>
           </div>
-          <a routerLink="/settings/references" class="btn btn-secondary btn-sm">Tout afficher</a>
+          <a routerLink="/settings/references" class="btn btn-secondary btn-sm">Ouvrir toutes les listes</a>
         </div>
 
         <div class="module-grid">
-          <div class="module" *ngFor="let m of referenceModules" [ngClass]="'tone-' + m.tone">
+          <div class="gm-card module" *ngFor="let m of referenceModules">
             <div class="module-head">
-              <span class="module-icon"><app-icon [name]="m.icon"></app-icon></span>
-              <div class="module-titles">
-                <span class="module-name">{{ m.label }}</span>
-                <span class="module-desc">{{ m.description }}</span>
-              </div>
-              <span class="module-count">{{ m.categories.length }}</span>
+              <span class="bubble"><app-icon [name]="m.icon"></app-icon></span>
+              <div class="module-titles"><b>{{ m.label }}</b><small>{{ m.description }}</small></div>
+              <span class="module-count">{{ m.categories.length }} listes</span>
             </div>
             <nav class="module-links">
-              <a *ngFor="let c of m.categories"
-                 [routerLink]="['/settings/references']"
-                 [queryParams]="{ category: c.key }"
-                 class="ref-link">
-                <span class="ref-dot"></span>
-                <span class="ref-label">{{ sentenceCase(c.label) }}</span>
-                <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+              <a *ngFor="let c of m.categories" [routerLink]="['/settings/references']" [queryParams]="{ category: c.key }" class="ref-link">
+                <span>{{ sentenceCase(c.label) }}</span>
+                <app-icon name="chevron-right"></app-icon>
               </a>
             </nav>
           </div>
@@ -133,377 +124,112 @@ interface RoleCount {
     </div>
   `,
   styles: [`
-    .admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; padding: 0 20px 20px; }
-    .admin-tile { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; color: inherit; text-decoration: none; transition: border-color .15s, box-shadow .15s; }
-    .admin-tile:hover { border-color: var(--primary-200); box-shadow: var(--card-shadow-hover); color: inherit; }
-    .admin-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--primary-50); color: var(--primary-600); display: grid; place-items: center; font-size: 18px; flex-shrink: 0; }
-    .admin-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-    .admin-text b { font-size: 0.875rem; font-weight: 600; }
-    .admin-text small { font-size: 0.75rem; color: var(--text-muted); }
-    .admin-tile svg { width: 16px; height: 16px; fill: none; stroke: var(--gray-400); stroke-width: 2; }
+    :host { --burgundy: #8c1c2b; --navy: #13254b; }
 
-    .settings-page {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 0.68rem; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--burgundy);
+    }
+    .eyebrow::before { content: ''; width: 14px; height: 2px; border-radius: 2px; background: var(--burgundy); }
+
+    .bubble {
+      width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%;
+      display: grid; place-items: center;
+      background: #e3ecfb; color: var(--navy); font-size: 19px;
+      box-shadow: 0 2px 8px -3px rgba(30, 70, 140, 0.18);
     }
 
-    .settings-page > app-page-header {
-      margin-bottom: 0;
+    /* ---- Top row */
+    .hub-top { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); gap: 16px; }
+    @media (max-width: 1100px) { .hub-top { grid-template-columns: 1fr; } }
+
+    .users { padding: 20px 22px; display: flex; flex-direction: column; gap: 18px; }
+    .sec-head { display: flex; align-items: flex-start; gap: 14px; }
+    .sec-titles { flex: 1; min-width: 0; }
+    .sec-titles h2, .hub-title h2 { margin: 4px 0 0; font-size: 1.125rem; font-weight: 700; color: var(--navy); letter-spacing: -0.01em; }
+    .sec-titles p, .hub-title p { margin: 4px 0 0; font-size: 0.84rem; color: var(--text-secondary); max-width: 640px; }
+
+    .role-strip {
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+      border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+      background: linear-gradient(180deg, #f8fbff, var(--surface));
+    }
+    .role { padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; border-left: 1px solid var(--border); }
+    .role:first-child { border-left: 0; }
+    .role .k { display: inline-flex; align-items: center; gap: 7px; font-size: 0.76rem; font-weight: 600; color: var(--text-secondary); }
+    .role b { font-size: 1.75rem; font-weight: 700; color: var(--navy); line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .role small { font-size: 0.74rem; color: var(--text-muted); line-height: 1.35; }
+    .role.total { position: relative; }
+    .role.total::before { content: ''; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 0 3px 3px 0; background: var(--burgundy); }
+    .role i { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-blue { background: var(--primary-600); }
+    .dot-amber { background: var(--warning); }
+    .dot-green { background: var(--success); }
+    @media (max-width: 720px) {
+      .role-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .role:nth-child(3) { border-left: 0; }
+      .role:nth-child(n+3) { border-top: 1px solid var(--border); }
+      .sec-head { flex-wrap: wrap; }
     }
 
-    /* Colour identities */
-    .tone-blue   { --tone: var(--primary-600); --tone-bg: var(--primary-50);    --tone-line: var(--primary-100); }
-    .tone-amber  { --tone: #b86e00;            --tone-bg: #fdf4e3;              --tone-line: #f6dfb3; }
-    .tone-violet { --tone: #6a4fc9;            --tone-bg: #f3f0fd;              --tone-line: #e0d9fa; }
-    .tone-green  { --tone: #23784a;            --tone-bg: #e9f6ef;              --tone-line: #c9e8d6; }
-
-    .top-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
-      gap: 16px;
-      align-items: stretch;
+    .account { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+    .acc-top {
+      display: flex; align-items: center; gap: 14px; padding: 22px;
+      background:
+        radial-gradient(80% 90% at 100% 0%, rgba(120, 170, 240, 0.28) 0%, transparent 70%),
+        linear-gradient(165deg, #dbe9fb 0%, #eaf2fd 100%);
+      border-bottom: 1px solid var(--border);
     }
-
-    .panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: var(--card-shadow);
+    .acc-avatar {
+      width: 52px; height: 52px; flex-shrink: 0; border-radius: 50%;
+      display: grid; place-items: center;
+      background: var(--navy); color: #fff; font-weight: 600; font-size: 1.05rem; letter-spacing: 0.02em;
+      box-shadow: 0 0 0 3px #fff, 0 6px 14px -6px rgba(19, 37, 75, 0.5);
     }
+    .acc-id { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .acc-id b { font-size: 1rem; font-weight: 700; color: var(--navy); }
+    .acc-id small { font-size: 0.8rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; }
+    .facts { margin: 0; padding: 6px 22px 10px; }
+    .facts div { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.84rem; }
+    .facts div:last-child { border-bottom: 0; }
+    .facts dt { color: var(--text-secondary); }
+    .facts dd { margin: 0; font-weight: 600; color: var(--navy); }
+    .role-pill { display: inline-block; padding: 3px 10px; border-radius: 999px; background: #f6e9eb; color: var(--burgundy); font-size: 0.75rem; font-weight: 600; }
 
-    .panel-head {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      margin-bottom: 18px;
+    /* ---- Sections */
+    .hub-section { margin-top: 8px; display: flex; flex-direction: column; gap: 14px; }
+    .hub-title.with-action { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+
+    .admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+    .admin-tile {
+      display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      text-decoration: none; color: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
     }
+    .admin-tile:hover { border-color: var(--primary-300); box-shadow: 0 8px 20px -12px rgba(30, 70, 140, 0.35); transform: translateY(-1px); }
+    .admin-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .admin-text b { font-size: 0.88rem; font-weight: 600; color: var(--navy); }
+    .admin-text small { font-size: 0.76rem; color: var(--text-muted); }
+    .chev { color: var(--gray-400); font-size: 16px; transition: transform 0.15s, color 0.15s; }
+    .admin-tile:hover .chev { color: var(--burgundy); transform: translateX(2px); }
 
-    .panel-head h2 {
-      margin: 0;
-      font-size: 15.5px;
-      font-weight: 600;
-    }
-
-    .panel-titles {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .panel-titles p {
-      margin: 2px 0 0;
-      font-size: 13.5px;
-      color: var(--text-secondary);
-    }
-
-    .chip {
-      width: 40px;
-      height: 40px;
-      flex-shrink: 0;
-      display: grid;
-      place-items: center;
-      border-radius: 10px;
-      background: var(--tone-bg);
-      color: var(--tone);
-      font-size: 20px;
-    }
-
-    /* ---- Users ---- */
-    .role-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .role-tile {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      padding: 14px 16px;
-      border-radius: 10px;
-      background: var(--tone-bg, var(--gray-50));
-      border: 1px solid var(--tone-line, var(--border));
-    }
-
-    .role-tile.total {
-      background: var(--brand-gradient);
-      border-color: transparent;
-      color: #fff;
-    }
-
-    .role-name {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--tone, var(--text));
-    }
-
-    .role-tile.total .role-name,
-    .role-tile.total .role-count {
-      color: #fff;
-    }
-
-    .role-count {
-      font-variant-numeric: tabular-nums;
-      font-size: 28px;
-      font-weight: 500;
-      line-height: 1;
-      color: var(--text);
-      font-variant-numeric: tabular-nums;
-    }
-
-    .role-desc {
-      font-size: 12px;
-      line-height: 1.4;
-      color: var(--text-secondary);
-    }
-
-    .role-tile.total .role-desc {
-      color: rgba(255, 255, 255, 0.8);
-    }
-
-    /* ---- Account ---- */
-    .account {
-      padding: 0;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .account-banner {
-      height: 64px;
-      background: var(--brand-gradient);
-    }
-
-    .account-body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      padding: 0 20px 14px;
-      margin-top: -32px;
-    }
-
-    .account-avatar {
-      width: 64px;
-      height: 64px;
-      display: grid;
-      place-items: center;
-      border-radius: 50%;
-      border: 4px solid var(--surface);
-      background: var(--primary-600);
-      color: #fff;
-      font-size: 20px;
-      font-weight: 600;
-      text-transform: uppercase;
-      box-shadow: var(--card-shadow);
-    }
-
-    .account-name {
-      margin-top: 10px;
-      font-size: 15.5px;
-      font-weight: 600;
-    }
-
-    .account-email {
-      font-size: 13px;
-      color: var(--text-muted);
-      word-break: break-all;
-    }
-
-    .role-pill {
-      margin-top: 8px;
-      padding: 3px 10px;
-      border-radius: 999px;
-      background: var(--primary-50);
-      color: var(--primary-700);
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    .facts {
-      margin: auto 0 0;
-      padding: 4px 20px 14px;
-      border-top: 1px solid var(--border);
-    }
-
-    .facts > div {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--gray-100);
-      font-size: 13.5px;
-    }
-
-    .facts > div:last-child {
-      border-bottom: 0;
-      padding-bottom: 0;
-    }
-
-    .facts dt {
-      color: var(--text-secondary);
-    }
-
-    .facts dd {
-      margin: 0;
-      font-weight: 500;
-    }
-
-    .facts dd.mono {
-      font-variant-numeric: tabular-nums;
-      font-size: 12.5px;
-    }
-
-    /* ---- Reference data ---- */
-    .module-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .module {
-      display: flex;
-      flex-direction: column;
-      border: 1px solid var(--tone-line);
-      border-radius: 12px;
-      overflow: hidden;
-      background: var(--surface);
-    }
-
-    .module-head {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 14px;
-      background: var(--tone-bg);
-      border-bottom: 1px solid var(--tone-line);
-    }
-
-    .module-icon {
-      width: 38px;
-      height: 38px;
-      flex-shrink: 0;
-      display: grid;
-      place-items: center;
-      border-radius: 10px;
-      background: var(--tone);
-      color: #fff;
-      font-size: 19px;
-    }
-
-    .module-titles {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .module-name {
-      font-size: 14.5px;
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    .module-desc {
-      font-size: 12px;
-      line-height: 1.35;
-      color: var(--text-secondary);
-    }
-
-    .module-count {
-      min-width: 26px;
-      height: 24px;
-      padding: 0 8px;
-      display: grid;
-      place-items: center;
-      border-radius: 999px;
-      background: var(--surface);
-      color: var(--tone);
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    .module-links {
-      display: flex;
-      flex-direction: column;
-      padding: 6px;
-    }
-
+    .module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+    .module { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+    .module-head { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, #f6f9fe, var(--surface)); }
+    .module-titles { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .module-titles b { font-size: 0.95rem; font-weight: 700; color: var(--navy); }
+    .module-titles small { font-size: 0.76rem; color: var(--text-muted); }
+    .module-count { padding: 3px 9px; border-radius: 999px; background: var(--gray-100); color: var(--gray-600); font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
+    .module-links { display: flex; flex-direction: column; padding: 6px; }
     .ref-link {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      height: 36px;
-      padding: 0 10px;
-      border-radius: 8px;
-      font-size: 13.5px;
-      color: var(--text);
-      transition: background-color 0.12s ease, color 0.12s ease;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 9px 12px; border-radius: 8px; text-decoration: none;
+      font-size: 0.86rem; color: var(--gray-800);
     }
-
-    .ref-dot {
-      width: 6px;
-      height: 6px;
-      flex-shrink: 0;
-      border-radius: 50%;
-      background: var(--tone);
-      opacity: 0.55;
-    }
-
-    .ref-label {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .ref-link svg {
-      width: 15px;
-      height: 15px;
-      fill: none;
-      stroke: var(--gray-400);
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
-    .ref-link:hover {
-      background: var(--tone-bg);
-      color: var(--tone);
-    }
-
-    .ref-link:hover .ref-dot {
-      opacity: 1;
-    }
-
-    .ref-link:hover svg {
-      stroke: var(--tone);
-    }
-
-    @media (max-width: 1280px) {
-      .module-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .role-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
-
-    @media (max-width: 900px) {
-      .top-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .panel-head {
-        flex-wrap: wrap;
-      }
-    }
-
-    @media (max-width: 600px) {
-      .module-grid,
-      .role-grid {
-        grid-template-columns: 1fr;
-      }
-    }
+    .ref-link app-icon { color: var(--gray-300); font-size: 15px; transition: color 0.15s, transform 0.15s; }
+    .ref-link:hover { background: #eef3fd; color: var(--navy); }
+    .ref-link:hover app-icon { color: var(--burgundy); transform: translateX(2px); }
   `]
 })
 export class SettingsComponent implements OnInit {
@@ -520,18 +246,18 @@ export class SettingsComponent implements OnInit {
   currentUser: UserInfo | null = null;
   referenceModules: ReferenceModule[] = [];
   roleCounts: RoleCount[] = [
-    { role: 'Superviseur', description: 'Planifie et administre', tone: 'blue', count: 0 },
-    { role: 'Utilisateur', description: 'Technicien, traite les interventions', tone: 'amber', count: 0 },
-    { role: 'Demandeur', description: 'Déclare les pannes', tone: 'green', count: 0 }
+    { role: 'Superviseur', label: 'Superviseurs', description: 'Affectent, valident et administrent', tone: 'blue', count: 0 },
+    { role: 'Utilisateur', label: 'Techniciens', description: 'Réalisent les interventions (rôle Utilisateur)', tone: 'amber', count: 0 },
+    { role: 'Demandeur', label: 'Demandeurs', description: 'Chefs de chaîne, déclarent les pannes', tone: 'green', count: 0 }
   ];
   totalUsers = 0;
   usersLoading = true;
 
   private readonly moduleInfo: Omit<ReferenceModule, 'categories'>[] = [
-    { key: 'equipment', label: 'Équipements', description: 'Criticité, état, familles, marques', icon: 'equipment', tone: 'blue' },
-    { key: 'interventions', label: 'Interventions', description: 'Types, urgences, pannes, lignes', icon: 'interventions', tone: 'amber' },
-    { key: 'resources', label: 'Pièces de rechange', description: 'Familles, constructeurs, criticité', icon: 'resources', tone: 'violet' },
-    { key: 'stock', label: 'Stock', description: 'Entités, statuts, fournisseurs', icon: 'stock', tone: 'green' }
+    { key: 'equipment', label: 'Équipements', description: 'Criticité, état, familles, marques, modèles', icon: 'equipment', tone: 'blue' },
+    { key: 'interventions', label: 'Interventions', description: 'Types, urgences, pannes, chaînes', icon: 'interventions', tone: 'amber' },
+    // The old "Stock" lists were replaced by Magasin > Magasins and Achats > Fournisseurs
+    { key: 'resources', label: 'Magasin', description: 'Familles, constructeurs, criticité des articles', icon: 'stock', tone: 'violet' }
   ];
 
   constructor(

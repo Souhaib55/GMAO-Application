@@ -64,9 +64,9 @@ import { NgFor, NgSwitch, NgSwitchCase } from '@angular/common';
       overflow: hidden;
       display: flex;
       background:
-        radial-gradient(85% 60% at 100% 0%, rgba(120, 170, 240, 0.32) 0%, transparent 65%),
-        radial-gradient(70% 55% at 0% 100%, rgba(150, 190, 245, 0.30) 0%, transparent 70%),
-        linear-gradient(165deg, #dbe9fb 0%, #e6f0fc 50%, #eef5fd 100%);
+        radial-gradient(85% 60% at 100% 0%, rgba(100, 154, 235, 0.44) 0%, transparent 65%),
+        radial-gradient(70% 55% at 0% 100%, rgba(130, 176, 241, 0.42) 0%, transparent 70%),
+        linear-gradient(165deg, #c9ddf8 0%, #d8e6fa 50%, #e2edfb 100%);
       color: #13254b;
       border-right: 1px solid #d3e1f5;
     }

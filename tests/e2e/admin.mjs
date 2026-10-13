@@ -121,20 +121,17 @@ try {
   const REF = 'Panne E2E ' + stamp;
   await check(b, 'Référentiels: ajouter puis supprimer un type de panne', async () => {
     await goto(b, '/settings/references');
-    let r = await click('Intervention', '.module-tab'); await idle(b, 400);
-    r = await ev(b, `(() => { const c = [...document.querySelectorAll('.category-card')].find(e => /panne/i.test(e.innerText)); if (!c) return 'no panne category'; c.click(); return 'ok'; })()`);
-    if (r !== 'ok') return r;
+    let r = await click('Interventions', '.gm-tabs button'); if (r !== 'ok') return 'tab: ' + r;
+    r = await click('Types de Pannes', '.nav-item'); if (r !== 'ok') return 'list: ' + r;
     await idle(b, 600);
-    r = await ev(b, `__t.clickSel('.btn-new')`); if (r !== 'ok') return 'add button: ' + r;
-    await idle(b, 400);
+    r = await click('Ajouter', '.ref-panel button'); if (r !== 'ok') return 'add: ' + r;
     await fill('[formcontrolname=name]', REF);
-    r = await ev(b, `__t.clickSel('.modal-overlay button[type=submit], form button[type=submit]')`); await idle(b, 1000);
+    r = await ev(b, `__t.clickSel('button[form=refForm]')`); await idle(b, 1000);
     if (!(await text()).includes(REF)) return 'not added';
-    r = await rowAction(REF, '[title=Supprimer]');
-    if (r !== 'ok') r = await ev(b, `(() => { const e = [...document.querySelectorAll('*')].filter(x => x.children.length < 8 && x.innerText && x.innerText.includes(${JSON.stringify(REF)})).pop(); const c = e && e.closest('tr, li, .item, .row, .card'); const btn = c && c.querySelector('[title=Supprimer]'); if (!btn) return 'no delete'; btn.click(); return 'ok'; })()`);
+    r = await ev(b, `(() => { const li = [...document.querySelectorAll('.item-list li')].find(x => x.innerText.includes(${JSON.stringify(REF)})); if (!li) return 'row'; li.querySelector('button[title=Supprimer]').click(); return 'ok'; })()`);
     if (r !== 'ok') return r;
     await idle(b, 400);
-    await ev(b, `__t.clickSel('.modal-overlay .btn-danger')`); await idle(b, 1000);
+    await ev(b, `__t.clickSel('.gm-dialog .btn-danger')`); await idle(b, 1000);
     return !(await text()).includes(REF) || 'not deleted';
   });
 

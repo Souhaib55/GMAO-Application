@@ -171,6 +171,9 @@
 }
 
 .nav-group-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   padding: 18px 12px 6px;
   font-size: 11px;
   font-weight: 600;
@@ -178,6 +181,8 @@
   letter-spacing: 0.08em;
   color: var(--gray-400);
   white-space: nowrap;
+
+  &::before { content: ''; width: 10px; height: 2px; border-radius: 2px; background: var(--burgundy); opacity: 0.75; flex-shrink: 0; }
 }
 
 .nav-item {
@@ -211,6 +216,8 @@
     background: #e2e9fd;
     color: var(--primary-800);
     font-weight: 600;
+
+    &::before { content: ''; position: absolute; left: 0; top: 9px; bottom: 9px; width: 3px; border-radius: 0 3px 3px 0; background: var(--burgundy); }
 
     .nav-icon {
       color: var(--primary-700);
