@@ -10,7 +10,7 @@
       <button *ngFor="let y of years" [class.on]="annee === y" (click)="annee = y; load()">{{ y }}</button>
     </div>
     <span class="spacer"></span>
-    <span class="muted small" *ngIf="vue">{{ vue.moisEcoules }} mois écoulé{{ vue.moisEcoules > 1 ? 's' : '' }} sur 12</span>
+    <span class="muted small" *ngIf="vue">{{ anneeEcoulee }}</span>
   </div>
 
   <div class="gm-error-box" *ngIf="error"><app-icon name="alert"></app-icon>{{ error }}</div>

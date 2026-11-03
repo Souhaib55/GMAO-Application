@@ -224,3 +224,15 @@
   box-shadow: var(--shadow-lg);
   &.error { background: var(--error-dark); }
 }
+
+/* Quick durations and touch-size checklist (tablet, V3) */
+.quick { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.quick button {
+  height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface);
+  font: inherit; font-size: 0.8125rem; color: var(--text-secondary); cursor: pointer;
+}
+.quick button.on { background: var(--primary-50); border-color: var(--primary-300); color: var(--primary-700); font-weight: 600; }
+@media (pointer: coarse) {
+  .quick button { height: 44px; padding: 0 16px; font-size: 0.9375rem; }
+  .check { min-width: 44px; min-height: 44px; }
+}
