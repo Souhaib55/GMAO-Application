@@ -352,7 +352,9 @@ namespace API.Services
                 chefs[c.Chaine] = await EnsureUserAsync(c.Prenom, c.Nom, c.Email, Roles.Demandeur, roleIds[Roles.Demandeur]);
             chefs["Finition"] = chefs["Repassage et emballage"];
 
-            var superviseur = await _db.Users.Where(u => u.IsActif && u.IDRole == roleIds[Roles.Superviseur]).OrderBy(u => u.ID).FirstAsync();
+            // A fresh database has no supervisor yet: the demo then brings its own (same account as database/demo-donnees-simotex.sql)
+            var superviseur = await _db.Users.Where(u => u.IsActif && u.IDRole == roleIds[Roles.Superviseur]).OrderBy(u => u.ID).FirstOrDefaultAsync()
+                ?? await EnsureUserAsync("Responsable", "Maintenance", "superviseur@simotex.demo", Roles.Superviseur, roleIds[Roles.Superviseur]);
             await _db.SaveChangesAsync();
 
             // --- Machines -------------------------------------------------------
