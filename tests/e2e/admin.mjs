@@ -1,10 +1,10 @@
 // Équipements CRUD + fiche, utilisateurs (création -> connexion -> suppression libère ses OT),
 // référentiels, budgets, techniciens, explorateur, notifications, droits du demandeur.
-import { launch, login, goto, ev, check, shot, results, idle, sleep } from './cdp.mjs';
+import { launch, login, goto, ev, check, shot, results, idle, sleep, API } from './cdp.mjs';
 const PW = 'Simotex!2026';
 const SUP = 'superviseur@simotex.demo', TECH = 'm.bensalah@simotex.demo', DEM = 's.haddad@simotex.demo';
 const stamp = new Date().toISOString().slice(11, 19).replace(/:/g, '');
-const api = (path, method = 'GET', body) => `fetch('http://localhost:5000/api${path}', {method:'${method}', credentials:'include', headers:{'Content-Type':'application/json'}${body ? `, body: JSON.stringify(${JSON.stringify(body)})` : ''}}).then(async r => { const t = await r.text(); try { return t ? JSON.parse(t) : {status: r.status}; } catch { return {status: r.status, text: t.slice(0,200)}; } })`;
+const api = (path, method = 'GET', body) => `fetch('${API}${path}', {method:'${method}', credentials:'include', headers:{'Content-Type':'application/json'}${body ? `, body: JSON.stringify(${JSON.stringify(body)})` : ''}}).then(async r => { const t = await r.text(); try { return t ? JSON.parse(t) : {status: r.status}; } catch { return {status: r.status, text: t.slice(0,200)}; } })`;
 const b = await launch();
 async function click(text, sel) {
   let r;

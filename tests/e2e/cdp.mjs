@@ -1,10 +1,29 @@
-// Minimal CDP driver over headless Edge for end-to-end UI checks.
+// Minimal CDP driver over a headless Chromium-family browser for end-to-end UI checks.
+// Microsoft Edge on Windows by default; Chrome or Chromium elsewhere. Override with
+// GMAO_BROWSER=<path to the browser executable>, and the app address with GMAO_APP.
 import { spawn } from 'child_process';
-import { mkdirSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
-export const APP = 'http://localhost:4200';
+export const APP = (process.env.GMAO_APP || 'http://localhost:4200').replace(/\/$/, '');
+// API called directly by some checks (same origin as APP when the API serves the client)
+export const API = (process.env.GMAO_API || 'http://localhost:5000/api').replace(/\/$/, '');
+
+function browserPath() {
+  const candidates = [
+    process.env.GMAO_BROWSER,
+    'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
+    'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
+    'C:/Program Files/Google/Chrome/Application/chrome.exe',
+    '/opt/pw-browsers/chromium',
+    '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/google-chrome', '/usr/bin/microsoft-edge',
+    '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+  ].filter(Boolean);
+  for (const c of candidates) if (existsSync(c)) return c;
+  throw new Error('Aucun navigateur trouvé : renseignez GMAO_BROWSER avec le chemin de Edge, Chrome ou Chromium.');
+}
 export const sleep = ms => new Promise(r => setTimeout(r, ms));
 // Screenshots of failed checks (and the headless browser profile) go next to the scripts
 const OUT = join(dirname(fileURLToPath(import.meta.url)), 'captures');
@@ -35,15 +54,16 @@ window.__t = {
 
 export async function launch({ width = 1440, height = 900 } = {}) {
   const port = 9300 + Math.floor(Math.random() * 400);
-  const edge = spawn('C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', [
-    '--headless=new', '--disable-gpu', '--hide-scrollbars', '--no-first-run', `--remote-debugging-port=${port}`,
+  const extra = process.platform === 'win32' ? [] : ['--no-sandbox', '--disable-dev-shm-usage'];
+  const edge = spawn(browserPath(), [
+    '--headless=new', '--disable-gpu', '--hide-scrollbars', '--no-first-run', ...extra, `--remote-debugging-port=${port}`,
     `--user-data-dir=${join(OUT, '.edge-' + port)}`, `--window-size=${width},${height}`, 'about:blank'
   ], { stdio: 'ignore' });
   let target;
   for (let i = 0; i < 150 && !target; i++) {
     try { target = await (await fetch(`http://127.0.0.1:${port}/json/new?about:blank`, { method: 'PUT' })).json(); } catch { await sleep(200); }
   }
-  if (!target) throw new Error('Edge did not start');
+  if (!target) throw new Error('The browser did not start');
   const ws = new WebSocket(target.webSocketDebuggerUrl);
   await new Promise(r => ws.onopen = r);
   let seq = 0; const pending = new Map();
