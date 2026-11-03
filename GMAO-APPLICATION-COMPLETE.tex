@@ -1,0 +1,2101 @@
+%==============================================================================
+% GMAO Application - Documentation Technique Complète
+% Guide pour la Compréhension de l'Architecture et du Code
+% Date: 31 Janvier 2026
+%==============================================================================
+
+\documentclass[12pt,a4paper]{article}
+
+%------------------------------------------------------------------------------
+% PACKAGES
+%------------------------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{tcolorbox}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{colortbl}
+\usepackage{hyperref}
+\usepackage{fontawesome5}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{multicol}
+
+%------------------------------------------------------------------------------
+% CONFIGURATION DE LA PAGE
+%------------------------------------------------------------------------------
+\geometry{
+    left=2cm,
+    right=2cm,
+    top=2.5cm,
+    bottom=2.5cm
+}
+
+%------------------------------------------------------------------------------
+% COULEURS PERSONNALISÉES
+%------------------------------------------------------------------------------
+% Couleurs principales
+\definecolor{primaryblue}{RGB}{41, 98, 255}
+\definecolor{secondarygreen}{RGB}{46, 204, 113}
+\definecolor{accentorange}{RGB}{243, 156, 18}
+\definecolor{warningred}{RGB}{231, 76, 60}
+\definecolor{darkgray}{RGB}{52, 73, 94}
+\definecolor{lightgray}{RGB}{236, 240, 241}
+\definecolor{codebg}{RGB}{45, 45, 45}
+\definecolor{codegreen}{RGB}{152, 195, 121}
+\definecolor{codepurple}{RGB}{198, 120, 221}
+\definecolor{codeyellow}{RGB}{229, 192, 123}
+\definecolor{codeblue}{RGB}{97, 175, 239}
+
+% Couleurs spécifiques aux technologies
+\definecolor{dotnetpurple}{RGB}{81, 43, 212}
+\definecolor{angularred}{RGB}{221, 0, 49}
+\definecolor{pythonyellow}{RGB}{255, 212, 59}
+\definecolor{dockerblue}{RGB}{33, 150, 243}
+
+% Couleurs pour les boîtes
+\definecolor{infobox}{RGB}{52, 152, 219}
+\definecolor{successbox}{RGB}{39, 174, 96}
+\definecolor{warningbox}{RGB}{241, 196, 15}
+\definecolor{dangerbox}{RGB}{192, 57, 43}
+
+%------------------------------------------------------------------------------
+% CONFIGURATION DES LIENS
+%------------------------------------------------------------------------------
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primaryblue,
+    urlcolor=primaryblue,
+    citecolor=primaryblue
+}
+
+%------------------------------------------------------------------------------
+% STYLE DES TITRES
+%------------------------------------------------------------------------------
+\titleformat{\section}
+    {\color{primaryblue}\LARGE\bfseries}
+    {\thesection}{1em}{}[\titlerule]
+
+\titleformat{\subsection}
+    {\color{darkgray}\Large\bfseries}
+    {\thesubsection}{1em}{}
+
+\titleformat{\subsubsection}
+    {\color{darkgray}\large\bfseries}
+    {\thesubsubsection}{1em}{}
+
+%------------------------------------------------------------------------------
+% BOÎTES COLORÉES (tcolorbox)
+%------------------------------------------------------------------------------
+\tcbuselibrary{skins,breakable}
+
+% Boîte Info
+\newtcolorbox{infobox}[1][]{
+    enhanced,
+    colback=infobox!10,
+    colframe=infobox,
+    fonttitle=\bfseries,
+    title={\faInfoCircle\ Information},
+    #1
+}
+
+% Boîte Succès
+\newtcolorbox{successbox}[1][]{
+    enhanced,
+    colback=successbox!10,
+    colframe=successbox,
+    fonttitle=\bfseries,
+    title={\faCheckCircle\ Point Clé},
+    #1
+}
+
+% Boîte Avertissement
+\newtcolorbox{warningbox}[1][]{
+    enhanced,
+    colback=warningbox!10,
+    colframe=warningbox,
+    fonttitle=\bfseries,
+    title={\faExclamationTriangle\ Important},
+    #1
+}
+
+% Boîte Définition
+\newtcolorbox{defbox}[2][]{
+    enhanced,
+    colback=lightgray,
+    colframe=primaryblue,
+    fonttitle=\bfseries,
+    title={\faBook\ #2},
+    #1
+}
+
+% Boîte Code/Technique
+\newtcolorbox{techbox}[2][]{
+    enhanced,
+    colback=codebg,
+    colframe=darkgray,
+    fonttitle=\bfseries\color{white},
+    coltitle=white,
+    title={\faCode\ #2},
+    #1
+}
+
+% Boîte .NET
+\newtcolorbox{dotnetbox}[1][]{
+    enhanced,
+    colback=dotnetpurple!10,
+    colframe=dotnetpurple,
+    fonttitle=\bfseries,
+    title={\faServer\ .NET Core},
+    #1
+}
+
+% Boîte Angular
+\newtcolorbox{angularbox}[1][]{
+    enhanced,
+    colback=angularred!10,
+    colframe=angularred,
+    fonttitle=\bfseries,
+    title={\faAngular\ Angular},
+    #1
+}
+
+% Boîte Python
+\newtcolorbox{pythonbox}[1][]{
+    enhanced,
+    colback=pythonyellow!15,
+    colframe=accentorange,
+    fonttitle=\bfseries,
+    title={\faPython\ Python FastAPI},
+    #1
+}
+
+%------------------------------------------------------------------------------
+% CONFIGURATION DES LISTINGS (CODE)
+%------------------------------------------------------------------------------
+\lstset{
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\small\color{white},
+    keywordstyle=\color{codepurple}\bfseries,
+    stringstyle=\color{codegreen},
+    commentstyle=\color{gray}\itshape,
+    numberstyle=\tiny\color{gray},
+    numbers=left,
+    numbersep=8pt,
+    breaklines=true,
+    breakatwhitespace=true,
+    tabsize=4,
+    showstringspaces=false,
+    frame=single,
+    rulecolor=\color{darkgray},
+    captionpos=b,
+    xleftmargin=15pt,
+    framexleftmargin=15pt
+}
+
+\lstdefinelanguage{CSharp}{
+    keywords={public, private, protected, class, interface, namespace, using, async, await, return, var, new, if, else, for, foreach, while, try, catch, finally, throw, static, readonly, const, override, virtual, abstract, sealed, partial, get, set, int, string, bool, void, Task, ActionResult, IActionResult, HttpGet, HttpPost, HttpPut, HttpDelete, Route, ApiController, Authorize},
+    keywordstyle=\color{codeblue}\bfseries,
+    sensitive=true,
+    morestring=[b]",
+    morecomment=[l]{//},
+    morecomment=[s]{/*}{*/},
+}
+
+\lstdefinelanguage{TypeScript}{
+    keywords={import, export, from, class, interface, extends, implements, constructor, public, private, protected, readonly, async, await, return, const, let, var, if, else, for, while, function, new, this, true, false, null, undefined, Observable, BehaviorSubject, Component, Injectable, OnInit, subscribe, pipe, tap, map, catchError},
+    keywordstyle=\color{codeblue}\bfseries,
+    sensitive=true,
+    morestring=[b]",
+    morestring=[b]',
+    morestring=[b]`,
+    morecomment=[l]{//},
+    morecomment=[s]{/*}{*/},
+}
+
+\lstdefinelanguage{Python}{
+    keywords={def, return, if, else, elif, for, while, in, import, from, as, class, try, except, with, True, False, None, and, or, not, async, await, self},
+    keywordstyle=\color{codepurple}\bfseries,
+    sensitive=true,
+    morestring=[b]",
+    morestring=[b]',
+    morecomment=[l]{\#},
+}
+
+\lstdefinelanguage{SQL}{
+    keywords={SELECT, FROM, WHERE, JOIN, LEFT, RIGHT, INNER, ON, AND, OR, NOT, IN, AS, TOP, ORDER, BY, GROUP, HAVING, COUNT, SUM, AVG, MAX, MIN, INSERT, UPDATE, DELETE, CREATE, TABLE},
+    keywordstyle=\color{codeblue}\bfseries,
+    sensitive=false,
+    morestring=[b]',
+    morecomment=[l]{--},
+}
+
+%------------------------------------------------------------------------------
+% EN-TÊTE ET PIED DE PAGE
+%------------------------------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{darkgray}{\small GMAO Application - Documentation Complète}}
+\fancyhead[R]{\textcolor{darkgray}{\small \thepage}}
+\fancyfoot[C]{\textcolor{gray}{\small Documentation Technique - Janvier 2026}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+%------------------------------------------------------------------------------
+% TikZ LIBRARIES
+%------------------------------------------------------------------------------
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, shadows, fit, backgrounds, decorations.pathreplacing}
+
+%==============================================================================
+% DÉBUT DU DOCUMENT
+%==============================================================================
+\begin{document}
+
+%------------------------------------------------------------------------------
+% PAGE DE TITRE
+%------------------------------------------------------------------------------
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+    
+    % Logo/Icône
+    {\Huge\color{primaryblue}\faCogs}
+    
+    \vspace{0.8cm}
+    
+    {\Huge\bfseries\color{primaryblue} Application GMAO}
+    
+    \vspace{0.3cm}
+    
+    {\LARGE\color{darkgray} Gestion de Maintenance Assistée par Ordinateur}
+    
+    \vspace{1.5cm}
+    
+    \begin{tikzpicture}
+        \node[draw=primaryblue, fill=primaryblue!10, rounded corners=10pt, 
+              minimum width=13cm, minimum height=4cm, align=center] {
+            {\Large\bfseries Documentation Technique Complète}\\[0.4cm]
+            {\large Architecture $\bullet$ Technologies $\bullet$ Code Source}\\[0.3cm]
+            {\large Workflow $\bullet$ Modules $\bullet$ DevOps}
+        };
+    \end{tikzpicture}
+    
+    \vspace{1.5cm}
+    
+    % Technologies utilisées
+    \begin{tikzpicture}
+        \node[draw=dotnetpurple, fill=dotnetpurple!20, rounded corners=5pt, minimum width=2.5cm, minimum height=1cm] at (0,0) {\textbf{.NET 9}};
+        \node[draw=angularred, fill=angularred!20, rounded corners=5pt, minimum width=2.5cm, minimum height=1cm] at (3.5,0) {\textbf{Angular 17}};
+        \node[draw=accentorange, fill=pythonyellow!30, rounded corners=5pt, minimum width=2.5cm, minimum height=1cm] at (7,0) {\textbf{FastAPI}};
+        \node[draw=darkgray, fill=darkgray!20, rounded corners=5pt, minimum width=2.5cm, minimum height=1cm] at (10.5,0) {\textbf{SQL Server}};
+    \end{tikzpicture}
+    
+    \vspace{1.5cm}
+    
+    \begin{tabular}{ll}
+        \faCalendar & \textbf{Date :} 31 Janvier 2026 \\[0.3cm]
+        \faCode & \textbf{Version :} 1.0 \\[0.3cm]
+        \faUser & \textbf{Auteur :} Stagiaire GMAO \\[0.3cm]
+        \faBuilding & \textbf{Projet :} Stage de Fin d'Études
+    \end{tabular}
+    
+    \vfill
+    
+    {\large\color{gray} Documentation pour la Soutenance de Stage}
+    
+\end{titlepage}
+
+%------------------------------------------------------------------------------
+% TABLE DES MATIÈRES
+%------------------------------------------------------------------------------
+\tableofcontents
+\newpage
+
+%==============================================================================
+% SECTION 1 : VUE D'ENSEMBLE
+%==============================================================================
+\section{\faEye\ Vue d'Ensemble de l'Application}
+
+\subsection{Qu'est-ce que le GMAO ?}
+
+\begin{defbox}{GMAO - Gestion de Maintenance Assistée par Ordinateur}
+Le \textbf{GMAO} est un système informatique permettant de gérer l'ensemble des activités de maintenance d'une entreprise :
+\begin{itemize}
+    \item \textbf{Gestion des équipements} : inventaire, caractéristiques, historique
+    \item \textbf{Gestion des interventions} : demandes, planification, suivi
+    \item \textbf{Gestion des stocks} : pièces de rechange, fournisseurs
+    \item \textbf{Gestion des ressources} : techniciens, compétences
+    \item \textbf{Assistant IA} : chatbot pour interroger les données
+\end{itemize}
+\end{defbox}
+
+\subsection{Objectifs du Projet}
+
+\begin{successbox}[title={\faCheckCircle\ Objectifs Principaux}]
+\begin{enumerate}
+    \item Créer une application web moderne pour la gestion de maintenance
+    \item Implémenter un système d'authentification sécurisé avec rôles
+    \item Développer un chatbot IA capable d'interroger la base de données
+    \item Préparer l'infrastructure pour un déploiement DevOps
+\end{enumerate}
+\end{successbox}
+
+\subsection{Architecture Globale}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    scale=0.8,
+    transform shape,
+    node distance=1cm,
+    component/.style={rectangle, rounded corners=8pt, draw=#1, fill=#1!20,
+                      minimum width=9cm, minimum height=1.3cm, align=center,
+                      font=\small, drop shadow},
+    arrow/.style={-{Stealth[length=3mm]}, thick, color=darkgray},
+    nodelabel/.style={font=\footnotesize, color=gray}
+]
+
+% User
+\node[rectangle, rounded corners=5pt, draw=primaryblue, fill=primaryblue!30,
+      minimum width=3cm, minimum height=0.8cm] (user) at (0, 6) {
+    \faUser\ \textbf{Utilisateur}
+};
+
+% Frontend
+\node[component=angularred] (frontend) at (0, 4) {
+    \textcolor{angularred}{\faAngular\ \textbf{FRONTEND - Angular 17}}\\
+    SPA (Single Page Application) - Port 4200
+};
+
+% API
+\node[component=dotnetpurple] (api) at (0, 2) {
+    \textcolor{dotnetpurple}{\faServer\ \textbf{API - .NET Core 9}}\\
+    RESTful API + Cookie Auth - Port 5000
+};
+
+% Python Service
+\node[component=accentorange] (python) at (5, 0) {
+    \textcolor{accentorange}{\faPython\ \textbf{CHATBOT}}\\
+    FastAPI - Port 5002
+};
+
+% Database
+\node[component=darkgray] (db) at (0, 0) {
+    \textcolor{darkgray}{\faDatabase\ \textbf{SQL SERVER}}\\
+    Base de données GMAO
+};
+
+% LLM
+\node[rectangle, rounded corners=5pt, draw=codepurple, fill=codepurple!20,
+      minimum width=3cm, minimum height=1cm, align=center] (llm) at (9, 0) {
+    \faBrain\ \textbf{LLM} \\ OpenRouter
+};
+
+% Arrows
+\draw[arrow, <->] (user) -- (frontend);
+\draw[arrow, <->] (frontend) -- node[right, nodelabel] {HTTP/JSON} (api);
+\draw[arrow, <->] (api) -- node[left, nodelabel] {EF Core} (db);
+\draw[arrow, <->] (api) -- node[above, nodelabel] {HTTP} (python);
+\draw[arrow, <->] (python) -- node[above, nodelabel] {PyODBC} (db);
+\draw[arrow, <->] (python) -- node[above, nodelabel] {API} (llm);
+
+\end{tikzpicture}
+\caption{Architecture Multi-Tiers de l'Application GMAO}
+\end{figure}
+
+\newpage
+
+%==============================================================================
+% SECTION 2 : TECHNOLOGIES & CONCEPTS
+%==============================================================================
+\section{\faTools\ Technologies et Concepts Clés}
+
+\subsection{Backend : .NET Core 9}
+
+\begin{dotnetbox}
+\textbf{.NET Core} est un framework open-source de Microsoft pour développer des applications web modernes.
+
+\begin{itemize}
+    \item \textbf{Cross-platform} : Fonctionne sur Windows, Linux, macOS
+    \item \textbf{Performance} : Très rapide grâce à la compilation JIT
+    \item \textbf{Écosystème riche} : NuGet packages, Entity Framework
+\end{itemize}
+\end{dotnetbox}
+
+\subsubsection{Entity Framework Core (ORM)}
+
+\begin{defbox}{ORM - Object-Relational Mapping}
+\textbf{Entity Framework Core} est un ORM qui permet de manipuler la base de données avec des objets C\# au lieu d'écrire du SQL brut.
+
+\textbf{Avantages :}
+\begin{itemize}
+    \item Code plus lisible et maintenable
+    \item Protection contre les injections SQL
+    \item Migrations automatiques de la base de données
+\end{itemize}
+\end{defbox}
+
+\begin{lstlisting}[language=CSharp, caption=Exemple Entity Framework - Récupération des interventions]
+// Sans EF Core (SQL brut) - DANGEREUX et verbeux
+string sql = "SELECT * FROM DemandeInterventions WHERE IsActif = 1";
+
+// Avec EF Core (LINQ) - SECURISE et lisible
+var interventions = await _context.DemandeInterventions
+    .Where(d => d.IsActif)           // Filtre: WHERE IsActif = 1
+    .Include(d => d.Status)          // JOIN avec table Status
+    .Include(d => d.Demandeur)       // JOIN avec table Users
+    .ToListAsync();                  // Execute et retourne List<>
+\end{lstlisting}
+
+\begin{infobox}[title={\faLightbulb\ Explication Ligne par Ligne}]
+\begin{itemize}
+    \item \texttt{\_context} : Instance du DbContext injectée, représente la connexion à la DB
+    \item \texttt{.Where(d => d.IsActif)} : Expression Lambda - \texttt{d} est chaque élément, \texttt{=>} signifie "tel que"
+    \item \texttt{.Include()} : \textbf{Eager Loading} - charge les relations en une seule requête (évite le problème N+1)
+    \item \texttt{await ... ToListAsync()} : Exécution asynchrone - ne bloque pas le thread pendant la requête DB
+\end{itemize}
+\end{infobox}
+
+\subsubsection{ASP.NET Identity (Authentification)}
+
+\begin{defbox}{Identity - Système d'Authentification}
+\textbf{ASP.NET Identity} gère :
+\begin{itemize}
+    \item La création et gestion des utilisateurs
+    \item Le hashage sécurisé des mots de passe
+    \item La gestion des rôles (Superviseur, Demandeur, Utilisateur)
+    \item Les tokens de réinitialisation de mot de passe
+\end{itemize}
+\end{defbox}
+
+\subsubsection{Cookie Authentication vs JWT}
+
+\begin{warningbox}[title={\faKey\ Authentification par Cookie (Notre Choix)}]
+Notre application utilise l'authentification par \textbf{Cookie} plutôt que JWT :
+
+\textbf{Avantages des Cookies :}
+\begin{itemize}
+    \item Gérés automatiquement par le navigateur
+    \item Plus sécurisés (HttpOnly, Secure flags)
+    \item Expiration automatique avec sliding expiration
+    \item Pas besoin de stocker le token côté client
+\end{itemize}
+
+\textbf{Configuration :}
+\begin{itemize}
+    \item \texttt{HttpOnly = true} : Cookie inaccessible par JavaScript
+    \item \texttt{Secure = true} : Cookie envoyé uniquement en HTTPS
+    \item \texttt{SameSite = None} : Pour les requêtes cross-origin
+\end{itemize}
+\end{warningbox}
+
+\begin{lstlisting}[language=CSharp, caption=Configuration Cookie Authentication]
+builder.Services.ConfigureApplicationCookie(options => 
+{
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.HttpOnly = true;
+    options.ExpireTimeSpan = TimeSpan.FromDays(7);
+    options.SlidingExpiration = true;
+});
+\end{lstlisting}
+
+\begin{infobox}[title={\faLightbulb\ Explication de Chaque Option}]
+\begin{itemize}
+    \item \texttt{SecurePolicy.Always} : Cookie transmis \textbf{uniquement en HTTPS} - empêche l'interception sur HTTP non sécurisé
+    \item \texttt{SameSite.None} : Permet l'envoi du cookie dans les requêtes \textbf{cross-origin} (Angular sur port 4200 → API sur port 5000)
+    \item \texttt{HttpOnly = true} : Cookie \textbf{inaccessible via JavaScript} (\texttt{document.cookie}) - protection contre les attaques XSS
+    \item \texttt{ExpireTimeSpan} : Durée de vie du cookie (7 jours) - après, l'utilisateur doit se reconnecter
+    \item \texttt{SlidingExpiration = true} : Chaque requête \textbf{renouvelle} l'expiration - l'utilisateur actif reste connecté
+\end{itemize}
+\end{infobox}
+
+\newpage
+
+\subsection{Frontend : Angular 17+}
+
+\begin{angularbox}
+\textbf{Angular} est un framework TypeScript pour créer des SPA (Single Page Applications).
+
+\textbf{Caractéristiques clés :}
+\begin{itemize}
+    \item \textbf{Component-based} : Application divisée en composants réutilisables
+    \item \textbf{TypeScript} : JavaScript avec typage statique
+    \item \textbf{Reactive} : Programmation réactive avec RxJS
+    \item \textbf{Standalone Components} : Nouvelle syntaxe Angular 17+
+\end{itemize}
+\end{angularbox}
+
+\subsubsection{Concepts Angular Essentiels}
+
+\begin{defbox}{Observable (RxJS)}
+Un \textbf{Observable} représente un flux de données asynchrones. Contrairement à une Promise qui retourne une seule valeur, un Observable peut émettre plusieurs valeurs dans le temps.
+
+\begin{lstlisting}[language=TypeScript]
+// Promise : une seule valeur
+fetch('/api/data').then(data => console.log(data));
+
+// Observable : flux de valeurs
+this.http.get('/api/data').subscribe(data => {
+    console.log(data); // Peut etre appele plusieurs fois
+});
+\end{lstlisting}
+\end{defbox}
+
+\begin{defbox}{BehaviorSubject}
+Un \textbf{BehaviorSubject} est un type spécial d'Observable qui :
+\begin{itemize}
+    \item Garde en mémoire la dernière valeur émise
+    \item Émet immédiatement cette valeur aux nouveaux abonnés
+    \item Peut être mis à jour avec \texttt{.next(value)}
+\end{itemize}
+
+\begin{lstlisting}[language=TypeScript]
+// Declaration avec valeur initiale
+private currentUserSubject = new BehaviorSubject<User | null>(null);
+public currentUser$ = this.currentUserSubject.asObservable();
+
+// Mise a jour
+this.currentUserSubject.next(newUser);
+
+// Lecture de la valeur actuelle
+const user = this.currentUserSubject.value;
+\end{lstlisting}
+\end{defbox}
+
+\begin{defbox}{Interceptor HTTP}
+Un \textbf{Interceptor} est un middleware qui intercepte toutes les requêtes HTTP sortantes et/ou les réponses entrantes.
+
+\textbf{Utilisations :}
+\begin{itemize}
+    \item Ajouter automatiquement les credentials (cookies)
+    \item Gérer les erreurs 401 (redirection vers login)
+    \item Ajouter des headers communs
+    \item Logging des requêtes
+\end{itemize}
+\end{defbox}
+
+\begin{lstlisting}[language=TypeScript, caption=Auth Interceptor - Gestion automatique des cookies]
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  // Verifier si la requete va vers notre API
+  if (req.url.includes(environment.apiUrl)) {
+    // Cloner la requete avec credentials
+    req = req.clone({
+      withCredentials: true
+    });
+  }
+
+  // Passer au prochain handler et gerer les erreurs
+  return next(req).pipe(
+    catchError((error) => {
+      if (error.status === 401) {
+        const router = inject(Router);
+        router.navigate(['/login']);
+      }
+      return throwError(() => error);
+    })
+  );
+};
+\end{lstlisting}
+
+\begin{infobox}[title={\faLightbulb\ Explication Détaillée de l'Interceptor}]
+\textbf{Ligne 1 - Signature :}
+\begin{itemize}
+    \item \texttt{HttpInterceptorFn} : Type fonction d'interceptor (Angular 17+ standalone)
+    \item \texttt{req} : La requête HTTP sortante (objet immuable)
+    \item \texttt{next} : Fonction pour passer au handler suivant
+\end{itemize}
+
+\textbf{Ligne 3-7 - Modification de la requête :}
+\begin{itemize}
+    \item \texttt{req.url.includes()} : Vérifie si l'URL contient notre API
+    \item \texttt{req.clone(\{...\})} : Crée une \textbf{copie} avec modifications (requête immuable)
+    \item \texttt{withCredentials: true} : Inclut les cookies dans la requête cross-origin
+\end{itemize}
+
+\textbf{Ligne 10-17 - Pipeline RxJS :}
+\begin{itemize}
+    \item \texttt{next(req)} : Envoie la requête, retourne un Observable
+    \item \texttt{.pipe()} : Chaîne d'opérateurs RxJS
+    \item \texttt{catchError()} : Intercepte les erreurs HTTP
+    \item \texttt{inject(Router)} : Injection de dépendance dans une fonction
+    \item \texttt{throwError(() => error)} : Propage l'erreur aux autres handlers
+\end{itemize}
+\end{infobox}
+
+\begin{defbox}{Data Binding (Liaison de Données)}
+Angular offre plusieurs types de data binding :
+
+\begin{itemize}
+    \item \textbf{Interpolation} \texttt{\{\{value\}\}} : Affiche une valeur dans le template
+    \item \textbf{Property Binding} \texttt{[property]="value"} : Lie une propriété HTML
+    \item \textbf{Event Binding} \texttt{(event)="handler()"} : Écoute un événement
+    \item \textbf{Two-Way Binding} \texttt{[(ngModel)]="value"} : Liaison bidirectionnelle
+\end{itemize}
+
+\begin{lstlisting}[language=TypeScript]
+<!-- Interpolation -->
+<p>Bienvenue, {{user.name}}</p>
+
+<!-- Property Binding -->
+<button [disabled]="isLoading">Envoyer</button>
+
+<!-- Event Binding -->
+<button (click)="sendMessage()">Envoyer</button>
+
+<!-- Two-Way Binding -->
+<input [(ngModel)]="searchTerm" />
+\end{lstlisting}
+\end{defbox}
+
+\newpage
+
+\subsection{Chatbot : Python FastAPI}
+
+\begin{pythonbox}
+\textbf{FastAPI} est un framework Python moderne pour créer des APIs REST.
+
+\textbf{Caractéristiques :}
+\begin{itemize}
+    \item \textbf{Très rapide} : Basé sur Starlette et Pydantic
+    \item \textbf{Documentation auto} : Swagger UI automatique
+    \item \textbf{Validation} : Validation automatique avec Pydantic
+    \item \textbf{Async} : Support natif de l'asynchrone
+\end{itemize}
+\end{pythonbox}
+
+\subsubsection{Pydantic (Validation)}
+
+\begin{defbox}{Pydantic - Validation des Données}
+\textbf{Pydantic} valide automatiquement les données entrantes et sortantes.
+
+\begin{lstlisting}[language=Python]
+from pydantic import BaseModel
+from typing import Optional, List, Dict
+
+class ChatRequest(BaseModel):
+    query: str  # Requis
+    conversation_history: Optional[List[Dict[str, str]]] = None
+
+class ChatResponse(BaseModel):
+    response: str
+    metadata: Optional[Dict[str, Any]] = None
+    suggestions: Optional[List[str]] = None
+\end{lstlisting}
+\end{defbox}
+
+\newpage
+
+%==============================================================================
+% SECTION 3 : MODULE INTERVENTIONS (DÉTAILLÉ)
+%==============================================================================
+\section{\faWrench\ Module Interventions - Étude Détaillée}
+
+\subsection{Vue d'Ensemble du Module}
+
+Le module \textbf{Interventions} est le cœur de l'application GMAO. Il permet de gérer tout le cycle de vie d'une demande d'intervention.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=0.8cm,
+    state/.style={rectangle, rounded corners=8pt, draw=#1, fill=#1!30,
+                  minimum width=2.5cm, minimum height=1cm, align=center, font=\small},
+    arrow/.style={-{Stealth[length=3mm]}, thick}
+]
+
+% States
+\node[state=primaryblue] (new) {Nouveau};
+\node[state=accentorange, right=2cm of new] (assigned) {Assignée};
+\node[state=infobox, right=2cm of assigned] (progress) {En cours};
+\node[state=successbox, right=2cm of progress] (done) {Terminée};
+\node[state=warningred, below=1.5cm of assigned] (cancel) {Annulée};
+
+% Arrows
+\draw[arrow, primaryblue] (new) -- node[above, font=\footnotesize] {Assignation} (assigned);
+\draw[arrow, accentorange] (assigned) -- node[above, font=\footnotesize] {Prise en charge} (progress);
+\draw[arrow, infobox] (progress) -- node[above, font=\footnotesize] {Résolution} (done);
+\draw[arrow, warningred, dashed] (new) -- (cancel);
+\draw[arrow, warningred, dashed] (assigned) -- (cancel);
+
+\end{tikzpicture}
+\caption{Workflow d'une Demande d'Intervention}
+\end{figure}
+
+\subsection{Entité : DemandeIntervention}
+
+\begin{lstlisting}[language=CSharp, caption=Core/Entities/interventions/DemandeIntervention.cs]
+namespace Core.Entities
+{
+    public class DemandeIntervention
+    {
+        // Cle primaire
+        public int IdDemandeIntervention { get; set; }
+        
+        // Informations principales
+        public string Titre { get; set; } = string.Empty;
+        public DateTime DateCreation { get; set; }
+        public bool MachineArretee { get; set; }
+        
+        // Fichier attache (stocke en binaire)
+        public byte[]? FileData { get; set; }
+        public string? FileName { get; set; }
+        public string? ContentType { get; set; }
+
+        // Relations (Foreign Keys)
+        public int StatusId { get; set; }
+        public Status Status { get; set; } = null!;
+        
+        public int IDTypeIntervention { get; set; }
+        public TypeIntervention TypeIntervention { get; set; } = null!;
+        
+        public int IDUrgence { get; set; }
+        public Urgence Urgence { get; set; } = null!;
+        
+        // Utilisateurs lies
+        public int DemandeursID { get; set; }
+        public Users Demandeur { get; set; } = null!;
+        
+        public int? DestinatairesID { get; set; }  // Nullable = optionnel
+        public Users? Destinataire { get; set; }
+        
+        // Suivi du workflow
+        public DateTime? DateAssignation { get; set; }
+        public DateTime? DatePriseEnCharge { get; set; }
+        public DateTime? DateResolution { get; set; }
+        public DateTime? DateCloture { get; set; }
+        public string? RaisonAnnulation { get; set; }
+        
+        public bool IsActif { get; set; }  // Soft delete
+    }
+}
+\end{lstlisting}
+
+\begin{infobox}[title={\faLightbulb\ Explication Détaillée du Code}]
+\textbf{Propriétés de Base :}
+\begin{itemize}
+    \item \texttt{public int IdDemandeIntervention \{ get; set; \}} : Propriété auto-implémentée en C\# - le compilateur génère automatiquement le champ privé
+    \item \texttt{= string.Empty} : Initialisation par défaut pour éviter les null
+\end{itemize}
+
+\textbf{Navigation Properties (Relations) :}
+\begin{itemize}
+    \item \texttt{public int StatusId} : Clé étrangère (FK) - stocke l'ID de la relation
+    \item \texttt{public Status Status} : Navigation Property - permet d'accéder à l'objet complet
+    \item \texttt{= null!} : Le \texttt{!} dit au compilateur "je sais que ce n'est pas null" (évite les warnings)
+\end{itemize}
+
+\textbf{Types Nullable (?) :}
+\begin{itemize}
+    \item \texttt{int?} = \texttt{Nullable<int>} : Peut contenir un int OU null
+    \item \texttt{DestinatairesID?} : Le technicien assigné est optionnel (pas toujours assigné)
+    \item \texttt{DateTime?} : Les dates de workflow sont null tant que l'action n'est pas faite
+\end{itemize}
+
+\textbf{Patterns Importants :}
+\begin{itemize}
+    \item \textbf{Soft Delete} : \texttt{IsActif = false} au lieu de DELETE - conserve l'historique
+    \item \textbf{Binary Storage} : \texttt{byte[]?} pour stocker des fichiers directement en DB
+\end{itemize}
+\end{infobox}
+
+\newpage
+
+\subsection{DTO : Data Transfer Object}
+
+\begin{defbox}{DTO - Data Transfer Object}
+Un \textbf{DTO} est un objet utilisé pour transférer des données entre les couches de l'application. Il permet de :
+\begin{itemize}
+    \item Ne pas exposer directement les entités de la base
+    \item Valider les données entrantes
+    \item Contrôler les champs envoyés/reçus
+\end{itemize}
+\end{defbox}
+
+\begin{lstlisting}[language=CSharp, caption=API/DTOs/InterventionDto.cs]
+using System.Text.Json.Serialization;
+
+namespace API.DTOs
+{
+    public class InterventionDto
+    {
+        public int IdDemandeIntervention { get; set; }
+        
+        [JsonPropertyName("titre")]  // Nom JSON different du C#
+        public string? Titre { get; set; }
+        
+        [JsonPropertyName("dateCreation")]
+        public DateTime DateCreation { get; set; }
+        
+        [JsonPropertyName("machineArretee")]
+        public bool MachineArretee { get; set; }
+        
+        [JsonPropertyName("idTypeIntervention")]
+        public int? IDTypeIntervention { get; set; }
+        
+        [JsonPropertyName("idUrgence")]
+        public int? IDUrgence { get; set; }
+        
+        [JsonPropertyName("demandeursId")]
+        public int? DemandeursID { get; set; }
+        
+        [JsonPropertyName("destinatairesId")]
+        public int? DestinatairesID { get; set; }
+        
+        // Actions de workflow
+        public string? WorkflowAction { get; set; }
+        public string? RaisonAnnulation { get; set; }
+    }
+}
+\end{lstlisting}
+
+\begin{infobox}[title={\faLightbulb\ Explication Complète du DTO}]
+\textbf{Pourquoi un DTO séparé de l'Entity ?}
+\begin{itemize}
+    \item \textbf{Sécurité} : Ne pas exposer tous les champs (ex: FileData binaire)
+    \item \textbf{Validation} : Contrôler ce que le client peut envoyer
+    \item \textbf{Découplage} : Changer l'Entity sans casser l'API
+\end{itemize}
+
+\textbf{L'attribut [JsonPropertyName] :}
+\begin{itemize}
+    \item C\# utilise \texttt{PascalCase} : \texttt{Titre}, \texttt{DateCreation}
+    \item JavaScript/JSON utilise \texttt{camelCase} : \texttt{titre}, \texttt{dateCreation}
+    \item L'attribut fait la \textbf{correspondance automatique} lors de la sérialisation
+\end{itemize}
+
+\textbf{Types Nullable (?) dans le DTO :}
+\begin{itemize}
+    \item \texttt{string?} : Le champ est optionnel dans la requête
+    \item \texttt{int?} : Permet de distinguer "non fourni" (null) de "valeur 0"
+    \item Utile pour les \textbf{PATCH} partiels où on ne met à jour que certains champs
+\end{itemize}
+\end{infobox}
+
+\newpage
+
+\subsection{Controller : API REST}
+
+\begin{lstlisting}[language=CSharp, caption=DemandeInterventionController.cs - Structure]
+[Authorize]  // Requiert authentification
+[ApiController]
+[Route("api/[controller]")]  // Route: /api/demandeintervention
+public class DemandeInterventionController : ControllerBase
+{
+    private readonly StoreContext _context;  // Acces DB
+    private readonly UserManager<AppUser> _userManager;  // Gestion users
+    private readonly ILogger<DemandeInterventionController> _logger;
+    
+    // Injection de dependances via constructeur
+    public DemandeInterventionController(
+        StoreContext context, 
+        UserManager<AppUser> userManager,
+        ILogger<DemandeInterventionController> logger)
+    {
+        _context = context;
+        _userManager = userManager;
+        _logger = logger;
+    }
+}
+\end{lstlisting}
+
+\begin{defbox}{Injection de Dépendances (DI) - Concept Fondamental}
+L'\textbf{Injection de Dépendances} est un pattern où les dépendances sont \textbf{fournies} à une classe plutôt que créées par elle-même.
+
+\textbf{Sans DI (Mauvaise pratique) :}
+\begin{lstlisting}[language=CSharp, numbers=none]
+public class MyController {
+    private StoreContext _context = new StoreContext(); // Mauvais!
+}
+\end{lstlisting}
+
+\textbf{Avec DI (Bonne pratique) :}
+\begin{lstlisting}[language=CSharp, numbers=none]
+public class MyController {
+    private readonly StoreContext _context;
+    public MyController(StoreContext context) { // Injecte!
+        _context = context;
+    }
+}
+\end{lstlisting}
+
+\textbf{Avantages :}
+\begin{itemize}
+    \item \textbf{Testabilité} : On peut injecter un mock/fake pour les tests
+    \item \textbf{Découplage} : Le controller ne sait pas comment créer le context
+    \item \textbf{Lifecycle} : Le framework gère la durée de vie (Scoped, Singleton, Transient)
+\end{itemize}
+\end{defbox}
+
+\begin{lstlisting}[language=CSharp, caption=GET - Récupérer les interventions avec filtrage par rôle]
+[HttpGet]  // Repond aux requetes GET sur /api/demandeintervention
+public async Task<ActionResult<PagedResult<object>>> GetDemandeInterventions(
+    int page = 1, int pageSize = 5, string? search = null)
+{
+    // 1. Recuperer l'utilisateur depuis le cookie d'auth
+    var currentUser = await _userManager.GetUserAsync(User);
+    if (currentUser == null) return Unauthorized("User not found");
+
+    // 2. Recuperer ses roles (un user peut avoir plusieurs roles)
+    var roles = await _userManager.GetRolesAsync(currentUser);
+    var role = roles.FirstOrDefault();  // Prend le premier
+
+    // 3. Commencer la requete (pas encore executee!)
+    var query = _context.DemandeInterventions.Where(d => d.IsActif);
+
+    // 4. Appliquer le filtre selon le role
+    if (role == "Demandeur")
+    {
+        query = query.Where(d => d.DemandeursID == userEntity.ID);
+    }
+    else if (role == "Utilisateur" || role == "Technicien")
+    {
+        query = query.Where(d => 
+            d.DemandeursID == userEntity.ID || 
+            d.DestinatairesID == userEntity.ID);
+    }
+    // Superviseur: pas de filtre = voit tout
+
+    // 5. Eager Loading - charge les relations en 1 requete
+    query = query
+        .Include(d => d.Status)
+        .Include(d => d.Demandeur)
+        .Include(d => d.Destinataire);
+
+    // 6. Pagination - SEULEMENT ICI la requete est executee
+    var items = await query
+        .Skip((page - 1) * pageSize)  // Saute les elements precedents
+        .Take(pageSize)                // Prend N elements
+        .ToListAsync();                // Execute la requete SQL
+
+    return Ok(new PagedResult<object> { 
+        Data = items, 
+        TotalCount = totalCount 
+    });
+}
+\end{lstlisting}
+
+\begin{infobox}[title={\faLightbulb\ Concepts Avancés Expliqués}]
+\textbf{1. Deferred Execution (Exécution Différée) :}
+\begin{itemize}
+    \item Les lignes avec \texttt{.Where()}, \texttt{.Include()} ne font PAS de requête SQL
+    \item Elles construisent un \textbf{arbre d'expression} (Expression Tree)
+    \item La requête SQL est générée et exécutée SEULEMENT au \texttt{ToListAsync()}
+    \item Avantage : On peut composer la requête dynamiquement
+\end{itemize}
+
+\textbf{2. Le mot-clé async/await :}
+\begin{itemize}
+    \item \texttt{async} : Marque la méthode comme asynchrone
+    \item \texttt{await} : "Attend" le résultat sans bloquer le thread
+    \item \texttt{Task<T>} : Représente une opération asynchrone qui retournera T
+    \item Permet de gérer des milliers de requêtes simultanées efficacement
+\end{itemize}
+
+\textbf{3. L'objet User :}
+\begin{itemize}
+    \item \texttt{User} est une propriété de \texttt{ControllerBase}
+    \item Contient les \textbf{Claims} de l'utilisateur authentifié (depuis le cookie)
+    \item \texttt{\_userManager.GetUserAsync(User)} récupère l'entité complète
+\end{itemize}
+
+\textbf{4. La pagination :}
+\begin{itemize}
+    \item \texttt{Skip((page - 1) * pageSize)} : Page 1 = Skip(0), Page 2 = Skip(5), etc.
+    \item \texttt{Take(pageSize)} : Limite le nombre de résultats
+    \item Génère : \texttt{OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY} en SQL
+\end{itemize}
+\end{infobox}
+
+\newpage
+
+\subsection{Service Angular : Intervention Service}
+
+\begin{lstlisting}[language=TypeScript, caption=intervention.service.ts - Service Angular Complet]
+@Injectable({
+  providedIn: 'root'  // Singleton global - une seule instance
+})
+export class InterventionService {
+  // URL de base construite depuis environment.ts
+  private apiUrl = `${environment.apiUrl}/demandeintervention`;
+
+  // Injection du HttpClient via le constructeur
+  constructor(private http: HttpClient) {}
+
+  // GET avec pagination et recherche
+  getInterventions(
+    page: number = 1,        // Valeur par defaut = 1
+    pageSize: number = 10,   // Valeur par defaut = 10
+    search?: string          // Optionnel (peut etre undefined)
+  ): Observable<PagedResult<DemandeIntervention>> {
+    
+    // Construire les query parameters de maniere type-safe
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString());
+
+    // Ajouter search seulement s'il existe
+    if (search) {
+      params = params.set('search', search);
+    }
+
+    // Faire la requete HTTP GET
+    return this.http.get<PagedResult<DemandeIntervention>>(
+      this.apiUrl,
+      {
+        params,              // Query params: ?page=1&pageSize=10
+        withCredentials: true // Envoie le cookie d'auth
+      }
+    );
+  }
+
+  // POST avec upload de fichier optionnel
+  createIntervention(
+    intervention: Partial<InterventionDto>,  // Partial = tous champs optionnels
+    file?: File                               // Fichier optionnel
+  ): Observable<DemandeIntervention> {
+    
+    if (file) {
+      // FormData permet d'envoyer fichier + JSON ensemble
+      const formData = new FormData();
+      formData.append('interventionData', JSON.stringify(intervention));
+      formData.append('file', file);
+
+      return this.http.post<DemandeIntervention>(
+        this.apiUrl,
+        formData,  // Content-Type: multipart/form-data (auto)
+        { withCredentials: true }
+      );
+    }
+
+    // Sans fichier: JSON simple
+    return this.http.post<DemandeIntervention>(
+      this.apiUrl,
+      intervention,  // Content-Type: application/json (auto)
+      { withCredentials: true }
+    );
+  }
+
+  // Actions de workflow - POST sans body
+  acceptIntervention(id: number): Observable<void> {
+    return this.http.post<void>(
+      `${this.apiUrl}/${id}/accept`,  // Template string pour l'URL
+      {},                              // Body vide
+      { withCredentials: true }
+    );
+  }
+}
+\end{lstlisting}
+
+\begin{infobox}[title={\faLightbulb\ Concepts TypeScript/Angular Expliqués}]
+\textbf{1. Décorateurs (@) :}
+\begin{itemize}
+    \item \texttt{@Injectable()} : Marque la classe comme injectable (peut recevoir des DI)
+    \item \texttt{providedIn: 'root'} : Crée un \textbf{Singleton} au niveau de l'app
+\end{itemize}
+
+\textbf{2. Types Génériques (< >) :}
+\begin{itemize}
+    \item \texttt{Observable<PagedResult<DemandeIntervention>>} : Observable qui émet un PagedResult contenant des DemandeIntervention
+    \item \texttt{http.get<T>()} : Le type de retour est typé comme T
+\end{itemize}
+
+\textbf{3. Partial<T> :}
+\begin{itemize}
+    \item \texttt{Partial<InterventionDto>} : Tous les champs de InterventionDto deviennent optionnels
+    \item Utile pour les créations/mises à jour partielles
+\end{itemize}
+
+\textbf{4. Template Strings (`) :}
+\begin{itemize}
+    \item \texttt{\`\$\{this.apiUrl\}/\$\{id\}/accept\`} : Interpolation de variables dans une string
+    \item Plus lisible que concaténation : \texttt{this.apiUrl + '/' + id + '/accept'}
+\end{itemize}
+
+\textbf{5. HttpParams (immutable) :}
+\begin{itemize}
+    \item \texttt{params.set()} retourne un \textbf{nouveau} objet (ne modifie pas l'original)
+    \item C'est pourquoi on fait \texttt{params = params.set(...)}
+\end{itemize}
+\end{infobox}
+
+\newpage
+
+%==============================================================================
+% SECTION 4 : MODULE CHATBOT IA
+%==============================================================================
+\section{\faRobot\ Module Chatbot IA - GMAO Chat}
+
+\subsection{Architecture Text-to-SQL}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    scale=0.85,
+    transform shape,
+    node distance=0.8cm,
+    step/.style={rectangle, rounded corners=8pt, draw=#1, fill=#1!20,
+                 minimum width=11cm, minimum height=1.2cm, align=center, font=\small},
+    arrow/.style={-{Stealth[length=3mm]}, thick, color=darkgray}
+]
+
+\node[step=primaryblue] (q) {\faUser\ "Quelles sont les interventions en cours ?"};
+\node[step=accentorange, below=of q] (prep) {\faCog\ Prétraitement (normalisation, dates françaises)};
+\node[step=codepurple, below=of prep] (llm) {\faBrain\ LLM génère le SQL via prompt engineering};
+\node[step=warningred, below=of llm] (valid) {\faShieldAlt\ Validation sécurité (SELECT only)};
+\node[step=darkgray, below=of valid] (exec) {\faDatabase\ Exécution sur SQL Server};
+\node[step=successbox, below=of exec] (resp) {\faComment\ Formatage réponse en français};
+
+\foreach \i/\j in {q/prep, prep/llm, llm/valid, valid/exec, exec/resp} {
+    \draw[arrow] (\i) -- (\j);
+}
+
+\end{tikzpicture}
+\caption{Pipeline de Traitement Text-to-SQL}
+\end{figure}
+
+\subsection{Configuration de l'API Key et des Providers}
+
+\begin{lstlisting}[language=Python, caption=Configuration des providers IA]
+# Dictionnaire de configuration pour chaque provider
+AI_PROVIDERS = {
+    "openrouter": {
+        "api_key": "sk-or-v1-...",  # Cle secrete (ne jamais commit!)
+        "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+        "model": "google/gemma-3-27b-it:free"  # Modele gratuit
+    },
+    "openai": {
+        # .get() retourne '' si la cle n'existe pas (evite KeyError)
+        "api_key": app_settings.get('OpenAI', {}).get('ApiKey', ''),
+        "endpoint": "https://api.openai.com/v1/chat/completions",
+        "model": "gpt-4o-mini"
+    }
+}
+
+# Selection automatique du provider avec fallback
+PRIMARY_AI_PROVIDER = None      # Le provider principal
+FALLBACK_PROVIDERS = []         # Liste des providers de secours
+
+for provider in ["openrouter", "gemini", "openai", "deepseek"]:
+    # Verifie si l'API key existe et n'est pas vide
+    if AI_PROVIDERS[provider]["api_key"]:
+        if PRIMARY_AI_PROVIDER is None:
+            PRIMARY_AI_PROVIDER = provider  # Premier trouve = principal
+        else:
+            FALLBACK_PROVIDERS.append(provider)  # Autres = fallback
+\end{lstlisting}
+
+\begin{infobox}[title={\faLightbulb\ Concepts Python Expliqués}]
+\textbf{1. Dictionnaires Imbriqués :}
+\begin{itemize}
+    \item \texttt{AI\_PROVIDERS["openrouter"]["api\_key"]} : Accès à une valeur dans un dict imbriqué
+    \item Structure : \texttt{\{"cle": \{"sous\_cle": "valeur"\}\}}
+\end{itemize}
+
+\textbf{2. La méthode .get() :}
+\begin{itemize}
+    \item \texttt{dict.get('key', default)} : Retourne \texttt{default} si la clé n'existe pas
+    \item \texttt{dict['key']} : Lève \texttt{KeyError} si la clé n'existe pas
+    \item \texttt{app\_settings.get('OpenAI', \{\}).get('ApiKey', '')} : Chaîne sécurisée de .get()
+\end{itemize}
+
+\textbf{3. Pattern Fallback :}
+\begin{itemize}
+    \item Si OpenRouter échoue, on essaie Gemini, puis OpenAI, puis DeepSeek
+    \item Assure la \textbf{haute disponibilité} du service
+    \item \texttt{is None} : Vérifie si la variable est exactement None (pas juste falsy)
+\end{itemize}
+\end{infobox}
+
+\begin{warningbox}[title={\faKey\ Sécurité des API Keys}]
+Les API Keys ne doivent \textbf{JAMAIS} être commitées sur Git. En production :
+\begin{itemize}
+    \item Utiliser des variables d'environnement
+    \item Utiliser Azure Key Vault ou AWS Secrets Manager
+    \item Configurer dans \texttt{appsettings.Production.json} (non versionné)
+\end{itemize}
+\end{warningbox}
+
+\subsection{Prompt Engineering pour Text-to-SQL}
+
+\begin{lstlisting}[language=Python, caption=Prompt système pour génération SQL]
+def get_sql_generation_prompt() -> str:
+    return f"""Tu es un expert SQL Server pour une application GMAO.
+La date actuelle est: {datetime.now().strftime("%Y-%m-%d")}
+
+## Schema de la base de donnees:
+{DATABASE_SCHEMA}
+
+## Regles:
+1. Genere UNIQUEMENT des requetes SELECT
+2. Utilise TOUJOURS des alias clairs
+3. Pour les dates:
+   - Aujourd'hui: CAST(GETDATE() AS DATE)
+   - Comparaison: CAST(column AS DATE) = 'YYYY-MM-DD'
+4. Pour les enregistrements actifs:
+   - WHERE IsActif = 1 ou WHERE IsDeleted = 0
+
+## Joins importants:
+- DemandeInterventions -> Statuses ON StatusId = Id
+- DemandeInterventions -> Users ON DemandeursID = ID
+- Equipments -> EtatEquipements ON IdEtat = IdEtat
+
+## Format:
+Reponds UNIQUEMENT avec la requete SQL, sans markdown.
+"""
+\end{lstlisting}
+
+\subsection{Validation de Sécurité SQL}
+
+\begin{lstlisting}[language=Python, caption=Validation pour prévenir les injections SQL]
+# Liste des mots-cles SQL dangereux (peuvent modifier/supprimer des donnees)
+FORBIDDEN_KEYWORDS = [
+    'INSERT', 'UPDATE', 'DELETE',  # Modification de donnees
+    'DROP', 'TRUNCATE', 'ALTER', 'CREATE',  # Modification de schema
+    'EXEC', 'EXECUTE',  # Execution de code
+    'xp_', 'sp_',  # Procedures stockees systeme SQL Server
+    '--', ';',     # Commentaires et multi-statements (injection classique)
+    '/*', '*/'     # Commentaires bloc
+]
+
+def validate_sql(sql: str) -> bool:
+    """Valide que le SQL est securise (SELECT uniquement)
+    
+    Args:
+        sql: La requete SQL a valider
+        
+    Returns:
+        bool: True si securise, False sinon
+    """
+    sql_upper = sql.upper()  # Comparaison insensible a la casse
+    
+    # Parcourir chaque mot-cle interdit
+    for keyword in FORBIDDEN_KEYWORDS:
+        if keyword in sql_upper:
+            logger.warning(f"SQL bloque: mot-cle interdit '{keyword}'")
+            return False  # Rejete immediatement
+    
+    # Verifier que ca commence par SELECT
+    if not sql.strip().upper().startswith('SELECT'):
+        logger.warning("SQL bloque: ne commence pas par SELECT")
+        return False
+    
+    return True  # SQL valide
+\end{lstlisting}
+
+\begin{infobox}[title={\faLightbulb\ Concepts Python et Sécurité}]
+\textbf{1. Type Hints (Annotations) :}
+\begin{itemize}
+    \item \texttt{def validate\_sql(sql: str) -> bool:} : Déclare les types attendus
+    \item \texttt{sql: str} : Le paramètre doit être une string
+    \item \texttt{-> bool} : La fonction retourne un booléen
+    \item Aide l'IDE et les outils de vérification (mypy)
+\end{itemize}
+
+\textbf{2. Docstrings (\"\"\" \"\"\")} :
+\begin{itemize}
+    \item Documentation intégrée dans le code
+    \item Accessible via \texttt{help(validate\_sql)} ou \texttt{validate\_sql.\_\_doc\_\_}
+    \item Format Google/NumPy standard
+\end{itemize}
+
+\textbf{3. F-strings (f"...") :}
+\begin{itemize}
+    \item \texttt{f"SQL bloque: mot-cle interdit '\{keyword\}'"} : Interpolation de variables
+    \item Plus lisible que \texttt{"SQL bloque: " + keyword}
+    \item Peut contenir des expressions : \texttt{f"Total: \{a + b\}"}
+\end{itemize}
+
+\textbf{4. Protection contre les Injections SQL :}
+\begin{itemize}
+    \item \textbf{Attaque classique} : \texttt{'; DROP TABLE Users; --}
+    \item On bloque \texttt{;} et \texttt{--} pour empêcher les multi-statements
+    \item On force \texttt{SELECT} uniquement : lecture seule
+\end{itemize}
+\end{infobox}
+
+\subsection{Flux de Communication Complet}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    scale=0.75,
+    transform shape,
+    node distance=1.5cm,
+    comp/.style={rectangle, rounded corners=5pt, draw=#1, fill=#1!20,
+                 minimum width=2.5cm, minimum height=1.2cm, align=center, font=\footnotesize},
+    arrow/.style={-{Stealth[length=2.5mm]}, thick}
+]
+
+% Components
+\node[comp=angularred] (angular) {\faAngular\\ Angular\\Chat Component};
+\node[comp=dotnetpurple, right=2cm of angular] (dotnet) {\faServer\\ .NET API\\GMAOChatController};
+\node[comp=accentorange, right=2cm of dotnet] (python) {\faPython\\ Python\\FastAPI Service};
+\node[comp=codepurple, right=2cm of python] (llm) {\faBrain\\ OpenRouter\\LLM API};
+\node[comp=darkgray, below=1.5cm of python] (db) {\faDatabase\\ SQL Server};
+
+% Arrows with labels
+\draw[arrow, angularred] (angular) -- node[above, font=\tiny] {1. POST /query} (dotnet);
+\draw[arrow, dotnetpurple] (dotnet) -- node[above, font=\tiny] {2. Forward} (python);
+\draw[arrow, accentorange] (python) -- node[above, font=\tiny] {3. Generate SQL} (llm);
+\draw[arrow, codepurple] (llm) -- node[above, font=\tiny] {4. SQL} (python);
+\draw[arrow, accentorange] (python) -- node[right, font=\tiny] {5. Execute} (db);
+\draw[arrow, darkgray] (db) -- node[left, font=\tiny] {6. Results} (python);
+\draw[arrow, accentorange, dashed] (python) -- node[below, font=\tiny] {7. Response} (dotnet);
+\draw[arrow, dotnetpurple, dashed] (dotnet) -- node[below, font=\tiny] {8. JSON} (angular);
+
+\end{tikzpicture}
+\caption{Flux de Communication du Chatbot}
+\end{figure}
+
+\newpage
+
+%==============================================================================
+% SECTION 5 : AUTHENTIFICATION COMPLÈTE
+%==============================================================================
+\section{\faLock\ Système d'Authentification}
+
+\subsection{Flux d'Authentification}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=0.6cm,
+    step/.style={rectangle, rounded corners=5pt, draw=primaryblue, fill=primaryblue!15,
+                 minimum width=12cm, minimum height=0.9cm, align=center, font=\small},
+    num/.style={circle, draw=primaryblue, fill=primaryblue, text=white, 
+                minimum size=0.5cm, font=\bfseries\footnotesize}
+]
+
+\node[step] (s1) {Utilisateur entre email + mot de passe sur la page Login};
+\node[num, left=0.2cm of s1] {1};
+
+\node[step, below=of s1] (s2) {Angular envoie POST /api/account/login avec credentials};
+\node[num, left=0.2cm of s2] {2};
+
+\node[step, below=of s2] (s3) {.NET vérifie via SignInManager.PasswordSignInAsync()};
+\node[num, left=0.2cm of s3] {3};
+
+\node[step, below=of s3] (s4) {Si OK : Cookie d'authentification créé automatiquement};
+\node[num, left=0.2cm of s4] {4};
+
+\node[step, below=of s4] (s5) {Retour JSON avec infos user (id, email, role)};
+\node[num, left=0.2cm of s5] {5};
+
+\node[step, below=of s5] (s6) {Angular stocke dans BehaviorSubject + localStorage};
+\node[num, left=0.2cm of s6] {6};
+
+\node[step, below=of s6] (s7) {Requêtes suivantes : Cookie envoyé automatiquement};
+\node[num, left=0.2cm of s7] {7};
+
+\foreach \i/\j in {s1/s2, s2/s3, s3/s4, s4/s5, s5/s6, s6/s7} {
+    \draw[-{Stealth}, thick, primaryblue!70] (\i) -- (\j);
+}
+
+\end{tikzpicture}
+\caption{Flux d'Authentification Complet}
+\end{figure}
+
+\subsection{Backend : AccountController}
+
+\begin{lstlisting}[language=CSharp, caption=Login avec Cookie Authentication]
+[HttpPost("login")]
+public async Task<ActionResult> Login(LoginDto loginDto)
+{
+    // 1. Trouver l'utilisateur par email
+    var user = await _userManager.FindByEmailAsync(loginDto.Email);
+    if (user == null) return Unauthorized("Email incorrect.");
+
+    // 2. Verifier le mot de passe
+    var result = await _signInManager.PasswordSignInAsync(
+        user.UserName, 
+        loginDto.Password, 
+        isPersistent: true,  // Cookie persistant
+        lockoutOnFailure: false
+    );
+    
+    if (!result.Succeeded) 
+        return Unauthorized("Mot de passe incorrect.");
+
+    // 3. Recuperer le role
+    var roles = await _userManager.GetRolesAsync(user);
+    var role = roles.FirstOrDefault();
+
+    // 4. Recuperer l'entite User complete
+    var userEntity = await _storeContext.Users
+        .Include(u => u.Role)
+        .FirstOrDefaultAsync(u => u.AppUserId == user.Id);
+
+    // 5. Retourner les infos (le cookie est cree automatiquement)
+    return Ok(new
+    {
+        userId = user.Id,
+        email = user.Email,
+        firstName = user.FirstName,
+        lastName = user.LastName,
+        role = role,
+        internalId = userEntity.ID
+    });
+}
+\end{lstlisting}
+
+\subsection{Frontend : AuthService}
+
+\begin{lstlisting}[language=TypeScript, caption=AuthService avec BehaviorSubject - Explique]
+@Injectable({ providedIn: 'root' })  // Singleton global
+export class AuthService {
+  private apiUrl = `${environment.apiUrl}/account`;
+  
+  // BehaviorSubject: Observable avec valeur initiale qui garde la derniere valeur
+  private currentUserSubject = new BehaviorSubject<UserInfo | null>(null);
+  
+  // Expose l'Observable en lecture seule (pas de .next() de l'exterieur)
+  public currentUser$ = this.currentUserSubject.asObservable();
+
+  constructor(private http: HttpClient) {
+    this.checkAuthStatus();  // Verifie l'auth au demarrage de l'app
+  }
+
+  login(credentials: LoginDto): Observable<UserInfo> {
+    return this.http.post<UserInfo>(
+      `${this.apiUrl}/login`,
+      credentials,
+      { withCredentials: true }  // Important: envoie/recoit les cookies
+    ).pipe(
+      // tap: execute un effet secondaire sans modifier la valeur
+      tap(user => {
+        this.currentUserSubject.next(user);  // Met a jour le state
+        localStorage.setItem('currentUser', JSON.stringify(user));
+      })
+    );
+  }
+
+  logout(): Observable<void> {
+    return this.http.post<void>(
+      `${this.apiUrl}/logout`,
+      {},
+      { withCredentials: true }
+    ).pipe(
+      tap(() => {
+        this.currentUserSubject.next(null);  // Reset l'user
+        localStorage.removeItem('currentUser');
+      }),
+      // catchError: gere les erreurs dans le pipe
+      catchError(() => {
+        this.currentUserSubject.next(null);
+        localStorage.removeItem('currentUser');
+        return of(void 0);  // of() cree un Observable qui emet une valeur
+      })
+    );
+  }
+
+  checkAuthStatus(): void {
+    // 1. Restaurer depuis localStorage (instantane)
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      this.currentUserSubject.next(JSON.parse(storedUser));
+    }
+
+    // 2. Verifier avec le serveur (asynchrone)
+    this.http.get<UserInfo>(`${this.apiUrl}/user-info`, {
+      withCredentials: true
+    }).subscribe({
+      next: (user) => this.currentUserSubject.next(user),
+      error: () => {
+        this.currentUserSubject.next(null);
+        localStorage.removeItem('currentUser');
+      }
+    });
+  }
+
+  isAuthenticated(): boolean {
+    return this.currentUserSubject.value !== null;
+  }
+
+  hasRole(role: string): boolean {
+    return this.currentUserSubject.value?.role === role;
+  }
+}
+\end{lstlisting}
+
+\begin{infobox}[title={\faLightbulb\ Concepts RxJS et State Management}]
+\textbf{1. BehaviorSubject vs Subject vs Observable :}
+\begin{itemize}
+    \item \texttt{Observable} : Flux de données en lecture seule
+    \item \texttt{Subject} : Observable + peut émettre des valeurs (.next())
+    \item \texttt{BehaviorSubject} : Subject + garde la dernière valeur + valeur initiale obligatoire
+\end{itemize}
+
+\textbf{2. Pattern Private Subject + Public Observable :}
+\begin{lstlisting}[language=TypeScript, numbers=none]
+private subject = new BehaviorSubject<T>(init);  // Prive: on peut .next()
+public obs$ = this.subject.asObservable();       // Public: lecture seule
+\end{lstlisting}
+\begin{itemize}
+    \item Empêche les composants d'appeler \texttt{.next()} directement
+    \item Seul le service contrôle les mises à jour
+\end{itemize}
+
+\textbf{3. Opérateurs RxJS utilisés :}
+\begin{itemize}
+    \item \texttt{pipe()} : Chaîne des opérateurs (comme le pipe Unix |)
+    \item \texttt{tap()} : Exécute un effet secondaire sans modifier la valeur
+    \item \texttt{catchError()} : Intercepte les erreurs, peut retourner un Observable de remplacement
+    \item \texttt{of()} : Crée un Observable qui émet une valeur puis se complète
+\end{itemize}
+
+\textbf{4. L'opérateur ?.} (Optional Chaining) :
+\begin{itemize}
+    \item \texttt{this.currentUserSubject.value?.role} : Retourne \texttt{undefined} si value est null
+    \item Évite le crash : \texttt{Cannot read property 'role' of null}
+\end{itemize}
+
+\textbf{5. Pourquoi localStorage + BehaviorSubject ?}
+\begin{itemize}
+    \item \texttt{localStorage} : Persiste après refresh de la page
+    \item \texttt{BehaviorSubject} : Réactivité en temps réel (les composants sont notifiés)
+    \item Les deux ensemble : Meilleure UX
+\end{itemize}
+\end{infobox}
+
+\newpage
+
+%==============================================================================
+% SECTION 6 : BASE DE DONNÉES
+%==============================================================================
+\section{\faDatabase\ Structure de la Base de Données}
+
+\subsection{DbContext : StoreContext}
+
+\begin{lstlisting}[language=CSharp, caption=Infrastructure/Data/StoreContext.cs]
+public class StoreContext : IdentityDbContext<AppUser, IdentityRole, string>
+{
+    public StoreContext(DbContextOptions<StoreContext> options) 
+        : base(options) { }
+    
+    // Tables principales
+    public DbSet<Users> Users { get; set; }
+    public DbSet<Role> Roles { get; set; }
+
+    // Module Equipements
+    public DbSet<Equipment> Equipments { get; set; }
+    public DbSet<FamilleEquipment> FamilleEquipements { get; set; }
+    public DbSet<EquipmentCriticite> EquipmentCriticites { get; set; }
+    public DbSet<EtatEquipement> EtatEquipements { get; set; }
+
+    // Module Interventions
+    public DbSet<DemandeIntervention> DemandeInterventions { get; set; }
+    public DbSet<TypeIntervention> TypeInterventions { get; set; }
+    public DbSet<Urgence> Urgences { get; set; }
+    public DbSet<Status> Statuses { get; set; }
+
+    // Module Stock
+    public DbSet<Stock> Stocks { get; set; }
+    public DbSet<StockEntities> StockEntities { get; set; }
+    public DbSet<StockStatus> StockStatuses { get; set; }
+    public DbSet<StockSupplier> StockSuppliers { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        
+        // Appliquer les configurations Fluent API
+        modelBuilder.ApplyConfiguration(new EquipmentConfiguration());
+        modelBuilder.ApplyConfiguration(new DemandeInterventionConfiguration());
+        // ... autres configurations
+    }
+}
+\end{lstlisting}
+
+\subsection{Diagramme Simplifié des Relations}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    scale=0.8,
+    transform shape,
+    table/.style={rectangle, draw=darkgray, fill=lightgray,
+                  minimum width=3cm, minimum height=1.8cm, align=center, font=\small},
+    relation/.style={-{Stealth[length=2mm]}, thick, darkgray}
+]
+
+% Tables
+\node[table] (user) at (0, 0) {\textbf{Users}\\ID, Nom, Prenom\\Email, IDRole};
+\node[table] (role) at (4, 0) {\textbf{Roles}\\IDRole, Libelle};
+\node[table] (inter) at (0, -3) {\textbf{DemandeInterventions}\\ID, Titre, StatusId\\DemandeursID, DestinatairesID};
+\node[table] (status) at (4, -3) {\textbf{Statuses}\\Id, Statut};
+\node[table] (equip) at (8, 0) {\textbf{Equipments}\\ID, Designation\\IdEtat, IdCriticite};
+\node[table] (etat) at (8, -3) {\textbf{EtatEquipements}\\IdEtat, NomEtat};
+
+% Relations
+\draw[relation] (user) -- node[above, font=\tiny] {N:1} (role);
+\draw[relation] (inter) -- node[left, font=\tiny] {N:1} (user);
+\draw[relation] (inter) -- node[above, font=\tiny] {N:1} (status);
+\draw[relation] (equip) -- node[right, font=\tiny] {N:1} (etat);
+
+\end{tikzpicture}
+\caption{Relations Principales de la Base de Données}
+\end{figure}
+
+\newpage
+
+%==============================================================================
+% SECTION 7 : DEVOPS & FUTUR
+%==============================================================================
+\section{\faDocker\ DevOps et Améliorations Futures}
+
+\subsection{Infrastructure Docker Actuelle}
+
+\begin{lstlisting}[language=Python, caption=docker-compose.yml - Services]
+services:
+  # Base de donnees SQL Server
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "YourStrong!Password123"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa ...
+      interval: 10s
+      retries: 10
+
+  # Backend .NET
+  backend:
+    build:
+      context: .
+      dockerfile: API/Dockerfile
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;...
+      - ChatbotService__Url=http://chatbot:5002
+    ports:
+      - "5000:80"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+  # Chatbot Python
+  chatbot:
+    build: ./gmaochat
+    ports:
+      - "5002:5002"
+    depends_on:
+      - sqlserver
+
+  # Frontend Angular
+  frontend:
+    build: ./client
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+\end{lstlisting}
+
+\subsection{Pipeline CI/CD Proposé}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    scale=0.85,
+    transform shape,
+    node distance=0.5cm,
+    stage/.style={rectangle, rounded corners=8pt, draw=#1, fill=#1!20,
+                  minimum width=10cm, minimum height=1cm, align=center, font=\small},
+    arrow/.style={-{Stealth[length=3mm]}, thick, darkgray}
+]
+
+\node[stage=primaryblue] (code) {\faCode\ Code Push sur GitHub/GitLab};
+\node[stage=accentorange, below=of code] (build) {\faCog\ Build \& Tests Unitaires};
+\node[stage=codepurple, below=of build] (docker) {\faDocker\ Build Images Docker};
+\node[stage=darkgray, below=of docker] (push) {\faCloud\ Push vers Container Registry};
+\node[stage=successbox, below=of push] (deploy) {\faServer\ Déploiement sur Azure/AWS};
+
+\foreach \i/\j in {code/build, build/docker, docker/push, push/deploy} {
+    \draw[arrow] (\i) -- (\j);
+}
+
+% Labels
+\node[right=0.5cm of build, font=\footnotesize\color{gray}] {xUnit, Jest};
+\node[right=0.5cm of docker, font=\footnotesize\color{gray}] {Multi-stage builds};
+\node[right=0.5cm of push, font=\footnotesize\color{gray}] {ACR, ECR, Docker Hub};
+\node[right=0.5cm of deploy, font=\footnotesize\color{gray}] {Kubernetes, App Service};
+
+\end{tikzpicture}
+\caption{Pipeline CI/CD Proposé}
+\end{figure}
+
+\subsection{Améliorations Futures Détaillées}
+
+\begin{table}[H]
+\centering
+\rowcolors{2}{lightgray}{white}
+\begin{tabular}{|>{\bfseries}l|l|l|}
+\hline
+\rowcolor{primaryblue}
+\textcolor{white}{\textbf{Domaine}} & \textcolor{white}{\textbf{Amélioration}} & \textcolor{white}{\textbf{Outil}} \\
+\hline
+\multicolumn{3}{|c|}{\cellcolor{dockerblue!30}\textbf{CI/CD}} \\
+\hline
+Build & Automatisation des builds & GitHub Actions / GitLab CI \\
+Tests & Tests automatisés & xUnit, Jest, Cypress \\
+Qualité & Analyse de code & SonarQube \\
+Déploiement & Déploiement continu & ArgoCD, Flux \\
+\hline
+\multicolumn{3}{|c|}{\cellcolor{successbox!30}\textbf{Infrastructure}} \\
+\hline
+Orchestration & Conteneurisation avancée & Kubernetes (AKS/EKS) \\
+Scaling & Auto-scaling & HPA, Karpenter \\
+Secrets & Gestion des secrets & Azure Key Vault \\
+\hline
+\multicolumn{3}{|c|}{\cellcolor{accentorange!30}\textbf{Monitoring}} \\
+\hline
+Logs & Centralisation logs & ELK Stack, Loki \\
+Métriques & Métriques applicatives & Prometheus + Grafana \\
+Tracing & Distributed tracing & Jaeger, Zipkin \\
+Alerting & Alertes & PagerDuty, OpsGenie \\
+\hline
+\multicolumn{3}{|c|}{\cellcolor{warningred!30}\textbf{Sécurité}} \\
+\hline
+Scan & Scan de vulnérabilités & Trivy, Snyk \\
+Secrets & Rotation des secrets & Vault \\
+Réseau & Service Mesh & Istio, Linkerd \\
+\hline
+\end{tabular}
+\caption{Roadmap DevOps}
+\end{table}
+
+\subsection{GitHub Actions - Exemple de Workflow}
+
+\begin{lstlisting}[language=Python, caption=.github/workflows/ci-cd.yml (proposé)]
+name: GMAO CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Job 1: Build et Test Backend
+  build-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      
+      - name: Restore dependencies
+        run: dotnet restore
+      
+      - name: Build
+        run: dotnet build --no-restore
+      
+      - name: Test
+        run: dotnet test --no-build --verbosity normal
+
+  # Job 2: Build et Test Frontend
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        working-directory: ./client
+        run: npm ci
+      
+      - name: Build
+        working-directory: ./client
+        run: npm run build --prod
+      
+      - name: Test
+        working-directory: ./client
+        run: npm test -- --watch=false --browsers=ChromeHeadless
+
+  # Job 3: Build Docker Images
+  docker:
+    needs: [build-backend, build-frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build and push Docker images
+        run: |
+          docker-compose build
+          # docker-compose push (vers registry)
+\end{lstlisting}
+
+\newpage
+
+%==============================================================================
+% SECTION 8 : PATTERNS & BEST PRACTICES
+%==============================================================================
+\section{\faGraduationCap\ Patterns et Bonnes Pratiques}
+
+\subsection{LINQ : Méthodes les Plus Utilisées}
+
+\begin{table}[H]
+\centering
+\small
+\rowcolors{2}{lightgray}{white}
+\begin{tabular}{|>{\bfseries}p{3cm}|p{5cm}|p{5.5cm}|}
+\hline
+\rowcolor{dotnetpurple}
+\textcolor{white}{\textbf{Méthode}} & \textcolor{white}{\textbf{Description}} & \textcolor{white}{\textbf{SQL Équivalent}} \\
+\hline
+Where(x => ...) & Filtre les éléments & WHERE condition \\
+\hline
+Select(x => ...) & Transforme/projette les éléments & SELECT colonnes \\
+\hline
+OrderBy(x => x.Prop) & Trie par ordre croissant & ORDER BY Prop ASC \\
+\hline
+OrderByDescending() & Trie par ordre décroissant & ORDER BY Prop DESC \\
+\hline
+Include(x => x.Nav) & Charge une relation & JOIN \\
+\hline
+FirstOrDefault() & Premier élément ou null & SELECT TOP 1 \\
+\hline
+Skip(n).Take(m) & Pagination & OFFSET n FETCH m \\
+\hline
+Count() & Compte les éléments & COUNT(*) \\
+\hline
+Any(x => ...) & Vérifie si au moins un existe & EXISTS \\
+\hline
+GroupBy(x => ...) & Groupe les éléments & GROUP BY \\
+\hline
+\end{tabular}
+\caption{LINQ vers SQL - Correspondances}
+\end{table}
+
+\subsection{RxJS : Opérateurs Essentiels}
+
+\begin{table}[H]
+\centering
+\small
+\rowcolors{2}{lightgray}{white}
+\begin{tabular}{|>{\bfseries}p{2.5cm}|p{5cm}|p{6cm}|}
+\hline
+\rowcolor{angularred}
+\textcolor{white}{\textbf{Opérateur}} & \textcolor{white}{\textbf{Description}} & \textcolor{white}{\textbf{Exemple d'Usage}} \\
+\hline
+map() & Transforme chaque valeur & \texttt{.pipe(map(x => x * 2))} \\
+\hline
+filter() & Ne garde que certaines valeurs & \texttt{.pipe(filter(x => x > 0))} \\
+\hline
+tap() & Effet secondaire sans modifier & \texttt{.pipe(tap(x => console.log(x)))} \\
+\hline
+catchError() & Gère les erreurs & \texttt{.pipe(catchError(err => of(null)))} \\
+\hline
+switchMap() & Annule l'Observable précédent & Recherche avec debounce \\
+\hline
+mergeMap() & Fusionne les Observables & Requêtes parallèles \\
+\hline
+debounceTime() & Attend un délai d'inactivité & \texttt{.pipe(debounceTime(300))} \\
+\hline
+distinctUntilChanged() & Ignore les doublons consécutifs & Éviter requêtes inutiles \\
+\hline
+takeUntil() & Complète quand un autre émet & Unsubscribe automatique \\
+\hline
+\end{tabular}
+\caption{Opérateurs RxJS les Plus Utiles}
+\end{table}
+
+\subsection{Pattern : Unsubscribe Automatique}
+
+\begin{lstlisting}[language=TypeScript, caption=Éviter les memory leaks avec takeUntil]
+@Component({ ... })
+export class MyComponent implements OnInit, OnDestroy {
+  // Subject qui emet quand le composant est detruit
+  private destroy$ = new Subject<void>();
+
+  ngOnInit(): void {
+    // Toutes les subscriptions s'arretent automatiquement
+    this.myService.getData().pipe(
+      takeUntil(this.destroy$)  // Complete quand destroy$ emet
+    ).subscribe(data => {
+      this.data = data;
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();     // Emet une valeur
+    this.destroy$.complete(); // Complete le Subject
+  }
+}
+\end{lstlisting}
+
+\begin{warningbox}[title={\faExclamationTriangle\ Memory Leaks en Angular}]
+\textbf{Problème :} Si vous ne vous désabonnez pas des Observables, ils continuent à écouter même après la destruction du composant $\rightarrow$ \textbf{Memory Leak}.
+
+\textbf{Solutions :}
+\begin{itemize}
+    \item \texttt{takeUntil(destroy\$)} : Pattern recommandé (ci-dessus)
+    \item \texttt{async} pipe dans le template : Désabonnement automatique
+    \item \texttt{subscription.unsubscribe()} : Manuel mais fastidieux
+\end{itemize}
+\end{warningbox}
+
+\subsection{Pattern : Smart vs Dumb Components}
+
+\begin{defbox}{Architecture de Composants}
+\textbf{Smart Components (Containers) :}
+\begin{itemize}
+    \item Contiennent la logique métier
+    \item Injectent les services
+    \item Gèrent l'état
+    \item Exemple : \texttt{InterventionsPageComponent}
+\end{itemize}
+
+\textbf{Dumb Components (Presentational) :}
+\begin{itemize}
+    \item Affichent des données via @Input()
+    \item Émettent des événements via @Output()
+    \item Pas de logique, pas de services
+    \item Réutilisables et testables
+    \item Exemple : \texttt{InterventionCardComponent}
+\end{itemize}
+\end{defbox}
+
+\newpage
+
+%==============================================================================
+% SECTION 9 : GLOSSAIRE
+%==============================================================================
+\section{\faBookOpen\ Glossaire des Termes Techniques}
+
+\begin{table}[H]
+\centering
+\small
+\rowcolors{2}{lightgray}{white}
+\begin{tabular}{|>{\bfseries}p{3.5cm}|p{10cm}|}
+\hline
+\rowcolor{primaryblue}
+\textcolor{white}{\textbf{Terme}} & \textcolor{white}{\textbf{Définition}} \\
+\hline
+API & Application Programming Interface - Interface permettant la communication entre applications \\
+\hline
+REST & Representational State Transfer - Style d'architecture pour les APIs web (GET, POST, PUT, DELETE) \\
+\hline
+SPA & Single Page Application - Application web qui charge une seule page HTML et met à jour dynamiquement le contenu \\
+\hline
+ORM & Object-Relational Mapping - Technique pour convertir des données entre objets et bases de données relationnelles \\
+\hline
+DTO & Data Transfer Object - Objet utilisé pour transférer des données entre couches \\
+\hline
+DI & Dependency Injection - Pattern où les dépendances sont injectées plutôt que créées \\
+\hline
+Observable & Flux de données asynchrones pouvant émettre plusieurs valeurs dans le temps \\
+\hline
+BehaviorSubject & Type d'Observable qui garde la dernière valeur et l'émet aux nouveaux abonnés \\
+\hline
+Interceptor & Middleware qui intercepte les requêtes/réponses HTTP \\
+\hline
+Cookie Auth & Authentification basée sur des cookies HTTP sécurisés \\
+\hline
+CORS & Cross-Origin Resource Sharing - Mécanisme permettant les requêtes cross-domain \\
+\hline
+Text-to-SQL & Technique IA convertissant le langage naturel en requêtes SQL \\
+\hline
+Prompt Engineering & Art de concevoir des prompts efficaces pour les LLMs \\
+\hline
+CI/CD & Continuous Integration / Continuous Deployment - Automatisation du build et déploiement \\
+\hline
+Docker & Plateforme de conteneurisation d'applications \\
+\hline
+Kubernetes & Système d'orchestration de conteneurs \\
+\hline
+Lambda Expression & Fonction anonyme courte : \texttt{x => x.Property} \\
+\hline
+Async/Await & Syntaxe pour gérer le code asynchrone de manière synchrone \\
+\hline
+Middleware & Code qui s'exécute entre la requête et la réponse \\
+\hline
+\end{tabular}
+\caption{Glossaire des Termes Techniques}
+\end{table}
+
+\newpage
+
+%==============================================================================
+% CONCLUSION
+%==============================================================================
+\section{\faFlagCheckered\ Conclusion}
+
+\begin{tcolorbox}[
+    enhanced,
+    colback=primaryblue!10,
+    colframe=primaryblue,
+    title={\faStar\ Résumé de l'Application GMAO},
+    fonttitle=\bfseries
+]
+
+\textbf{Architecture Technique :}
+\begin{itemize}
+    \item Backend \textbf{.NET Core 9} avec Entity Framework Core et Cookie Authentication
+    \item Frontend \textbf{Angular 17+} avec architecture modulaire et RxJS
+    \item Chatbot IA \textbf{Python FastAPI} avec approche Text-to-SQL
+    \item Base de données \textbf{SQL Server} avec relations normalisées
+\end{itemize}
+
+\vspace{0.3cm}
+
+\textbf{Modules Principaux :}
+\begin{itemize}
+    \item Gestion des \textbf{Interventions} avec workflow complet
+    \item Gestion des \textbf{Équipements} et leur état
+    \item Gestion des \textbf{Stocks} et fournisseurs
+    \item \textbf{Chatbot IA} pour interroger les données en langage naturel
+\end{itemize}
+
+\vspace{0.3cm}
+
+\textbf{Bonnes Pratiques Implémentées :}
+\begin{itemize}
+    \item Séparation des responsabilités (Controllers, Services, DTOs)
+    \item Sécurité (Cookie Auth, validation SQL, filtrage par rôle)
+    \item Architecture reactive (BehaviorSubject, Observables)
+    \item Infrastructure Docker pour le déploiement
+\end{itemize}
+
+\end{tcolorbox}
+
+\vspace{1cm}
+
+\begin{center}
+\begin{tikzpicture}
+    \node[draw=successbox, fill=successbox!20, rounded corners=10pt,
+          minimum width=12cm, minimum height=2cm, align=center] {
+        {\Large\bfseries\color{successbox} Application GMAO Complète}\\[0.3cm]
+        {\large Prête pour la démonstration devant le jury}\\[0.2cm]
+        {\normalsize .NET Core $\bullet$ Angular $\bullet$ FastAPI $\bullet$ SQL Server $\bullet$ Docker}
+    };
+\end{tikzpicture}
+\end{center}
+
+%==============================================================================
+% FIN DU DOCUMENT
+%==============================================================================
+\end{document}

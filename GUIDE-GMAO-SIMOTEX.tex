@@ -824,6 +824,63 @@ Projection fin d'année & dépensé $\div$ part de l'année écoulée & Dépense
 \end{gtable}
 
 % -----------------------------------------------------------------------------
+\section{Accès à l'application et comptes de démonstration}\label{sec:acces}
+
+L'application est installée sur le serveur de SIMOTEX (\code{SRV-TN-BI}, \code{192.168.6.245}), sous IIS, sur le port \textbf{5091}. Elle s'ouvre dans un simple navigateur : aucune installation n'est nécessaire sur les postes ni sur les tablettes.
+
+\subsection{Adresses}
+
+\begin{gtable}{L{0.6cm} L{3.6cm} L{4.6cm} Y}
+\headrow \thead{N°} & \thead{Où} & \thead{Adresse} & \thead{Ce que l'on vérifie} \\
+1 & Navigateur \textbf{du serveur} & \code{http://localhost:5091} & Connexion avec le compte superviseur, puis ouverture du Tableau de bord et du Planning \\
+2 & Navigateur \textbf{du serveur} & \code{http://SRV-TN-BI:5091} & La page de connexion s'affiche \\
+3 & \textbf{Une tablette de l'usine} & \code{http://192.168.6.245:5091} & Connexion, puis déclaration d'une panne de test \\
+\end{gtable}
+
+\begin{note}[Pourquoi cet ordre]
+Chaque test ajoute un seul élément au précédent : l'application (1), puis le nom du serveur (2), puis le réseau de l'usine (3). Le premier test qui échoue désigne donc la cause. Un essai depuis un poste relié par VPN ne prouve rien : seul un appareil situé dans l'usine représente les tablettes.
+\end{note}
+
+\subsection{Comptes de démonstration}
+
+Tous les comptes ont le \textbf{même mot de passe} : \code{Simotex!2026}.
+
+\begin{gtable}{L{2.6cm} L{3.6cm} L{5.2cm} Y}
+\headrow \thead{Rôle} & \thead{Personne} & \thead{Identifiant (e-mail)} & \thead{Remarque} \\
+\ui{Superviseur} & Responsable Maintenance & \code{superviseur@simotex.demo} & Accès à tous les modules \\
+\ui{Technicien} & Mohamed Ben Salah & \code{m.bensalah@simotex.demo} & Mécanique machines à coudre \\
+\ui{Technicien} & Karim Jlassi & \code{k.jlassi@simotex.demo} & Électricité et automatisme \\
+\ui{Technicien} & Anis Trabelsi & \code{a.trabelsi@simotex.demo} & Mécanique générale \\
+\ui{Technicien} & Sami Gharbi & \code{s.gharbi@simotex.demo} & Vapeur, air comprimé et pneumatique \\
+\ui{Demandeur} & Salma Haddad & \code{s.haddad@simotex.demo} & Chef de chaîne \\
+\ui{Demandeur} & Nour Ben Amor & \code{n.benamor@simotex.demo} & Chef de chaîne \\
+\ui{Demandeur} & Hichem Mansour & \code{h.mansour@simotex.demo} & Chef de chaîne \\
+\ui{Demandeur} & Rim Chaabane & \code{r.chaabane@simotex.demo} & Chef de chaîne \\
+\end{gtable}
+
+\begin{retenir}[Avant la mise en service réelle]
+Ces comptes servent uniquement à la démonstration. Avant l'utilisation réelle, le superviseur crée les comptes nominatifs du personnel (\ui{Paramètres} $\rightarrow$ \ui{Gérer les utilisateurs}) puis supprime les comptes de démonstration.
+\end{retenir}
+
+\subsection{Parcourir le circuit complet en dix minutes}
+
+Pour voir les trois rôles échanger sur une même intervention, utiliser \textbf{trois navigateurs différents}, ou des fenêtres de navigation privée : chaque navigateur garde une seule session ouverte.
+
+\begin{enumerate}
+  \item \textbf{Demandeur} (\code{s.haddad@simotex.demo}) : \ui{Déclarer une panne}. Choisir une chaîne et une machine, le type «~Maintenance corrective~», un type de panne, l'urgence «~Haute~» et un titre, puis valider. La machine passe \ui{En panne}.
+  \item \textbf{Superviseur} (\code{superviseur@simotex.demo}) : la cloche signale la nouvelle demande. Ouvrir l'intervention, puis dans la carte \ui{À faire}, \ui{Affecter} à Mohamed Ben Salah.
+  \item \textbf{Technicien} (\code{m.bensalah@simotex.demo}) : ouvrir l'intervention affectée, puis \ui{Accepter et démarrer}. Dans le \ui{Suivi des travaux} : saisir un temps passé, sortir une pièce du magasin et ajouter une photo.
+  \item \textbf{Technicien} : rédiger le compte rendu, puis \ui{Marquer comme réalisée}. La machine redevient \ui{En service}.
+  \item \textbf{Superviseur} : lire le compte rendu et voir la photo sous celui-ci, puis \ui{Valider et clôturer}.
+  \item \textbf{Superviseur} : constater les effets. Le coût apparaît sur la fiche (main-d'\oe uvre + pièce), le stock de l'article a baissé dans le \ui{Magasin}, chaque étape figure dans le \ui{Journal d'activité}, et les indicateurs du \ui{Tableau de bord} sont à jour.
+  \item \textbf{Demandeur} : la cloche indique que la demande est clôturée.
+\end{enumerate}
+
+\begin{note}[Les données de démonstration]
+La base contient deux mois d'activité réaliste d'un atelier de confection : 43 interventions, 26 machines réparties sur les chaînes Coupe, Couture A, Couture B, Finition et Repassage, 12 plans préventifs, et un magasin de pièces avec ses fournisseurs. Seuls les entretiens préventifs des sept prochains jours apparaissent dans le futur.
+\end{note}
+
+% -----------------------------------------------------------------------------
 \section{Questions fréquentes}
 
 \begin{retenir}[« Pourquoi la disponibilité est-elle si élevée alors qu'il y a eu beaucoup de pannes ? »]
