@@ -39,6 +39,7 @@ import { InterventionPhotosComponent } from '../intervention-photos/intervention
           <div class="gm-note" *ngIf="lockReason"><app-icon name="info"></app-icon>{{ lockReason }}</div>
           <div class="gm-loading" *ngIf="loading"><span class="spinner"></span> Chargement…</div>
 
+          <div class="gm-note ok" *ngIf="machineFromLink"><app-icon name="qr"></app-icon>Machine reconnue par son étiquette : <b>{{ machineFromLink }}</b>. Il reste à dire ce qui ne va pas.</div>
           <div class="gm-section-title">1 · Où se trouve le problème ?</div>
           <div class="gm-form">
             <div class="gm-field">
@@ -93,6 +94,7 @@ import { InterventionPhotosComponent } from '../intervention-photos/intervention
             <div class="gm-field full">
               <label for="titre">Titre<span class="req" *ngIf="!isViewMode">*</span></label>
               <input id="titre" type="text" formControlName="titre" maxlength="100" placeholder="Ex. : Fuite d'huile sous le carter de la presse P-12">
+              <span class="hint" *ngIf="!isViewMode && !isEditMode && titreSuggere">Proposé à partir du type de panne et de la machine : vous pouvez le modifier.</span>
               <span class="err" *ngIf="invalid('titre')">Un titre de 3 caractères minimum est requis.</span>
             </div>
             <div class="gm-field full">
@@ -105,7 +107,9 @@ import { InterventionPhotosComponent } from '../intervention-photos/intervention
 
           <div class="gm-section-title">3 · Pièce jointe (facultatif)</div>
           <div class="gm-field" *ngIf="!isViewMode">
-            <input id="file" type="file" (change)="onFileSelected($event)" [accept]="allowedExtensions.join(',')">
+            <input id="file" class="sr-label" type="file" (change)="onFileSelected($event)" [accept]="allowedExtensions.join(',')">
+            <label for="file" class="btn btn-secondary file-btn"><app-icon name="upload"></app-icon> Ajouter une photo ou un document</label>
+            <span class="file-none" *ngIf="!selectedFile">Aucun fichier choisi</span>
             <span class="hint">Une photo de la panne aide le technicien. PDF, Office, images ou archives, 10 Mo maximum.</span>
           </div>
           <div class="file-preview existing-file" *ngIf="existingFileName && !selectedFile">
@@ -283,7 +287,9 @@ import { InterventionPhotosComponent } from '../intervention-photos/intervention
           <div class="form-section">
             <h3 class="section-title"><span class="step">3</span> Pièce jointe de la demande</h3>
             <div class="form-group" *ngIf="!isViewMode">
-              <input id="file" type="file" (change)="onFileSelected($event)" [accept]="allowedExtensions.join(',')" />
+              <input id="file" class="sr-label" type="file" (change)="onFileSelected($event)" [accept]="allowedExtensions.join(',')" />
+              <label for="file" class="btn btn-secondary file-btn"><app-icon name="upload"></app-icon> Ajouter une photo ou un document</label>
+              <span class="file-none" *ngIf="!selectedFile">Aucun fichier choisi</span>
               <small class="form-text">Photo de la panne, document… PDF, Office, images ou archives, 10 Mo maximum.</small>
             </div>
 
@@ -501,6 +507,9 @@ import { InterventionPhotosComponent } from '../intervention-photos/intervention
 
     .empty-note { margin: 0; color: var(--text-muted); font-size: 14px; }
 
+    .file-btn { cursor: pointer; }
+    .file-none { margin-left: 10px; font-size: 0.8125rem; color: var(--text-muted); }
+    input.sr-label:focus-visible + .file-btn { outline: 2px solid var(--primary-600); outline-offset: 2px; }
     .file-preview {
       display: flex;
       align-items: center;
@@ -691,6 +700,12 @@ export class InterventionFormComponent implements OnInit, OnDestroy {
       }
     }));
 
+    // Title proposed from the breakdown type and the machine, until the user writes their own
+    const panneCtl = this.interventionForm.get('idPanne')!;
+    this.subscriptions.push(panneCtl.valueChanges.subscribe(() => this.suggestTitle()));
+    this.subscriptions.push(machine.valueChanges.subscribe(() => this.suggestTitle()));
+    this.subscriptions.push(this.interventionForm.get('titre')!.valueChanges.subscribe(() => this.titreSuggere = false));
+
     // Changing the line drops a machine that is not on it
     this.subscriptions.push(chaine.valueChanges.subscribe(() => {
       const selected = this.machines.find(m => m.idEquipement === machine.value);
@@ -700,16 +715,68 @@ export class InterventionFormComponent implements OnInit, OnDestroy {
     }));
   }
 
+  /** True while the title is the one proposed by the form (the user has not typed their own). */
+  titreSuggere = false;
+
+  private get isCreation(): boolean { return !this.isEditMode && !this.isViewMode && !this.interventionId; }
+
+  /**
+   * Fewer choices for the person declaring: a breakdown is corrective work of normal urgency
+   * unless they say otherwise. Whoever knows better changes it in one click.
+   */
+  private applyCreationDefaults(): void {
+    if (!this.isCreation) return;
+    const f = this.interventionForm;
+    if (f.get('idTypeIntervention')?.value === null && this.typesIntervention.length) {
+      const norm = (l: string) => l.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      const corrective = this.typesIntervention.find(t => norm(t.libelle).includes('correct'))
+        ?? this.typesIntervention.find(t => norm(t.libelle).includes('depann'));
+      if (corrective) f.get('idTypeIntervention')!.setValue(corrective.idTypeIntervention);
+    }
+    if (f.get('idUrgence')?.value === null && this.urgences.length) {
+      const normale = this.urgences.find(u => this.urgenceLevel(u.libelle) === 'medium');
+      if (normale) f.get('idUrgence')!.setValue(normale.idUrgence);
+    }
+  }
+
+  /** "?machine=12" (QR label on the machine): the machine and its line are filled in. */
+  private applyMachineFromLink(): void {
+    if (!this.isCreation) return;
+    const id = Number(this.route.snapshot.queryParamMap.get('machine'));
+    if (id && this.machines.some(m => m.idEquipement === id)) {
+      const selected = this.machines.find(m => m.idEquipement === id)!;
+      if (selected.idChaineProduction) this.interventionForm.get('idChaineProduction')!.setValue(selected.idChaineProduction, { emitEvent: false });
+      this.interventionForm.get('idEquipement')!.setValue(id);
+      this.machineFromLink = `${selected.codeEquipement} — ${selected.designation}`;
+    }
+  }
+  machineFromLink = '';
+
+  /** Proposes "Casse aiguille — CB-04" while the user has not written a title of their own. */
+  private suggestTitle(): void {
+    if (!this.isCreation) return;
+    const titre = this.interventionForm.get('titre')!;
+    if (titre.value && !this.titreSuggere) return;
+    const panne = this.pannes.find(p => p.idPanne === this.interventionForm.get('idPanne')?.value);
+    const machine = this.machines.find(m => m.idEquipement === this.interventionForm.get('idEquipement')?.value);
+    const chaine = this.chainesProduction.find(c => c.idChaineProduction === this.interventionForm.get('idChaineProduction')?.value);
+    if (!panne) return;
+    const lieu = machine ? machine.codeEquipement : chaine ? chaine.libelle : '';
+    titre.setValue(`${panne.libelle}${lieu ? ' — ' + lieu : ''}`.slice(0, 100), { emitEvent: false });
+    this.titreSuggere = true;
+  }
+
   loadReferenceData(): void {
     this.referenceDataService.getTypesIntervention().subscribe({
       next: data => {
         this.typesIntervention = data;
         this.interventionForm.get('idTypeIntervention')?.updateValueAndValidity();
+        this.applyCreationDefaults();
       },
       error: () => this.notificationService.error('Erreur', 'Impossible de charger les types')
     });
     this.referenceDataService.getUrgences().subscribe({
-      next: data => this.urgences = data,
+      next: data => { this.urgences = data; this.applyCreationDefaults(); },
       error: () => this.notificationService.error('Erreur', 'Impossible de charger les urgences')
     });
     this.referenceDataService.getChainesProduction().subscribe({
@@ -721,7 +788,7 @@ export class InterventionFormComponent implements OnInit, OnDestroy {
       error: () => this.notificationService.error('Erreur', 'Impossible de charger les pannes')
     });
     this.equipmentService.lookup().subscribe({
-      next: data => this.machines = data,
+      next: data => { this.machines = data; this.applyMachineFromLink(); },
       error: () => this.machines = []
     });
   }
