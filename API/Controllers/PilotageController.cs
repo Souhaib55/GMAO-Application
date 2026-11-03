@@ -39,7 +39,7 @@ namespace API.Controllers
 
         private sealed record Ot(int Id, string Titre, DateTime Created, int StatusId, bool Stop, int Chaine, string ChaineLib,
             int? Machine, string? MachineCode, string? MachineLib, string Panne, DateTime? Taken, DateTime? Done,
-            DateTime? Planned, int? Plan, int? Tech, string? TechName, int Urgence, string UrgenceLib)
+            DateTime? Planned, int? Plan, int? Tech, string? TechName, int Urgence, string UrgenceLib, int PanneId)
         {
             /// <summary>Counts in downtime, MTBF and availability: it stopped an identified machine.</summary>
             public bool IsArret => Stop && Machine.HasValue;
@@ -95,7 +95,7 @@ namespace API.Controllers
                     d.Equipement != null ? d.Equipement.CodeEquipement : null, d.Equipement != null ? d.Equipement.Designation : null,
                     d.Panne.Libelle, d.DatePriseEnCharge, d.DateRealisation, d.DatePlanifiee, d.IdPlanPreventif,
                     d.DestinatairesID, d.Destinataire != null ? d.Destinataire.Prenom + " " + d.Destinataire.Nom : null,
-                    d.IDUrgence, d.Urgence.Libelle))
+                    d.IDUrgence, d.Urgence.Libelle, d.IDPanne))
                 .ToListAsync();
             var valid = ots.Where(o => o.StatusId != StatusAnnulee).ToList();
 
@@ -245,15 +245,15 @@ namespace API.Controllers
                 .Select(g => new { id = g.Key.Chaine, chaine = g.Key.ChaineLib, heures = Math.Round(g.Sum(x => x.h), 1), pannes = g.Count(x => x.o.Created >= from) })
                 .OrderByDescending(x => x.heures).ToList();
 
-            var causes = stopsCur.Where(x => x.o.Created >= from).GroupBy(x => x.o.Panne)
-                .Select(g => new { panne = g.Key, nombre = g.Count(), heures = Math.Round(g.Sum(x => x.h), 1) })
+            var causes = stopsCur.Where(x => x.o.Created >= from).GroupBy(x => new { x.o.PanneId, x.o.Panne })
+                .Select(g => new { panneId = g.Key.PanneId, panne = g.Key.Panne, nombre = g.Count(), heures = Math.Round(g.Sum(x => x.h), 1) })
                 .OrderByDescending(x => x.nombre).ThenByDescending(x => x.heures).ToList();
             var totalCauses = causes.Sum(c => c.nombre);
             var cumulCauses = 0;
             var pareto = causes.Take(8).Select(c =>
             {
                 cumulCauses += c.nombre;
-                return new { c.panne, c.nombre, c.heures, part = KpiCalculator.Taux(c.nombre, totalCauses), cumul = KpiCalculator.Taux(cumulCauses, totalCauses) };
+                return new { c.panneId, c.panne, c.nombre, c.heures, part = KpiCalculator.Taux(c.nombre, totalCauses), cumul = KpiCalculator.Taux(cumulCauses, totalCauses) };
             }).ToList();
 
             var parMachine = stopsCur.GroupBy(x => new { x.o.Machine, x.o.MachineCode, x.o.MachineLib, x.o.ChaineLib })

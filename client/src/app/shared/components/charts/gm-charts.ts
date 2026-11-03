@@ -294,7 +294,7 @@ export interface DonutSlice { label: string; value: number; color?: string; }
     <div class="donut" *ngIf="total > 0; else empty">
       <svg viewBox="0 0 42 42">
         <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--gray-100)" stroke-width="6"></circle>
-        <circle *ngFor="let s of arcs; let i = index" cx="21" cy="21" r="15.9" fill="none" [attr.stroke]="s.color"
+        <circle *ngFor="let s of visibleArcs; let i = index" cx="21" cy="21" r="15.9" fill="none" [attr.stroke]="s.color"
                 stroke-width="6" [attr.stroke-dasharray]="s.dash" [attr.stroke-dashoffset]="s.offset" transform="rotate(-90 21 21)"></circle>
         <text x="21" y="20.5" text-anchor="middle" class="c-val">{{ center ?? total }}</text>
         <text x="21" y="26" text-anchor="middle" class="c-lab">{{ centerLabel }}</text>
@@ -325,16 +325,19 @@ export class GmDonutComponent implements OnChanges {
 
   total = 0;
   arcs: { label: string; color: string; dash: string; offset: number; pct: number }[] = [];
+  /** Zero slices stay in the legend (a "0 %" answers the question) but draw nothing. */
+  visibleArcs: { label: string; color: string; dash: string; offset: number; pct: number }[] = [];
 
   ngOnChanges(): void {
     this.total = this.slices.reduce((s, x) => s + x.value, 0);
     let acc = 0;
-    this.arcs = this.slices.filter(s => s.value > 0).map((s, i) => {
+    this.arcs = this.slices.map((s, i) => {
       const pct = this.total ? (s.value / this.total) * 100 : 0;
       const arc = { label: s.label, color: s.color || CHART_COLORS[i % CHART_COLORS.length], dash: `${pct} ${100 - pct}`, offset: -acc, pct: Math.round(pct) };
       acc += pct;
       return arc;
     });
+    this.visibleArcs = this.arcs.filter(a => a.pct > 0 || a.dash !== '0 100');
   }
 }
 
