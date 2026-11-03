@@ -715,7 +715,7 @@ table {
 @media (pointer: coarse) {
   .btn, .btn.btn-sm { min-height: 44px; height: auto; padding-top: 6px; padding-bottom: 6px; }
   .btn.btn-sm { padding-left: 0.875rem; padding-right: 0.875rem; font-size: 0.875rem; }
-  .btn-icon, .icon-btn, .action-btn { min-width: 44px; min-height: 44px; }
+  .btn-icon, .icon-btn, .action-btn, .gm-icon-btn, .menu-toggle, .user-card-logout, .user-toggle { min-width: 44px; min-height: 44px; }
   input:not([type=checkbox]):not([type=radio]), select { min-height: 44px; font-size: 1rem; }
   textarea { font-size: 1rem; }
   input[type=checkbox], input[type=radio] { width: 22px; height: 22px; }

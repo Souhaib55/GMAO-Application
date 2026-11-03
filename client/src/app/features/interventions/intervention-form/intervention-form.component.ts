@@ -39,7 +39,7 @@ import { InterventionPhotosComponent } from '../intervention-photos/intervention
           <div class="gm-note" *ngIf="lockReason"><app-icon name="info"></app-icon>{{ lockReason }}</div>
           <div class="gm-loading" *ngIf="loading"><span class="spinner"></span> Chargement…</div>
 
-          <div class="gm-note ok" *ngIf="machineFromLink"><app-icon name="qr"></app-icon>Machine reconnue par son étiquette : <b>{{ machineFromLink }}</b>. Il reste à dire ce qui ne va pas.</div>
+          <div class="gm-note ok" *ngIf="machineFromLink"><app-icon name="qr"></app-icon><span>Machine reconnue par son étiquette : <b>{{ machineFromLink }}</b>. Il reste à dire ce qui ne va pas.</span></div>
           <div class="gm-section-title">1 · Où se trouve le problème ?</div>
           <div class="gm-form">
             <div class="gm-field">

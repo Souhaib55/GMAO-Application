@@ -137,7 +137,7 @@ interface Ligne { label: string; def: string; cur: string; prev: string; cmp: Co
     section { break-inside: avoid; }
     .points { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
     .points li { padding: 6px 10px 6px 12px; border-left: 3px solid var(--gray-400); background: #f6f8fb; font-size: 0.8125rem; }
-    .points li span { color: #505a69; }
+    .points li span { display: block; color: #505a69; margin-top: 1px; }
     .points .n-bad { border-color: var(--error); } .points .n-warn { border-color: var(--warning); } .points .n-ok { border-color: var(--success); } .points .n-info { border-color: var(--primary-600); }
     .t { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
     .t th { text-align: left; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7585; border-bottom: 1px solid #cdd4df; padding: 5px 6px; font-weight: 600; }

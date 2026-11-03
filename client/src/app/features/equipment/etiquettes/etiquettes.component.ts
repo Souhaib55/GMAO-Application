@@ -89,6 +89,7 @@ export function qrPath(text: string): { d: string; size: number } {
     .warn { display: flex; gap: 8px; align-items: flex-start; color: var(--warning-dark); background: var(--warning-light); border-radius: var(--radius); padding: 8px 10px; font-size: 0.8125rem; margin: 10px 0 0; max-width: 760px; }
     .hint { font-size: 0.8125rem; color: var(--text-muted); margin: 8px 0 0; }
     .filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+    .filters select { width: auto; min-width: 220px; }
     .labels { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
     .label { position: relative; display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: center; background: #fff;
              border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 12px 14px 12px 12px; cursor: pointer; color: #151a22; }
