@@ -116,7 +116,8 @@ export async function shot(b, name) {
 export async function login(b, email, password) {
   await b.send('Page.navigate', { url: APP + '/login' });
   await sleep(1500);
-  await ev(b, `localStorage.clear()`);
+  // The first-visit guided tour would cover the page: switched off for the tests
+  await ev(b, `localStorage.clear(), localStorage.setItem('gmao.visite.off', '1')`);
   await b.send('Network.clearBrowserCookies');
   await b.send('Page.navigate', { url: APP + '/login' });
   for (let i = 0; i < 60 && !(await ev(b, `!!document.querySelector('#email')`)); i++) await sleep(250);

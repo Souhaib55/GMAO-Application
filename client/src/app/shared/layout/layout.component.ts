@@ -8,6 +8,8 @@ import { AuthService } from '../../core/services/auth.service';
 import { InterventionNotificationService } from '../../core/services/intervention-notification.service';
 import { UserInfo, Notification } from '../../core/models';
 import { AppIconComponent } from '../components/app-icon/app-icon.component';
+import { GuidedTourComponent } from '../components/guided-tour/guided-tour.component';
+import { TourService } from '../../core/services/tour.service';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Observable, Subject, Subscription, forkJoin, of } from 'rxjs';
@@ -41,7 +43,7 @@ interface SearchHit {
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, AppIconComponent, ConfirmDialogComponent],
+  imports: [CommonModule, RouterModule, FormsModule, AppIconComponent, ConfirmDialogComponent, GuidedTourComponent],
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.scss']
 })
@@ -98,7 +100,8 @@ export class LayoutComponent implements OnInit, OnDestroy {
     {
       label: 'Système',
       items: [
-        { label: 'Paramètres', icon: 'settings', route: '/settings', roles: ['Superviseur'] }
+        { label: 'Paramètres', icon: 'settings', route: '/settings', roles: ['Superviseur'] },
+        { label: 'Aide', icon: 'help', route: '/aide', roles: ['Superviseur', 'Demandeur', 'Utilisateur'] }
       ]
     }
   ];
@@ -107,8 +110,20 @@ export class LayoutComponent implements OnInit, OnDestroy {
   private readonly hiddenPages: { [route: string]: { section: string; title: string } } = {
     '/resources': { section: 'Magasin & achats', title: 'Pièces de rechange' },
     '/stock': { section: 'Magasin & achats', title: 'Stock (ancien module)' },
-    '/journal': { section: 'Système', title: "Journal d'activité" }
+    '/journal': { section: 'Système', title: "Journal d'activité" },
+    '/rapport-mensuel': { section: 'Pilotage', title: 'Rapport mensuel' }
   };
+
+  /** Business names of the roles ("Utilisateur" is the technical name of the technician role). */
+  roleLabel(role: string | undefined): string {
+    return role === 'Utilisateur' ? 'Technicien' : role === 'Demandeur' ? 'Demandeur' : role ?? '';
+  }
+
+  /** Replays the guided tour of the current role, from the user menu. */
+  revoirVisite(): void {
+    this.userDropdownOpen = false;
+    this.router.navigate(['/dashboard']).then(() => setTimeout(() => this.tour.start(this.currentUser?.role ?? ''), 600));
+  }
 
   private readonly subPageLabels: { [segment: string]: string } = {
     new: 'Nouveau',
@@ -116,7 +131,8 @@ export class LayoutComponent implements OnInit, OnDestroy {
     view: 'Fiche',
     users: 'Utilisateurs',
     references: 'Référentiels',
-    historique: 'Historique'
+    historique: 'Historique',
+    etiquettes: 'Étiquettes QR'
   };
 
   // Global search (Ctrl K)
@@ -132,7 +148,8 @@ export class LayoutComponent implements OnInit, OnDestroy {
     private router: Router,
     private notificationService: InterventionNotificationService,
     private sanitizer: DomSanitizer,
-    private http: HttpClient
+    private http: HttpClient,
+    private tour: TourService
   ) {}
 
   /** Reference time for "Il y a …" labels, refreshed every 30 s (stable between change-detection passes). */
@@ -165,8 +182,8 @@ export class LayoutComponent implements OnInit, OnDestroy {
       this.currentUser = user;
       this.visibleGroups = this.computeVisibleGroups();
       
-      // Start notification polling only for Superviseur and Utilisateur
-      if (user && (user.role === 'Superviseur' || user.role === 'Utilisateur')) {
+      // Every role gets its notifications (requesters are told when work starts and ends)
+      if (user) {
         this.notificationService.startPolling(30000);
         
         // Subscribe to notifications
