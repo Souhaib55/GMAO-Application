@@ -161,19 +161,42 @@ namespace API.Controllers
         // Queries
         // ------------------------------------------------------------------
 
+        /// <summary>
+        /// The list, with the filters of the screen and the presets the dashboard opens
+        /// ("why is this figure high?"). Each preset selects exactly the work orders behind a
+        /// dashboard figure, with the same rules as <see cref="PilotageController"/>:
+        ///  - "arrets": stops of an identified machine overlapping [du, au) — downtime, availability
+        ///  - "pannes": stops of an identified machine declared in [du, au) — breakdowns, MTBF, causes
+        ///  - "reparees": stops repaired in [du, au) — MTTR
+        ///  - "preventifs-dus": preventive jobs due in [du, au) — preventive compliance
+        ///  - "declarees" / "realisees": declared / completed in [du, au)
+        ///  - "ouvertes", "en-retard", "non-affectees", "arret": right now
+        /// </summary>
         [HttpGet]
-        /// <param name="vue">Optional preset used by the dashboard alerts: "ouvertes", "non-affectees", "arret".</param>
-        public async Task<ActionResult<PagedResult<object>>> GetDemandeInterventions(int page = 1, int pageSize = 10, string? search = null, int? statusId = null, string? vue = null)
+        public async Task<ActionResult<PagedResult<object>>> GetDemandeInterventions(int page = 1, int pageSize = 10, string? search = null, int? statusId = null, string? vue = null,
+            DateTime? du = null, DateTime? au = null, int? chaineId = null, int? equipementId = null, int? panneId = null, string? type = null, bool export = false)
         {
             var user = await GetUserContextAsync();
             if (user == null) return Unauthorized();
 
             page = Math.Max(1, page);
-            pageSize = Math.Clamp(pageSize, 1, 100);
+            // An export takes the whole filtered list in one go
+            pageSize = Math.Clamp(pageSize, 1, export ? 5000 : 100);
 
             var query = ScopeToUser(_context.DemandeInterventions.Where(d => d.IsActif), user);
+            var now = DateTime.Now;
+            var today = DateTime.Today;
+            var debut = du ?? today.AddDays(-29);
+            var fin = au ?? now;
 
             if (statusId.HasValue) query = query.Where(d => d.StatusId == statusId.Value);
+            if (chaineId.HasValue) query = query.Where(d => d.IDChaineProduction == chaineId.Value);
+            if (equipementId.HasValue) query = query.Where(d => d.IDEquipement == equipementId.Value);
+            if (panneId.HasValue) query = query.Where(d => d.IDPanne == panneId.Value);
+            if (type == "preventif") query = query.Where(d => d.IdPlanPreventif != null);
+            else if (type == "panne") query = query.Where(d => d.IdPlanPreventif == null && d.MachineArretee);
+            else if (type == "corrective") query = query.Where(d => d.IdPlanPreventif == null);
+
             switch (vue)
             {
                 case "ouvertes":
@@ -185,6 +208,38 @@ namespace API.Controllers
                 case "arret":
                     // Same rule as the dashboard: a stop counts only with an identified machine
                     query = query.Where(d => (d.StatusId == StatusATraiter || d.StatusId == StatusEnCours) && d.MachineArretee && d.IDEquipement != null);
+                    break;
+                case "en-retard":
+                    var limite = now.AddHours(-48);
+                    query = query.Where(d => (d.StatusId == StatusATraiter || d.StatusId == StatusEnCours) &&
+                        ((d.IdPlanPreventif != null && d.DatePlanifiee < today) ||
+                         (d.IdPlanPreventif == null && d.MachineArretee && d.IDEquipement != null && d.DateCreation < limite)));
+                    break;
+                case "arrets":
+                    query = query.Where(d => d.StatusId != StatusAnnulee && d.MachineArretee && d.IDEquipement != null &&
+                        d.DateCreation < fin && (d.DateRealisation == null || d.DateRealisation > debut));
+                    break;
+                case "pannes":
+                    query = query.Where(d => d.StatusId != StatusAnnulee && d.MachineArretee && d.IDEquipement != null && d.DateCreation >= debut && d.DateCreation < fin);
+                    break;
+                case "reparees":
+                    query = query.Where(d => d.StatusId != StatusAnnulee && d.MachineArretee && d.IDEquipement != null &&
+                        d.DatePriseEnCharge != null && d.DateRealisation >= debut && d.DateRealisation < fin);
+                    break;
+                case "preventifs-dus":
+                    query = query.Where(d => d.StatusId != StatusAnnulee && d.IdPlanPreventif != null &&
+                        d.DatePlanifiee >= debut.Date && d.DatePlanifiee < fin && d.DatePlanifiee <= today);
+                    break;
+                case "declarees":
+                    query = query.Where(d => d.StatusId != StatusAnnulee && d.DateCreation >= debut && d.DateCreation < fin);
+                    break;
+                case "realisees":
+                    query = query.Where(d => d.StatusId != StatusAnnulee && d.DateRealisation >= debut && d.DateRealisation < fin);
+                    break;
+                default:
+                    // Plain list: the period filters on the declaration date
+                    if (du.HasValue) query = query.Where(d => d.DateCreation >= du.Value);
+                    if (au.HasValue) query = query.Where(d => d.DateCreation < au.Value);
                     break;
             }
 

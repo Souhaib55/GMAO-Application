@@ -1,6 +1,8 @@
 <div class="gm-page">
   <app-page-header icon="equipment" title="Équipements"
                    subtitle="Le parc machines de l'usine : où se trouve chaque machine, son état et son importance pour la production.">
+    <button class="btn btn-secondary" type="button" (click)="exporter()" [disabled]="exporting"><app-icon name="download"></app-icon> Exporter</button>
+    <a class="btn btn-secondary" routerLink="/equipment/etiquettes" *ngIf="canCreate()"><app-icon name="qr"></app-icon> Étiquettes QR</a>
     <button class="btn btn-primary" routerLink="/equipment/new" *ngIf="canCreate()"><app-icon name="plus"></app-icon> Nouvel équipement</button>
   </app-page-header>
 

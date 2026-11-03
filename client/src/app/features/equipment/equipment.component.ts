@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { debouncer } from '../../shared/utils/gm-format';
+import { debouncer, errorMessage, exportCsv, isoDate } from '../../shared/utils/gm-format';
 import { FormsModule } from '@angular/forms';
 import { EquipmentService } from './services/equipment.service';
 import { Equipment, PagedResult, UserInfo } from '../../core/models';
@@ -61,6 +61,23 @@ export class EquipmentComponent implements OnInit {
   canCreate(): boolean {
     // Only Superviseur can create
     return this.currentUser?.role === 'Superviseur';
+  }
+
+  exporting = false;
+
+  /** The whole machine list (not only the current page), as a file Excel opens directly. */
+  exporter(): void {
+    this.exporting = true;
+    this.equipmentService.getEquipments(1, 5000, this.searchTerm, true).subscribe({
+      next: r => {
+        const rows = r.data.map((e: any) => [e.codeEquipement, e.designation, e.chaineProduction?.libelle ?? e.chaineProduction?.nom ?? '',
+          e.famille?.nomFamille ?? '', e.modele?.marque?.nomMarque ?? '', e.modele?.nomModele ?? '', e.etat?.nomEtat ?? '', e.criticite?.nomCriticite ?? '',
+          e.emplacement ?? '', e.numeroSerie ?? '']);
+        exportCsv(`equipements-${isoDate(new Date())}`, ['Code', 'Désignation', 'Chaîne', 'Famille', 'Marque', 'Modèle', 'État', 'Criticité', 'Emplacement', 'N° de série'], rows);
+        this.exporting = false;
+      },
+      error: err => { this.exporting = false; this.notificationService.error('Export impossible', errorMessage(err, "La liste n'a pas pu être exportée.")); }
+    });
   }
 
   loadEquipments(): void {

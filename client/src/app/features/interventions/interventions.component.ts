@@ -2,10 +2,12 @@ import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { STATUTS_OT, debouncer } from '../../shared/utils/gm-format';
+import { STATUTS_OT, debouncer, errorMessage, exportCsv, fmtDate, fmtDateTime, isoDate } from '../../shared/utils/gm-format';
 import { AppIconComponent } from '../../shared/components/app-icon/app-icon.component';
 import { FormsModule } from '@angular/forms';
-import { InterventionService } from './services/intervention.service';
+import { InterventionFiltres, InterventionService } from './services/intervention.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 import { DemandeIntervention, PagedResult, UserInfo } from '../../core/models';
 import { NotificationService } from '../../core/services/notification.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -54,15 +56,44 @@ import { ConfirmService } from '../../core/services/confirm.service';
         </div>
       </div>
 
+      <!-- Filter coming from the dashboard: says in words what the list shows -->
+      <div class="drill-banner" *ngIf="drillLabel" role="status">
+        <app-icon name="filter"></app-icon>
+        <span><b>{{ drillLabel }}</b><small *ngIf="drillDetail">{{ drillDetail }}</small></span>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="clearDrill()">Retirer ce filtre</button>
+      </div>
+
       <div class="gm-filters">
         <span class="gm-search"><app-icon name="search"></app-icon>
-          <input type="search" placeholder="Titre, référence, machine…" [(ngModel)]="searchTerm" (ngModelChange)="search()">
+          <input type="search" placeholder="Titre, référence, machine…" aria-label="Rechercher" [(ngModel)]="searchTerm" (ngModelChange)="search()">
         </span>
-        <button type="button" class="filter-chip" *ngIf="vue" (click)="clearVue()" title="Retirer le filtre">
-          {{ vueLabels[vue] || vue }} <app-icon name="close"></app-icon>
-        </button>
+        <select [ngModel]="statusId" (ngModelChange)="setFilter('statusId', $event)" aria-label="Statut">
+          <option [ngValue]="null">Tous les statuts</option>
+          <option *ngFor="let st of statutOptions" [ngValue]="st.id">{{ st.label }}</option>
+        </select>
+        <select [ngModel]="type" (ngModelChange)="setFilter('type', $event)" aria-label="Type">
+          <option [ngValue]="null">Tous les types</option>
+          <option ngValue="panne">Pannes avec arrêt</option>
+          <option ngValue="corrective">Correctif (hors préventif)</option>
+          <option ngValue="preventif">Préventif</option>
+        </select>
+        <select *ngIf="!isDemandeur" [ngModel]="chaineId" (ngModelChange)="setFilter('chaineId', $event)" aria-label="Chaîne">
+          <option [ngValue]="null">Toutes les chaînes</option>
+          <option *ngFor="let c of chaines" [ngValue]="c.id">{{ c.libelle }}</option>
+        </select>
+        <select *ngIf="!vue" [ngModel]="periode" (ngModelChange)="setPeriode($event)" aria-label="Période de déclaration">
+          <option [ngValue]="null">Toutes les dates</option>
+          <option ngValue="7">Déclarées ces 7 jours</option>
+          <option ngValue="30">Déclarées ces 30 jours</option>
+          <option ngValue="90">Déclarées ces 90 jours</option>
+          <option ngValue="mois">Déclarées ce mois-ci</option>
+        </select>
+        <button type="button" class="btn btn-secondary btn-sm" *ngIf="hasFilters" (click)="clearAll()">Effacer les filtres</button>
         <span class="spacer"></span>
         <span class="count" *ngIf="!loading">{{ totalCount }} intervention{{ totalCount > 1 ? 's' : '' }}</span>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="exporter()" [disabled]="exporting || !totalCount">
+          <app-icon name="download"></app-icon> {{ exporting ? 'Export…' : 'Exporter' }}
+        </button>
       </div>
 
       <div class="gm-card">
@@ -71,8 +102,9 @@ import { ConfirmService } from '../../core/services/confirm.service';
         <div class="gm-empty" *ngIf="!loading && !interventions.length">
           <app-icon name="interventions"></app-icon>
           <strong>Aucune intervention</strong>
-          <span>{{ searchTerm || vue ? 'Aucun résultat pour cette recherche.' : 'Déclarez une panne ou une demande de maintenance pour commencer.' }}</span>
-          <button class="btn btn-primary btn-sm mt-1" *ngIf="!searchTerm && !vue" routerLink="/interventions/new"><app-icon name="plus"></app-icon> Nouvelle intervention</button>
+          <span>{{ searchTerm || hasFilters ? 'Aucune intervention ne correspond à ces filtres.' : 'Déclarez une panne ou une demande de maintenance pour commencer.' }}</span>
+          <button class="btn btn-secondary btn-sm mt-1" *ngIf="searchTerm || hasFilters" (click)="clearAll()">Effacer les filtres</button>
+          <button class="btn btn-primary btn-sm mt-1" *ngIf="!searchTerm && !hasFilters" routerLink="/interventions/new"><app-icon name="plus"></app-icon> Nouvelle intervention</button>
         </div>
 
         <div class="gm-table-wrap" *ngIf="!loading && interventions.length">
@@ -102,9 +134,9 @@ import { ConfirmService } from '../../core/services/confirm.service';
                 <td data-label="Demandeur">{{ getDemandeurName(intervention) }}</td>
                 <td class="right" data-label="">
                   <div class="row-actions" (click)="$event.stopPropagation()">
-                    <button class="gm-icon-btn" title="Consulter la fiche" [routerLink]="['/interventions/view', intervention.idDemandeIntervention]"><app-icon name="eye"></app-icon></button>
-                    <button class="gm-icon-btn" title="Modifier" *ngIf="canEdit(intervention)" [routerLink]="['/interventions/edit', intervention.idDemandeIntervention]"><app-icon name="edit"></app-icon></button>
-                    <button class="gm-icon-btn danger" title="Supprimer" *ngIf="canDelete()" (click)="deleteIntervention(intervention.idDemandeIntervention)"><app-icon name="trash"></app-icon></button>
+                    <button class="gm-icon-btn" title="Consulter la fiche" aria-label="Consulter la fiche" [routerLink]="['/interventions/view', intervention.idDemandeIntervention]"><app-icon name="eye"></app-icon></button>
+                    <button class="gm-icon-btn" title="Modifier" aria-label="Modifier" *ngIf="canEdit(intervention)" [routerLink]="['/interventions/edit', intervention.idDemandeIntervention]"><app-icon name="edit"></app-icon></button>
+                    <button class="gm-icon-btn danger" title="Supprimer" aria-label="Supprimer" *ngIf="canDelete()" (click)="deleteIntervention(intervention.idDemandeIntervention)"><app-icon name="trash"></app-icon></button>
                   </div>
                 </td>
               </tr>
@@ -112,8 +144,12 @@ import { ConfirmService } from '../../core/services/confirm.service';
           </table>
         </div>
 
-        <div class="gm-pager" *ngIf="!loading && totalCount > pageSize">
-          <span>{{ (currentPage - 1) * pageSize + 1 }}–{{ currentPage * pageSize > totalCount ? totalCount : currentPage * pageSize }} sur {{ totalCount }}</span>
+        <div class="gm-pager" *ngIf="!loading && totalCount > 10">
+          <span>{{ (currentPage - 1) * pageSize + 1 }}–{{ currentPage * pageSize > totalCount ? totalCount : currentPage * pageSize }} sur {{ totalCount }}
+            <select class="page-size" [ngModel]="pageSize" (ngModelChange)="setPageSize($event)" aria-label="Lignes par page">
+              <option [ngValue]="10">10 par page</option><option [ngValue]="25">25 par page</option><option [ngValue]="50">50 par page</option><option [ngValue]="100">100 par page</option>
+            </select>
+          </span>
           <div class="pages">
             <button class="gm-icon-btn" [disabled]="currentPage === 1" (click)="previousPage()" aria-label="Page précédente"><app-icon name="chevron-left"></app-icon></button>
             <button class="gm-icon-btn" [disabled]="currentPage >= totalPages" (click)="nextPage()" aria-label="Page suivante"><app-icon name="chevron-right"></app-icon></button>
@@ -134,6 +170,14 @@ import { ConfirmService } from '../../core/services/confirm.service';
     .filter-chip:hover { background: var(--primary-100); }
     .filter-chip app-icon { font-size: 13px; }
     .count { font-size: 0.8125rem; color: var(--text-muted); }
+    .drill-banner {
+      display: flex; align-items: center; gap: 12px; padding: 10px 14px; margin-bottom: 12px;
+      background: var(--primary-50); border: 1px solid var(--primary-200); border-radius: var(--radius-lg); color: var(--primary-900);
+    }
+    .drill-banner > app-icon { font-size: 18px; color: var(--primary-600); flex-shrink: 0; }
+    .drill-banner > span { flex: 1; display: flex; flex-direction: column; gap: 2px; font-size: 0.875rem; }
+    .drill-banner small { font-size: 0.8125rem; color: var(--primary-800); }
+    .page-size { margin-left: 10px; height: 30px; font-size: 0.8125rem; }
     .row-actions { display: inline-flex; gap: 2px; justify-content: flex-end; }
     .clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   `]
@@ -149,13 +193,37 @@ export class InterventionsComponent implements OnInit, OnDestroy {
   viewMode: 'list' | 'grid' = 'list';
   currentUser: UserInfo | null = null;
 
-  /** Preset filter opened from a dashboard alert (?vue=…). */
+  /** Preset filter opened from a dashboard figure or alert (?vue=…). */
   vue: string | null = null;
   readonly vueLabels: Record<string, string> = {
-    'ouvertes': 'Interventions ouvertes',
+    'ouvertes': 'Interventions ouvertes en ce moment',
+    'en-retard': 'Interventions en retard en ce moment',
     'non-affectees': 'Demandes sans technicien',
-    'arret': "Machines à l'arrêt"
+    'arret': "Machines à l'arrêt en ce moment",
+    'arrets': "Arrêts machine de la période (heures d'arrêt, disponibilité)",
+    'pannes': 'Pannes déclarées sur la période',
+    'reparees': 'Pannes réparées sur la période (temps moyen de réparation)',
+    'preventifs-dus': 'Préventifs prévus sur la période (respect du préventif)',
+    'declarees': 'Interventions déclarées sur la période',
+    'realisees': 'Interventions terminées sur la période'
   };
+  readonly statutOptions = [1, 2, 3, 4, 5].map(id => ({ id, label: STATUTS_OT[id]?.label ?? '' }));
+
+  // Filters, mirrored in the address so the back button and shared links keep them
+  statusId: number | null = null;
+  type: string | null = null;
+  chaineId: number | null = null;
+  equipementId: number | null = null;
+  panneId: number | null = null;
+  du: string | null = null;
+  au: string | null = null;
+  periode: string | null = null;
+  exporting = false;
+
+  chaines: { id: number; libelle: string }[] = [];
+  private machines: { id: number; libelle: string }[] = [];
+  private pannes: { id: number; libelle: string }[] = [];
+  private readonly http = inject(HttpClient);
   private listSub?: Subscription;
   private routeSub?: Subscription;
   private readonly debounce = debouncer();
@@ -182,20 +250,117 @@ export class InterventionsComponent implements OnInit, OnDestroy {
       this.currentUser = user;
     });
     this.routeSub = this.route.queryParamMap.subscribe(q => {
+      const num = (k: string) => q.get(k) ? +q.get(k)! : null;
       this.vue = q.get('vue');
+      this.statusId = num('statusId');
+      this.type = q.get('type');
+      this.chaineId = num('chaineId');
+      this.equipementId = num('equipementId');
+      this.panneId = num('panneId');
+      this.du = q.get('du');
+      this.au = q.get('au');
+      this.periode = q.get('periode');
       this.currentPage = 1;
       this.loadInterventions();
     });
     this.loadStats();
+    this.loadLookups();
+  }
+
+  get isDemandeur(): boolean { return this.currentUser?.role === 'Demandeur'; }
+
+  get hasFilters(): boolean {
+    return !!(this.vue || this.statusId || this.type || this.chaineId || this.equipementId || this.panneId || this.du || this.au || this.periode);
+  }
+
+  /** Names of the line, machine and breakdown type, to write the active filter in words. */
+  private loadLookups(): void {
+    const base = environment.apiUrl;
+    this.http.get<any[]>(`${base}/ChaineProduction`).subscribe({ next: l => this.chaines = (l || []).map(c => ({ id: c.idChaineProduction, libelle: c.libelle })), error: () => {} });
+    this.http.get<any[]>(`${base}/Panne`).subscribe({ next: l => this.pannes = (l || []).map(p => ({ id: p.idPanne, libelle: p.libelle })), error: () => {} });
+    if (!this.isDemandeur) {
+      this.http.get<any[]>(`${base}/Equipment/lookup`).subscribe({ next: l => this.machines = (l || []).map(e => ({ id: e.idEquipement, libelle: `${e.codeEquipement} — ${e.designation}` })), error: () => {} });
+    }
+  }
+
+  /** "Arrêts machine de la période", with the period, line, machine and cause it is narrowed to. */
+  get drillLabel(): string {
+    if (this.vue) return this.vueLabels[this.vue] || this.vue;
+    if (this.equipementId || this.panneId || (this.du && !this.periode)) return 'Liste filtrée';
+    return '';
+  }
+
+  get drillDetail(): string {
+    const parts: string[] = [];
+    if (this.du || this.au) {
+      const au = this.au ? new Date(this.au) : null;
+      parts.push(this.du && au ? `du ${fmtDate(this.du)} au ${fmtDate(au)}` : this.du ? `depuis le ${fmtDate(this.du)}` : `jusqu'au ${fmtDate(au)}`);
+    }
+    if (this.chaineId) parts.push('chaîne ' + (this.chaines.find(c => c.id === this.chaineId)?.libelle ?? this.chaineId));
+    if (this.equipementId) parts.push('machine ' + (this.machines.find(m => m.id === this.equipementId)?.libelle ?? this.equipementId));
+    if (this.panneId) parts.push('cause « ' + (this.pannes.find(p => p.id === this.panneId)?.libelle ?? this.panneId) + ' »');
+    return parts.join(' · ');
+  }
+
+  private navigate(params: Record<string, any>): void {
+    this.router.navigate([], { queryParams: params, queryParamsHandling: 'merge', replaceUrl: true });
+  }
+
+  setFilter(key: string, value: any): void {
+    this.navigate({ [key]: value ?? null });
+  }
+
+  setPeriode(value: string | null): void {
+    let du: string | null = null;
+    if (value === 'mois') { const d = new Date(); du = isoDate(new Date(d.getFullYear(), d.getMonth(), 1)); }
+    else if (value) { const d = new Date(); d.setDate(d.getDate() - (+value) + 1); du = isoDate(d); }
+    this.navigate({ periode: value, du, au: null });
+  }
+
+  setPageSize(size: number): void {
+    this.pageSize = size;
+    this.currentPage = 1;
+    this.loadInterventions();
+  }
+
+  clearDrill(): void {
+    this.navigate({ vue: null, du: null, au: null, equipementId: null, panneId: null, periode: null });
+  }
+
+  clearAll(): void {
+    this.searchTerm = '';
+    this.router.navigate([], { queryParams: {}, replaceUrl: true });
+  }
+
+  private get filtres(): InterventionFiltres {
+    return { statusId: this.statusId, type: this.type, chaineId: this.chaineId, equipementId: this.equipementId, panneId: this.panneId, du: this.du, au: this.au };
+  }
+
+  /** The whole filtered list, not only the current page, as a file Excel opens directly. */
+  exporter(): void {
+    this.exporting = true;
+    this.interventionService.getInterventions(1, 5000, this.searchTerm, this.vue, { ...this.filtres, export: true }).subscribe({
+      next: r => {
+        const rows = r.data.map((i: any) => [
+          this.getInterventionCode(i), i.titre, fmtDateTime(i.dateCreation), i.typeIntervention?.libelle ?? '', i.panne?.libelle ?? '',
+          i.chaineProduction?.libelle ?? '', i.equipement ? `${i.equipement.codeEquipement} — ${i.equipement.designation}` : '',
+          i.urgence?.libelle ?? '', i.status?.statut ?? '', this.getDemandeurName(i),
+          i.destinataire ? `${i.destinataire.prenom ?? ''} ${i.destinataire.nom ?? ''}`.trim() : '',
+          i.datePriseEnCharge ? fmtDateTime(i.datePriseEnCharge) : '', i.dateRealisation ? fmtDateTime(i.dateRealisation) : '',
+          i.machineArretee ? 'Oui' : 'Non', i.cause ?? '', i.remede ?? ''
+        ]);
+        exportCsv(`interventions-${isoDate(new Date())}`, ['Référence', 'Titre', 'Déclarée le', 'Type', 'Type de panne', 'Chaîne', 'Machine', 'Urgence', 'Statut',
+          'Demandeur', 'Technicien', 'Prise en charge', 'Réalisée le', 'Arrêt machine', 'Cause', 'Remède'], rows);
+        this.exporting = false;
+        if (r.totalCount > r.data.length) this.notificationService.warning('Export partiel', `Les ${r.data.length} premières lignes sur ${r.totalCount} ont été exportées. Ajoutez un filtre pour réduire la liste.`);
+      },
+      error: err => { this.exporting = false; this.notificationService.error('Export impossible', errorMessage(err, "La liste n'a pas pu être exportée.")); }
+    });
   }
 
   ngOnDestroy(): void {
     this.listSub?.unsubscribe();
     this.routeSub?.unsubscribe();
-  }
-
-  clearVue(): void {
-    this.router.navigate([], { queryParams: { vue: null }, queryParamsHandling: 'merge' });
   }
 
   /** Same rule as the server: supervisor until closed, requester until someone takes it on. */
@@ -215,7 +380,7 @@ export class InterventionsComponent implements OnInit, OnDestroy {
     this.loading = true;
     // Only the latest request counts: an older, slower answer must not overwrite the list
     this.listSub?.unsubscribe();
-    this.listSub = this.interventionService.getInterventions(this.currentPage, this.pageSize, this.searchTerm, this.vue).subscribe({
+    this.listSub = this.interventionService.getInterventions(this.currentPage, this.pageSize, this.searchTerm, this.vue, this.filtres).subscribe({
       next: (result: PagedResult<DemandeIntervention>) => {
         this.interventions = result.data;
         this.totalCount = result.totalCount;

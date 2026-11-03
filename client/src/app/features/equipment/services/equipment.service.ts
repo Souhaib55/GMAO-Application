@@ -12,10 +12,11 @@ export class EquipmentService {
 
   constructor(private http: HttpClient) {}
 
-  getEquipments(page: number = 1, pageSize: number = 10, search?: string): Observable<PagedResult<Equipment>> {
+  getEquipments(page: number = 1, pageSize: number = 10, search?: string, exportAll = false): Observable<PagedResult<Equipment>> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('pageSize', pageSize.toString());
+    if (exportAll) params = params.set('export', 'true');
 
     if (search) {
       params = params.set('search', search);

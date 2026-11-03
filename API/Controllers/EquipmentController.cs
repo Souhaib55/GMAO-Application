@@ -28,7 +28,7 @@ namespace API.Controllers
 
         // GET: api/Equipment
         [HttpGet]
-        public async Task<ActionResult<PagedResult<object>>> GetEquipments(int page = 1, int pageSize = 5, string search = null)
+        public async Task<ActionResult<PagedResult<object>>> GetEquipments(int page = 1, int pageSize = 5, string search = null, bool export = false)
         {
             var query = _context.Equipments
                 .Where(e => !e.IsDeleted);
@@ -50,7 +50,8 @@ namespace API.Controllers
                 .Include(e => e.ChaineProduction);
 
             page = Math.Max(1, page);
-            pageSize = Math.Clamp(pageSize, 1, 100);
+            // An export takes the whole list in one go
+            pageSize = Math.Clamp(pageSize, 1, export ? 5000 : 100);
 
             var totalCount = await query.CountAsync();
             var items = await query
