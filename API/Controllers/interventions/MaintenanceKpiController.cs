@@ -1,3 +1,4 @@
+using API.Services.Kpi;
 using System.Globalization;
 using System.Text;
 using Core.Entities;
@@ -15,8 +16,8 @@ namespace API.Controllers
     /// Definitions (hours unless stated):
     ///  - MTTR   : mean of (DateRealisation - DatePriseEnCharge) for jobs completed in the period
     ///  - MTTA   : mean of (DatePriseEnCharge - DateCreation), i.e. response delay
-    ///  - Downtime: for requests that stopped a machine, (DateRealisation or now) - DateCreation,
-    ///             clipped to the period
+    ///  - Downtime: for requests that stopped an identified machine, (DateRealisation or now) - DateCreation,
+    ///             clipped to the period, overlapping stops of one machine counted once (KpiCalculator)
     ///  - Availability: 1 - downtime / (machines x hours in period)
     ///  - MTBF   : (machines x hours - downtime) / number of breakdowns in the period
     /// Supervisors see the whole plant; other roles see their own requests / assignments.
@@ -129,25 +130,21 @@ namespace API.Controllers
             var created = rows.Where(r => r.Created >= from).ToList();
             var createdValid = created.Where(r => !r.IsCancelled).ToList();
             var completedInPeriod = rows.Where(r => r.Done.HasValue && r.Done >= from).ToList();
-            var breakdowns = createdValid.Where(r => r.Stop).ToList();
-
-            // Downtime per request, clipped to the period
-            double Downtime(Row r)
-            {
-                if (!r.Stop || r.IsCancelled) return 0;
-                var start = r.Created < from ? from : r.Created;
-                var end = r.Done ?? now;
-                return end <= start ? 0 : Hours(start, end);
-            }
-            var downtimeRows = rows.Where(r => r.Stop && !r.IsCancelled && (r.Done ?? now) >= from).ToList();
-            var totalDowntime = downtimeRows.Sum(Downtime);
+            // Same definitions as the dashboard (KpiCalculator): a breakdown stopped an identified
+            // machine, and overlapping stops of one machine are counted once
+            var breakdowns = createdValid.Where(r => r.Stop && r.EquipmentId.HasValue).ToList();
+            var downtimeRows = rows.Where(r => r.Stop && r.EquipmentId.HasValue && !r.IsCancelled && (r.Done ?? now) >= from).ToList();
+            var attributed = KpiCalculator.AttribuerHeuresArret(
+                downtimeRows.Select(r => new ArretMachine(r.EquipmentId!.Value, r.Created, r.Done)).ToList(), from, now, now);
+            var downtimeById = downtimeRows.Select((r, i) => (r.Id, h: attributed[i])).ToDictionary(x => x.Id, x => x.h);
+            double Downtime(Row r) => downtimeById.GetValueOrDefault(r.Id);
+            var totalDowntime = attributed.Sum();
 
             var machineCount = Math.Max(1, await _context.Equipments.CountAsync(e => !e.IsDeleted));
-            var plannedHours = machineCount * periodHours;
 
-            var mttr = Mean(completedInPeriod.Where(r => r.Taken.HasValue && r.Done >= r.Taken).Select(r => Hours(r.Taken!.Value, r.Done!.Value)));
+            var mttr = KpiCalculator.Mttr(completedInPeriod.Where(r => r.Taken.HasValue).Select(r => (r.Taken!.Value, r.Done!.Value)));
             var mtta = Mean(created.Where(r => r.Taken.HasValue && r.Taken >= r.Created).Select(r => Hours(r.Created, r.Taken!.Value)));
-            double? mtbf = breakdowns.Count > 0 ? Round((plannedHours - totalDowntime) / breakdowns.Count) : null;
+            var mtbf = KpiCalculator.Mtbf(machineCount, periodHours, totalDowntime, breakdowns.Count);
 
             var open = rows.Where(r => r.IsOpen).ToList();
 
@@ -163,7 +160,7 @@ namespace API.Controllers
                 responseHours = mtta,
                 mtbfHours = mtbf,
                 downtimeHours = Round(totalDowntime),
-                availability = Round(Math.Clamp(100.0 * (1 - totalDowntime / plannedHours), 0, 100), 1),
+                availability = KpiCalculator.Disponibilite(totalDowntime, machineCount, periodHours),
                 preventiveShare = createdValid.Count == 0 ? (double?)null : Round(100.0 * createdValid.Count(r => r.IsPreventive) / createdValid.Count),
                 breakdowns = breakdowns.Count,
                 backlog = open.Count,
