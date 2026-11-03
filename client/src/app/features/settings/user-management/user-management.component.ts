@@ -228,7 +228,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
                 <label>Mot de passe <span class="required">*</span></label>
                 <input type="password" formControlName="password" placeholder="Ex: Password1">
                 <span class="error" *ngIf="userForm.get('password')?.invalid && userForm.get('password')?.touched">
-                  Min. 8 caractères, 1 majuscule, 1 minuscule, 1 chiffre
+                  Min. 10 caractères, 1 majuscule, 1 minuscule, 1 chiffre, sans votre nom
                 </span>
               </div>
 
@@ -1291,7 +1291,7 @@ export class UserManagementComponent implements OnInit {
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/)]],
+      password: ['', [Validators.required, Validators.minLength(10), Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/)]],
       roleId: ['', Validators.required]
     });
   }
@@ -1362,7 +1362,7 @@ export class UserManagementComponent implements OnInit {
     this.isEditMode = false;
     this.editingUser = null;
     this.userForm.reset();
-    this.userForm.get('password')?.setValidators([Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/)]);
+    this.userForm.get('password')?.setValidators([Validators.required, Validators.minLength(10), Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/)]);
     this.userForm.get('password')?.updateValueAndValidity();
     this.showModal = true;
   }

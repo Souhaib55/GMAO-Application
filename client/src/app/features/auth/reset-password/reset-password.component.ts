@@ -33,7 +33,7 @@ export class ResetPasswordComponent implements OnInit {
     private route: ActivatedRoute
   ) {
     this.resetPasswordForm = this.fb.group({
-      newPassword: ['', [Validators.required, Validators.minLength(8)]],
+      newPassword: ['', [Validators.required, Validators.minLength(10)]],
       confirmPassword: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
   }
@@ -117,7 +117,7 @@ export class ResetPasswordComponent implements OnInit {
 
   // Password validation helpers
   hasMinLength(): boolean {
-    return this.newPassword?.value?.length >= 8;
+    return this.newPassword?.value?.length >= 10;
   }
 
   hasUppercase(): boolean {

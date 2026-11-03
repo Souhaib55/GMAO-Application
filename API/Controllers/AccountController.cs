@@ -123,16 +123,20 @@ namespace API.Controllers
             var user = await _userManager.FindByEmailAsync(loginDto.Email);
             if (user == null) return Unauthorized(new { message = InvalidCredentials });
 
+            // Password first: whether an account exists or is deactivated is only revealed to
+            // someone who knows its password (no account discovery through the login form).
+            var check = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, lockoutOnFailure: true);
+            if (check.IsLockedOut)
+                return Unauthorized(new { message = "Compte temporairement verrouillé après plusieurs tentatives. Réessayez dans 15 minutes." });
+            if (!check.Succeeded) return Unauthorized(new { message = InvalidCredentials });
+
             var userEntity = await _storeContext.Users
                 .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.AppUserId == user.Id);
             if (userEntity == null || !userEntity.IsActif)
                 return Unauthorized(new { message = "Ce compte est désactivé. Contactez votre responsable maintenance." });
 
-            var result = await _signInManager.PasswordSignInAsync(user.UserName!, loginDto.Password, loginDto.RememberMe, lockoutOnFailure: true);
-            if (result.IsLockedOut)
-                return Unauthorized(new { message = "Compte temporairement verrouillé après plusieurs tentatives. Réessayez dans 15 minutes." });
-            if (!result.Succeeded) return Unauthorized(new { message = InvalidCredentials });
+            await _signInManager.SignInAsync(user, loginDto.RememberMe);
 
             var roles = await _userManager.GetRolesAsync(user);
             var role = roles.FirstOrDefault();
@@ -236,7 +240,9 @@ namespace API.Controllers
         public async Task<ActionResult> ResetPassword(ResetPasswordDto dto)
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);
-            if (user == null)
+            // A deactivated account cannot get a new password through an old link
+            var actif = user != null && await _storeContext.Users.AnyAsync(u => u.AppUserId == user.Id && u.IsActif);
+            if (user == null || !actif)
             {
                 return BadRequest(new { message = "Le lien de réinitialisation est invalide ou a expiré." });
             }

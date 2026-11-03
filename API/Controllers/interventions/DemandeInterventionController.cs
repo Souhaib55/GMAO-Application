@@ -329,7 +329,9 @@ namespace API.Controllers
                 return NotFound(new { message = "Fichier introuvable." });
             if (!CanView(demande, user)) return Forbidden("Vous n'avez pas accès à ce fichier.");
 
-            return File(demande.FileData, demande.ContentType, demande.FileName ?? "piece-jointe");
+            // Content type from the extension, also for files stored before version 3
+            var nom = API.Security.FichierSecurise.NomSur(demande.FileName ?? "piece-jointe");
+            return File(demande.FileData, API.Security.FichierSecurise.TypeContenu(nom), nom);
         }
 
         // ------------------------------------------------------------------
@@ -358,12 +360,14 @@ namespace API.Controllers
             }
         }
 
+        /// <summary>Extension, size and real content of the file (see <see cref="API.Security.FichierSecurise"/>).</summary>
         private static string? ValidateFile(IFormFile file)
         {
             if (file.Length > MaxFileSize) return $"La pièce jointe dépasse {MaxFileSize / (1024 * 1024)} Mo.";
-            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-            if (!AllowedExtensions.Contains(extension)) return $"Type de fichier non autorisé. Types acceptés : {string.Join(", ", AllowedExtensions)}";
-            return null;
+            var debut = new byte[512];
+            int lus;
+            using (var s = file.OpenReadStream()) lus = s.Read(debut, 0, debut.Length);
+            return API.Security.FichierSecurise.Verifier(file.FileName, file.Length, debut.AsSpan(0, lus), AllowedExtensions);
         }
 
         private static async Task AttachFileAsync(DemandeIntervention demande, IFormFile file)
@@ -371,8 +375,9 @@ namespace API.Controllers
             using var memoryStream = new MemoryStream();
             await file.CopyToAsync(memoryStream);
             demande.FileData = memoryStream.ToArray();
-            demande.FileName = Path.GetFileName(file.FileName);
-            demande.ContentType = string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType;
+            // Name cleaned, content type from the extension: never what the browser claims
+            demande.FileName = API.Security.FichierSecurise.NomSur(file.FileName);
+            demande.ContentType = API.Security.FichierSecurise.TypeContenu(demande.FileName);
         }
 
         private static string Normalize(string value)

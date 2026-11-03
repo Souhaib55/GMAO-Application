@@ -1,3 +1,4 @@
+using API.Security;
 using API.Services;
 using Core.Entities;
 using Infrastructure.Data;
@@ -84,21 +85,22 @@ namespace API.Controllers
             if (!write) return StatusCode(403, new { message = "Vous ne pouvez pas ajouter de document ici." });
 
             if (file == null || file.Length == 0) return BadRequest(new { message = "Fichier vide." });
-            if (file.Length > MaxFileSize) return BadRequest(new { message = "Le fichier dépasse 10 Mo." });
-            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-            if (!AllowedExtensions.Contains(ext)) return BadRequest(new { message = $"Type de fichier non autorisé ({string.Join(", ", AllowedExtensions)})." });
 
             using var ms = new MemoryStream();
             await file.CopyToAsync(ms);
-            var name = Path.GetFileName(file.FileName);
+            var donnees = ms.ToArray();
+            // Extension, size and real content (magic number); name and type decided by the server
+            var erreur = FichierSecurise.Verifier(file.FileName, donnees.LongLength, donnees.AsSpan(0, Math.Min(512, donnees.Length)), AllowedExtensions);
+            if (erreur != null) return BadRequest(new { message = erreur });
+            var name = FichierSecurise.NomSur(file.FileName);
             _context.PiecesJointes.Add(new PieceJointe
             {
                 Entite = entite,
                 EntiteId = entiteId,
-                NomFichier = name.Length > 255 ? name[^255..] : name,
-                ContentType = string.IsNullOrWhiteSpace(file.ContentType) || file.ContentType.Length > 100 ? "application/octet-stream" : file.ContentType,
-                Taille = file.Length,
-                Donnees = ms.ToArray(),
+                NomFichier = name,
+                ContentType = FichierSecurise.TypeContenu(name),
+                Taille = donnees.LongLength,
+                Donnees = donnees,
                 DateAjout = DateTime.Now,
                 AjouteParId = user.Id
             });
@@ -119,7 +121,9 @@ namespace API.Controllers
             if (!read) return StatusCode(403, new { message = "Accès refusé." });
 
             var file = await _context.PiecesJointes.AsNoTracking().FirstAsync(p => p.Id == id);
-            return File(file.Donnees, file.ContentType, file.NomFichier);
+            // Content type from the extension, also for documents stored before version 3
+            var nom = FichierSecurise.NomSur(file.NomFichier);
+            return File(file.Donnees, FichierSecurise.TypeContenu(nom), nom);
         }
 
         [HttpDelete("{id:int}")]
