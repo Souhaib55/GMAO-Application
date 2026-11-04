@@ -124,7 +124,7 @@ try {
   await check(b, 'Référentiels: ajouter puis supprimer un type de panne', async () => {
     await goto(b, '/settings/references');
     let r = await click('Interventions', '.gm-tabs button'); if (r !== 'ok') return 'tab: ' + r;
-    r = await click('Types de Pannes', '.nav-item'); if (r !== 'ok') return 'list: ' + r;
+    r = await click('Types de pannes', '.nav-item'); if (r !== 'ok') return 'list: ' + r;
     await idle(b, 600);
     r = await click('Ajouter', '.ref-panel button'); if (r !== 'ok') return 'add: ' + r;
     await fill('[formcontrolname=name]', REF);
