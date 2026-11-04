@@ -45,7 +45,7 @@
         <span class="user-card-avatar">{{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}</span>
         <span class="user-card-text">
           <span class="user-card-name">{{ currentUser.firstName }} {{ currentUser.lastName }}</span>
-          <span class="user-card-role">{{ currentUser.role }}</span>
+          <span class="user-card-role">{{ roleLabel(currentUser.role) }}</span>
         </span>
         <button class="user-card-logout" (click)="logout()" title="Se déconnecter" aria-label="Se déconnecter">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -103,9 +103,9 @@
 
         <span class="today hide-mobile">{{ today | date:'EEEE d MMMM':'':'fr' }}</span>
 
-        <!-- Notifications - Superviseur and Utilisateur only -->
+        <!-- Notifications, every role -->
         <div class="notification-menu"
-             *ngIf="currentUser && (currentUser.role === 'Superviseur' || currentUser.role === 'Utilisateur')"
+             *ngIf="currentUser"
              [class.open]="notificationDropdownOpen">
           <button class="icon-btn notification-toggle" (click)="toggleNotificationDropdown($event)" aria-label="Notifications">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
@@ -171,8 +171,14 @@
             <div class="dropdown-header">
               <span class="user-name-dropdown">{{ currentUser.firstName }} {{ currentUser.lastName }}</span>
               <span class="user-email-dropdown">{{ currentUser.email }}</span>
-              <span class="role-tag">{{ currentUser.role }}</span>
+              <span class="role-tag">{{ roleLabel(currentUser.role) }}</span>
             </div>
+            <a class="dropdown-item" routerLink="/aide" (click)="userDropdownOpen = false">
+              <app-icon name="help"></app-icon> Aide et glossaire
+            </a>
+            <button class="dropdown-item" type="button" (click)="revoirVisite()">
+              <app-icon name="play"></app-icon> Revoir la visite guidée
+            </button>
             <button class="dropdown-item logout-item" (click)="logout()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
@@ -194,3 +200,6 @@
 
 <!-- Shared confirmation dialog (deletions and other irreversible actions) -->
 <app-confirm-dialog></app-confirm-dialog>
+
+<!-- First-visit guided tour, per role -->
+<app-guided-tour></app-guided-tour>

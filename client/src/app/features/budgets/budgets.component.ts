@@ -88,6 +88,16 @@ export class BudgetsComponent implements OnInit {
   pct(l: BudgetLigne): number { return l.montant ? Math.min(100, (l.realise / l.montant) * 100) : 0; }
   prorataPct(l: BudgetLigne): number { return l.montant ? Math.min(100, (l.prorata / l.montant) * 100) : 0; }
 
+  /** "84 % de l'année écoulée (307 jours sur 365)": the pro-rata is by days, the label says so. */
+  get anneeEcoulee(): string {
+    if (!this.vue) return '';
+    const f = this.vue.fractionEcoulee;
+    if (f >= 1) return 'Année terminée';
+    if (f <= 0) return 'Année pas encore commencée';
+    const total = this.vue.annee % 4 === 0 && (this.vue.annee % 100 !== 0 || this.vue.annee % 400 === 0) ? 366 : 365;
+    return `${Math.round(f * 100)} % de l'année écoulée (${Math.round(f * total)} jours sur ${total})`;
+  }
+
   get projection(): number | null {
     if (!this.vue || !this.vue.fractionEcoulee) return null;
     return this.vue.realiseTotal / this.vue.fractionEcoulee;

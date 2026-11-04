@@ -1,6 +1,7 @@
-@API_HostAddress = http://localhost:5168
+@API_HostAddress = http://localhost:5000
 
-GET {{API_HostAddress}}/weatherforecast/
+# Is the API up? (anonymous)
+GET {{API_HostAddress}}/api/account/auth-status
 Accept: application/json
 
 ###

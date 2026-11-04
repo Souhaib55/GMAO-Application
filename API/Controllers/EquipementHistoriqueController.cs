@@ -1,3 +1,4 @@
+using API.Services.Kpi;
 using API.Services;
 using Core.Entities;
 using Infrastructure.Data;
@@ -58,19 +59,16 @@ namespace API.Controllers
                 })
                 .ToListAsync();
 
-            double Downtime(DateTime created, DateTime? done)
-            {
-                var start = created < from ? from : created;
-                var end = done ?? now;
-                return end > start ? (end - start).TotalHours : 0;
-            }
-
+            // Same definitions as the dashboard (KpiCalculator): overlapping stops counted once,
+            // MTTR over the repairs completed in the last 12 months
             var annule = StatusAnnulee;
             var periode = ots.Where(o => o.StatusId != annule && (o.DateCreation >= from || (o.DateRealisation ?? now) >= from)).ToList();
             var pannes = periode.Where(o => o.MachineArretee && o.DateCreation >= from).ToList();
-            var arret = periode.Where(o => o.MachineArretee).Sum(o => Downtime(o.DateCreation, o.DateRealisation));
+            var arret = KpiCalculator.HeuresArret(
+                periode.Where(o => o.MachineArretee).Select(o => new ArretMachine(id, o.DateCreation, o.DateRealisation)).ToList(), from, now, now);
             var heures = (now - from).TotalHours;
-            var reparations = pannes.Where(o => o.DateRealisation.HasValue && o.DatePriseEnCharge.HasValue).ToList();
+            var reparations = periode.Where(o => o.MachineArretee && o.DateRealisation >= from && o.DatePriseEnCharge.HasValue)
+                .Select(o => (o.DatePriseEnCharge!.Value, o.DateRealisation!.Value)).ToList();
 
             var piecesConsommees = await _context.InterventionPieces.AsNoTracking()
                 .Where(p => p.DemandeIntervention.IDEquipement == id)
@@ -100,9 +98,9 @@ namespace API.Controllers
                     interventions12Mois = periode.Count(o => o.DateCreation >= from),
                     pannes12Mois = pannes.Count,
                     heuresArret = Math.Round(arret, 1),
-                    disponibilite = Math.Round(Math.Clamp(100 * (1 - arret / heures), 0, 100), 1),
-                    mtbfHeures = pannes.Count > 0 ? Math.Round((heures - arret) / pannes.Count, 0) : (double?)null,
-                    mttrHeures = reparations.Count > 0 ? Math.Round(reparations.Average(o => (o.DateRealisation!.Value - o.DatePriseEnCharge!.Value).TotalHours), 1) : (double?)null,
+                    disponibilite = KpiCalculator.Disponibilite(arret, 1, heures),
+                    mtbfHeures = KpiCalculator.Mtbf(1, heures, arret, pannes.Count),
+                    mttrHeures = KpiCalculator.Mttr(reparations),
                     cout12Mois = Math.Round(cout12, 3),
                     coutTotal = Math.Round(ots.Sum(o => o.CoutMainOeuvre + o.CoutPieces + o.CoutExterne), 3),
                     otOuverts = ots.Count(o => o.StatusId <= StatusEnCours),

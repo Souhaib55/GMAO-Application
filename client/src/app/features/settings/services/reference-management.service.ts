@@ -112,6 +112,8 @@ export interface ReferenceCategory {
   nameField: string;
   icon: string;
   module: string;
+  /** Lists people change often come first; the rare ones are folded under "Autres listes". */
+  frequent?: boolean;
   hasCode?: boolean;
   hasDescription?: boolean;
 }
@@ -124,25 +126,25 @@ export class ReferenceManagementService {
 
   // Define all reference data categories
   private readonly _categories: ReferenceCategory[] = [
-    // Equipment Module
-    { key: 'equipmentCriticite', label: 'Criticité Équipement', description: 'Niveaux de criticité des équipements', endpoint: 'equipmentcriticite', idField: 'idCriticite', nameField: 'nomCriticite', icon: 'alert-triangle', module: 'equipment' },
-    { key: 'etatEquipement', label: 'État Équipement', description: 'États possibles des équipements', endpoint: 'etatequipement', idField: 'idEtat', nameField: 'nomEtat', icon: 'settings', module: 'equipment' },
-    { key: 'familleEquipement', label: 'Famille Équipement', description: 'Familles d\'équipements', endpoint: 'familleequipment', idField: 'idFamille', nameField: 'nomFamille', icon: 'folder', module: 'equipment' },
-    { key: 'groupeEquipement', label: 'Groupe Équipement', description: 'Groupes d\'équipements', endpoint: 'groupeequipement', idField: 'idGroupe', nameField: 'nomGroupe', icon: 'layers', module: 'equipment' },
-    { key: 'marque', label: 'Marques', description: 'Marques des équipements', endpoint: 'marque', idField: 'idMarque', nameField: 'nomMarque', icon: 'award', module: 'equipment' },
-    { key: 'modeleEquipement', label: 'Modèles Équipement', description: 'Modèles d\'équipements', endpoint: 'modeleequipement', idField: 'idModele', nameField: 'nomModele', icon: 'cpu', module: 'equipment' },
+    // Machines and production lines
+    { key: 'chaineProduction', label: 'Chaînes de production', description: 'Les lignes de l\'atelier : Coupe, Couture A…', endpoint: 'chaineproduction', idField: 'idChaineProduction', nameField: 'libelle', icon: 'git-branch', module: 'equipment', frequent: true },
+    { key: 'equipmentCriticite', label: 'Importance des machines', description: 'Critique, important, standard : sert à décider quelle panne traiter d\'abord', endpoint: 'equipmentcriticite', idField: 'idCriticite', nameField: 'nomCriticite', icon: 'alert-triangle', module: 'equipment' },
+    { key: 'etatEquipement', label: 'États des machines', description: 'En service, en panne, en maintenance : l\'état « en panne » est mis à jour tout seul', endpoint: 'etatequipement', idField: 'idEtat', nameField: 'nomEtat', icon: 'settings', module: 'equipment' },
+    { key: 'familleEquipement', label: 'Familles de machines', description: 'Machines à coudre, de coupe, de repassage…', endpoint: 'familleequipment', idField: 'idFamille', nameField: 'nomFamille', icon: 'folder', module: 'equipment', frequent: true },
+    { key: 'groupeEquipement', label: 'Groupes de machines', description: 'Regroupement libre, facultatif', endpoint: 'groupeequipement', idField: 'idGroupe', nameField: 'nomGroupe', icon: 'layers', module: 'equipment' },
+    { key: 'marque', label: 'Marques', description: 'Fabricants des machines (JUKI, Brother…)', endpoint: 'marque', idField: 'idMarque', nameField: 'nomMarque', icon: 'award', module: 'equipment', frequent: true },
+    { key: 'modeleEquipement', label: 'Modèles de machines', description: 'Modèle précis, rattaché à une marque', endpoint: 'modeleequipement', idField: 'idModele', nameField: 'nomModele', icon: 'cpu', module: 'equipment', frequent: true },
     
     // Intervention Module
-    { key: 'etatIntervention', label: 'État Intervention', description: 'États des interventions', endpoint: 'etat', idField: 'idEtat', nameField: 'libelle', icon: 'activity', module: 'interventions' },
-    { key: 'typeIntervention', label: 'Type Intervention', description: 'Types d\'interventions', endpoint: 'typeintervention', idField: 'idTypeIntervention', nameField: 'libelle', icon: 'tool', module: 'interventions' },
-    { key: 'urgence', label: 'Niveaux d\'Urgence', description: 'Niveaux d\'urgence', endpoint: 'urgence', idField: 'idUrgence', nameField: 'libelle', icon: 'zap', module: 'interventions' },
-    { key: 'chaineProduction', label: 'Chaînes de Production', description: 'Chaînes de production', endpoint: 'chaineproduction', idField: 'idChaineProduction', nameField: 'libelle', icon: 'git-branch', module: 'interventions' },
-    { key: 'panne', label: 'Types de Pannes', description: 'Types de pannes', endpoint: 'panne', idField: 'idPanne', nameField: 'libelle', icon: 'alert-circle', module: 'interventions' },
+    { key: 'etatIntervention', label: 'États d\'intervention (liste technique)', description: 'Reliés aux statuts des interventions : ne pas renommer', endpoint: 'etat', idField: 'idEtat', nameField: 'libelle', icon: 'activity', module: 'interventions' },
+    { key: 'typeIntervention', label: 'Types d\'intervention', description: 'Corrective, préventive, dépannage…', endpoint: 'typeintervention', idField: 'idTypeIntervention', nameField: 'libelle', icon: 'tool', module: 'interventions', frequent: true },
+    { key: 'urgence', label: 'Niveaux d\'urgence', description: 'Haute, normale, basse', endpoint: 'urgence', idField: 'idUrgence', nameField: 'libelle', icon: 'zap', module: 'interventions' },
+    { key: 'panne', label: 'Types de pannes', description: 'Proposés au chef de chaîne quand il déclare une panne', endpoint: 'panne', idField: 'idPanne', nameField: 'libelle', icon: 'alert-circle', module: 'interventions', frequent: true },
     
     // Resource Module
-    { key: 'famillePiece', label: 'Famille Pièces', description: 'Familles de pièces', endpoint: 'famillepiece', idField: 'idFamillePiece', nameField: 'nomFamille', icon: 'archive', module: 'resources' },
-    { key: 'constructeur', label: 'Constructeurs', description: 'Constructeurs', endpoint: 'constructeur', idField: 'idConstructeur', nameField: 'nomConstructeur', icon: 'hard-hat', module: 'resources' },
-    { key: 'criticitePiece', label: 'Criticité Pièces', description: 'Niveaux de criticité des pièces', endpoint: 'criticitepiece', idField: 'idCriticitePiece', nameField: 'niveauCriticitePiece', icon: 'gauge', module: 'resources' },
+    { key: 'famillePiece', label: 'Familles d\'articles', description: 'Pièces de machines à coudre, composants électriques…', endpoint: 'famillepiece', idField: 'idFamillePiece', nameField: 'nomFamille', icon: 'archive', module: 'resources', frequent: true },
+    { key: 'constructeur', label: 'Fabricants des articles', description: 'Marques des pièces de rechange', endpoint: 'constructeur', idField: 'idConstructeur', nameField: 'nomConstructeur', icon: 'hard-hat', module: 'resources', frequent: true },
+    { key: 'criticitePiece', label: 'Importance des articles', description: 'Pour repérer les pièces qui ne doivent jamais manquer', endpoint: 'criticitepiece', idField: 'idCriticitePiece', nameField: 'niveauCriticitePiece', icon: 'gauge', module: 'resources' },
     
     // Stock Module
     { key: 'stockEntities', label: 'Entités Stock', description: 'Entités de stock', endpoint: 'stockentities', idField: 'id', nameField: 'name', icon: 'map-pin', module: 'stock' },

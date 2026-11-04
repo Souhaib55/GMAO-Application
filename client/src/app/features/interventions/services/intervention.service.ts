@@ -4,6 +4,18 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { DemandeIntervention, PagedResult, InterventionDto } from '../../../core/models';
 
+/** Filters of the list (all optional), same names as the API query parameters. */
+export interface InterventionFiltres {
+  statusId?: number | null;
+  type?: string | null;
+  chaineId?: number | null;
+  equipementId?: number | null;
+  panneId?: number | null;
+  du?: string | null;
+  au?: string | null;
+  export?: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -12,7 +24,12 @@ export class InterventionService {
 
   constructor(private http: HttpClient) {}
 
-  getInterventions(page: number = 1, pageSize: number = 10, search?: string, vue?: string | null): Observable<PagedResult<DemandeIntervention>> {
+  /**
+   * The list with its filters. "vue" selects the work orders behind a dashboard figure;
+   * "export" returns the whole filtered list (up to 5 000 rows) for the Excel export.
+   */
+  getInterventions(page: number = 1, pageSize: number = 10, search?: string, vue?: string | null,
+                   filtres: InterventionFiltres = {}): Observable<PagedResult<DemandeIntervention>> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('pageSize', pageSize.toString());
@@ -21,6 +38,9 @@ export class InterventionService {
       params = params.set('search', search);
     }
     if (vue) params = params.set('vue', vue);
+    for (const [k, v] of Object.entries(filtres)) {
+      if (v !== null && v !== undefined && v !== '') params = params.set(k, String(v));
+    }
 
     return this.http.get<PagedResult<DemandeIntervention>>(this.apiUrl, {
       params,

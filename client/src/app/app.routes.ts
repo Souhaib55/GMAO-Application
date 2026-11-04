@@ -5,25 +5,6 @@ import { LoginComponent } from './features/auth/login/login.component';
 import { ForgotPasswordComponent } from './features/auth/forgot-password/forgot-password.component';
 import { ResetPasswordComponent } from './features/auth/reset-password/reset-password.component';
 import { LayoutComponent } from './shared/layout/layout.component';
-import { DashboardComponent } from './features/dashboard/dashboard.component';
-import { InterventionsComponent } from './features/interventions/interventions.component';
-import { InterventionFormComponent } from './features/interventions/intervention-form/intervention-form.component';
-import { EquipmentComponent } from './features/equipment/equipment.component';
-import { EquipmentFormComponent } from './features/equipment/equipment-form/equipment-form.component';
-import { ResourceFormComponent } from './features/resources/resource-form/resource-form.component';
-import { StockFormComponent } from './features/stock/stock-form/stock-form.component';
-import { PlanningComponent } from './features/planning/planning.component';
-import { SettingsComponent } from './features/settings/settings.component';
-import { UserManagementComponent } from './features/settings/user-management/user-management.component';
-import { ReferencesComponent } from './features/settings/references/references.component';
-import { RapportsComponent } from './features/rapports/rapports.component';
-import { PreventifComponent } from './features/preventif/preventif.component';
-import { MagasinComponent } from './features/magasin/magasin.component';
-import { ExplorateurComponent } from './features/explorateur/explorateur.component';
-import { AchatsComponent } from './features/achats/achats.component';
-import { BudgetsComponent } from './features/budgets/budgets.component';
-import { TechniciensComponent } from './features/techniciens/techniciens.component';
-import { JournalComponent } from './features/settings/journal/journal.component';
 
 export const routes: Routes = [
   {
@@ -50,7 +31,7 @@ export const routes: Routes = [
       },
       {
         path: 'dashboard',
-        component: DashboardComponent
+        loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
       },
       {
         // "Assistant GMAO" was replaced by the Explorateur de données
@@ -60,74 +41,81 @@ export const routes: Routes = [
       },
       {
         path: 'achats',
-        component: AchatsComponent,
+        loadComponent: () => import('./features/achats/achats.component').then(m => m.AchatsComponent),
         canActivate: [roleGuard],
         data: { role: ['Superviseur', 'Utilisateur'] }
       },
       {
         path: 'budgets',
-        component: BudgetsComponent,
+        loadComponent: () => import('./features/budgets/budgets.component').then(m => m.BudgetsComponent),
         canActivate: [roleGuard],
         data: { role: 'Superviseur' }
       },
       {
         path: 'techniciens',
-        component: TechniciensComponent,
+        loadComponent: () => import('./features/techniciens/techniciens.component').then(m => m.TechniciensComponent),
         canActivate: [roleGuard],
         data: { role: 'Superviseur' }
       },
       {
         path: 'explorateur',
-        component: ExplorateurComponent,
+        loadComponent: () => import('./features/explorateur/explorateur.component').then(m => m.ExplorateurComponent),
         canActivate: [roleGuard],
         data: { role: 'Superviseur' }
       },
       {
         path: 'magasin',
-        component: MagasinComponent,
+        loadComponent: () => import('./features/magasin/magasin.component').then(m => m.MagasinComponent),
         canActivate: [roleGuard],
         data: { role: ['Superviseur', 'Utilisateur'] }
       },
       {
         path: 'preventif',
-        component: PreventifComponent,
+        loadComponent: () => import('./features/preventif/preventif.component').then(m => m.PreventifComponent),
         canActivate: [roleGuard],
         data: { role: ['Superviseur', 'Utilisateur'] }
       },
       {
         path: 'planning',
-        component: PlanningComponent,
+        loadComponent: () => import('./features/planning/planning.component').then(m => m.PlanningComponent),
         canActivate: [roleGuard],
         data: { role: ['Superviseur', 'Utilisateur'] }
       },
       {
         // The record page (follow-up, history) stays a full page
         path: 'interventions/view/:id',
-        component: InterventionFormComponent,
+        loadComponent: () => import('./features/interventions/intervention-form/intervention-form.component').then(m => m.InterventionFormComponent),
         data: { viewMode: true }
       },
       {
         // Create / edit open as a side panel over the list
         path: 'interventions',
-        component: InterventionsComponent,
+        loadComponent: () => import('./features/interventions/interventions.component').then(m => m.InterventionsComponent),
         children: [
-          { path: 'new', component: InterventionFormComponent, data: { drawer: true } },
-          { path: 'edit/:id', component: InterventionFormComponent, data: { drawer: true } }
+          { path: 'new', loadComponent: () => import('./features/interventions/intervention-form/intervention-form.component').then(m => m.InterventionFormComponent), data: { drawer: true } },
+          { path: 'edit/:id', loadComponent: () => import('./features/interventions/intervention-form/intervention-form.component').then(m => m.InterventionFormComponent), data: { drawer: true } }
         ]
       },
       {
+        // Printable QR labels: each opens "Déclarer une panne" with the machine filled in
+        path: 'equipment/etiquettes',
+        loadComponent: () => import('./features/equipment/etiquettes/etiquettes.component').then(m => m.EtiquettesComponent),
+        canActivate: [roleGuard],
+        data: { role: 'Superviseur' }
+      },
+      {
         path: 'equipment/view/:id',
-        component: EquipmentFormComponent,
+        loadComponent: () => import('./features/equipment/equipment-form/equipment-form.component').then(m => m.EquipmentFormComponent),
         data: { viewMode: true }
       },
       {
         path: 'equipment',
-        component: EquipmentComponent,
+        loadComponent: () => import('./features/equipment/equipment.component').then(m => m.EquipmentComponent),
         canActivate: [roleGuard],
         data: { role: ['Superviseur', 'Utilisateur'] },
         children: [
-          { path: 'new', component: EquipmentFormComponent, canActivate: [roleGuard], data: { role: 'Superviseur', drawer: true } },
-          { path: 'edit/:id', component: EquipmentFormComponent, canActivate: [roleGuard], data: { role: 'Superviseur', drawer: true } }
+          { path: 'new', loadComponent: () => import('./features/equipment/equipment-form/equipment-form.component').then(m => m.EquipmentFormComponent), canActivate: [roleGuard], data: { role: 'Superviseur', drawer: true } },
+          { path: 'edit/:id', loadComponent: () => import('./features/equipment/equipment-form/equipment-form.component').then(m => m.EquipmentFormComponent), canActivate: [roleGuard], data: { role: 'Superviseur', drawer: true } }
         ]
       },
       {
@@ -138,19 +126,19 @@ export const routes: Routes = [
       },
       {
         path: 'resources/new',
-        component: ResourceFormComponent,
+        loadComponent: () => import('./features/resources/resource-form/resource-form.component').then(m => m.ResourceFormComponent),
         canActivate: [roleGuard],
         data: { role: 'Superviseur' }
       },
       {
         path: 'resources/edit/:id',
-        component: ResourceFormComponent,
+        loadComponent: () => import('./features/resources/resource-form/resource-form.component').then(m => m.ResourceFormComponent),
         canActivate: [roleGuard],
         data: { role: 'Superviseur' }
       },
       {
         path: 'resources/view/:id',
-        component: ResourceFormComponent,
+        loadComponent: () => import('./features/resources/resource-form/resource-form.component').then(m => m.ResourceFormComponent),
         data: { viewMode: true }
       },
       {
@@ -161,48 +149,60 @@ export const routes: Routes = [
       },
       {
         path: 'stock/new',
-        component: StockFormComponent,
+        loadComponent: () => import('./features/stock/stock-form/stock-form.component').then(m => m.StockFormComponent),
         canActivate: [roleGuard],
         data: { role: 'Superviseur' }
       },
       {
         path: 'stock/edit/:id',
-        component: StockFormComponent,
+        loadComponent: () => import('./features/stock/stock-form/stock-form.component').then(m => m.StockFormComponent),
         canActivate: [roleGuard],
         data: { role: 'Superviseur' }
       },
       {
         path: 'stock/view/:id',
-        component: StockFormComponent,
+        loadComponent: () => import('./features/stock/stock-form/stock-form.component').then(m => m.StockFormComponent),
         data: { viewMode: true }
       },
       {
         path: 'settings',
-        component: SettingsComponent,
+        loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent),
         canActivate: [roleGuard],
         data: { role: 'Superviseur' }
       },
       {
         path: 'settings/users',
-        component: UserManagementComponent,
+        loadComponent: () => import('./features/settings/user-management/user-management.component').then(m => m.UserManagementComponent),
         canActivate: [roleGuard],
         data: { role: 'Superviseur' }
       },
       {
         path: 'settings/journal',
-        component: JournalComponent,
+        loadComponent: () => import('./features/settings/journal/journal.component').then(m => m.JournalComponent),
         canActivate: [roleGuard],
         data: { role: 'Superviseur' }
       },
       {
         path: 'settings/references',
-        component: ReferencesComponent,
+        loadComponent: () => import('./features/settings/references/references.component').then(m => m.ReferencesComponent),
         canActivate: [roleGuard],
         data: { role: 'Superviseur' }
       },
       {
+        // Printable monthly report for the management meeting
+        path: 'rapport-mensuel',
+        loadComponent: () => import('./features/rapport-mensuel/rapport-mensuel.component').then(m => m.RapportMensuelComponent),
+        canActivate: [roleGuard],
+        data: { role: 'Superviseur' }
+      },
+      {
+        // Help: glossary, indicators explained, how-to per role, guided tour
+        path: 'aide',
+        loadComponent: () => import('./features/aide/aide.component').then(m => m.AideComponent)
+      },
+      {
         path: 'rapports',
-        component: RapportsComponent,
+        loadComponent: () => import('./features/rapports/rapports.component').then(m => m.RapportsComponent),
         canActivate: [roleGuard],
         data: { role: 'Superviseur' }
       }

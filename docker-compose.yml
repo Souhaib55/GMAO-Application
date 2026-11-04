@@ -34,6 +34,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:80
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=gmao;User Id=sa;Password=YourStrong!Password123;TrustServerCertificate=True;
+      # nginx (frontend container) is a trusted proxy: the real client IP is read from X-Forwarded-For
+      - ReverseProxy__KnownNetworks__0=172.16.0.0/12
       # Explorateur de données : compte SQL en lecture seule (voir database/explorateur-lecture-seule.sql)
       # - ConnectionStrings__Explorateur=Server=sqlserver;Database=gmao;User Id=gmao_lecture;Password=<mot de passe>;TrustServerCertificate=True;
       # Données de démonstration (une seule fois, jamais en production réelle)

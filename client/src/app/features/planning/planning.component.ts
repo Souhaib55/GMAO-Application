@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { InterventionService } from '../interventions/services/intervention.service';
 import { DemandeIntervention } from '../../core/models';
 import { InterventionDetailModalComponent } from './intervention-detail-modal/intervention-detail-modal.component';
+import { AppIconComponent } from '../../shared/components/app-icon/app-icon.component';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 
 interface CalendarDay {
@@ -16,67 +17,35 @@ interface CalendarDay {
 @Component({
   selector: 'app-planning',
   standalone: true,
-  imports: [CommonModule, RouterModule, InterventionDetailModalComponent, PageHeaderComponent],
+  imports: [CommonModule, RouterModule, InterventionDetailModalComponent, PageHeaderComponent, AppIconComponent],
   template: `
     <div class="planning-container">
       <!-- Header with Title -->
-      <app-page-header icon="calendar" title="Planning des interventions" subtitle="Calendrier et planification des interventions">
+      <app-page-header icon="calendar" title="Planning des interventions" subtitle="Le mois en calendrier : cliquez une intervention pour l'ouvrir, « +N » pour voir toute la journée.">
 
       </app-page-header>
 
-      <!-- Stats Cards -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon-wrapper">
-            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="16" y1="2" x2="16" y2="6"></line>
-              <line x1="8" y1="2" x2="8" y2="6"></line>
-              <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">Total</div>
-            <div class="stat-value">{{ monthlyStats.total }}</div>
-          </div>
+      <!-- This month, with the status names used everywhere else -->
+      <div class="gm-kpis plan-kpis">
+        <div class="gm-kpi">
+          <div class="kpi-top"><span class="kpi-label">Ce mois-ci</span><span class="kpi-icon t-neutral"><app-icon name="calendar"></app-icon></span></div>
+          <div class="kpi-value">{{ monthlyStats.total }}</div>
+          <div class="kpi-hint">Interventions du mois affiché</div>
         </div>
-
-        <div class="stat-card stat-nouveau">
-          <div class="stat-icon-wrapper">
-            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">Nouveau</div>
-            <div class="stat-value">{{ monthlyStats.nouveau }}</div>
-          </div>
+        <div class="gm-kpi">
+          <div class="kpi-top"><span class="kpi-label">À traiter</span><span class="kpi-icon t-info"><app-icon name="clock"></app-icon></span></div>
+          <div class="kpi-value">{{ monthlyStats.nouveau }}</div>
+          <div class="kpi-hint">Le travail n'a pas commencé</div>
         </div>
-
-        <div class="stat-card stat-encours">
-          <div class="stat-icon-wrapper">
-            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"></path>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">En cours</div>
-            <div class="stat-value">{{ monthlyStats.enCours }}</div>
-          </div>
+        <div class="gm-kpi">
+          <div class="kpi-top"><span class="kpi-label">En cours</span><span class="kpi-icon t-warn"><app-icon name="interventions"></app-icon></span></div>
+          <div class="kpi-value">{{ monthlyStats.enCours }}</div>
+          <div class="kpi-hint">Un technicien y travaille</div>
         </div>
-
-        <div class="stat-card stat-termine">
-          <div class="stat-icon-wrapper">
-            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="9 12 12 15 16 10"></polyline>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">Terminé</div>
-            <div class="stat-value">{{ monthlyStats.termine }}</div>
-          </div>
+        <div class="gm-kpi">
+          <div class="kpi-top"><span class="kpi-label">Réalisées ou clôturées</span><span class="kpi-icon t-ok"><app-icon name="check"></app-icon></span></div>
+          <div class="kpi-value">{{ monthlyStats.termine }}</div>
+          <div class="kpi-hint">Travail terminé</div>
         </div>
       </div>
 
@@ -198,6 +167,7 @@ interface CalendarDay {
     ></app-intervention-detail-modal>
   `,
   styles: [`
+    .plan-kpis { margin-bottom: 16px; }
     .planning-container {
       width: 100%;
     }

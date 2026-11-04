@@ -1,10 +1,10 @@
 // Full corrective workflow through the real UI: Demandeur -> Superviseur -> Technicien -> Superviseur,
 // plus refusal, send-back, cancellation (parts returned) and Superviseur CRUD on interventions.
-import { launch, login, goto, ev, check, shot, results, idle, sleep } from './cdp.mjs';
+import { launch, login, goto, ev, check, shot, results, idle, sleep, API } from './cdp.mjs';
 const PW = 'Simotex!2026';
 const SUP = 'superviseur@simotex.demo', TECH = 'm.bensalah@simotex.demo', TECH2 = 'k.jlassi@simotex.demo', DEM = 's.haddad@simotex.demo';
 const stamp = new Date().toISOString().slice(11, 19).replace(/:/g, '');
-const api = path => `fetch('http://localhost:5000/api${path}', {credentials:'include'}).then(r => r.ok ? r.json() : {status: r.status})`;
+const api = path => `fetch('${API}${path}', {credentials:'include'}).then(r => r.ok ? r.json() : {status: r.status})`;
 const b = await launch();
 
 async function findId(title) {

@@ -988,3 +988,6 @@
     .gs-panel { position: fixed; top: calc(var(--navbar-height) + 4px); left: 8px; right: 8px; min-width: 0; }
   }
 }
+
+a.dropdown-item { text-decoration: none; color: inherit; }
+.dropdown-item app-icon { font-size: 16px; color: var(--text-muted); }

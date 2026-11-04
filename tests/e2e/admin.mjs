@@ -1,10 +1,10 @@
 // Équipements CRUD + fiche, utilisateurs (création -> connexion -> suppression libère ses OT),
 // référentiels, budgets, techniciens, explorateur, notifications, droits du demandeur.
-import { launch, login, goto, ev, check, shot, results, idle, sleep } from './cdp.mjs';
+import { launch, login, goto, ev, check, shot, results, idle, sleep, API } from './cdp.mjs';
 const PW = 'Simotex!2026';
 const SUP = 'superviseur@simotex.demo', TECH = 'm.bensalah@simotex.demo', DEM = 's.haddad@simotex.demo';
 const stamp = new Date().toISOString().slice(11, 19).replace(/:/g, '');
-const api = (path, method = 'GET', body) => `fetch('http://localhost:5000/api${path}', {method:'${method}', credentials:'include', headers:{'Content-Type':'application/json'}${body ? `, body: JSON.stringify(${JSON.stringify(body)})` : ''}}).then(async r => { const t = await r.text(); try { return t ? JSON.parse(t) : {status: r.status}; } catch { return {status: r.status, text: t.slice(0,200)}; } })`;
+const api = (path, method = 'GET', body) => `fetch('${API}${path}', {method:'${method}', credentials:'include', headers:{'Content-Type':'application/json'}${body ? `, body: JSON.stringify(${JSON.stringify(body)})` : ''}}).then(async r => { const t = await r.text(); try { return t ? JSON.parse(t) : {status: r.status}; } catch { return {status: r.status, text: t.slice(0,200)}; } })`;
 const b = await launch();
 async function click(text, sel) {
   let r;
@@ -124,7 +124,7 @@ try {
   await check(b, 'Référentiels: ajouter puis supprimer un type de panne', async () => {
     await goto(b, '/settings/references');
     let r = await click('Interventions', '.gm-tabs button'); if (r !== 'ok') return 'tab: ' + r;
-    r = await click('Types de Pannes', '.nav-item'); if (r !== 'ok') return 'list: ' + r;
+    r = await click('Types de pannes', '.nav-item'); if (r !== 'ok') return 'list: ' + r;
     await idle(b, 600);
     r = await click('Ajouter', '.ref-panel button'); if (r !== 'ok') return 'add: ' + r;
     await fill('[formcontrolname=name]', REF);
@@ -195,14 +195,16 @@ try {
     await idle(b, 1200);
     const url = await ev(b, 'location.pathname + location.search');
     if (!url.includes('vue=non-affectees')) return 'went to ' + url;
-    const chip = await ev(b, `!!document.querySelector('.filter-chip')`);
+    // The active filter is shown as a banner in words (version 3; a chip before)
+    const chip = await ev(b, `(document.querySelector('.drill-banner')?.innerText || '').includes('Demandes sans technicien')`);
     const rows = await ev(b, api('/demandeintervention?page=1&pageSize=100&vue=non-affectees'));
     const bad = (rows.data || []).filter(x => x.destinataire || (x.statusId ?? x.status?.id) !== 1).length;
     return (chip && bad === 0) || `chip=${chip} wrong rows=${bad}`;
   });
   await check(b, 'Tableau de bord: KPI « Interventions ouvertes » = nombre filtré', async () => {
     await goto(b, '/dashboard');
-    const kpi = await ev(b, `(() => { const a = [...document.querySelectorAll('a.gm-kpi')].find(x => x.innerText.includes('Interventions ouvertes')); return a ? a.querySelector('.kpi-value').innerText.replace(/\D/g, '') : 'none'; })()`);
+    // A KPI card is a block with a "?" and a link covering it (version 3; a link before)
+    const kpi = await ev(b, `(() => { const a = [...document.querySelectorAll('.gm-kpi')].find(x => x.querySelector('.kpi-label')?.innerText.includes('Interventions ouvertes')); return a ? a.querySelector('.kpi-value').innerText.replace(/\D/g, '') : 'none'; })()`);
     const list = await ev(b, api('/demandeintervention?page=1&pageSize=1&vue=ouvertes'));
     return String(list.totalCount) === kpi || `KPI ${kpi} vs list ${list.totalCount}`;
   });

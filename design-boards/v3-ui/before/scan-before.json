@@ -1,0 +1,530 @@
+[
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/dashboard",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/planning",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/interventions",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/interventions/new",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/interventions/view/846",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/interventions/edit/1869",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/interventions/view/840",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/preventif",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/equipment",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/equipment/new",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/equipment/view/15",
+  "leaks": [
+   "binding Angular visible: « {{ end >= today ? 'Sous garantie jusqu'au ' + (end | date:'dd/MM/yyyy') : 'Garantie expirée' }} »"
+  ],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/equipment/edit/15",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/equipment/view/15?onglet=historique",
+  "leaks": [
+   "binding Angular visible: « {{ end >= today ? 'Sous garantie jusqu'au ' + (end | date:'dd/MM/yyyy') : 'Garantie expirée' }} »"
+  ],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/equipment/etiquettes",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/techniciens",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/magasin",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/achats",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/budgets",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/explorateur",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/rapports",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/settings",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/settings/users",
+  "leaks": [
+   "anglais: « Utilisateur\tEmail\tRôle\tDate de création\tStatut\tActions »"
+  ],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/settings/references",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/settings/journal",
+  "leaks": [
+   "anglais: « Date\tUtilisateur\tObjet\tAction\tDétail »",
+   "anglais: « Action, détail, utilisateur… »"
+  ],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/aide",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/rapport-mensuel",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/resources/new",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/resources/view/1",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "bureau",
+  "route": "/stock/new",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "tablette",
+  "route": "/dashboard",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "tablette",
+  "route": "/planning",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "tablette",
+  "route": "/interventions",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "tablette",
+  "route": "/interventions/new",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "tablette",
+  "route": "/interventions/view/846",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "tablette",
+  "route": "/preventif",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "tablette",
+  "route": "/equipment",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "tablette",
+  "route": "/equipment/view/15",
+  "leaks": [
+   "binding Angular visible: « {{ end >= today ? 'Sous garantie jusqu'au ' + (end | date:'dd/MM/yyyy') : 'Garantie expirée' }} »"
+  ],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "tablette",
+  "route": "/magasin",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "tablette",
+  "route": "/achats",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "tablette",
+  "route": "/budgets",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "tablette",
+  "route": "/settings",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "tablette",
+  "route": "/settings/users",
+  "leaks": [
+   "anglais: « Utilisateur\tEmail\tRôle\tDate de création\tStatut\tActions »"
+  ],
+  "errors": []
+ },
+ {
+  "role": "superviseur",
+  "vp": "tablette",
+  "route": "/settings/references",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "technicien",
+  "vp": "bureau",
+  "route": "/dashboard",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "technicien",
+  "vp": "bureau",
+  "route": "/planning",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "technicien",
+  "vp": "bureau",
+  "route": "/interventions",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "technicien",
+  "vp": "bureau",
+  "route": "/interventions/view/846",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "technicien",
+  "vp": "bureau",
+  "route": "/preventif",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "technicien",
+  "vp": "bureau",
+  "route": "/equipment",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "technicien",
+  "vp": "bureau",
+  "route": "/equipment/view/15",
+  "leaks": [
+   "binding Angular visible: « {{ end >= today ? 'Sous garantie jusqu'au ' + (end | date:'dd/MM/yyyy') : 'Garantie expirée' }} »"
+  ],
+  "errors": []
+ },
+ {
+  "role": "technicien",
+  "vp": "bureau",
+  "route": "/magasin",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "technicien",
+  "vp": "bureau",
+  "route": "/achats",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "technicien",
+  "vp": "bureau",
+  "route": "/aide",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "technicien",
+  "vp": "tablette",
+  "route": "/dashboard",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "technicien",
+  "vp": "tablette",
+  "route": "/planning",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "technicien",
+  "vp": "tablette",
+  "route": "/interventions",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "technicien",
+  "vp": "tablette",
+  "route": "/interventions/view/846",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "technicien",
+  "vp": "tablette",
+  "route": "/preventif",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "technicien",
+  "vp": "tablette",
+  "route": "/equipment",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "technicien",
+  "vp": "tablette",
+  "route": "/equipment/view/15",
+  "leaks": [
+   "binding Angular visible: « {{ end >= today ? 'Sous garantie jusqu'au ' + (end | date:'dd/MM/yyyy') : 'Garantie expirée' }} »"
+  ],
+  "errors": []
+ },
+ {
+  "role": "technicien",
+  "vp": "tablette",
+  "route": "/magasin",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "technicien",
+  "vp": "tablette",
+  "route": "/achats",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "technicien",
+  "vp": "tablette",
+  "route": "/aide",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "demandeur",
+  "vp": "bureau",
+  "route": "/dashboard",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "demandeur",
+  "vp": "bureau",
+  "route": "/interventions",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "demandeur",
+  "vp": "bureau",
+  "route": "/interventions/new",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "demandeur",
+  "vp": "bureau",
+  "route": "/interventions/view/831",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "demandeur",
+  "vp": "bureau",
+  "route": "/aide",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "demandeur",
+  "vp": "tablette",
+  "route": "/dashboard",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "demandeur",
+  "vp": "tablette",
+  "route": "/interventions",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "demandeur",
+  "vp": "tablette",
+  "route": "/interventions/new",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "demandeur",
+  "vp": "tablette",
+  "route": "/interventions/view/831",
+  "leaks": [],
+  "errors": []
+ },
+ {
+  "role": "demandeur",
+  "vp": "tablette",
+  "route": "/aide",
+  "leaks": [],
+  "errors": []
+ }
+]

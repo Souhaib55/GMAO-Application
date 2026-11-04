@@ -4,6 +4,10 @@ Creates or removes three local QA accounts (one per role) used by api_tests.py.
     python tests/qa_accounts.py create   [--server "localhost\\SQLEXPRESS"] [--database gmao]
     python tests/qa_accounts.py remove
 
+Windows authentication by default. For a SQL login (Docker, Linux): --user sa --password ...
+The sqlcmd program can be replaced with GMAO_SQLCMD, e.g.
+    GMAO_SQLCMD="docker exec -i gmao-sql /opt/mssql-tools18/bin/sqlcmd -C"
+
 Development databases only: rows are written directly with sqlcmd (Windows
 authentication). The password hash uses the ASP.NET Core Identity v3 format
 (PBKDF2-HMAC-SHA512, 100 000 iterations), so the accounts log in normally.
@@ -12,6 +16,7 @@ import argparse
 import base64
 import hashlib
 import os
+import shlex
 import struct
 import subprocess
 import uuid
@@ -33,9 +38,13 @@ def identity_v3_hash(password: str) -> str:
     return base64.b64encode(blob).decode()
 
 
+AUTH = ["-E"]  # Windows authentication unless --user is given
+
+
 def sql(server: str, database: str, query: str) -> str:
+    sqlcmd = shlex.split(os.environ.get("GMAO_SQLCMD", "sqlcmd"))
     result = subprocess.run(
-        ["sqlcmd", "-S", server, "-E", "-d", database, "-I", "-b", "-W", "-h", "-1", "-Q", "SET NOCOUNT ON; " + query],
+        sqlcmd + ["-S", server, *AUTH, "-d", database, "-I", "-b", "-W", "-h", "-1", "-Q", "SET NOCOUNT ON; " + query],
         capture_output=True, text=True, encoding="utf-8", errors="replace")
     if result.returncode != 0:
         raise SystemExit(result.stdout + result.stderr)
@@ -111,5 +120,9 @@ if __name__ == "__main__":
     parser.add_argument("action", choices=["create", "remove"])
     parser.add_argument("--server", default="localhost\\SQLEXPRESS")
     parser.add_argument("--database", default="gmao")
+    parser.add_argument("--user", help="SQL login (default: Windows authentication)")
+    parser.add_argument("--password", help="password of the SQL login")
     args = parser.parse_args()
+    if args.user:
+        AUTH = ["-U", args.user, "-P", args.password or ""]
     (create if args.action == "create" else remove)(args.server, args.database)

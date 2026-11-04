@@ -80,7 +80,8 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
     options.Password.RequireLowercase = true;
     options.Password.RequireUppercase = true;
     options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequiredLength = 8;
+    // 10 characters (was 8): applies to new and changed passwords, existing ones keep working
+    options.Password.RequiredLength = 10;
 
     // Brute-force protection on the login form
     options.Lockout.AllowedForNewUsers = true;
@@ -88,7 +89,12 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
 })
 .AddEntityFrameworkStores<StoreContext>()
-.AddDefaultTokenProviders();
+.AddDefaultTokenProviders()
+.AddPasswordValidator<API.Security.MotDePasseValidator>()
+.AddErrorDescriber<API.Security.ErreursIdentiteFr>();
+
+// Password reset links expire after 2 hours (default: 1 day)
+builder.Services.Configure<DataProtectionTokenProviderOptions>(o => o.TokenLifespan = TimeSpan.FromHours(2));
 
 // Role changes and deactivations reach open sessions within a few minutes
 builder.Services.Configure<SecurityStampValidatorOptions>(options =>
@@ -144,12 +150,19 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 
-// Behind nginx: trust the forwarded scheme / client IP
+// Behind a reverse proxy (nginx in Docker, IIS out-of-process): the client IP and scheme are
+// read from X-Forwarded-* only when the request comes from a trusted proxy. Loopback is trusted
+// by default; other proxies are listed in "ReverseProxy:KnownNetworks" (e.g. "172.16.0.0/12").
+// Trusting every sender would let anyone fake their IP and bypass the login rate limit.
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownNetworks.Clear();
-    options.KnownProxies.Clear();
+    foreach (var cidr in builder.Configuration.GetSection("ReverseProxy:KnownNetworks").Get<string[]>() ?? Array.Empty<string>())
+    {
+        var parts = cidr.Split('/');
+        if (parts.Length == 2 && System.Net.IPAddress.TryParse(parts[0], out var prefix) && int.TryParse(parts[1], out var length))
+            options.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(prefix, length));
+    }
 });
 
 var app = builder.Build();
@@ -199,12 +212,30 @@ if (!app.Environment.IsDevelopment())
     }));
 }
 
+// Security headers on every response. The CSP fits the Angular build (no inline script;
+// inline styles are needed by Angular components) and the Power BI page (iframe to *.powerbi.com).
+// Nothing else is loaded from outside: fonts, icons and scripts are all served by the app.
+const string Csp =
+    "default-src 'self'; " +
+    "script-src 'self'; " +
+    "style-src 'self' 'unsafe-inline'; " +
+    "img-src 'self' data: blob:; " +
+    "font-src 'self' data:; " +
+    "connect-src 'self' https://app.powerbi.com; " +
+    "frame-src https://app.powerbi.com https://*.powerbi.com https://app.powerbigov.us https://*.powerbi.cn; " +
+    "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
 app.Use(async (context, next) =>
 {
     var headers = context.Response.Headers;
     headers["X-Content-Type-Options"] = "nosniff";
     headers["X-Frame-Options"] = "DENY";
     headers["Referrer-Policy"] = "same-origin";
+    headers["Content-Security-Policy"] = Csp;
+    headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=(), usb=()";
+    headers["Cross-Origin-Opener-Policy"] = "same-origin";
+    // API answers are personal data: never kept by a shared browser or a proxy cache
+    if (context.Request.Path.StartsWithSegments("/api"))
+        headers["Cache-Control"] = "no-store";
     await next();
 });
 

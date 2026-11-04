@@ -4,6 +4,16 @@ This guide explains what every part of the application does, what every number m
 
 Screen names and labels are written in French, exactly as they appear in the application, so you can point at them during a demo.
 
+> **Version 3 (November 2026), what is new for users:**
+> - Supervisor dashboard: a short **"À retenir"** summary that says what to do; a **"?"** on every figure, with the calculation done on your own numbers; changes written as sentences ("+42 % par rapport aux 30 jours précédents") with a colour legend; every card opens the list of interventions behind it.
+> - **Rapport mensuel**, ready to print or save as PDF.
+> - **Étiquettes QR** to stick on the machines. Scanning one opens "Déclarer une panne" with the machine already filled in.
+> - Simpler breakdown form: type and urgency pre-filled, title proposed, photo button in French.
+> - Interventions list: filters (status, type, line, period) and **Excel export**. Equipment list: Excel export.
+> - Tablet: larger buttons (44 px), the next step as one big button, quick durations (15 min, 30 min, 1 h, 2 h).
+> - **Aide** page (how to, KPIs explained, glossary, FAQ) and a **guided tour** for each role on first login.
+> - Requesters now see the notification bell. The technician role is shown as "Technicien".
+
 ---
 
 ## Contents
@@ -99,7 +109,7 @@ Every account has exactly one role. The menu, the pages and the buttons adapt to
 | **Utilisateur** = **Technicien** | Maintenance technicians | Accept or refuse their interventions, log time and parts, write the report, mark the work done, request purchases | Their own interventions and planning, préventif (read), équipements (read), magasin, achats (their own requests) |
 | **Demandeur** | Production line heads (*chefs de chaîne*) | Declare breakdowns and requests, follow them | Their own requests only, and their personal dashboard |
 
-> The technician role is called "Utilisateur" in the database for historical reasons. On screens it is explained as "Techniciens (rôle Utilisateur)".
+> The technician role is called "Utilisateur" in the database for historical reasons. Since version 3 the screens show **"Technicien"** (sidebar card, user menu); the database name is unchanged.
 
 ---
 
@@ -157,33 +167,69 @@ The dashboard is different for each role.
 - **Période**: 7 j, 30 j, 90 j, 12 mois.
 - **Chaîne**: one production line, or all.
 - **Équipement**: one machine, or all.
-- **Exporter**: downloads the figures as a CSV file, which opens in Excel.
+- **Plus d'actions** (top right, next to "Déclarer une panne"): **Rapport mensuel à imprimer** (§5.4) and **Exporter les chiffres (Excel)**: the figures plus the "À retenir" points, as a CSV file.
 
-Each figure is compared with the **previous period of the same length**, for example the last 30 days vs the 30 days before. The small coloured badge shows the change: green = better, red = worse.
+**Reading order of the page (UI pass of November 2026).** Top to bottom: "À retenir" → the 4 key figures → what to handle now and the alerts → four charts that each answer a question → the detail, folded. One message per block.
 
-**The 6 key figures (KPI cards).** Each one has a **"?"** button that shows its explanation in the app.
+**"À retenir" (what to remember).** The first block of the page: 1 to 5 sentences, most urgent first, each with **what to do** and a **"Voir"** button that opens the right screen with the same period and line. It is built from fixed rules, not AI:
 
-| Card | What it tells the client | How it is calculated |
+| Rule | Fires when | Example |
 |---|---|---|
-| **Disponibilité du parc** | % of the time the machines **could produce** | `1 − (downtime hours ÷ (number of machines × hours in the period))`. Example: 38 machines × 30 days × 24 h = 27 360 machine-hours. With 253 h of downtime, availability = 1 − 253/27 360 = **99,1 %**. Only breakdowns on an **identified machine** count, because a breakdown on "the whole line" cannot be attributed to one machine. |
-| **Heures d'arrêt** | Total hours machines were **stopped** by breakdowns | For each breakdown: from **declaration** until **completion** (or until now if still open), counted only inside the period. The hint shows the number of breakdowns declared. |
-| **Temps moyen de réparation** (MTTR) | How long a repair takes on average | Average of (completion time − start of work) for the breakdowns **completed** in the period. Lower is better. The small line under it shows the **MTBF**. |
-| ↳ **MTBF** | How long machines run between breakdowns on average | `(machines × hours − downtime) ÷ number of breakdowns declared`. Higher is better. |
-| **Respect du préventif** | Is the planned servicing done on time? | Preventive jobs **due** in the period that were done **within 2 days** of their planned date, ÷ all preventive jobs due. Target: **90 %**. Click to open Préventif. |
-| **Interventions ouvertes** | The current backlog (work not finished) | Count of interventions in status À traiter or En cours. **"En retard"** = open preventive jobs past their date, plus open breakdowns older than 48 h. Click to open the filtered list. |
-| **Coût de maintenance** | How much maintenance cost in the period | **Labour** (hours logged × technician's hourly rate in DT/h) + **parts** (quantity × unit price at the moment they left the store) + **subcontracting** (external cost entered on the intervention). The bar compares it to the **budget** for the same period. Click to open Budgets. |
+| Machines stopped now | at least one machine is stopped by an open breakdown | "1 machine est à l'arrêt en ce moment." |
+| Requests without a technician | at least one | "2 demandes attendent un technicien." |
+| Downtime concentrated on a few machines | the top 3 machines make ≥ 50 % of the downtime (or one machine ≥ 40 %) | "3 machines cumulent 55 % des heures d'arrêt de ces 30 jours (CB-04, CB-01, CA-02)." |
+| One line hit hardest | one line has ≥ 40 % of the downtime | "La chaîne Couture B concentre 48 % des heures d'arrêt." |
+| Main cause | one breakdown type is ≥ 30 % of the breakdowns (3 or more) | "« Panne électrique » est la première cause de panne : 6 sur 17 (35 %)." |
+| Downtime trend | +20 % and at least +2 h vs the previous period (or −20 %: good news) | "Les heures d'arrêt augmentent : 62 h contre 44 h…" |
+| Repairs getting longer | MTTR +20 % and at least +15 min | "Les réparations durent plus longtemps : 1,6 h en moyenne contre 1,2 h…" |
+| Preventive behind | compliance < 90 % (red under 75 %) | "Respect du préventif : 80 % (objectif 90 %), 2 préventifs en retard." |
+| Budget | year-end projection > annual budget (or period cost > 110 % of its budget) | "Au rythme actuel, le budget annuel (34 000 DT) sera dépassé d'environ 3 735 DT…" |
+| Stock | at least one article out of stock | "1 article est en rupture de stock." |
 
-**The cards below:**
+If no rule fires: "Rien d'anormal sur ces 30 jours." The rules are in `API/Services/Kpi/SyntheseRegles.cs` and covered by unit tests.
+
+**"Les chiffres clés" — 4 cards, one message each.** The figures a maintenance manager checks every morning: **Disponibilité du parc**, **Heures d'arrêt**, **Interventions ouvertes**, **Respect du préventif**. Each card shows, and only shows:
+
+1. the label and the **"?"**;
+2. the figure, large, with its unit;
+3. its **level in words and colour**: "Bon niveau (objectif 98 %)", "À surveiller (objectif 98 %)", "Sous l'objectif de 90 %", "3 en retard"…;
+4. its **trend in words and colour**, compared with the **previous period of the same length**: "Mieux · +3 points par rapport aux 30 jours précédents", "Moins bien · +85 % par rapport aux 30 jours précédents", "Stable par rapport…". Green = better, red = worse, grey = stable: the words say it too, so colour is never the only signal. A change too small to mean anything is "stable": under half a point of availability, under 3 points of preventive compliance, under 5 % for the other figures. The trend is hidden when the previous period has fewer than 5 interventions (not enough history).
+
+**"Voir plus d'indicateurs"** (link under the cards) shows three more cards with the same pattern: **Temps moyen de réparation (MTTR)**, **Temps moyen entre deux pannes (MTBF)** and **Coût de maintenance** (level = share of the budget of the period).
+
+**The "?" button on every card** opens a short explanation: what the figure means (one sentence), the formula in words, **the calculation with the numbers on screen**, what a good or bad value is for a garment workshop, and which way is better. The texts are in `client/src/app/shared/kpi/kpi-definitions.ts`. The Aide page shows them too.
+
+**Clicking a card** opens the list of the interventions behind the figure, filtered on the same period, line and machine, with a banner saying what is shown. This answers "why is this number high?".
+
+| Card | What it tells the client | How it is calculated | Click opens | Good value (garment workshop) |
+|---|---|---|---|---|
+| **Disponibilité du parc** | % of the time the machines **could produce** | `1 − downtime ÷ (machines × hours of the period)`. Example: 26 machines × 716,9 h = 18 639 machine-hours; 61,6 h of downtime → 1 − 61,6 ÷ 18 639 = **99,7 %**. Only breakdowns on an **identified machine** count. | Machine stops overlapping the period | ≥ 98 % "Bon niveau", 95–98 % "À surveiller", < 95 % "Sous l'objectif" |
+| **Heures d'arrêt** | Hours machines were **stopped** by breakdowns | Per machine, from **declaration** to **completion** (or now), clipped to the period. **Two requests open at the same time on the same machine count once** (since version 3). | Machine stops overlapping the period | Lower is better; watch the trend |
+| **Temps moyen de réparation** (MTTR) — under "Voir plus" | How long a repair takes | `total repair time ÷ number of repairs`, repair = completion − start of work, for breakdowns completed in the period. | Breakdowns repaired in the period | Sewing machine: < 1 h good, 1–2 h usual, > 2 h often a missing part |
+| **Temps moyen entre deux pannes** (MTBF) — under "Voir plus" | How long a machine runs between breakdowns | `(machines × hours − downtime) ÷ breakdowns declared`. Hours are counted 24/7: compare periods rather than absolute values. | Breakdowns of the period | Higher is better |
+| **Respect du préventif** | Is planned servicing done on time? | Jobs **due** in the period done **within 2 days** of their date ÷ jobs due. The "?" shows "39 faits à temps sur 49 prévus". | Preventive jobs due in the period | ≥ 90 % "Objectif atteint", 75–90 % "À surveiller", < 75 % "Sous l'objectif" |
+| **Interventions ouvertes** | The backlog **right now** | À traiter + En cours. **En retard** = preventive past its date + breakdown open > 48 h. | Late interventions (or all open ones) | Stable; ~20 open is normal for 4 technicians |
+| **Coût de maintenance** — under "Voir plus" | What maintenance cost in the period | Labour (hours × rate DT/h) + parts (quantity × price at issue) + subcontracting. The level compares it with the **budget for the same duration** (annual budget × days ÷ 365). | Budgets | Under 100 % of the period budget |
+
+**What to handle now:**
 
 | Card | Meaning |
 |---|---|
-| **À traiter maintenant** | Action list: machines stopped, preventive jobs late, requests without a technician. The coloured tag says why; the right column says since when. Click a line to open the intervention. |
-| **Interventions déclarées et réalisées** | Two curves per day/week: requests declared vs completed. If "declared" stays above "completed", the backlog grows. |
-| **Heures d'arrêt par chaîne** | Which production lines lost the most hours. Click a line to filter the whole dashboard on it. |
-| **Pannes les plus fréquentes** | A ranking of breakdown types (Pareto). Fixing the top 2–3 causes usually removes most breakdowns. |
-| **Répartition des coûts** | A donut: labour / parts / subcontracting. The centre shows the total in thousands of DT. The subtitle gives the **share of preventive work** in labour hours. |
-| **Machines les plus pénalisantes** | The machines with the most downtime hours, number of breakdowns, and hours stopped. Click to open the machine's history. |
-| **Alertes** | Points that need a decision: machines stopped, requests without a technician, preventive late, items out of stock / under threshold, late deliveries, purchase requests to approve. Each line opens the right list, already filtered. |
+| **À traiter maintenant** | Action list: machines stopped, preventive jobs late, requests without a technician. The coloured tag says why; the right column says since when. |
+| **Alertes** | Points that need a decision now. Each line opens the right list, already filtered. |
+
+**"Comprendre les arrêts" — four charts, each answering one question.** Values are written on the bars and at the end of the lines, so there is no legend to decode.
+
+| Question (title of the chart) | What it shows | Click |
+|---|---|---|
+| **Quelles machines tombent le plus en panne ?** | The 6 machines with the most downtime hours: code, name, number of breakdowns. | Opens the machine's history |
+| **Pourquoi tombent-elles en panne ?** | Number of breakdowns per cause, with the share and the **cumulative share** (Pareto: treat the first lines first). | Opens the breakdowns of that cause |
+| **Quelles chaînes perdent le plus de temps ?** | Downtime hours per production line. | Filters the whole dashboard on that line |
+| **Le travail en attente augmente-t-il ?** | Interventions declared and completed, **per week** over 30 days (per day over 7 days). If "Déclarées" stays above "Réalisées", the backlog grows. | — |
+
+**"Voir le détail" (folded, at the bottom):** **Où part l'argent ?** (donut labour / parts / subcontracting, share of preventive work in the hours logged) and **Machines les plus pénalisantes** (downtime, cumulative share and maintenance cost per machine; click to open the history).
+
+**First login:** a **guided tour** (about one minute) shows "À retenir", the "?", how to read a card, Interventions, Préventif, the "Plus d'actions" menu and Aide. It can be replayed from the user menu or the Aide page.
 
 ### 5.2 Technician dashboard ("Votre journée de travail")
 
@@ -204,7 +250,13 @@ Each figure is compared with the **previous period of the same length**, for exa
 | **En attente** | Not started yet |
 | **Réalisées, à valider** | Work finished, waiting for the supervisor's validation |
 | **Réalisées sur 30 jours** | Finished in the last 30 days |
-| **Mes demandes en cours** | Their open requests with status and technician |
+| **Mes demandes en cours** | Their open requests with status and technician. When there is none, a "Déclarer une panne" button is shown. |
+
+### 5.4 Rapport mensuel (supervisor)
+
+Button **"Rapport mensuel"** on the dashboard (address `/rapport-mensuel`). Choose a month (the month just finished is selected), then **"Imprimer ou PDF"**: the browser prints the report; to get a PDF choose "Enregistrer au format PDF" as the printer. It works without Internet.
+
+Content on A4: "À retenir"; the indicators of the month vs the previous **calendar month** with the change, the target and a one-line definition; Pareto of causes; downtime per line; most penalising machines with their cost; costs of the month vs budget; machines that cost the most. The figures are exactly those of the dashboard (same calculation).
 
 ---
 
@@ -226,7 +278,7 @@ Each figure is compared with the **previous period of the same length**, for exa
   - **"Ouvrir la fiche"** for the full page.
 - Closed or cancelled badges can be hidden from the calendar (the small ✕). This only hides them in this browser; nothing is deleted.
 
-**Top counters** (current month): Total, Nouveau (= à traiter), En cours, Terminé (= réalisées + clôturées). Each has a "?" explanation.
+**Top counters** (month shown), with the same names as the statuses everywhere else: **Ce mois-ci**, **À traiter**, **En cours**, **Réalisées ou clôturées**.
 
 ---
 
@@ -243,7 +295,10 @@ Each figure is compared with the **previous period of the same length**, for exa
   - **Urgentes en attente**: high urgency, not finished. Do these first.
   - **Total**: everything, cancelled included.
 - **Search**: by title, reference ("INT-0042" or just "42"), machine or line. It filters as you type.
-- **Filter chip**: when you come from a dashboard alert, for example "Demandes sans technicien", the list is pre-filtered. Click ✕ to remove the filter.
+- **Filters**: status, type ("Pannes avec arrêt", "Correctif", "Préventif"), line (not for requesters), declaration period (7, 30, 90 days, this month). "Effacer les filtres" resets everything. The filters are kept in the address, so the browser's back button keeps them.
+- **Dashboard banner**: when you come from a dashboard card, a blue banner says in words what the list shows, e.g. "Arrêts machine de la période (heures d'arrêt, disponibilité) — du 05/10/2026 au 03/11/2026 · chaîne Couture B". "Retirer ce filtre" removes it.
+- **Exporter**: the **whole** filtered list (not only the page), as a CSV file Excel opens directly: reference, title, dates, type, breakdown type, line, machine, urgency, status, requester, technician, machine stop, cause, remedy.
+- **Lines per page**: 10, 25, 50 or 100 (at the bottom).
 - **Columns**: intervention (title + reference), declaration date and time, type, machine and line, **urgency** tag (red = Haute), **status** dot, requester.
 - **Actions**: 👁 open the page, ✎ edit (allowed only while editable), 🗑 delete (supervisor only, with a confirmation dialog).
 
@@ -257,16 +312,23 @@ Each figure is compared with the **previous period of the same length**, for exa
    - **Type de panne**: required only for a breakdown.
    - **Urgence**: Haute = production blocked; Normale = to handle within the day; Basse = can wait.
    - **Titre** and **Description**.
-3. **Pièce jointe**: a photo or document, up to 10 MB.
+3. **Pièce jointe**: a photo or document, up to 10 MB, with the button **"Ajouter une photo ou un document"** (on a tablet it offers the camera).
+
+To make declaring faster (version 3):
+
+- the **type** is pre-filled with corrective maintenance and the **urgency** with "Normale"; whoever knows better changes them in one tap;
+- the **title** is proposed from the breakdown type and the machine ("Casse aiguille — CB-04") until the user types their own;
+- from a **QR label** (§9.4), the machine and its line are already filled in and a note confirms it: only the breakdown type and a sentence remain.
 
 ### 7.3 The intervention page ("Fiche intervention")
 
 - **Header facts**: reference, declared on, requester, status, technician, planned date, machine stop yes/no.
-- **"À faire" card**: the next workflow action for the person looking at it (see §4).
+- **"La demande"** (consultation): the request in a few lines instead of a greyed-out form — title, full description, then machine, line, type, breakdown, urgency and attachment as label and value, and the technician's report with the photos once the job is done. **"Modifier"** in the header opens the form when the request can still be changed (supervisor until closed, requester until someone takes it on).
+- **"À faire" card**: the next workflow action for the person looking at it (see §4), as **one large button** (full width on a tablet). For the technician, a reminder lists what to do before finishing: time, parts, checklist, then the report.
 - **Suivi des travaux** (execution record):
   - **Coût**: labour (DT and hours), parts (DT and number of lines), external (subcontracting), **total**.
   - **Contrôles et étapes**: a checklist, copied automatically from the preventive plan. The technician ticks the steps.
-  - **Temps passé**: time entries (start, duration, comment). The supervisor can enter time for any technician.
+  - **Temps passé**: time entries (start, duration, comment). Quick buttons **15 min, 30 min, 1 h, 2 h** fill the duration and the start time in one tap. The supervisor can enter time for any technician.
   - **Pièces consommées**: parts taken from the store. Removing a line returns the part to stock.
   - **Analyse**: cause, remedy, external cost (subcontracting in DT), planned date, estimated duration.
   - **Documents**: files.
@@ -298,7 +360,7 @@ Each figure is compared with the **previous period of the same length**, for exa
 - A plan **never** gets two work orders for the same due date.
 - If a due date falls on a **Sunday**, the work order is planned for **Monday**.
 - If the server was stopped for a while, missed dates are not all created at once: it jumps to the latest due date.
-- **"Générer les OT dus"** runs that same generation immediately.
+- **Plus d'actions → "Créer maintenant les OT dont l'échéance approche"** runs that same generation immediately (rarely needed: it runs by itself every hour). The main button of the page is **Nouveau plan**.
 - **"Générer le prochain OT maintenant"** (▶ on a plan) creates the next work order early. It is **refused while the plan's current work order is still open**, so future jobs don't pile up.
 - **Suspendre / Réactiver** (⏸): a suspended plan creates nothing.
 
@@ -333,6 +395,8 @@ Each figure is compared with the **previous period of the same length**, for exa
 
 Columns: machine (name + code), model, line, **état** (green dot = en service, red = en panne, orange = maintenance), **criticité** tag (Critique / Important / Standard).
 
+Buttons: one main button, **Nouvel équipement** (supervisor). The rest is in **Plus d'actions**: **Exporter la liste (Excel)** and **Imprimer les étiquettes QR** (§9.4). A technician sees only **Exporter**.
+
 ### 9.2 Create / edit (side panel)
 
 Three sections:
@@ -343,15 +407,25 @@ Three sections:
 
 ### 9.3 Machine page ("Fiche équipement")
 
-Three tabs:
+Header: **Modifier** (supervisor, opens the form), **Imprimer**, **Retour**. Three tabs:
 
-- **Fiche**: the data.
+- **Fiche**: a reading view, not a form. At the top the code, the name, the line, the **state** and the **importance** as tags. Below, label and value: family, model, group, serial number; commissioning, purchase (with the cost), installation and manufacture dates in **dd/mm/yyyy**; the warranty in words ("Sous garantie jusqu'au …" or "Garantie expirée", in red). An empty field says "Non renseigné".
 - **Historique et fiabilité**: the machine's own KPIs over 12 months, plus all its interventions (filter: Toutes / Pannes / Préventif) and the parts consumed.
   - **Disponibilité (12 mois)**: the same formula as the dashboard, for this machine only.
   - **Pannes (12 mois)**: number of breakdowns, with the date of the last one.
   - **MTBF / MTTR**: the big number is the MTBF in hours; the line below is the average repair time.
   - **Coût de maintenance**: labour + parts + subcontracting over 12 months, and since the beginning.
 - **Documents**: manuals, photos, certificates.
+
+### 9.4 Étiquettes QR (supervisor)
+
+Address `/equipment/etiquettes`. One label per machine: QR code, machine code in large print, designation, line, "Panne ? Scannez ce code". Two labels per row on A4.
+
+1. Check the **address** at the top: it must be the one the tablets use, e.g. `http://SRV-TN-BI:5091`. If the page was opened on the server itself as `localhost`, a warning asks to change it, otherwise the codes would not open on the phones.
+2. Choose a line or keep all machines, untick the labels you do not want.
+3. **Imprimer**, then stick each label on its machine. Test one label with a phone first.
+
+Scanning with the phone's **own camera app** opens `…/interventions/new?machine=<id>`: after login, "Déclarer une panne" opens with the machine filled in. This works on plain HTTP because the page never uses the camera itself. The QR codes are generated in the browser (no Internet).
 
 ---
 
@@ -420,6 +494,8 @@ An article with **threshold = 0 is not tracked** and never raises an alert.
 
 **Who:** Superviseur (everything), Technicien (purchase requests only).
 
+Buttons: for the supervisor, the main button is **Bon de commande**; **Nouvelle demande d'achat** is in **Plus d'actions**. A technician has a single button, **Demande d'achat**.
+
 ### 12.1 The purchasing workflow
 
 ```
@@ -465,6 +541,8 @@ There are three categories, the same three parts as the cost: **Main-d'œuvre** 
 | **Reste disponible** | Budget − spent (red if negative) |
 | **Projection fin d'année** | `spent ÷ fraction of the year elapsed`. Example: 15 000 DT spent on 1 July (≈ 50 % of the year) → projection ≈ 30 000 DT. |
 
+The header shows how much of the year has passed, by days, e.g. "84 % de l'année écoulée (307 jours sur 365)" (before version 3 it showed the month number, "11 mois écoulés", which was misleading on 3 November).
+
 **Prorata** (on each line): the budget that *should* have been used by today = budget × fraction of the year elapsed. **Écart** = prorata − spent: positive means you are under budget, negative means you are over.
 
 The monthly chart shows spending month by month.
@@ -508,16 +586,20 @@ Displays the **Power BI** dashboards published by SIMOTEX. The supervisor sets t
 
 ### Paramètres (Superviseur)
 
-- **Utilisateurs et rôles**:
-  - counts per role,
-  - **Gérer les utilisateurs**: create an account (first name, last name, email, password, role) and edit or delete it.
-  - A deleted account can no longer log in, and its open interventions go back to "to assign".
-- **Your account**: name, email, role, application version.
-- **Administration des modules**: shortcuts to stores, suppliers, technicians and rates, preventive plans, budgets, Power BI, journal.
-- **Données de référence**: the **choice lists** used in forms. Changing them updates every form.
-  - Équipements: criticality, state, family, group, brand, model.
-  - Interventions: intervention state, intervention type, urgency levels, **production lines**, breakdown types.
-  - Magasin: part families, manufacturers, part criticality.
+Arranged by **what you want to do**, not by database table. Four groups, each with a one-line description, its usual settings first, and the rare ones folded under **"Autres réglages (n)"**:
+
+| Group | Usual settings | Under "Autres réglages" |
+|---|---|---|
+| **Utilisateurs et accès** — who can log in, and what each person can do. Shows "9 comptes : 1 superviseur, 4 techniciens, 4 demandeurs". | **Utilisateurs** (create an account, change a role, deactivate), **Techniciens et taux horaires** | Journal d'activité |
+| **Machines et chaînes** — the lines of the workshop and how machines are classified. | **Chaînes de production**, **Familles de machines**, **Marques et modèles**, **Étiquettes QR des machines** | Modèles de machines, Importance des machines, États des machines, Groupes de machines |
+| **Magasin et achats** — where parts are stored, who supplies them, how much can be spent. | **Magasins et emplacements**, **Fournisseurs**, **Budgets annuels** | Familles d'articles, Fabricants des articles, Importance des articles |
+| **Interventions** — the choices offered when declaring or planning an intervention. | **Types de pannes**, **Types d'intervention**, **Plans de maintenance préventive** | Niveaux d'urgence, États d'intervention (technical list), Rapports Power BI |
+
+At the bottom: application version (3.0) and the signed-in account.
+
+**Listes de choix** (`/settings/references`, opened from the groups above): three tabs, **Machines et chaînes**, **Interventions**, **Magasin**. Each tab lists its usual lists first and folds the rare ones under "Autres listes". The page opens on **Chaînes de production**. Every list has **Ajouter**, a **search box** (from 6 items), and an empty state that offers to add the first item. Names are in plain French ("Importance des machines" rather than "Criticité équipement"). The "États d'intervention" list is technical: its entries are matched to the statuses by keyword, so do not rename them.
+
+**Utilisateurs:** the technician role is shown as **Technicien** everywhere (cards, tags, filter, form); "Adresse e-mail"; no internal identifier under the names.
 
 ### Journal d'activité
 
@@ -540,10 +622,13 @@ Sent automatically. The number on the bell = unread notifications.
 | Preventive work order generated | The plan's technician |
 | New purchase request / decision | Supervisors / the requester |
 
-### Help everywhere
+### Aide, guided tour, help everywhere
 
-- The **"?"** next to each figure explains it in plain words.
+- **Aide** (last item of the menu, for every role, and in the user menu): how to do things for the user's role (the supervisor sees all three roles), **the indicators explained** (supervisor), a searchable **glossary** of maintenance words (OT, préventif, MTBF, Pareto, criticité, seuil…), and **frequent questions** (camera on HTTP, forgotten password, locked account, colours, offline use).
+- **Guided tour**: shown once per account and device at first login, adapted to the role. "Revoir la visite guidée" in the user menu or on the Aide page replays it. Keys: → next, ← previous, Échap closes.
+- The **"?"** next to each dashboard figure explains it with the numbers on screen.
 - Deletions always ask for confirmation in the application's own dialog.
+- **Notifications**: since version 3 the bell is shown to requesters too (they are told when work starts, is closed or cancelled).
 
 ---
 
@@ -574,7 +659,7 @@ Every action ──► Journal d'activité, Notifications
 
 | KPI | Formula | Read it as |
 |---|---|---|
-| Downtime (heures d'arrêt) | Σ over breakdowns with a machine: (completion or now) − declaration, clipped to the period | Hours of production lost |
+| Downtime (heures d'arrêt) | Per machine, union of the periods during which a breakdown kept it stopped (declaration → completion or now), clipped to the period; overlapping requests on the same machine count once | Hours of production lost |
 | Availability (disponibilité) | 1 − downtime ÷ (machines × 24 h × days) | Higher is better; 99 % means machines were available 99 % of the time |
 | MTTR | average (completion − start of work) of breakdowns completed in the period | Lower is better |
 | MTBF | (machines × hours − downtime) ÷ breakdowns declared | Higher is better |
@@ -590,7 +675,11 @@ Every action ──► Journal d'activité, Notifications
 | Suggested reorder | (max stock, or 2 × threshold) − stock − on order | Quantity to buy |
 | Budget prorata | budget × fraction of year elapsed | What should be spent by today |
 | Year-end projection | spent ÷ fraction of year elapsed | Expected spend on 31 Dec |
-| Δ vs previous period | (current − previous); "pt" for percentages | Green = better |
+| Δ vs previous period | Previous period = same length just before (monthly report: previous calendar month). Change in % (or in points for percentages); below 5 % (0,5 pt availability, 3 pt preventive) shown as "stable" | Green = better, red = worse, grey = stable |
+| Cumulative share (Pareto) | running total of the ranked items ÷ total | The first lines that reach ~80 % are the priorities |
+| Cost per machine | labour + parts + subcontracting of the period on the machine's interventions | In DT |
+
+All these formulas live in one place, `API/Services/Kpi/KpiCalculator.cs`, used by the dashboard, the machine page, the monthly report and `/api/kpi`, and covered by unit tests (`tests/Gmao.Tests`).
 
 ---
 
@@ -762,6 +851,7 @@ client/src/app/
 - **CORS**: only the Angular origin may call the API (in development).
 - **Explorateur**: fixed SQL, parameters only, transaction always rolled back; optional read-only database account.
 - **Audit**: the journal records every important action.
+- **Version 3** (details in `SECURITE-V3.md`): uploaded files are checked by their real content (magic number) and their type is decided by the server; Content-Security-Policy and other security headers; `X-Forwarded-For` trusted only from known proxies (`ReverseProxy:KnownNetworks`); passwords of at least 10 characters, refusing the user's name and common words, with French messages; the login no longer reveals whether an account exists or is deactivated before the password is checked; demo error controllers removed.
 
 ---
 
@@ -799,7 +889,7 @@ Example: the supervisor clicks **"Affecter"**.
   - `JournalActivites`, `Notifications`, `PiecesJointes`
   - `Users` + the Identity tables (`AspNetUsers`, `AspNetRoles`…)
   - all the reference lists
-- **Migrations** (e.g. `GmaoModulesPro`, `AccentsStatuts`) are applied automatically when the API starts (`MigrateAsync`). They are additive: existing data is kept.
+- **Migrations** (e.g. `GmaoModulesPro`, `AccentsStatuts`, `RoleSuperviseurManquant`) are applied automatically when the API starts (`MigrateAsync`). They are additive: existing data is kept.
 - **Soft delete**: "deleting" an intervention or a machine sets `IsActif = false` / `IsDeleted = true` instead of erasing it, so history and KPIs stay correct.
 
 ---
@@ -816,8 +906,9 @@ The browser also refreshes notifications periodically.
 
 | Suite | Tool | Checks |
 |---|---|---|
-| `tests/api_tests.py` | Python, HTTP calls | **137** checks: authentication and rights, intervention lifecycle, preventive, store, purchasing, budgets, all Explorateur questions, dashboard, planning, business rules, Power BI, regressions |
-| `tests/e2e/*.mjs` | Node.js driving **Microsoft Edge in headless mode** through the **Chrome DevTools Protocol (CDP)** | Clicks through the real screens like a user: every page of every role (`pages`), the full workflow (`workflow`), préventif/magasin/achats (`modules`), equipment, users, references, budgets, dashboard links (`admin`) |
+| `tests/Gmao.Tests` | xUnit (`dotnet test tests/Gmao.Tests`) | **46** unit tests: every KPI formula against a hand calculation (downtime with overlaps, availability, MTBF, MTTR, preventive compliance, same-length previous period, monthly period, labour cost, budget prorata across two years, year-end projection), the "À retenir" rules, file upload checks, password rules |
+| `tests/api_tests.py` | Python, HTTP calls | **168** checks: the 137 previous ones, plus version 3: each dashboard figure equals the length of the list it opens, filters, export, monthly report, security headers, upload checks, password policy, login answers, cross-access (IDOR) by requester and technician |
+| `tests/e2e/*.mjs` | Node.js driving a **headless browser** (Microsoft Edge on Windows, Chrome or Chromium elsewhere; `GMAO_BROWSER` to force one) through the **Chrome DevTools Protocol (CDP)**. `GMAO_APP` and `GMAO_API` change the addresses (default `http://localhost:4200` and `http://localhost:5000/api`). | Clicks through the real screens like a user: every page of every role (`pages`), the full workflow (`workflow`), préventif/magasin/achats (`modules`), equipment, users, references, budgets, dashboard links (`admin`) |
 | `tests/e2e/cleanup.sql` | SQL | Removes data created by the browser tests |
 
 "Headless" = the browser runs without a window. CDP = the protocol DevTools uses, which lets a script click, type and read the page.
@@ -826,7 +917,7 @@ The browser also refreshes notifications periodically.
 
 ## 29. Deployment
 
-See `DEPLOIEMENT-VERSION-2.md`. In short:
+See `DEPLOIEMENT-VERSION-3.md` (latest) and `DEPLOIEMENT-VERSION-2.md`. In short:
 
 1. **Back up** the database.
 2. Build the API (`dotnet publish`) and the client (`ng build`).

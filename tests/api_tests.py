@@ -370,6 +370,92 @@ def main():
     check("recherche d'un OT par sa référence", status == 200 and any(d["idDemandeIntervention"] == ot_id for d in found["data"]), found)
 
     # ------------------------------------------------------------------
+    section("Version 3 : chiffres du tableau de bord et listes derrière chaque chiffre")
+    _, pil = sup.get("/api/pilotage?days=30")
+    per = pil["periode"]
+    du, au = urllib.parse.quote(per["from"]), urllib.parse.quote(per["to"])
+    check("période précédente de même durée",
+          abs((dt.datetime.fromisoformat(per["to"][:19]) - dt.datetime.fromisoformat(per["from"][:19])) -
+              (dt.datetime.fromisoformat(per["precedentTo"][:19]) - dt.datetime.fromisoformat(per["precedentFrom"][:19]))) < dt.timedelta(seconds=2), per)
+    check("« À retenir » présent (1 à 5 points avec un texte et une action)",
+          1 <= len(pil["aRetenir"]) <= 5 and all(p["texte"] and p["action"] and p["niveau"] in ("bad", "warn", "ok", "info") for p in pil["aRetenir"]), pil["aRetenir"])
+    c = pil["courant"]
+    check("chiffres bruts des explications cohérents",
+          c["preventifsATemps"] <= c["preventifsDus"] and (c["mttr"] is None or abs(c["mttr"] - c["heuresReparation"] / max(1, c["reparations"])) < 0.11), c)
+    _, lst = sup.get(f"/api/DemandeIntervention?page=1&pageSize=1&vue=pannes&du={du}&au={au}")
+    check("liste « pannes » = nombre de pannes du tableau de bord", lst["totalCount"] == c["pannes"], (lst["totalCount"], c["pannes"]))
+    _, lst = sup.get(f"/api/DemandeIntervention?page=1&pageSize=1&vue=reparees&du={du}&au={au}")
+    check("liste « réparées » = réparations du temps moyen de réparation", lst["totalCount"] == c["reparations"], (lst["totalCount"], c["reparations"]))
+    _, lst = sup.get(f"/api/DemandeIntervention?page=1&pageSize=1&vue=preventifs-dus&du={du}&au={au}")
+    check("liste « préventifs prévus » = échéances du respect du préventif", lst["totalCount"] == c["preventifsDus"], (lst["totalCount"], c["preventifsDus"]))
+    _, lst = sup.get(f"/api/DemandeIntervention?page=1&pageSize=1&vue=declarees&du={du}&au={au}")
+    check("liste « déclarées » = interventions déclarées", lst["totalCount"] == c["declarees"], (lst["totalCount"], c["declarees"]))
+    if pil["pareto"]:
+        cause = pil["pareto"][0]
+        _, lst = sup.get(f"/api/DemandeIntervention?page=1&pageSize=1&vue=pannes&panneId={cause['panneId']}&du={du}&au={au}")
+        check("clic sur une cause du Pareto = ses pannes", lst["totalCount"] == cause["nombre"], (lst["totalCount"], cause))
+    if pil["parChaine"]:
+        ch = pil["parChaine"][0]
+        _, pch = sup.get(f"/api/pilotage?days=30&chaineId={ch['id']}")
+        _, lst = sup.get(f"/api/DemandeIntervention?page=1&pageSize=1&vue=pannes&chaineId={ch['id']}&du={urllib.parse.quote(pch['periode']['from'])}&au={urllib.parse.quote(pch['periode']['to'])}")
+        check("filtre chaîne : liste et tableau de bord d'accord", lst["totalCount"] == pch["courant"]["pannes"], (lst["totalCount"], pch["courant"]["pannes"]))
+    _, prev = sup.get(f"/api/DemandeIntervention?page=1&pageSize=100&type=preventif")
+    check("filtre type préventif", all(x.get("idPlanPreventif") for x in prev["data"]), prev["totalCount"])
+    _, big = sup.get("/api/DemandeIntervention?page=1&pageSize=1000&export=true")
+    check("export : toute la liste en une fois", len(big["data"]) == min(big["totalCount"], 1000) and (big["totalCount"] <= 100 or len(big["data"]) > 100), (len(big["data"]), big["totalCount"]))
+    _, small = sup.get("/api/DemandeIntervention?page=1&pageSize=1000")
+    check("sans export : 100 lignes au plus par page", len(small["data"]) <= 100, len(small["data"]))
+    _, dem_list = dem.get(f"/api/DemandeIntervention?page=1&pageSize=100&vue=declarees&du={du}&au={au}")
+    check("filtres du demandeur limités à ses demandes", all(x["demandeursID"] == dem.me["internalId"] for x in dem_list["data"]), dem_list["totalCount"])
+    mois = (today.replace(day=1) - dt.timedelta(days=1)).strftime("%Y-%m")
+    status, pm = sup.get(f"/api/pilotage?mois={mois}")
+    check("rapport mensuel : mois calendaire complet", status == 200 and pm["periode"]["from"][:10] == mois + "-01" and pm["periode"]["mois"] == mois, pm.get("periode") if isinstance(pm, dict) else pm)
+    status, eq = sup.get("/api/Equipment?page=1&pageSize=500&export=true")
+    check("export des équipements", status == 200 and len(eq["data"]) == eq["totalCount"], status)
+
+    # ------------------------------------------------------------------
+    section("Version 3 : sécurité")
+    req = urllib.request.Request(base + "/dashboard")
+    with urllib.request.urlopen(req, timeout=30) as r:
+        h = r.headers
+    check("CSP sans script externe ni inline", "script-src 'self'" in (h.get("Content-Security-Policy") or "") and "frame-ancestors 'none'" in h.get("Content-Security-Policy", ""), h.get("Content-Security-Policy"))
+    check("en-têtes de sécurité", h.get("X-Content-Type-Options") == "nosniff" and h.get("X-Frame-Options") == "DENY" and "camera=()" in (h.get("Permissions-Policy") or ""), dict(h))
+    check("contrôleur de test d'erreurs retiré", sup.get("/api/buggy/internalerror")[0] == 404)
+    status, _ = sup.upload("/api/pieces-jointes", {"entite": "Intervention", "entiteId": ot_id}, "photo.jpg", b"<!DOCTYPE html><script>alert(1)</script>", "image/jpeg")
+    check("page web renommée en .jpg refusée", status == 400, status)
+    status, _ = sup.upload("/api/pieces-jointes", {"entite": "Intervention", "entiteId": ot_id}, "programme.pdf", b"MZ\x90\x00" + b"\x00" * 64, "application/pdf")
+    check("programme renommé en .pdf refusé", status == 400, status)
+    status, _ = sup.upload("/api/pieces-jointes", {"entite": "Intervention", "entiteId": ot_id}, "..\\..\\QA vraie photo.png", b"\x89PNG\r\n\x1a\n" + b"\x00" * 64, "text/html")
+    check("vraie photo acceptée même avec un type navigateur trompeur", status == 200, status)
+    _, pj = sup.get(f"/api/pieces-jointes?entite=Intervention&entiteId={ot_id}")
+    photo = next((f for f in pj["fichiers"] if f["nomFichier"].endswith("vraie photo.png")), None)
+    check("nom nettoyé et type décidé par le serveur", photo is not None and "\\" not in photo["nomFichier"] and photo["contentType"] == "image/png", pj["fichiers"][:3])
+    if photo:
+        sup.delete(f"/api/pieces-jointes/{photo['id']}")
+    weak = {"firstName": "Qa", "lastName": "Faible", "email": f"qa.faible.{uuid.uuid4().hex[:6]}@gmao.test", "password": "Abc12345", "roleId": 3}
+    status, body = sup.post("/api/account/register", weak)
+    check("mot de passe de 8 caractères refusé (10 minimum), message en français", status == 400 and "10 caractères" in json.dumps(body, ensure_ascii=False), body)
+    weak["password"] = "Faible2026XY"
+    status, body = sup.post("/api/account/register", weak)
+    check("mot de passe contenant le nom refusé", status == 400 and "nom" in json.dumps(body, ensure_ascii=False), body)
+    s1, b1 = Session(base).post("/api/account/login", {"email": "inconnu.qa@gmao.test", "password": "Faux12345678"})
+    s2, b2 = Session(base).post("/api/account/login", {"email": "qa.demandeur@gmao.test", "password": "Faux12345678"})
+    check("même réponse pour un e-mail inconnu et un mauvais mot de passe", s1 == s2 == 401 and b1 == b2, (b1, b2))
+    # Someone else's work order: the requester and the technician must not reach it by changing the id
+    _, autres = sup.get("/api/DemandeIntervention?page=1&pageSize=50&vue=declarees")
+    autre = next((x for x in autres["data"] if x["demandeursID"] not in (dem.me["internalId"], tech_id)
+                  and x.get("destinatairesID") not in (dem.me["internalId"], tech_id)), None)
+    check("une intervention d'un autre utilisateur existe pour le test", autre is not None)
+    if autre:
+        oid = autre["idDemandeIntervention"]
+        check("demandeur : fiche d'un autre refusée (IDOR)", dem.get(f"/api/DemandeIntervention/{oid}")[0] in (403, 404))
+        check("demandeur : suivi d'un autre refusé (IDOR)", dem.get(f"/api/interventions/{oid}/suivi")[0] in (403, 404))
+        check("demandeur : pièces jointes d'un autre refusées (IDOR)", dem.get(f"/api/pieces-jointes?entite=Intervention&entiteId={oid}")[0] == 403)
+        check("technicien : temps saisi sur l'intervention d'un autre refusé (IDOR)",
+              tech.post(f"/api/interventions/{oid}/temps", {"debut": dt.datetime.now().isoformat(timespec="minutes"), "dureeMinutes": 30})[0] in (403, 404))
+        check("demandeur : export limité à ses demandes", all(x["demandeursID"] == dem.me["internalId"] for x in dem.get("/api/DemandeIntervention?page=1&pageSize=5000&export=true")[1]["data"]))
+
+    # ------------------------------------------------------------------
     section("Rapports Power BI")
     _, previous = sup.get("/api/parametres/powerbi")
     check("lien hors Power BI refusé", sup.put("/api/parametres/powerbi", [{"titre": "QA", "url": "https://evil.example.com/x"}])[0] == 400)

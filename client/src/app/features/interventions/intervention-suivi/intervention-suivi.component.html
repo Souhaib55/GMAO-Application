@@ -34,7 +34,7 @@
           </button>
           <span class="lib">{{ t.libelle }}</span>
           <small class="muted" *ngIf="t.fait && t.dateFait">{{ fmtDateTime(t.dateFait) }}</small>
-          <button type="button" class="gm-icon-btn danger" *ngIf="s.peutSaisir" (click)="deleteTache(t.id)" title="Supprimer l'étape"><app-icon name="trash"></app-icon></button>
+          <button type="button" class="gm-icon-btn danger" *ngIf="s.peutSaisir" (click)="deleteTache(t.id)" title="Supprimer l'étape" aria-label="Supprimer l'étape"><app-icon name="trash"></app-icon></button>
         </li>
       </ul>
       <div class="add-line" *ngIf="s.peutSaisir">
@@ -59,7 +59,11 @@
             </select>
           </div>
           <div class="gm-field"><label>Début</label><input type="datetime-local" [(ngModel)]="tempsForm.debut"></div>
-          <div class="gm-field"><label>Durée (minutes)</label><input type="number" min="5" max="1440" step="5" [(ngModel)]="tempsForm.dureeMinutes"></div>
+          <div class="gm-field"><label for="duree-temps">Durée (minutes)</label><input id="duree-temps" type="number" min="5" max="1440" step="5" [(ngModel)]="tempsForm.dureeMinutes">
+            <div class="quick" role="group" aria-label="Durée rapide">
+              <button type="button" *ngFor="let q of dureesRapides" [class.on]="tempsForm.dureeMinutes === q.min" [attr.aria-pressed]="tempsForm.dureeMinutes === q.min" (click)="choisirDuree(q.min)">{{ q.label }}</button>
+            </div>
+          </div>
           <div class="gm-field full"><label>Commentaire</label><input maxlength="500" [(ngModel)]="tempsForm.commentaire" placeholder="Facultatif"></div>
         </div>
         <div class="entry-actions">
@@ -71,7 +75,7 @@
         <div class="row" *ngFor="let t of s.temps">
           <span class="who"><b>{{ t.technicien }}</b><small>{{ fmtDateTime(t.debut) }}<ng-container *ngIf="t.commentaire"> · {{ t.commentaire }}</ng-container></small></span>
           <span class="num strong">{{ fmtMinutes(t.dureeMinutes) }}</span>
-          <button type="button" class="gm-icon-btn danger" *ngIf="s.peutSaisir" (click)="deleteTemps(t.id)" title="Supprimer"><app-icon name="trash"></app-icon></button>
+          <button type="button" class="gm-icon-btn danger" *ngIf="s.peutSaisir" (click)="deleteTemps(t.id)" title="Supprimer" aria-label="Supprimer cette saisie de temps"><app-icon name="trash"></app-icon></button>
         </div>
       </div>
       <ng-template #noTime><p class="empty">Aucun temps saisi.</p></ng-template>
@@ -108,7 +112,7 @@
           <span class="who"><b>{{ p.designation }}</b><small>{{ p.codePiece }} · {{ fmtDate(p.date) }}</small></span>
           <span class="num">{{ p.quantite }} {{ p.unite }}</span>
           <span class="num strong">{{ p.montant | number:'1.0-0':'fr' }} DT</span>
-          <button type="button" class="gm-icon-btn danger" *ngIf="s.peutSaisir" (click)="deletePiece(p.id)" title="Retourner au magasin"><app-icon name="trash"></app-icon></button>
+          <button type="button" class="gm-icon-btn danger" *ngIf="s.peutSaisir" (click)="deletePiece(p.id)" title="Retourner au magasin" aria-label="Retourner la pièce au magasin"><app-icon name="trash"></app-icon></button>
         </div>
       </div>
       <ng-template #noPart><p class="empty">Aucune pièce sortie du magasin.</p></ng-template>

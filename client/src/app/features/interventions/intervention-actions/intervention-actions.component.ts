@@ -50,7 +50,7 @@ const STATUS = { A_TRAITER: 1, EN_COURS: 2, REALISEE: 3, CLOTUREE: 4, ANNULEE: 5
       <div class="action" *ngIf="canAccept">
         <p class="hint">Cette intervention vous a été affectée. Acceptez-la pour la démarrer.</p>
         <div class="inline" *ngIf="!showRejectForm">
-          <button class="btn btn-primary" (click)="acceptIntervention()" [disabled]="busy">Accepter et démarrer</button>
+          <button class="btn btn-primary btn-next" (click)="acceptIntervention()" [disabled]="busy">Accepter et démarrer</button>
           <button class="btn btn-secondary" (click)="showRejectForm = true" [disabled]="busy">Refuser</button>
         </div>
         <div class="stacked" *ngIf="showRejectForm">
@@ -64,12 +64,13 @@ const STATUS = { A_TRAITER: 1, EN_COURS: 2, REALISEE: 3, CLOTUREE: 4, ANNULEE: 5
 
       <!-- Technician: complete with a work report -->
       <div class="action" *ngIf="canComplete">
+        <p class="hint">Avant de terminer : saisissez votre temps, les pièces sorties et cochez les contrôles (plus bas sur cette page). Puis écrivez ce que vous avez fait.</p>
         <label for="compteRendu">Compte rendu d'intervention <span class="required">*</span></label>
         <textarea id="compteRendu" [(ngModel)]="compteRendu" rows="4" maxlength="2000"
                   placeholder="Travaux réalisés, cause identifiée, pièces remplacées, essais effectués…"></textarea>
         <div class="inline between">
           <small class="counter" [class.ok]="compteRendu.trim().length >= 10">{{ compteRendu.trim().length }} / 10 caractères minimum</small>
-          <button class="btn btn-success" (click)="completeIntervention()" [disabled]="compteRendu.trim().length < 10 || busy">Marquer comme réalisée</button>
+          <button class="btn btn-success btn-next" (click)="completeIntervention()" [disabled]="compteRendu.trim().length < 10 || busy">Marquer comme réalisée</button>
         </div>
       </div>
 
@@ -77,7 +78,7 @@ const STATUS = { A_TRAITER: 1, EN_COURS: 2, REALISEE: 3, CLOTUREE: 4, ANNULEE: 5
       <div class="action" *ngIf="canClose">
         <p class="hint">Le technicien a terminé. Vérifiez le compte rendu ci-dessous avant de clôturer.</p>
         <div class="inline">
-          <button class="btn btn-success" (click)="closeIntervention()" [disabled]="busy">Valider et clôturer</button>
+          <button class="btn btn-success btn-next" (click)="closeIntervention()" [disabled]="busy">Valider et clôturer</button>
           <button class="btn btn-secondary" (click)="reopenIntervention()" [disabled]="busy">Renvoyer au technicien</button>
         </div>
       </div>
@@ -97,6 +98,12 @@ const STATUS = { A_TRAITER: 1, EN_COURS: 2, REALISEE: 3, CLOTUREE: 4, ANNULEE: 5
   `,
   styles: [`
     :host { display: block; }
+
+    /* The next step of the workflow: one large button, full width on a tablet */
+    .btn-next { min-height: 46px; font-size: 0.9375rem; font-weight: 600; padding: 0 20px; }
+    @media (pointer: coarse), (max-width: 760px) {
+      .btn-next { min-height: 52px; font-size: 1rem; flex: 1 1 100%; width: 100%; }
+    }
 
     /* Action card */
     .action-card {

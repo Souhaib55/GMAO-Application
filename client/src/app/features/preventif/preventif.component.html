@@ -1,9 +1,10 @@
 <div class="gm-page">
   <app-page-header icon="preventive" title="Maintenance préventive"
                    subtitle="Plans récurrents par machine. Les ordres de travail sont créés automatiquement avant chaque échéance.">
-    <button class="btn btn-secondary" *ngIf="isSuperviseur" (click)="generateAll()" title="Créer maintenant les ordres de travail dont l'échéance approche">
-      <app-icon name="refresh"></app-icon> Générer les OT dus
-    </button>
+    <!-- Rare: work orders are created automatically every hour -->
+    <app-actions-menu *ngIf="isSuperviseur">
+      <button type="button" class="menu-item" role="menuitem" (click)="generateAll()"><app-icon name="refresh"></app-icon> Créer maintenant les OT dont l'échéance approche</button>
+    </app-actions-menu>
     <button class="btn btn-primary" *ngIf="isSuperviseur" (click)="openCreate()">
       <app-icon name="plus"></app-icon> Nouveau plan
     </button>
@@ -102,9 +103,9 @@
               </td>
               <td class="right" *ngIf="isSuperviseur" data-label="">
                 <div class="row-actions">
-                  <button class="gm-icon-btn" title="Générer le prochain OT maintenant" [disabled]="!p.isActif || busyPlanId === p.id" (click)="generateNow(p.id, $event)"><app-icon name="play"></app-icon></button>
-                  <button class="gm-icon-btn" title="Modifier" (click)="openEdit(p.id, $event)"><app-icon name="edit"></app-icon></button>
-                  <button class="gm-icon-btn" [title]="p.isActif ? 'Suspendre' : 'Réactiver'" (click)="toggleActif(p, $event)"><app-icon [name]="p.isActif ? 'pause' : 'refresh'"></app-icon></button>
+                  <button class="gm-icon-btn" title="Générer le prochain OT maintenant" aria-label="Générer le prochain OT maintenant" [disabled]="!p.isActif || busyPlanId === p.id" (click)="generateNow(p.id, $event)"><app-icon name="play"></app-icon></button>
+                  <button class="gm-icon-btn" title="Modifier" aria-label="Modifier le plan" (click)="openEdit(p.id, $event)"><app-icon name="edit"></app-icon></button>
+                  <button class="gm-icon-btn" [title]="p.isActif ? 'Suspendre' : 'Réactiver'" [attr.aria-label]="p.isActif ? 'Suspendre le plan' : 'Réactiver le plan'" (click)="toggleActif(p, $event)"><app-icon [name]="p.isActif ? 'pause' : 'refresh'"></app-icon></button>
                 </div>
               </td>
             </tr>
@@ -309,9 +310,9 @@
           <div class="task-row" *ngFor="let t of formTaches; let i = index">
             <span class="task-num">{{ i + 1 }}</span>
             <input [name]="'tache' + i" [(ngModel)]="t.libelle" maxlength="255" placeholder="Décrire l'étape…" (keydown.enter)="$event.preventDefault(); addTache()">
-            <button type="button" class="gm-icon-btn" title="Monter" (click)="moveTache(i, -1)" [disabled]="i === 0"><app-icon name="chevron-left" class="rot-up"></app-icon></button>
-            <button type="button" class="gm-icon-btn" title="Descendre" (click)="moveTache(i, 1)" [disabled]="i === formTaches.length - 1"><app-icon name="chevron-right" class="rot-up"></app-icon></button>
-            <button type="button" class="gm-icon-btn danger" title="Supprimer" (click)="removeTache(i)"><app-icon name="trash"></app-icon></button>
+            <button type="button" class="gm-icon-btn" title="Monter" aria-label="Monter l'étape" (click)="moveTache(i, -1)" [disabled]="i === 0"><app-icon name="chevron-left" class="rot-up"></app-icon></button>
+            <button type="button" class="gm-icon-btn" title="Descendre" aria-label="Descendre l'étape" (click)="moveTache(i, 1)" [disabled]="i === formTaches.length - 1"><app-icon name="chevron-right" class="rot-up"></app-icon></button>
+            <button type="button" class="gm-icon-btn danger" title="Supprimer" aria-label="Supprimer l'étape" (click)="removeTache(i)"><app-icon name="trash"></app-icon></button>
           </div>
         </div>
         <button type="button" class="btn btn-secondary btn-sm mt-1" (click)="addTache()"><app-icon name="plus"></app-icon> Ajouter une étape</button>

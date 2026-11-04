@@ -1,8 +1,12 @@
 <div class="gm-page">
   <app-page-header icon="purchase" title="Achats"
                    [subtitle]="isSuperviseur ? 'Demandes d\'achat, bons de commande, réceptions et fournisseurs.' : 'Demandez l\'achat d\'une pièce absente du magasin.'">
-    <button class="btn btn-secondary" (click)="newDemande()"><app-icon name="plus"></app-icon> Demande d'achat</button>
+    <!-- Supervisor: ordering is the main action; a technician's only action is to ask -->
+    <app-actions-menu *ngIf="isSuperviseur">
+      <button type="button" class="menu-item" role="menuitem" (click)="newDemande()"><app-icon name="plus"></app-icon> Nouvelle demande d'achat</button>
+    </app-actions-menu>
     <button class="btn btn-primary" *ngIf="isSuperviseur" (click)="newCommande()"><app-icon name="plus"></app-icon> Bon de commande</button>
+    <button class="btn btn-primary" *ngIf="!isSuperviseur" (click)="newDemande()"><app-icon name="plus"></app-icon> Demande d'achat</button>
   </app-page-header>
 
   <div class="gm-kpis" *ngIf="isSuperviseur && synthese as s">

@@ -8,7 +8,8 @@ export type AppIconName =
   | 'filter' | 'alert' | 'clock' | 'check' | 'close' | 'edit' | 'trash' | 'eye' | 'refresh'
   | 'arrow-right' | 'external' | 'file' | 'upload' | 'history' | 'play' | 'chevron-left'
   | 'chevron-right' | 'maximize' | 'link' | 'offline' | 'info' | 'truck' | 'coins' | 'gauge'
-  | 'list' | 'table' | 'chart' | 'hash' | 'pause' | 'journal' | 'warehouse' | 'move';
+  | 'list' | 'table' | 'chart' | 'hash' | 'pause' | 'journal' | 'warehouse' | 'move'
+  | 'help' | 'print' | 'qr' | 'lightbulb';
 
 /**
  * Line icons shared by the sidebar, the page headers and the screens, so a page's
@@ -49,6 +50,10 @@ export type AppIconName =
       <svg *ngSwitchCase="'filter'" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5z"/></svg>
       <svg *ngSwitchCase="'alert'" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
       <svg *ngSwitchCase="'info'" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+      <svg *ngSwitchCase="'help'" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.9.8c0 1.7-2.5 2.2-2.5 3.6M12 17h.01"/></svg>
+      <svg *ngSwitchCase="'print'" viewBox="0 0 24 24"><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="1.5"/><path d="M7 14h10v7H7z"/></svg>
+      <svg *ngSwitchCase="'qr'" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v.01M17 21h4v-4M14 18v3"/></svg>
+      <svg *ngSwitchCase="'lightbulb'" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>
       <svg *ngSwitchCase="'clock'" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
       <svg *ngSwitchCase="'history'" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg>
       <svg *ngSwitchCase="'check'" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>

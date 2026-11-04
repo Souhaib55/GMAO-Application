@@ -38,6 +38,15 @@ export class InterventionSuiviComponent implements OnChanges, OnDestroy {
   techniciens: TechnicienRow[] = [];
 
   // Time entry
+  /** One tap instead of typing minutes on a tablet. */
+  readonly dureesRapides = [{ min: 15, label: '15 min' }, { min: 30, label: '30 min' }, { min: 60, label: '1 h' }, { min: 120, label: '2 h' }];
+
+  /** The work started that long ago: the start time follows the chosen duration. */
+  choisirDuree(minutes: number): void {
+    this.tempsForm.dureeMinutes = minutes;
+    this.tempsForm.debut = isoDateTimeLocal(new Date(Date.now() - minutes * 60000));
+  }
+
   tempsForm = { idTechnicien: null as number | null, debut: isoDateTimeLocal(new Date(Date.now() - 3600000)), dureeMinutes: 60, commentaire: '' };
   tempsOpen = false;
 

@@ -8,6 +8,7 @@ import {
 } from '../../core/services/gmao-api.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { AppIconComponent } from '../../shared/components/app-icon/app-icon.component';
+import { ActionsMenuComponent } from '../../shared/components/actions-menu/actions-menu.component';
 import { ArticlePickerComponent } from '../../shared/components/article-picker/article-picker.component';
 import { debouncer, errorMessage, exportCsv, fmtDate, fmtDateTime, isoDate, otCode } from '../../shared/utils/gm-format';
 
@@ -18,7 +19,7 @@ interface EditLine { idPiece: number | null; designation: string; quantite: numb
 @Component({
   selector: 'app-achats',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent, AppIconComponent, ArticlePickerComponent],
+  imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent, AppIconComponent, ActionsMenuComponent, ArticlePickerComponent],
   templateUrl: './achats.component.html',
   styleUrls: ['./achats.component.scss']
 })

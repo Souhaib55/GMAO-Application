@@ -16,8 +16,8 @@ import { ConfirmService } from '../../../core/services/confirm.service';
   imports: [CommonModule, FormsModule, ReactiveFormsModule, PageHeaderComponent, AppIconComponent],
   template: `
     <div class="gm-page">
-      <app-page-header icon="references" title="Données de référence"
-                       subtitle="Les listes de choix proposées dans les formulaires. Une modification ici est reprise partout dans l'application.">
+      <app-page-header icon="references" title="Listes de choix"
+                       subtitle="Les choix proposés dans les formulaires (chaînes, types de pannes, familles…). Une modification ici est reprise partout.">
         <button class="btn btn-secondary" (click)="goBack()"><app-icon name="chevron-left"></app-icon> Paramètres</button>
       </app-page-header>
 
@@ -32,12 +32,29 @@ import { ConfirmService } from '../../../core/services/confirm.service';
         <!-- Lists of the module -->
         <nav class="ref-nav" aria-label="Listes">
           <div class="nav-title">Listes · {{ getModuleLabel(selectedModule) }}</div>
-          <button type="button" *ngFor="let category of getCategoriesForModule(selectedModule)" class="nav-item"
-                  [class.on]="selectedCategory?.key === category.key" (click)="selectCategory(category)">
-            <span class="nav-icon" [innerHTML]="getCategoryIconSvg(category.icon)"></span>
-            <span class="nav-text"><b>{{ category.label }}</b><small>{{ category.description }}</small></span>
-            <span class="nav-count">{{ categoryItemCounts[category.key] ?? '–' }}</span>
-          </button>
+          <ng-container *ngFor="let category of frequentCategories">
+            <ng-container *ngTemplateOutlet="navItem; context: { $implicit: category }"></ng-container>
+          </ng-container>
+          <!-- Lists changed rarely: folded, so the common ones stay easy to find -->
+          <ng-container *ngIf="rareCategories.length">
+            <button type="button" class="more-toggle" [attr.aria-expanded]="showRare" (click)="showRare = !showRare">
+              <app-icon [name]="showRare ? 'chevron-left' : 'chevron-right'"></app-icon>
+              {{ showRare ? 'Masquer les autres listes' : 'Autres listes (' + rareCategories.length + ')' }}
+            </button>
+            <ng-container *ngIf="showRare">
+              <ng-container *ngFor="let category of rareCategories">
+                <ng-container *ngTemplateOutlet="navItem; context: { $implicit: category }"></ng-container>
+              </ng-container>
+            </ng-container>
+          </ng-container>
+          <ng-template #navItem let-category>
+            <button type="button" class="nav-item" [class.on]="selectedCategory?.key === category.key" (click)="selectCategory(category)"
+                    [attr.aria-current]="selectedCategory?.key === category.key ? 'true' : null">
+              <span class="nav-icon" [innerHTML]="getCategoryIconSvg(category.icon)"></span>
+              <span class="nav-text"><b>{{ category.label }}</b><small>{{ category.description }}</small></span>
+              <span class="nav-count">{{ countLabel(category.key) }}</span>
+            </button>
+          </ng-template>
         </nav>
 
         <!-- Items of the selected list -->
@@ -52,6 +69,12 @@ import { ConfirmService } from '../../../core/services/confirm.service';
               <button class="btn btn-primary" (click)="openCreateModal()"><app-icon name="plus"></app-icon> Ajouter</button>
             </div>
 
+            <div class="list-search" *ngIf="!loading && items.length > 5">
+              <span class="gm-search"><app-icon name="search"></app-icon>
+                <input type="search" [(ngModel)]="filtre" placeholder="Rechercher dans la liste…" [attr.aria-label]="'Rechercher dans ' + c.label">
+              </span>
+            </div>
+
             <div class="gm-loading" *ngIf="loading"><span class="spinner"></span> Chargement…</div>
 
             <div class="gm-empty" *ngIf="!loading && !items.length">
@@ -61,13 +84,19 @@ import { ConfirmService } from '../../../core/services/confirm.service';
               <button class="btn btn-primary btn-sm mt-1" (click)="openCreateModal()"><app-icon name="plus"></app-icon> Ajouter</button>
             </div>
 
-            <ul class="item-list" *ngIf="!loading && items.length">
-              <li *ngFor="let item of items; let i = index">
+            <div class="gm-empty" *ngIf="!loading && items.length && !filteredItems.length">
+              <app-icon name="search"></app-icon>
+              <strong>Aucun élément ne correspond à « {{ filtre }} »</strong>
+              <button class="btn btn-secondary btn-sm mt-1" (click)="filtre = ''">Effacer la recherche</button>
+            </div>
+
+            <ul class="item-list" *ngIf="!loading && filteredItems.length">
+              <li *ngFor="let item of filteredItems; let i = index">
                 <span class="item-index">{{ i + 1 }}</span>
                 <span class="item-name">{{ getItemName(item) }}</span>
                 <span class="item-actions">
-                  <button class="gm-icon-btn" (click)="openEditModal(item)" title="Modifier"><app-icon name="edit"></app-icon></button>
-                  <button class="gm-icon-btn danger" (click)="confirmDelete(item)" title="Supprimer"><app-icon name="trash"></app-icon></button>
+                  <button class="gm-icon-btn" (click)="openEditModal(item)" title="Modifier" [attr.aria-label]="'Modifier ' + getItemName(item)"><app-icon name="edit"></app-icon></button>
+                  <button class="gm-icon-btn danger" (click)="confirmDelete(item)" title="Supprimer" [attr.aria-label]="'Supprimer ' + getItemName(item)"><app-icon name="trash"></app-icon></button>
                 </span>
               </li>
             </ul>
@@ -168,13 +197,18 @@ import { ConfirmService } from '../../../core/services/confirm.service';
     .item-list li:hover .item-actions, .item-actions:focus-within { opacity: 1; }
     @media (hover: none) { .item-actions { opacity: 1; } }
 
+    .more-toggle { display: flex; align-items: center; gap: 6px; width: 100%; margin-top: 4px; padding: 10px; border: 0; border-top: 1px solid var(--gray-100); background: none; font: inherit; font-size: 0.8125rem; font-weight: 500; color: var(--primary-700); cursor: pointer; text-align: left; border-radius: 0 0 8px 8px; }
+    .more-toggle:hover { background: var(--gray-50); }
+    .list-search { padding: 12px 22px 0; }
+    .list-search .gm-search { max-width: 360px; }
+    @media (pointer: coarse) { .more-toggle { min-height: 44px; } }
     .confirm-text { margin: 0; font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5; }
   `]
 })
 export class ReferencesComponent implements OnInit {
   private readonly confirmDialog = inject(ConfirmService);
   modules = [
-    { key: 'equipment', label: 'Équipements', icon: 'equipment' },
+    { key: 'equipment', label: 'Machines et chaînes', icon: 'equipment' },
     { key: 'interventions', label: 'Interventions', icon: 'interventions' },
     // Lists used by the Magasin article form. The old "Stock" lists (entities, statuses, suppliers)
     // were replaced by Magasin > Magasins and Achats > Fournisseurs, so they are not offered here.
@@ -186,7 +220,21 @@ export class ReferencesComponent implements OnInit {
   
   categories: ReferenceCategory[] = [];
   items: any[] = [];
-  categoryItemCounts: { [key: string]: number } = {};
+  categoryItemCounts: { [key: string]: number | undefined } = {};
+  filtre = '';
+  showRare = false;
+
+  get frequentCategories(): ReferenceCategory[] { return this.getCategoriesForModule(this.selectedModule).filter(c => c.frequent); }
+  get rareCategories(): ReferenceCategory[] { return this.getCategoriesForModule(this.selectedModule).filter(c => !c.frequent); }
+
+  /** Items of the open list matching the search (accents and case ignored). */
+  get filteredItems(): any[] {
+    const n = (x: string) => (x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const f = n(this.filtre.trim());
+    return f ? this.items.filter(i => n(this.getItemName(i)).includes(f)) : this.items;
+  }
+
+  countLabel(key: string): string { const c = this.categoryItemCounts[key]; return c === undefined ? '–' : String(c); }
   
   loading = false;
   submitting = false;
@@ -257,14 +305,18 @@ export class ReferencesComponent implements OnInit {
   /** Opens the module on its first list, so the page never shows an empty panel. */
   selectModule(moduleKey: string): void {
     this.selectedModule = moduleKey;
+    this.showRare = false;
     this.selectedCategory = null;
     this.items = [];
-    const first = this.getCategoriesForModule(moduleKey)[0];
+    const first = this.frequentCategories[0] ?? this.getCategoriesForModule(moduleKey)[0];
     if (first) this.selectCategory(first);
   }
 
   selectCategory(category: ReferenceCategory): void {
     this.selectedCategory = category;
+    this.filtre = '';
+    // A rare list opened by a link stays visible in the menu
+    if (!category.frequent) this.showRare = true;
     this.loadItems();
   }
 
