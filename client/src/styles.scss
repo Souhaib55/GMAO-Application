@@ -706,7 +706,7 @@ table {
 }
 
 /* Keyboard focus always visible, mouse clicks unchanged */
-:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--primary-600);
   outline-offset: 2px;
 }
