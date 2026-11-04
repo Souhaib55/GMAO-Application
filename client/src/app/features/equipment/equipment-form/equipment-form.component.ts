@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterModule } from '@angular/router';
+import { fmtDate, fmtMoney } from '../../../shared/utils/gm-format';
 import { EquipmentService } from '../services/equipment.service';
 import { ReferenceDataService, EquipmentCriticite, EtatEquipement, FamilleEquipement, GroupeEquipement, ModeleEquipement, ChaineProduction } from '../../../core/services/reference-data.service';
 
@@ -40,7 +41,7 @@ import { EquipementHistoriqueComponent } from '../equipement-historique/equipeme
 @Component({
   selector: 'app-equipment-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, AppIconComponent, EquipementHistoriqueComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, PageHeaderComponent, AppIconComponent, EquipementHistoriqueComponent],
   template: `
     <!-- Create / edit: side panel over the list, like every other form of the app -->
     <ng-container *ngIf="drawer">
@@ -151,7 +152,7 @@ import { EquipementHistoriqueComponent } from '../equipement-historique/equipeme
             <div class="gm-field">
               <label for="dateFinGarantie">Fin de garantie</label>
               <input id="dateFinGarantie" type="date" formControlName="dateFinGarantie" [min]="dateValue('dateAchat')">
-              <span class="hint" *ngIf="dateValue('dateFinGarantie') as end">{{ end >= today ? "Sous garantie jusqu'au " + (end | date:'dd/MM/yyyy') : 'Garantie expirée' }}</span>
+              <span class="hint" *ngIf="garantie as g">{{ g }}</span>
             </div>
           </div>
           <div class="gm-error-box" *ngIf="equipmentForm.errors?.['chronology']"><app-icon name="alert"></app-icon>{{ equipmentForm.errors?.['chronology'] }}</div>
@@ -174,14 +175,8 @@ import { EquipementHistoriqueComponent } from '../equipement-historique/equipeme
     <div class="form-container" *ngIf="!drawer">
       <app-page-header icon="equipment" [title]="formTitle" subtitle="Identification, état et caractéristiques de l'équipement">
         <div class="header-actions">
-          <button class="btn btn-print" (click)="printForm()" *ngIf="isViewMode" title="Imprimer / Télécharger PDF">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M6 9V2h12v7"/>
-              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-              <rect x="6" y="14" width="12" height="8"/>
-            </svg>
-            Imprimer
-          </button>
+          <a class="btn btn-primary" *ngIf="isViewMode && canEdit && equipmentId" [routerLink]="['/equipment/edit', equipmentId]"><app-icon name="edit"></app-icon> Modifier</a>
+          <button class="btn btn-secondary" type="button" (click)="printForm()" *ngIf="isViewMode"><app-icon name="print"></app-icon> Imprimer</button>
           <button class="btn btn-secondary" (click)="cancel()">{{ isViewMode ? 'Retour' : 'Annuler' }}</button>
         </div>
       </app-page-header>
@@ -195,7 +190,43 @@ import { EquipementHistoriqueComponent } from '../equipement-historique/equipeme
 
       <app-equipement-historique *ngIf="isViewMode && equipmentId && onglet !== 'fiche'" [equipementId]="equipmentId" [mode]="onglet === 'documents' ? 'documents' : 'historique'"></app-equipement-historique>
 
-      <form [formGroup]="equipmentForm" (ngSubmit)="onSubmit()" class="card" [hidden]="isViewMode && onglet !== 'fiche'">
+      <!-- Consultation: a reading view (label and value), the form is only for editing -->
+      <section class="gm-card fiche" *ngIf="isViewMode && onglet === 'fiche'" aria-label="Fiche de la machine">
+        <div class="gm-loading" *ngIf="loading"><span class="spinner"></span> Chargement de la fiche…</div>
+        <ng-container *ngIf="!loading">
+          <div class="fiche-head">
+            <div>
+              <span class="gm-code code">{{ v('codeEquipement') }}</span>
+              <h2>{{ v('designation') }}</h2>
+              <p class="lieu">{{ nom(chaines, 'idChaineProduction', 'idChaineProduction', 'libelle') || 'Chaîne non renseignée' }}</p>
+            </div>
+            <div class="pills">
+              <span class="gm-tag" [ngClass]="etatTone">{{ nom(etats, 'idEtat', 'idEtat', 'nomEtat') || 'État non renseigné' }}</span>
+              <span class="gm-tag t-neutral" *ngIf="nom(criticites, 'idCriticite', 'idCriticite', 'nomCriticite') as c">Importance : {{ c }}</span>
+            </div>
+          </div>
+          <div class="fiche-grid">
+            <dl>
+              <h3>Identification</h3>
+              <div><dt>Famille</dt><dd>{{ nom(familles, 'idFamille', 'idFamille', 'nomFamille') || vide }}</dd></div>
+              <div><dt>Modèle</dt><dd>{{ modeleLibelle || vide }}</dd></div>
+              <div><dt>Groupe</dt><dd>{{ nom(groupes, 'idGroupe', 'idGroupe', 'nomGroupe') || vide }}</dd></div>
+              <div><dt>Numéro de série</dt><dd>{{ v('numeroSerie') || vide }}</dd></div>
+            </dl>
+            <dl>
+              <h3>Dates et coût</h3>
+              <div><dt>Mise en service</dt><dd>{{ date('dateMiseEnService') }}</dd></div>
+              <div><dt>Achat</dt><dd>{{ date('dateAchat') }}<ng-container *ngIf="v('coutAchat') !== null && v('coutAchat') !== ''"> · {{ montant(v('coutAchat')) }}</ng-container></dd></div>
+              <div><dt>Installation</dt><dd>{{ date('dateInstallation') }}</dd></div>
+              <div><dt>Fabrication</dt><dd>{{ date('dateConstruction') }}</dd></div>
+              <div><dt>Garantie</dt><dd [class.expired]="garantieExpiree">{{ garantie || vide }}</dd></div>
+            </dl>
+          </div>
+          <div class="fiche-desc" *ngIf="v('description')"><h3>Description</h3><p>{{ v('description') }}</p></div>
+        </ng-container>
+      </section>
+
+      <form [formGroup]="equipmentForm" (ngSubmit)="onSubmit()" class="card" *ngIf="!isViewMode">
         <div class="card-body">
           <div class="form-grid">
             <div class="form-group">
@@ -317,9 +348,7 @@ import { EquipementHistoriqueComponent } from '../equipement-historique/equipeme
             <div class="form-group">
               <label for="dateFinGarantie">Fin de garantie</label>
               <input id="dateFinGarantie" type="date" formControlName="dateFinGarantie" [min]="dateValue('dateAchat')" />
-              <small class="warranty" *ngIf="dateValue('dateFinGarantie') as end" [class.expired]="end < today">
-                {{ end >= today ? 'Sous garantie jusqu\'au ' + (end | date:'dd/MM/yyyy') : 'Garantie expirée' }}
-              </small>
+              <small class="warranty" *ngIf="garantie as g" [class.expired]="garantieExpiree">{{ g }}</small>
             </div>
           </div>
 
@@ -354,7 +383,26 @@ import { EquipementHistoriqueComponent } from '../equipement-historique/equipeme
     </div>
   `,
   styleUrls: ['../../../shared/styles/modern-form-design.scss'],
-  styles: [`.eq-tabs { margin-bottom: 16px; } app-equipement-historique { margin-bottom: 16px; }`]
+  styles: [`
+    .eq-tabs { margin-bottom: 16px; } app-equipement-historique { margin-bottom: 16px; }
+    .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .fiche { padding: 20px 24px; }
+    .fiche-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .fiche-head .code { font-size: 0.8125rem; color: var(--text-muted); }
+    .fiche-head h2 { margin: 2px 0 2px; font-size: 1.25rem; font-weight: 600; }
+    .fiche-head .lieu { margin: 0; color: var(--text-secondary); font-size: 0.875rem; }
+    .pills { display: flex; gap: 6px; flex-wrap: wrap; }
+    .fiche-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 32px; padding-top: 12px; }
+    .fiche h3 { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 8px 0 6px; }
+    dl { margin: 0; }
+    dl > div { display: grid; grid-template-columns: 150px 1fr; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--gray-100); font-size: 0.875rem; }
+    dt { color: var(--text-secondary); }
+    dd { margin: 0; color: var(--text); font-weight: 500; }
+    dd.expired { color: var(--error-dark); }
+    .fiche-desc { padding-top: 8px; }
+    .fiche-desc p { margin: 0; font-size: 0.875rem; line-height: 1.55; color: var(--text); white-space: pre-line; }
+    @media (max-width: 760px) { .fiche-grid { grid-template-columns: 1fr; } dl > div { grid-template-columns: 130px 1fr; } }
+  `]
 
 })
 export class EquipmentFormComponent implements OnInit {
@@ -389,6 +437,45 @@ export class EquipmentFormComponent implements OnInit {
   chaines: ChaineProduction[] = [];
 
   readonly today = toInputDate(new Date())!;
+  readonly vide = 'Non renseigné';
+
+  /** "Sous garantie jusqu'au 03/11/2027" or "Garantie expirée": computed here, not in the template. */
+  get garantie(): string | null {
+    const end = this.dateValue('dateFinGarantie');
+    if (!end) return null;
+    return end >= this.today ? `Sous garantie jusqu'au ${fmtDate(end)}` : 'Garantie expirée';
+  }
+
+  get garantieExpiree(): boolean {
+    const end = this.dateValue('dateFinGarantie');
+    return !!end && end < this.today;
+  }
+
+  get canEdit(): boolean { return this.auth.getCurrentUser()?.role === 'Superviseur'; }
+
+  /** Value of a field for the reading view (the form is disabled there). */
+  v(name: string): any { return this.equipmentForm.get(name)?.value ?? null; }
+
+  date(name: string): string { const d = this.v(name); return d ? fmtDate(d) : this.vide; }
+
+  montant(value: any): string { return fmtMoney(Number(value)); }
+
+  /** Name of the selected item of a reference list. */
+  nom(list: any[], control: string, idField: string, nameField: string): string {
+    const id = this.v(control);
+    if (id === null || id === undefined || id === '') return '';
+    return list.find(x => String(x[idField]) === String(id))?.[nameField] ?? '';
+  }
+
+  get modeleLibelle(): string {
+    const m: any = this.modeles.find(x => String(x.idModele) === String(this.v('idModele')));
+    return m ? m.nomModele + (m.marque ? ` (${m.marque.nomMarque})` : '') : '';
+  }
+
+  get etatTone(): string {
+    const n = this.nom(this.etats, 'idEtat', 'idEtat', 'nomEtat').toLowerCase();
+    return n.includes('panne') ? 't-bad' : n.includes('maint') ? 't-warn' : n.includes('service') ? 't-ok' : 't-neutral';
+  }
 
   dateValue(name: string): string | null {
     return this.equipmentForm.get(name)?.value || null;

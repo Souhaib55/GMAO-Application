@@ -706,7 +706,8 @@ input[type="file"] {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    height: 38px;
+    /* Same height as the global .btn: buttons side by side line up */
+    height: 36px;
     padding: 0 14px;
     background: var(--surface);
     border: 1px solid var(--border-strong);
