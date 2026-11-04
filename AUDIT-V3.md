@@ -69,7 +69,7 @@ Elles sont désormais couvertes par des tests unitaires (`tests/Gmao.Tests`).
 | S8 | Interventions, liste | Seule une recherche texte est disponible. Pas de filtre par statut, chaîne, machine, période ou type, et pas d'export. 10 lignes par page. | Pour retrouver « les pannes de la Couture B ce mois-ci », il faut tout parcourir. | Filtres simples (statut, type, chaîne, période), nombre de lignes par page réglable, export Excel (CSV) de la liste filtrée complète. | P1 | Fait |
 | S9 | Équipements, liste | Pas d'export. Pas de coût par machine dans la liste. | Le coût par machine n'est visible que fiche par fiche. | Export CSV. Le coût par machine apparaît dans « Machines les plus pénalisantes » et dans le rapport mensuel. | P2 | Fait |
 | S10 | Équipements | Pas d'étiquette à coller sur la machine. | Pour déclarer une panne, le chef de chaîne doit chercher la machine dans une liste de 26 lignes. | Étiquettes QR imprimables. Le code QR ouvre « Déclarer une panne » avec la machine déjà remplie. Lu par l'appareil photo du téléphone, il fonctionne en HTTP. | P2 | Fait |
-| S11 | Préventif | Uniquement au calendrier. Un compresseur ou un générateur vapeur s'entretient aussi selon ses heures de marche. | Entretiens trop tôt ou trop tard sur les machines de servitude. | Plans au compteur d'heures, et relevé du compteur sur la fiche machine. Voir §6. | P3 | Voir rapport |
+| S11 | Préventif | Uniquement au calendrier. Un compresseur ou un générateur vapeur s'entretient aussi selon ses heures de marche. | Entretiens trop tôt ou trop tard sur les machines de servitude. | Plans au compteur d'heures, et relevé du compteur sur la fiche machine. Voir §6. | P3 | Non fait : le bénéfice ne concerne que 2 ou 3 machines, et il ajouterait un relevé régulier à saisir par les techniciens. Un plan au calendrier, réglé sur l'usage moyen, couvre le besoin. |
 | S12 | Toutes les pages | Aucune aide en ligne, aucun glossaire. MTBF, MTTR, backlog et OT ne sont expliqués nulle part. | Formation orale obligatoire, oubliée au bout d'un mois. | Page « Aide » : glossaire, explication de chaque indicateur, « comment faire » par rôle, et visite guidée à rejouer. | P1 | Fait |
 
 ## 4. Technicien (tablette)
@@ -89,6 +89,7 @@ Elles sont désormais couvertes par des tests unitaires (`tests/Gmao.Tests`).
 | D1 | Déclarer une panne | 5 champs obligatoires, dont « Type d'intervention », que le chef de chaîne ne sait pas remplir (« Dépannage » ou « Maintenance corrective » ?). La machine se choisit dans une longue liste. | Déclarations retardées ou mal classées. | Pour le demandeur, le type « corrective » et l'urgence « Normale » sont pré-remplis. La machine est pré-remplie par le code QR. Le titre est proposé à partir du type de panne et de la machine. | P1 | Fait |
 | D2 | Déclarer une panne | Le bouton d'envoi de fichier est celui du navigateur, en anglais (« Choose File / No file chosen »). | Incompréhensible pour l'utilisateur. | Bouton en français « Ajouter une photo ou un document ». | P2 | Fait |
 | D3 | Tableau de bord | Liste vide sans explication quand il n'y a pas de demande. | L'utilisateur ne sait pas quoi faire. | État vide avec le bouton « Déclarer une panne ». | P2 | Fait |
+| D4 | Barre du haut | La cloche des notifications est cachée au demandeur. Pourtant, le serveur lui envoie des notifications (prise en charge, clôture, annulation). | Le chef de chaîne n'est jamais prévenu : il rappelle la maintenance pour savoir où en est sa demande. | Cloche affichée pour tous les rôles. | P2 | Fait |
 
 ## 6. Comparaison avec les leaders du marché
 
@@ -115,9 +116,9 @@ MaintainX, Fiix, UpKeep, Limble, Mobility Work, CARL Source et DIMO Maint ont é
 | # | Zone | Problème | Correction | Prio | Statut |
 |---|---|---|---|---|---|
 | A1 | Toute l'application | Le focus clavier n'est pas visible sur certains boutons et liens. | Contour de focus visible et cohérent (`:focus-visible`). | P2 | Fait |
-| A2 | Boutons ne contenant qu'une icône (voir, modifier, supprimer) | Pas de nom lisible par un lecteur d'écran sur certains d'entre eux. | `aria-label` en français. | P2 | Partiel |
-| A3 | Textes d'aide (`.kpi-hint`, gris clair) | Contraste juste suffisant (vérifié à 4,6:1), petite taille. | Taille de texte relevée sur tablette. | P3 | Fait |
-| P1 | Chargement | Tous les écrans sont dans un seul fichier de 1,13 Mo, chargé à la connexion. | Écrans chargés à la demande (`loadComponent`). Le fichier initial baisse fortement (voir rapport final). | P2 | Fait |
+| A2 | Boutons ne contenant qu'une icône (voir, modifier, supprimer) | Pas de nom lisible par un lecteur d'écran sur certains d'entre eux. | `aria-label` en français sur la liste des interventions, le suivi des travaux et les nouveaux écrans. Les autres écrans (magasin, achats, paramètres) gardent seulement l'info-bulle `title`. | P2 | Partiel |
+| A3 | Couleurs de texte | Mesures : le texte gris d'aide sur blanc est à 4,66:1 (conforme AA). En revanche, le texte des pastilles vertes est à 4,35:1 et celui des pastilles orange à 3,53:1, sous le minimum AA de 4,5:1. | Pastilles avec la teinte foncée de leur couleur : 5,92:1 (vert), 5,09:1 (orange), 5,95:1 (rouge). Taille des textes d'aide relevée sur tablette. | P2 | Fait |
+| P1 | Chargement | Tous les écrans sont dans un seul fichier de 1,13 Mo, chargé à la connexion. | Écrans chargés à la demande (`loadComponent`). Le chargement initial passe de 1,24 Mo à 649 Ko (de 234 Ko à 149 Ko compressé). | P2 | Fait |
 | P2 | Polices | La charte prévoit IBM Plex Sans, mais l'application chargeait Public Sans (IBM Plex Sans était installée sans être utilisée). | IBM Plex Sans locale (`@fontsource`), conforme à la charte. | P3 | Fait |
 
 ## 8. Sécurité
@@ -136,4 +137,6 @@ Voir `SECURITE-V3.md`.
 - **Rapport mensuel imprimable** : la réunion mensuelle se prépare en un clic, sans Excel.
 - **Cibles tactiles de 44 px sur tablette** : moins d'erreurs de saisie à l'atelier.
 - **Retrait des contrôleurs de démonstration `WeatherForecast` et `Buggy`** : modèles Visual Studio inutiles. `Buggy` provoquait volontairement des erreurs serveur.
+- **Préventif au compteur d'heures, non ajouté** : il demanderait aux techniciens un relevé régulier pour 2 ou 3 machines seulement (compresseur, générateur vapeur). C'est plus de travail pour tous, au profit de très peu de machines.
+- **Cloche des notifications pour le demandeur** : il est enfin prévenu quand sa panne est prise en charge et réparée, sans avoir à téléphoner.
 - **Rien n'a été retiré des modules métier.** Toutes les adresses existantes restent valides.
