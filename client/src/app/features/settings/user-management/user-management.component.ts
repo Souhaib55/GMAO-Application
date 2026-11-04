@@ -44,7 +44,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
           </div>
           <div class="stat-content">
             <span class="stat-number">{{ users.length }}</span>
-            <span class="stat-label">Total Utilisateurs</span>
+            <span class="stat-label">Comptes</span>
           </div>
         </div>
         <div class="stat-card superviseur">
@@ -81,7 +81,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
           </div>
           <div class="stat-content">
             <span class="stat-number">{{ getUsersByRole('Utilisateur').length }}</span>
-            <span class="stat-label">Utilisateurs</span>
+            <span class="stat-label">Techniciens</span>
           </div>
         </div>
       </div>
@@ -95,7 +95,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
           </svg>
           <input 
             type="text" 
-            placeholder="Rechercher un utilisateur..." 
+            placeholder="Rechercher par nom ou adresse e-mail…" 
             [(ngModel)]="searchTerm"
             (input)="filterUsers()"
           />
@@ -103,7 +103,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
         <div class="filter-group">
           <select [(ngModel)]="filterRole" (change)="filterUsers()">
             <option value="">Tous les rôles</option>
-            <option *ngFor="let role of roles" [value]="role.libelle">{{ role.libelle }}</option>
+            <option *ngFor="let role of roles" [value]="role.libelle">{{ roleLabel(role.libelle) }}</option>
           </select>
         </div>
       </div>
@@ -114,7 +114,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
           <thead>
             <tr>
               <th>Utilisateur</th>
-              <th>Email</th>
+              <th>Adresse e-mail</th>
               <th>Rôle</th>
               <th>Date de création</th>
               <th>Statut</th>
@@ -130,7 +130,6 @@ import { ConfirmService } from '../../../core/services/confirm.service';
                   </div>
                   <div class="user-details">
                     <span class="user-name">{{ user.prenom }} {{ user.nom }}</span>
-                    <span class="user-id">ID: {{ user.id }}</span>
                   </div>
                 </div>
               </td>
@@ -139,7 +138,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
               </td>
               <td>
                 <span class="role-badge" [class]="'role-' + (user.role?.libelle?.toLowerCase() || 'default')">
-                  {{ user.role?.libelle || 'Non assigné' }}
+                  {{ user.role?.libelle ? roleLabel(user.role!.libelle) : 'Non assigné' }}
                 </span>
               </td>
               <td>
@@ -194,7 +193,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
       <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
         <div class="modal" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h2>{{ isViewMode ? 'Détails Utilisateur' : (isEditMode ? 'Modifier Utilisateur' : 'Créer Utilisateur') }}</h2>
+            <h2>{{ isViewMode ? "Fiche de l'utilisateur" : (isEditMode ? "Modifier l'utilisateur" : 'Nouvel utilisateur') }}</h2>
             <button class="close-btn" (click)="closeModal()">×</button>
           </div>
           <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
@@ -217,7 +216,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
               </div>
 
               <div class="form-group">
-                <label>Email <span class="required">*</span></label>
+                <label>Adresse e-mail <span class="required">*</span></label>
                 <input type="email" formControlName="email" placeholder="exemple@email.com">
                 <span class="error" *ngIf="userForm.get('email')?.invalid && userForm.get('email')?.touched">
                   Email valide requis
@@ -226,7 +225,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
 
               <div class="form-group" *ngIf="!isEditMode">
                 <label>Mot de passe <span class="required">*</span></label>
-                <input type="password" formControlName="password" placeholder="Ex: Password1">
+                <input type="password" formControlName="password" placeholder="10 caractères : majuscule, minuscule et chiffre">
                 <span class="error" *ngIf="userForm.get('password')?.invalid && userForm.get('password')?.touched">
                   Min. 10 caractères, 1 majuscule, 1 minuscule, 1 chiffre, sans votre nom
                 </span>
@@ -236,7 +235,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
                 <label>Rôle <span class="required">*</span></label>
                 <select formControlName="roleId">
                   <option [ngValue]="''" disabled>Sélectionner un rôle</option>
-                  <option *ngFor="let role of roles" [ngValue]="role.idRole">{{ role.libelle }}</option>
+                  <option *ngFor="let role of roles" [ngValue]="role.idRole">{{ roleLabel(role.libelle) }}</option>
                 </select>
                 <span class="error" *ngIf="userForm.get('roleId')?.invalid && userForm.get('roleId')?.touched">
                   Le rôle est requis
@@ -1348,6 +1347,9 @@ export class UserManagementComponent implements OnInit {
   getUsersByRole(role: string): User[] {
     return this.users.filter(u => u.role?.libelle === role);
   }
+
+  /** Business name of a role on screen ("Utilisateur" is the technical name of technicians). */
+  roleLabel(role: string): string { return role === 'Utilisateur' ? 'Technicien' : role; }
 
   getAvatarColor(role: string): string {
     switch (role) {
