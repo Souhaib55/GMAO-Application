@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { InterventionService } from '../services/intervention.service';
 import { ReferenceDataService, TypeIntervention, Urgence, ChaineProduction, Panne } from '../../../core/services/reference-data.service';
@@ -21,7 +21,7 @@ import { InterventionPhotosComponent } from '../intervention-photos/intervention
 @Component({
   selector: 'app-intervention-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, InterventionSuiviComponent, InterventionActionsComponent, AppIconComponent, InterventionPhotosComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, PageHeaderComponent, InterventionSuiviComponent, InterventionActionsComponent, AppIconComponent, InterventionPhotosComponent],
   template: `
     <!-- Create / edit: side panel over the list, like every other form of the app -->
     <ng-container *ngIf="drawer">
@@ -135,20 +135,9 @@ import { InterventionPhotosComponent } from '../intervention-photos/intervention
     <div class="form-container" [class.view-mode]="isViewMode" *ngIf="!drawer">
       <app-page-header icon="interventions" [title]="formTitle" [subtitle]="formSubtitle">
         <div class="header-actions">
-          <button class="btn btn-print" (click)="printForm()" *ngIf="isViewMode" title="Imprimer / Télécharger PDF">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M6 9V2h12v7"/>
-              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-              <rect x="6" y="14" width="12" height="8"/>
-            </svg>
-            Imprimer
-          </button>
-          <button class="btn btn-secondary" (click)="cancel()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
-            {{ isViewMode ? 'Retour' : 'Annuler' }}
-          </button>
+          <a class="btn btn-secondary" *ngIf="isViewMode && peutModifier" [routerLink]="['/interventions/edit', intervention!.idDemandeIntervention]"><app-icon name="edit"></app-icon> Modifier</a>
+          <button class="btn btn-secondary" type="button" (click)="printForm()" *ngIf="isViewMode"><app-icon name="print"></app-icon> Imprimer</button>
+          <button class="btn btn-secondary" type="button" (click)="cancel()"><app-icon name="chevron-left"></app-icon> {{ isViewMode ? 'Retour' : 'Annuler' }}</button>
         </div>
       </app-page-header>
 
@@ -195,7 +184,30 @@ import { InterventionPhotosComponent } from '../intervention-photos/intervention
         {{ lockReason }}
       </div>
 
-      <form [formGroup]="interventionForm" (ngSubmit)="onSubmit()" class="card" id="intervention-form-print">
+      <!-- Consultation: the request in a few lines (label and value), not a greyed-out form -->
+      <section class="gm-card demande" *ngIf="isViewMode && intervention as i" aria-labelledby="demande-titre">
+        <h2 id="demande-titre" class="demande-eyebrow">La demande</h2>
+        <h3 class="demande-titre">{{ i.titre }}</h3>
+        <p class="demande-desc" *ngIf="i.description">{{ i.description }}</p>
+        <dl class="demande-grid">
+          <div><dt>Machine</dt><dd>{{ i.equipement ? i.equipement.codeEquipement + ' — ' + i.equipement.designation : 'Toute la chaîne' }}</dd></div>
+          <div><dt>Chaîne</dt><dd>{{ i.chaineProduction?.libelle || 'Non renseignée' }}</dd></div>
+          <div><dt>Type</dt><dd>{{ i.typeIntervention?.libelle || 'Non renseigné' }}</dd></div>
+          <div *ngIf="i.panne"><dt>Panne</dt><dd>{{ i.panne.libelle }}</dd></div>
+          <div><dt>Urgence</dt><dd><span class="gm-tag" [ngClass]="urgenceTag(i.urgence?.libelle)">{{ i.urgence?.libelle || 'Normale' }}</span></dd></div>
+          <div><dt>Pièce jointe</dt><dd>
+            <button type="button" class="link-btn" *ngIf="existingFileName; else sansFichier" (click)="downloadExistingFile()"><app-icon name="download"></app-icon> {{ existingFileName }}</button>
+            <ng-template #sansFichier>Aucune</ng-template>
+          </dd></div>
+        </dl>
+        <div class="demande-report" *ngIf="i.compteRendu">
+          <h3>Compte rendu du technicien</h3>
+          <p>{{ i.compteRendu }}</p>
+          <app-intervention-photos [interventionId]="i.idDemandeIntervention" [refresh]="i.statusId"></app-intervention-photos>
+        </div>
+      </section>
+
+      <form [formGroup]="interventionForm" (ngSubmit)="onSubmit()" class="card" id="intervention-form-print" *ngIf="!isViewMode">
         <div class="card-body">
 
           <!-- 1. Where -->
@@ -347,6 +359,20 @@ import { InterventionPhotosComponent } from '../intervention-photos/intervention
     @media print { .actions-block { display: none; } }
     @media print { .suivi-block { break-before: page; } }
 
+    .demande { padding: 18px 20px; margin-bottom: 16px; }
+    .demande-eyebrow { margin: 0; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+    .demande-titre { margin: 4px 0 0; font-size: 1.125rem; font-weight: 600; color: var(--text); }
+    .demande-desc { margin: 6px 0 0; font-size: 0.9375rem; line-height: 1.55; color: var(--text); white-space: pre-line; }
+    .demande-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 24px; margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--gray-100); }
+    .demande-grid dt { font-size: 0.8125rem; color: var(--text-secondary); }
+    .demande-grid dd { margin: 2px 0 0; font-size: 0.9rem; font-weight: 500; color: var(--text); overflow-wrap: anywhere; }
+    .demande-report { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--gray-100); }
+    .demande-report h3 { margin: 0 0 4px; font-size: 0.875rem; font-weight: 600; }
+    .demande-report p { margin: 0 0 8px; font-size: 0.9375rem; line-height: 1.55; white-space: pre-line; }
+    .link-btn { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; padding: 0; min-height: 32px; font: inherit; font-weight: 500; color: var(--primary-700); cursor: pointer; text-align: left; }
+    .link-btn:hover { text-decoration: underline; }
+    @media (max-width: 900px) { .demande-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (pointer: coarse) { .link-btn { min-height: 44px; } }
     .facts-card {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -608,6 +634,22 @@ export class InterventionFormComponent implements OnInit, OnDestroy {
       titre: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
       description: ['', Validators.maxLength(2000)]
     });
+  }
+
+  /** Same rule as the server and the list: supervisor until closed, requester until someone takes it on. */
+  get peutModifier(): boolean {
+    const i = this.intervention;
+    if (!i) return false;
+    const status = i.statusId ?? 1;
+    if (status === 4 || status === 5) return false;
+    const user = this.authService.currentUser;
+    if (user?.role === 'Superviseur') return true;
+    return i.demandeursID === user?.internalId && status === 1 && !i.datePriseEnCharge;
+  }
+
+  urgenceTag(libelle: string | undefined): string {
+    const l = (libelle || '').toLowerCase();
+    return l.includes('haut') || l.includes('urgent') ? 't-bad' : l.includes('norm') || l.includes('moy') ? 't-info' : 't-neutral';
   }
 
   get formTitle(): string {

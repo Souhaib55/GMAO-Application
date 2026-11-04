@@ -14,10 +14,10 @@ const STEPS: Record<string, TourStep[]> = {
     { titre: 'Bienvenue dans la GMAO SIMOTEX', texte: 'Une minute pour voir où se trouve l\'essentiel. Vous pourrez revoir cette visite à tout moment depuis le menu Aide.' },
     { selector: '.retenir', titre: 'Commencez ici chaque matin', texte: '« À retenir » résume les points importants de la période, du plus urgent au moins urgent, avec ce qu\'il faut faire. Le bouton « Voir » ouvre l\'écran utile.' },
     { selector: '.kpi-card app-kpi-info', titre: 'Chaque chiffre s\'explique', texte: 'Le bouton « ? » dit ce que mesure l\'indicateur, comment il est calculé avec vos chiffres, et quelle valeur est bonne. Cliquez la carte pour voir les interventions qui font ce chiffre.' },
-    { selector: '.kpi-legend', titre: 'Les couleurs ont toujours le même sens', texte: 'Vert : mieux que la période précédente. Rouge : moins bien. Gris : stable. Changez la période (7 jours, 30 jours…) et la chaîne en haut de l\'écran.' },
+    { selector: '.kpi-legend', titre: 'Les couleurs ont toujours le même sens', texte: 'Chaque carte dit si le niveau est bon, et si c\'est mieux ou moins bien que la période précédente. Changez la période (7 jours, 30 jours…) et la chaîne en haut de l\'écran.' },
     { selector: '.sidebar a[href="/interventions"]', titre: 'Interventions', texte: 'Affectez les demandes à un technicien et validez les travaux terminés. La liste se filtre par statut, type, chaîne et période, et s\'exporte vers Excel.' },
     { selector: '.sidebar a[href="/preventif"]', titre: 'Préventif', texte: 'Les plans d\'entretien créent les interventions tout seuls, avant chaque échéance.' },
-    { selector: 'a[href="/rapport-mensuel"]', titre: 'Rapport mensuel', texte: 'Le bilan d\'un mois, prêt à imprimer ou à enregistrer en PDF pour la réunion de direction.' },
+    { selector: 'app-actions-menu .trigger', titre: 'Plus d\'actions', texte: 'Le rapport mensuel, prêt à imprimer ou à enregistrer en PDF pour la réunion de direction, et l\'export des chiffres vers Excel.' },
     { selector: '.sidebar a[href="/aide"]', titre: 'Besoin d\'aide ?', texte: 'Le glossaire, l\'explication de chaque indicateur et cette visite sont dans Aide.' }
   ],
   Utilisateur: [
