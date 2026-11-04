@@ -153,10 +153,11 @@
   .kpi-hint { font-size: 0.75rem; color: var(--text-muted); }
 }
 
-/* Tone helpers shared by KPI icons, deltas, tags */
-.t-ok { background: var(--success-light) !important; color: var(--success) !important; }
-.t-warn { background: var(--warning-light) !important; color: var(--warning) !important; }
-.t-bad { background: var(--error-light) !important; color: var(--error) !important; }
+/* Tone helpers shared by KPI icons, deltas, tags. Text uses the darker shade of each
+   colour: at least 4.5:1 on its light background (WCAG AA for small text). */
+.t-ok { background: var(--success-light) !important; color: var(--success-dark) !important; }
+.t-warn { background: var(--warning-light) !important; color: var(--warning-dark) !important; }
+.t-bad { background: var(--error-light) !important; color: var(--error-dark) !important; }
 .t-info { background: var(--primary-50) !important; color: var(--primary-700) !important; }
 .t-neutral { background: var(--gray-100) !important; color: var(--gray-600) !important; }
 
