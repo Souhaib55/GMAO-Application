@@ -15,8 +15,8 @@ let nextId = 0;
   imports: [NgIf, NgFor],
   template: `
     <button type="button" class="kpi-info-btn" [attr.aria-expanded]="open" [attr.aria-controls]="panelId"
-            [attr.aria-label]="'Comprendre : ' + (defs[0]?.titre || '')" (click)="toggle($event)">?</button>
-    <div class="kpi-info-panel" *ngIf="open" [id]="panelId" role="dialog" [attr.aria-label]="defs[0]?.titre" [class.left]="alignLeft"
+            [attr.aria-label]="'Comprendre : ' + titre" (click)="toggle($event)">?</button>
+    <div class="kpi-info-panel" *ngIf="open" [id]="panelId" role="dialog" [attr.aria-label]="titre" [class.left]="alignLeft"
          (click)="$event.stopPropagation()">
       <section *ngFor="let d of defs; let first = first" [class.next]="!first">
         <h4>{{ d.titre }}</h4>
@@ -71,6 +71,7 @@ export class KpiInfoComponent {
   @Input() alignLeft = false;
 
   defs: KpiDefinition[] = [];
+  get titre(): string { return this.defs.length ? this.defs[0].titre : ''; }
   open = false;
   readonly panelId = `kpi-info-${++nextId}`;
 
