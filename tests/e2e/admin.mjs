@@ -195,14 +195,16 @@ try {
     await idle(b, 1200);
     const url = await ev(b, 'location.pathname + location.search');
     if (!url.includes('vue=non-affectees')) return 'went to ' + url;
-    const chip = await ev(b, `!!document.querySelector('.filter-chip')`);
+    // The active filter is shown as a banner in words (version 3; a chip before)
+    const chip = await ev(b, `(document.querySelector('.drill-banner')?.innerText || '').includes('Demandes sans technicien')`);
     const rows = await ev(b, api('/demandeintervention?page=1&pageSize=100&vue=non-affectees'));
     const bad = (rows.data || []).filter(x => x.destinataire || (x.statusId ?? x.status?.id) !== 1).length;
     return (chip && bad === 0) || `chip=${chip} wrong rows=${bad}`;
   });
   await check(b, 'Tableau de bord: KPI « Interventions ouvertes » = nombre filtré', async () => {
     await goto(b, '/dashboard');
-    const kpi = await ev(b, `(() => { const a = [...document.querySelectorAll('a.gm-kpi')].find(x => x.innerText.includes('Interventions ouvertes')); return a ? a.querySelector('.kpi-value').innerText.replace(/\D/g, '') : 'none'; })()`);
+    // A KPI card is a block with a "?" and a link covering it (version 3; a link before)
+    const kpi = await ev(b, `(() => { const a = [...document.querySelectorAll('.gm-kpi')].find(x => x.querySelector('.kpi-label')?.innerText.includes('Interventions ouvertes')); return a ? a.querySelector('.kpi-value').innerText.replace(/\D/g, '') : 'none'; })()`);
     const list = await ev(b, api('/demandeintervention?page=1&pageSize=1&vue=ouvertes'));
     return String(list.totalCount) === kpi || `KPI ${kpi} vs list ${list.totalCount}`;
   });
