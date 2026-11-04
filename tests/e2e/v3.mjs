@@ -17,13 +17,40 @@ try {
     return n >= 1 && n <= 5 && actions ? true : `points: ${n}, actions: ${actions}`;
   });
 
-  await check(b, 'légende des couleurs visible', async () =>
-    (await ev(b, `__t.text('.kpi-legend')`)).includes('vert = mieux') || 'légende absente');
+  await check(b, 'tendance et niveau écrits en mots (jamais la couleur seule)', async () => {
+    const trends = await ev(b, `[...document.querySelectorAll('.kpi-card .kpi-trend')].map(e => e.innerText)`);
+    const states = await ev(b, `[...document.querySelectorAll('.kpi-card .kpi-state')].map(e => e.innerText)`);
+    return trends.every(t => /^(Mieux|Moins bien|Stable|En ce moment)/.test(t)) && states.every(t => t.trim().length > 3) || JSON.stringify({ trends, states });
+  });
 
-  await check(b, 'six cartes, chacune avec un « ? »', async () => {
+  await check(b, '4 chiffres du matin, 3 de plus derrière « Voir plus », chacun avec un « ? »', async () => {
     const n = await ev(b, `document.querySelectorAll('.kpi-card').length`);
+    await ev(b, `document.querySelector('.more-btn').click()`);
+    await sleep(300);
+    const n2 = await ev(b, `document.querySelectorAll('.kpi-card').length`);
     const q = await ev(b, `document.querySelectorAll('.kpi-card .kpi-info-btn').length`);
-    return n === 6 && q === 6 ? true : `${n} cartes, ${q} boutons`;
+    await ev(b, `document.querySelector('.more-btn').click()`);
+    return n === 4 && n2 === 7 && q === 7 ? true : `${n} puis ${n2} cartes, ${q} boutons « ? »`;
+  });
+
+  await check(b, 'graphiques titrés par une question', async () => {
+    const titres = await ev(b, `[...document.querySelectorAll('.chart-card h3')].map(h => h.innerText)`);
+    return titres.length === 4 && titres.every(t => t.trim().endsWith('?')) || JSON.stringify(titres);
+  });
+
+  await check(b, '« Plus d\'actions » : menu au clavier avec le rapport mensuel', async () => {
+    // Real key presses (a scripted click does not give the page the keyboard focus)
+    const key = async (k, code, vk) => { await b.send('Input.dispatchKeyEvent', { type: 'keyDown', key: k, code, windowsVirtualKeyCode: vk }); await b.send('Input.dispatchKeyEvent', { type: 'keyUp', key: k, code, windowsVirtualKeyCode: vk }); };
+    await ev(b, `document.querySelector('app-actions-menu .trigger').focus()`);
+    await key('ArrowDown', 'ArrowDown', 40);
+    await sleep(300);
+    const items = await ev(b, `[...document.querySelectorAll('app-actions-menu .menu-item')].filter(e => __t.vis(e)).map(e => e.innerText.trim())`);
+    const focused = await ev(b, `document.activeElement?.classList.contains('menu-item')`);
+    await b.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+    await b.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+    await sleep(200);
+    const closed = !(await ev(b, `[...document.querySelectorAll('app-actions-menu .menu')].some(m => !m.hidden)`));
+    return items.some(t => t.includes('Rapport mensuel')) && focused && closed ? true : JSON.stringify({ items, focused, closed });
   });
 
   await check(b, '« ? » de la disponibilité : définition, calcul avec les chiffres, repères, sens', async () => {
@@ -45,8 +72,8 @@ try {
   });
 
   await check(b, 'clic sur « Respect du préventif » : la liste derrière le chiffre', async () => {
-    const hint = await ev(b, `[...document.querySelectorAll('.kpi-card')].find(c => c.innerText.includes('Respect du préventif')).querySelector('.kpi-hint').innerText`);
-    const prevus = +(/sur (\d+) prévus/.exec(hint) || [])[1];
+    // The figure behind the card: preventive jobs due over the period (same API as the dashboard)
+    const prevus = await ev(b, `fetch('${APP}/api/pilotage?days=30', {credentials:'include'}).then(r => r.json()).then(d => d.courant.preventifsDus)`);
     await ev(b, `[...document.querySelectorAll('.kpi-card')].find(c => c.innerText.includes('Respect du préventif')).querySelector('.kpi-link').click()`);
     await idle(b, 1000);
     const banner = await ev(b, `__t.text('.drill-banner')`);
@@ -68,13 +95,42 @@ try {
     return url.includes('type=preventif') && types.length > 0 && types.every(t => /pr[ée]ventive/i.test(t)) ? true : `${url} ${types.slice(0, 3)}`;
   });
 
-  await check(b, 'Pareto : bascule causes / machines', async () => {
+  await check(b, 'détail replié : coûts et machines pénalisantes', async () => {
     await goto(b, '/dashboard');
-    const causes = await ev(b, `__t.text('.gm-card:has(.gm-seg.small) .gm-card-body')`);
-    await ev(b, `__t.click('Machines', '.gm-seg.small button')`);
+    const ferme = !(await ev(b, `document.querySelector('details.detail').open`));
+    await ev(b, `document.querySelector('details.detail > summary').click()`);
     await sleep(300);
-    const machines = await ev(b, `__t.text('.gm-card:has(.gm-seg.small) .gm-card-body')`);
-    return causes !== machines && /cumul \d+ %/.test(machines) ? true : machines.slice(0, 120);
+    const t = await ev(b, `__t.text('details.detail')`);
+    return ferme && t.includes("Où part l'argent ?") && t.includes('Machines les plus pénalisantes') || t.slice(0, 160);
+  });
+
+  await check(b, 'fiche machine : lecture claire, dates jj/mm/aaaa, aucun code affiché', async () => {
+    const eq = await ev(b, `fetch('${APP}/api/Equipment/lookup', {credentials:'include'}).then(r => r.json()).then(l => l.find(e => e.codeEquipement === 'CB-04') || l[0])`);
+    await goto(b, `/equipment/view/${eq.idEquipement}`);
+    const t = await ev(b, `__t.text('.fiche')`);
+    const inputs = await ev(b, `document.querySelectorAll('.fiche input, .fiche select').length`);
+    return !/\{\{|\}\}|mm\/dd|undefined|Invalid Date/.test(t) && /\d{2}\/\d{2}\/\d{4}/.test(t) && inputs === 0 && t.includes('Garantie') || t.slice(0, 200);
+  });
+
+  await check(b, 'Paramètres : 4 groupes par objectif, réglages rares repliés', async () => {
+    await goto(b, '/settings');
+    const titres = await ev(b, `[...document.querySelectorAll('.group h2')].map(h => h.innerText)`);
+    const replies = await ev(b, `[...document.querySelectorAll('details.rare')].every(d => !d.open)`);
+    return titres.join('|') === 'Utilisateurs et accès|Machines et chaînes|Magasin et achats|Interventions' && replies || JSON.stringify(titres);
+  });
+
+  await check(b, 'listes de choix : ouverture sur les chaînes, recherche', async () => {
+    await goto(b, '/settings/references?category=panne');
+    const titre = await ev(b, `__t.text('.panel-head h2')`);
+    const search = await ev(b, `!!document.querySelector('.list-search input')`);
+    if (search) {
+      await ev(b, `__t.fill('.list-search input', 'zzzz-introuvable')`);
+      await sleep(200);
+    }
+    const vide = search ? (await ev(b, `__t.text('.ref-panel')`)).includes('Aucun élément ne correspond') : true;
+    await goto(b, '/settings/references');
+    const defaut = await ev(b, `__t.text('.panel-head h2')`);
+    return titre === 'Types de pannes' && vide && defaut === 'Chaînes de production' || JSON.stringify({ titre, search, vide, defaut });
   });
 
   await check(b, 'rapport mensuel : mois précédent, indicateurs et Pareto', async () => {
