@@ -1,7 +1,10 @@
 <div class="gm-page">
   <app-page-header icon="dashboard" [title]="greeting"
                    [subtitle]="(today | date:'EEEE d MMMM y':'':'fr') + (isSuperviseur ? ' · Pilotage de la maintenance' : isTechnicien ? ' · Votre journée de travail' : ' · Suivi de vos demandes')">
-    <a class="btn btn-secondary" *ngIf="isSuperviseur" routerLink="/rapport-mensuel"><app-icon name="print"></app-icon> Rapport mensuel</a>
+    <app-actions-menu *ngIf="isSuperviseur">
+      <a class="menu-item" role="menuitem" routerLink="/rapport-mensuel"><app-icon name="print"></app-icon> Rapport mensuel à imprimer</a>
+      <button type="button" class="menu-item" role="menuitem" (click)="exportSynthese()" [disabled]="!data"><app-icon name="download"></app-icon> Exporter les chiffres (Excel)</button>
+    </app-actions-menu>
     <button class="btn btn-primary" routerLink="/interventions/new"><app-icon name="plus"></app-icon> Déclarer une panne</button>
   </app-page-header>
 
@@ -20,14 +23,13 @@
         <option [ngValue]="null">Tous les équipements</option>
         <option *ngFor="let e of equipementsFiltres" [ngValue]="e.id">{{ e.libelle }}</option>
       </select>
-      <span class="spacer"></span>
-      <button class="btn btn-secondary btn-sm" (click)="exportSynthese()" [disabled]="!data"><app-icon name="download"></app-icon> Exporter</button>
+
     </div>
 
     <div class="gm-error-box" *ngIf="error"><app-icon name="alert"></app-icon>{{ error }}</div>
 
-    <div class="gm-kpis kpis-6" *ngIf="!data && loading">
-      <div class="gm-kpi" *ngFor="let i of [1,2,3,4,5,6]"><div class="gm-skeleton" style="height: 14px; width: 60%"></div><div class="gm-skeleton" style="height: 30px; width: 40%; margin-top: 8px"></div><div class="gm-skeleton" style="height: 12px; width: 70%; margin-top: 8px"></div></div>
+    <div class="gm-kpis kpis-4" *ngIf="!data && loading">
+      <div class="gm-kpi" *ngFor="let i of [1,2,3,4]"><div class="gm-skeleton" style="height: 14px; width: 60%"></div><div class="gm-skeleton" style="height: 30px; width: 40%; margin-top: 8px"></div><div class="gm-skeleton" style="height: 12px; width: 70%; margin-top: 8px"></div></div>
     </div>
 
     <ng-container *ngIf="data as d">
@@ -48,73 +50,78 @@
           </ul>
         </section>
 
-        <!-- How to read the cards -->
-        <p class="kpi-legend">
-          <span>Comparaison avec {{ comparaisonLabel }} :</span>
-          <span class="gm-delta t-ok">vert = mieux</span>
-          <span class="gm-delta t-bad">rouge = moins bien</span>
-          <span class="gm-delta t-neutral">gris = stable</span>
-          <span class="muted">Cliquez une carte pour voir les interventions concernées. Le bouton « ? » explique le calcul.</span>
-        </p>
-
-        <!-- Key figures -->
-        <div class="gm-kpis kpis-6">
+        <!-- The figures checked every morning: four cards, one message each -->
+        <div class="kpi-head">
+          <h2 class="section-title">Les chiffres clés de {{ periodLabel }}</h2>
+          <p class="kpi-legend">Comparés avec {{ comparaisonLabel }}. Cliquez une carte pour voir les interventions concernées, « ? » pour comprendre le calcul.</p>
+        </div>
+        <div class="gm-kpis kpis-4">
           <div class="gm-kpi kpi-card">
             <div class="kpi-top"><span class="kpi-label">Disponibilité du parc</span><app-kpi-info [def]="K['disponibilite']" [contexte]="ctx" [alignLeft]="true"></app-kpi-info></div>
-            <div class="kpi-value"><span class="state" [ngClass]="dispoTone(d.courant.disponibilite)" aria-hidden="true"></span>{{ d.courant.disponibilite | number:'1.1-1':'fr' }}<small>%</small></div>
-            <div class="kpi-cmp" *ngIf="cmp(d.courant.disponibilite, d.precedent.disponibilite, 'haut', 'pt') as x" [ngClass]="x.tone">{{ x.text }}</div>
-            <div class="kpi-hint">{{ d.periode.machines }} machines suivies · objectif 98 % ou plus</div>
+            <div class="kpi-value">{{ d.courant.disponibilite | number:'1.1-1':'fr' }}<small>%</small></div>
+            <div class="kpi-state" *ngIf="etatDispo(d.courant.disponibilite) as e" [ngClass]="e.tone">{{ e.texte }}</div>
+            <div class="kpi-trend" *ngIf="cmp(d.courant.disponibilite, d.precedent.disponibilite, 'haut', 'pt') as x" [ngClass]="x.tone">{{ x.text }}</div>
             <a class="kpi-link" routerLink="/interventions" [queryParams]="drill('arrets')"><span class="sr-label">Voir les arrêts machine de la période</span></a>
           </div>
 
           <div class="gm-kpi kpi-card">
             <div class="kpi-top"><span class="kpi-label">Heures d'arrêt</span><app-kpi-info [def]="K['heuresArret']" [contexte]="ctx"></app-kpi-info></div>
             <div class="kpi-value">{{ d.courant.heuresArret | number:'1.0-0':'fr' }}<small>h</small></div>
-            <div class="kpi-cmp" *ngIf="cmp(d.courant.heuresArret, d.precedent.heuresArret, 'bas') as x" [ngClass]="x.tone">{{ x.text }}</div>
-            <div class="kpi-hint">{{ d.courant.pannes }} panne{{ d.courant.pannes > 1 ? 's' : '' }} déclarée{{ d.courant.pannes > 1 ? 's' : '' }} sur la période</div>
+            <div class="kpi-state t-neutral">{{ d.courant.pannes }} panne{{ d.courant.pannes > 1 ? 's' : '' }} sur la période</div>
+            <div class="kpi-trend" *ngIf="cmp(d.courant.heuresArret, d.precedent.heuresArret, 'bas') as x" [ngClass]="x.tone">{{ x.text }}</div>
             <a class="kpi-link" routerLink="/interventions" [queryParams]="drill('arrets')"><span class="sr-label">Voir les arrêts machine de la période</span></a>
-          </div>
-
-          <div class="gm-kpi kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Temps moyen de réparation</span><app-kpi-info [def]="[K['mttr'], K['mtbf']]" [contexte]="ctx"></app-kpi-info></div>
-            <div class="kpi-value">{{ d.courant.mttr !== null ? (d.courant.mttr | number:'1.1-1':'fr') : '—' }}<small *ngIf="d.courant.mttr !== null">h</small></div>
-            <div class="kpi-cmp" *ngIf="cmp(d.courant.mttr, d.precedent.mttr, 'bas') as x" [ngClass]="x.tone">{{ x.text }}</div>
-            <div class="kpi-hint">MTTR, sur {{ d.courant.reparations }} réparation{{ d.courant.reparations > 1 ? 's' : '' }}<ng-container *ngIf="d.courant.mtbf !== null"> · une panne toutes les {{ d.courant.mtbf | number:'1.0-0':'fr' }} h par machine (MTBF)</ng-container></div>
-            <a class="kpi-link" routerLink="/interventions" [queryParams]="drill('reparees')"><span class="sr-label">Voir les réparations de la période</span></a>
-          </div>
-
-          <div class="gm-kpi kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Respect du préventif</span><app-kpi-info [def]="K['respectPreventif']" [contexte]="ctx"></app-kpi-info></div>
-            <div class="kpi-value"><span class="state" [ngClass]="respectTone(d.courant.respectPreventif)" aria-hidden="true"></span>{{ d.courant.respectPreventif !== null ? (d.courant.respectPreventif | number:'1.0-0':'fr') : '—' }}<small *ngIf="d.courant.respectPreventif !== null">%</small></div>
-            <div class="kpi-cmp" *ngIf="cmp(d.courant.respectPreventif, d.precedent.respectPreventif, 'haut', 'pt', 3) as x" [ngClass]="x.tone">{{ x.text }}</div>
-            <div class="kpi-hint">{{ d.courant.preventifsATemps }} faits à temps sur {{ d.courant.preventifsDus }} prévus · objectif 90 %</div>
-            <a class="kpi-link" routerLink="/interventions" [queryParams]="drill('preventifs-dus')"><span class="sr-label">Voir les préventifs prévus sur la période</span></a>
           </div>
 
           <div class="gm-kpi kpi-card">
             <div class="kpi-top"><span class="kpi-label">Interventions ouvertes</span><app-kpi-info [def]="K['backlog']" [contexte]="ctx"></app-kpi-info></div>
             <div class="kpi-value">{{ d.backlog }}</div>
-            <div class="kpi-cmp" [ngClass]="d.enRetard ? 't-bad' : 't-ok'">{{ d.enRetard ? d.enRetard + ' en retard' : 'Aucune en retard' }}</div>
-            <div class="kpi-hint">En ce moment · {{ d.courant.realisees }} terminées sur {{ periodLabel }}</div>
+            <div class="kpi-state" *ngIf="etatOuvertes(d.enRetard) as e" [ngClass]="e.tone">{{ e.texte }}</div>
+            <div class="kpi-trend t-neutral">En ce moment</div>
             <a class="kpi-link" routerLink="/interventions" [queryParams]="drill(d.enRetard ? 'en-retard' : 'ouvertes')"><span class="sr-label">Voir les interventions ouvertes</span></a>
           </div>
 
           <div class="gm-kpi kpi-card">
+            <div class="kpi-top"><span class="kpi-label">Respect du préventif</span><app-kpi-info [def]="K['respectPreventif']" [contexte]="ctx"></app-kpi-info></div>
+            <div class="kpi-value">{{ d.courant.respectPreventif !== null ? (d.courant.respectPreventif | number:'1.0-0':'fr') : '—' }}<small *ngIf="d.courant.respectPreventif !== null">%</small></div>
+            <div class="kpi-state" *ngIf="etatRespect(d.courant.respectPreventif) as e" [ngClass]="e.tone">{{ e.texte }}</div>
+            <div class="kpi-trend" *ngIf="cmp(d.courant.respectPreventif, d.precedent.respectPreventif, 'haut', 'pt', 3) as x" [ngClass]="x.tone">{{ x.text }}</div>
+            <a class="kpi-link" routerLink="/interventions" [queryParams]="drill('preventifs-dus')"><span class="sr-label">Voir les préventifs prévus sur la période</span></a>
+          </div>
+        </div>
+
+        <button type="button" class="more-btn" [attr.aria-expanded]="plusIndicateurs" aria-controls="plus-indicateurs" (click)="plusIndicateurs = !plusIndicateurs">
+          <app-icon [name]="plusIndicateurs ? 'chevron-left' : 'chevron-right'"></app-icon>
+          {{ plusIndicateurs ? 'Moins d\'indicateurs' : 'Voir plus d\'indicateurs : temps de réparation, temps entre pannes, coût' }}
+        </button>
+
+        <div class="gm-kpis kpis-3" id="plus-indicateurs" *ngIf="plusIndicateurs">
+          <div class="gm-kpi kpi-card">
+            <div class="kpi-top"><span class="kpi-label">Temps moyen de réparation (MTTR)</span><app-kpi-info [def]="K['mttr']" [contexte]="ctx" [alignLeft]="true"></app-kpi-info></div>
+            <div class="kpi-value">{{ d.courant.mttr !== null ? (d.courant.mttr | number:'1.1-1':'fr') : '—' }}<small *ngIf="d.courant.mttr !== null">h</small></div>
+            <div class="kpi-state t-neutral">Sur {{ d.courant.reparations }} réparation{{ d.courant.reparations > 1 ? 's' : '' }}</div>
+            <div class="kpi-trend" *ngIf="cmp(d.courant.mttr, d.precedent.mttr, 'bas') as x" [ngClass]="x.tone">{{ x.text }}</div>
+            <a class="kpi-link" routerLink="/interventions" [queryParams]="drill('reparees')"><span class="sr-label">Voir les réparations de la période</span></a>
+          </div>
+          <div class="gm-kpi kpi-card">
+            <div class="kpi-top"><span class="kpi-label">Temps moyen entre deux pannes (MTBF)</span><app-kpi-info [def]="K['mtbf']" [contexte]="ctx"></app-kpi-info></div>
+            <div class="kpi-value">{{ d.courant.mtbf !== null ? (d.courant.mtbf | number:'1.0-0':'fr') : '—' }}<small *ngIf="d.courant.mtbf !== null">h</small></div>
+            <div class="kpi-state t-neutral">Par machine</div>
+            <div class="kpi-trend" *ngIf="cmp(d.courant.mtbf, d.precedent.mtbf, 'haut') as x" [ngClass]="x.tone">{{ x.text }}</div>
+            <a class="kpi-link" routerLink="/interventions" [queryParams]="drill('pannes')"><span class="sr-label">Voir les pannes de la période</span></a>
+          </div>
+          <div class="gm-kpi kpi-card">
             <div class="kpi-top"><span class="kpi-label">Coût de maintenance</span><app-kpi-info [def]="K['cout']" [contexte]="ctx"></app-kpi-info></div>
             <div class="kpi-value">{{ d.cout.total | number:'1.0-0':'fr' }}<small>DT</small></div>
-            <div class="kpi-cmp" *ngIf="cmp(d.cout.total, d.coutPrecedent, 'bas') as x" [ngClass]="x.tone">{{ x.text }}</div>
-            <div class="budget-foot" *ngIf="budgetRatio !== null; else noBudget">
-              <div class="gm-progress" [ngClass]="budgetRatio > 100 ? 'bad' : budgetRatio > 90 ? 'warn' : 'ok'" role="img" [attr.aria-label]="budgetRatio + ' % du budget de la période'"><span [style.width.%]="budgetRatio > 100 ? 100 : budgetRatio"></span></div>
-              <span class="kpi-hint">{{ budgetRatio }} % du budget prévu pour cette durée ({{ d.budgetPeriode | number:'1.0-0':'fr' }} DT)</span>
-            </div>
-            <ng-template #noBudget><div class="kpi-hint">Aucun budget saisi pour la période</div></ng-template>
+            <div class="kpi-state" *ngIf="etatBudget(budgetRatio) as e; else noBudget" [ngClass]="e.tone">{{ e.texte }}</div>
+            <ng-template #noBudget><div class="kpi-state t-neutral">Aucun budget saisi</div></ng-template>
+            <div class="kpi-trend" *ngIf="cmp(d.cout.total, d.coutPrecedent, 'bas') as x" [ngClass]="x.tone">{{ x.text }}</div>
             <a class="kpi-link" routerLink="/budgets"><span class="sr-label">Voir le détail du budget</span></a>
           </div>
         </div>
 
-        <!-- Action list + trend -->
+        <!-- What needs a decision now -->
         <div class="gm-grid">
-          <div class="gm-card span-5">
+          <div class="gm-card span-7">
             <div class="gm-card-head">
               <div><h3>À traiter maintenant</h3><div class="sub">Machines arrêtées, préventifs en retard, demandes sans technicien</div></div>
               <a class="btn btn-secondary btn-sm" routerLink="/planning">Planning</a>
@@ -126,58 +133,6 @@
                 <span class="todo-main"><b>{{ t.titre }}</b><small>{{ t.machine || t.chaine }} · {{ otCode(t.id) }}{{ t.technicien ? ' · ' + t.technicien : '' }}</small></span>
                 <span class="todo-age num" [title]="'Depuis ' + depuis(t.heures)">{{ depuis(t.heures) }}</span>
               </a>
-            </div>
-          </div>
-          <div class="gm-card span-7">
-            <div class="gm-card-head"><div><h3>Interventions déclarées et réalisées</h3><div class="sub">{{ periodLabel }} · si les déclarées restent au-dessus des réalisées, le travail en attente grossit</div></div></div>
-            <div class="gm-card-body"><gm-line-chart [labels]="trend.labels" [series]="trend.series"></gm-line-chart></div>
-          </div>
-
-          <!-- Where and why -->
-          <div class="gm-card span-4">
-            <div class="gm-card-head"><div><h3>Heures d'arrêt par chaîne</h3><div class="sub">{{ chaineId ? 'Chaîne sélectionnée' : 'Cliquez une chaîne pour filtrer le tableau' }}</div></div></div>
-            <div class="gm-card-body"><gm-bar-list [items]="arretChaines" format="hours" [clickable]="!chaineId" (pick)="filterChaine($event)" emptyText="Aucun arrêt machine sur la période"></gm-bar-list></div>
-          </div>
-          <div class="gm-card span-4">
-            <div class="gm-card-head">
-              <div><h3>Pareto des pannes</h3><div class="sub">{{ paretoVue === 'causes' ? 'Nombre de pannes par cause, avec la part cumulée' : 'Heures d\'arrêt par machine, avec la part cumulée' }}</div></div>
-              <div class="gm-seg small" role="group" aria-label="Classer les pannes">
-                <button type="button" [class.on]="paretoVue === 'causes'" [attr.aria-pressed]="paretoVue === 'causes'" (click)="paretoVue = 'causes'">Causes</button>
-                <button type="button" [class.on]="paretoVue === 'machines'" [attr.aria-pressed]="paretoVue === 'machines'" (click)="paretoVue = 'machines'">Machines</button>
-              </div>
-            </div>
-            <div class="gm-card-body">
-              <gm-bar-list *ngIf="paretoVue === 'causes'" [items]="paretoBars" [clickable]="true" (pick)="pickCause($event)" emptyText="Aucune panne sur la période"></gm-bar-list>
-              <gm-bar-list *ngIf="paretoVue === 'machines'" [items]="paretoMachines" format="hours" [clickable]="true" (pick)="pickMachine($event)" emptyText="Aucun arrêt machine sur la période"></gm-bar-list>
-              <p class="pareto-tip">Traitez d'abord les premières lignes : quelques causes font en général la plupart des pannes.</p>
-            </div>
-          </div>
-          <div class="gm-card span-4">
-            <div class="gm-card-head"><div><h3>Répartition des coûts</h3><div class="sub">{{ d.partPreventif !== null ? 'Le préventif représente ' + (d.partPreventif | number:'1.0-0':'fr') + ' % des heures saisies' : periodLabel }}</div></div></div>
-            <div class="gm-card-body"><gm-donut [slices]="coutSlices" [center]="montantCentre(d.cout.total)" centerLabel="DT"></gm-donut></div>
-          </div>
-
-          <!-- Worst actors + alerts -->
-          <div class="gm-card span-7">
-            <div class="gm-card-head">
-              <div><h3>Machines les plus pénalisantes</h3><div class="sub">Classées par heures d'arrêt sur la période, avec leur coût de maintenance</div></div>
-              <a class="btn btn-secondary btn-sm" routerLink="/explorateur">Analyser</a>
-            </div>
-            <div class="gm-card-body flush">
-              <div class="gm-empty" *ngIf="!d.topMachines.length"><app-icon name="check"></app-icon><strong>Aucun arrêt machine</strong><span>Aucune machine n'a été arrêtée par une panne sur la période.</span></div>
-              <table class="gm-table responsive" *ngIf="d.topMachines.length">
-                <thead><tr><th scope="col">Machine</th><th scope="col">Chaîne</th><th scope="col" class="right">Pannes</th><th scope="col" class="right">Arrêt</th><th scope="col" class="right" title="Part cumulée des heures d'arrêt">Cumul</th><th scope="col" class="right">Coût</th></tr></thead>
-                <tbody>
-                  <tr *ngFor="let m of d.topMachines" class="clickable" tabindex="0" [routerLink]="['/equipment/view', m.id]" [queryParams]="{ onglet: 'historique' }" (keydown.enter)="router.navigate(['/equipment/view', m.id], { queryParams: { onglet: 'historique' } })">
-                    <td class="primary" data-label="Machine"><span class="title">{{ m.designation }}</span><span class="sub gm-code">{{ m.code }}</span></td>
-                    <td data-label="Chaîne">{{ m.chaine }}</td>
-                    <td class="right num" data-label="Pannes">{{ m.pannes }}</td>
-                    <td class="right num" data-label="Arrêt"><b>{{ fmtHours(m.heures) }}</b></td>
-                    <td class="right num muted" data-label="Cumul">{{ m.cumul !== null ? (m.cumul | number:'1.0-0':'fr') + ' %' : '—' }}</td>
-                    <td class="right num" data-label="Coût">{{ m.cout | number:'1.0-0':'fr' }} DT</td>
-                  </tr>
-                </tbody>
-              </table>
             </div>
           </div>
           <div class="gm-card span-5">
@@ -192,6 +147,59 @@
             </div>
           </div>
         </div>
+
+        <!-- Four questions, four charts: values written on the bars, no legend to decode -->
+        <h2 class="section-title">Comprendre les arrêts</h2>
+        <div class="gm-grid">
+          <section class="gm-card span-6 chart-card">
+            <div class="gm-card-head"><div><h3>Quelles machines tombent le plus en panne ?</h3><div class="sub">Heures d'arrêt sur {{ periodLabel }} · cliquez une machine pour son historique</div></div></div>
+            <div class="gm-card-body"><gm-bar-list [items]="paretoMachines" format="hours" [clickable]="true" (pick)="pickMachine($event)" emptyText="Aucun arrêt machine sur la période"></gm-bar-list></div>
+          </section>
+          <section class="gm-card span-6 chart-card">
+            <div class="gm-card-head"><div><h3>Pourquoi tombent-elles en panne ?</h3><div class="sub">Nombre de pannes par cause · cliquez une cause pour ses pannes</div></div></div>
+            <div class="gm-card-body"><gm-bar-list [items]="paretoBars" [clickable]="true" (pick)="pickCause($event)" emptyText="Aucune panne sur la période"></gm-bar-list></div>
+          </section>
+          <section class="gm-card span-6 chart-card">
+            <div class="gm-card-head"><div><h3>Quelles chaînes perdent le plus de temps ?</h3><div class="sub">{{ chaineId ? 'Chaîne sélectionnée' : "Heures d'arrêt par chaîne · cliquez une chaîne pour filtrer le tableau" }}</div></div></div>
+            <div class="gm-card-body"><gm-bar-list [items]="arretChaines" format="hours" [clickable]="!chaineId" (pick)="filterChaine($event)" emptyText="Aucun arrêt machine sur la période"></gm-bar-list></div>
+          </section>
+          <section class="gm-card span-6 chart-card">
+            <div class="gm-card-head"><div><h3>Le travail en attente augmente-t-il ?</h3><div class="sub">Interventions déclarées et réalisées{{ days === 30 ? ' par semaine' : '' }} · si « Déclarées » reste au-dessus, le travail en attente grossit</div></div></div>
+            <div class="gm-card-body"><gm-line-chart [labels]="trend.labels" [series]="trend.series" [directLabels]="true"></gm-line-chart></div>
+          </section>
+        </div>
+
+        <!-- Detail, for whoever needs it -->
+        <details class="gm-card detail">
+          <summary><app-icon name="chevron-right" class="chev"></app-icon> Voir le détail : coûts et machines les plus pénalisantes</summary>
+          <div class="gm-grid detail-grid">
+            <section class="span-4">
+              <h3>Où part l'argent ?</h3>
+              <p class="sub">{{ d.partPreventif !== null ? 'Le préventif représente ' + (d.partPreventif | number:'1.0-0':'fr') + ' % des heures saisies' : periodLabel }}</p>
+              <gm-donut [slices]="coutSlices" [center]="montantCentre(d.cout.total)" centerLabel="DT"></gm-donut>
+            </section>
+            <section class="span-8">
+              <div class="detail-head">
+                <div><h3>Machines les plus pénalisantes</h3><p class="sub">Heures d'arrêt, part cumulée et coût de maintenance sur la période</p></div>
+                <a class="btn btn-secondary btn-sm" routerLink="/explorateur">Analyser</a>
+              </div>
+              <div class="gm-empty" *ngIf="!d.topMachines.length"><app-icon name="check"></app-icon><strong>Aucun arrêt machine</strong></div>
+              <table class="gm-table responsive" *ngIf="d.topMachines.length">
+                <thead><tr><th scope="col">Machine</th><th scope="col">Chaîne</th><th scope="col" class="right">Pannes</th><th scope="col" class="right">Arrêt</th><th scope="col" class="right" title="Part cumulée des heures d'arrêt">Cumul</th><th scope="col" class="right">Coût</th></tr></thead>
+                <tbody>
+                  <tr *ngFor="let m of d.topMachines" class="clickable" tabindex="0" [routerLink]="['/equipment/view', m.id]" [queryParams]="{ onglet: 'historique' }" (keydown.enter)="router.navigate(['/equipment/view', m.id], { queryParams: { onglet: 'historique' } })">
+                    <td class="primary" data-label="Machine"><span class="title">{{ m.designation }}</span><span class="sub gm-code">{{ m.code }}</span></td>
+                    <td data-label="Chaîne">{{ m.chaine }}</td>
+                    <td class="right num" data-label="Pannes">{{ m.pannes }}</td>
+                    <td class="right num" data-label="Arrêt"><b>{{ fmtHours(m.heures) }}</b></td>
+                    <td class="right num muted" data-label="Cumul">{{ m.cumul !== null ? (m.cumul | number:'1.0-0':'fr') + ' %' : '—' }}</td>
+                    <td class="right num" data-label="Coût">{{ m.cout | number:'1.0-0':'fr' }} DT</td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
+          </div>
+        </details>
       </div>
     </ng-container>
   </ng-container>

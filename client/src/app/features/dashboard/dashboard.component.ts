@@ -12,6 +12,7 @@ import { STATUTS_OT, errorMessage, exportCsv, fmtDate, fmtHours, fmtMoney, otCod
 import { KpiInfoComponent } from '../../shared/components/kpi-info/kpi-info.component';
 import { KPI, KpiContexte } from '../../shared/kpi/kpi-definitions';
 import { TourService } from '../../core/services/tour.service';
+import { ActionsMenuComponent } from '../../shared/components/actions-menu/actions-menu.component';
 
 interface PeriodFigures {
   disponibilite: number; heuresArret: number; pannes: number; declarees: number; realisees: number;
@@ -47,6 +48,9 @@ export interface Pilotage {
 /** Comparison with the previous period, in words, coloured by meaning (better / worse / stable). */
 export interface Comparaison { text: string; tone: 't-ok' | 't-bad' | 't-neutral'; }
 
+/** Level of a figure against its usual target, in words and in colour. */
+export interface Etat { texte: string; tone: 't-ok' | 't-warn' | 't-bad'; }
+
 /**
  * "+12 % par rapport aux 30 jours précédents". Changes too small to mean anything are
  * shown as stable, in grey, so that red always means "worse" and never "noise".
@@ -73,7 +77,8 @@ export function comparer(cur: number | null, prev: number | null, sens: 'haut' |
     text = `${diff > 0 ? '+' : '−'}${Math.round(Math.abs(diff))} %`;
   }
   const better = sens === 'haut' ? diff > 0 : diff < 0;
-  return { text: `${text} ${versus}`, tone: better ? 't-ok' : 't-bad' };
+  // Said in words as well as in colour: never colour alone
+  return { text: `${better ? 'Mieux' : 'Moins bien'} · ${text} ${versus}`, tone: better ? 't-ok' : 't-bad' };
 }
 
 interface MonTravail {
@@ -86,7 +91,7 @@ interface MonTravail {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent, AppIconComponent, GmBarListComponent, GmDonutComponent, GmLineChartComponent, KpiInfoComponent],
+  imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent, AppIconComponent, GmBarListComponent, GmDonutComponent, GmLineChartComponent, KpiInfoComponent, ActionsMenuComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
@@ -118,6 +123,8 @@ export class DashboardComponent implements OnInit {
   paretoVue: 'causes' | 'machines' = 'causes';
   coutSlices: DonutSlice[] = [];
   ctx: KpiContexte | null = null;
+  /** Secondary indicators (repair time, time between failures, cost), shown on demand. */
+  plusIndicateurs = false;
 
   // Technician / requester
   work: MonTravail | null = null;
@@ -184,11 +191,13 @@ export class DashboardComponent implements OnInit {
           realisees: c.realisees, coutMainOeuvre: d.cout.mainOeuvre, coutPieces: d.cout.pieces, coutExterne: d.cout.externe,
           coutTotal: d.cout.total, budgetPeriode: d.budgetPeriode
         };
+        // 30 daily points are noise to the eye: grouped by week (from the end of the period)
+        const t = this.days === 30 ? this.parSemaine(d.tendance) : d.tendance;
         this.trend = {
-          labels: d.tendance.map(t => t.label),
+          labels: t.map(x => x.label),
           series: [
-            { name: 'Déclarées', values: d.tendance.map(t => t.declarees), color: '#3d60dc' },
-            { name: 'Réalisées', values: d.tendance.map(t => t.realisees), color: '#23a07a' }
+            { name: 'Déclarées', values: t.map(x => x.declarees), color: '#3d60dc' },
+            { name: 'Réalisées', values: t.map(x => x.realisees), color: '#1d7a5c' }
           ]
         };
         this.arretChaines = d.parChaine.map(c => ({ label: c.chaine, value: c.heures, sub: `${c.pannes} panne${c.pannes > 1 ? 's' : ''}`, tone: 'info' as const, key: c.id }));
@@ -196,9 +205,10 @@ export class DashboardComponent implements OnInit {
           label: p.panne, value: p.nombre, tone: 'info' as const, key: p.panneId,
           sub: `${p.part !== null ? Math.round(p.part) + ' %' : ''}${p.cumul !== null ? ' · cumul ' + Math.round(p.cumul) + ' %' : ''}`
         }));
-        this.paretoMachines = d.topMachines.map(m => ({
-          label: `${m.code} — ${m.designation}`, value: m.heures, tone: 'info' as const, key: m.id,
-          sub: `${m.pannes} panne${m.pannes > 1 ? 's' : ''}${m.cumul !== null ? ' · cumul ' + Math.round(m.cumul) + ' %' : ''}`
+        // Code as the label (short, it is written on the machine), name and breakdowns underneath
+        this.paretoMachines = d.topMachines.slice(0, 6).map(m => ({
+          label: m.code, value: m.heures, tone: 'info' as const, key: m.id,
+          sub: `${m.designation} · ${m.pannes} panne${m.pannes > 1 ? 's' : ''}`
         }));
         this.coutSlices = [
           { label: "Main-d'œuvre", value: d.cout.mainOeuvre, color: '#3d60dc' },
@@ -212,7 +222,42 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  /** Not enough history to compare (new installation, or a very quiet line / machine). */
+  /** Daily buckets grouped by 7 days, the last group ending today. */
+  private parSemaine(jours: Pilotage['tendance']): Pilotage['tendance'] {
+    const out: Pilotage['tendance'] = [];
+    for (let end = jours.length; end > 0; end -= 7) {
+      const g = jours.slice(Math.max(0, end - 7), end);
+      out.unshift({ label: 'sem. du ' + g[0].label, declarees: g.reduce((a, x) => a + x.declarees, 0), realisees: g.reduce((a, x) => a + x.realisees, 0), arret: g.reduce((a, x) => a + x.arret, 0) });
+    }
+    return out;
+  }
+
+  /** Availability against the usual targets of a garment workshop (see the "?"). */
+  etatDispo(v: number): Etat {
+    return v >= 98 ? { texte: 'Bon niveau (objectif 98 %)', tone: 't-ok' }
+      : v >= 95 ? { texte: 'À surveiller (objectif 98 %)', tone: 't-warn' }
+      : { texte: 'Sous l\'objectif de 98 %', tone: 't-bad' };
+  }
+
+  etatRespect(v: number | null): Etat | null {
+    if (v === null) return null;
+    return v >= 90 ? { texte: 'Objectif de 90 % atteint', tone: 't-ok' }
+      : v >= 75 ? { texte: 'À surveiller (objectif 90 %)', tone: 't-warn' }
+      : { texte: 'Sous l\'objectif de 90 %', tone: 't-bad' };
+  }
+
+  etatOuvertes(enRetard: number): Etat {
+    return enRetard ? { texte: `${enRetard} en retard`, tone: 't-bad' } : { texte: 'Aucune en retard', tone: 't-ok' };
+  }
+
+  etatBudget(ratio: number | null): Etat | null {
+    if (ratio === null) return null;
+    return ratio <= 90 ? { texte: `${ratio} % du budget de la période`, tone: 't-ok' }
+      : ratio <= 100 ? { texte: `${ratio} % du budget : à surveiller`, tone: 't-warn' }
+      : { texte: `${ratio} % du budget : dépassé`, tone: 't-bad' };
+  }
+
+  /** Not enough history (new installation, or a very quiet line / machine). */
   get historique(): boolean { return !!this.data && this.data.precedent.declarees >= 5; }
 
   /**
@@ -263,9 +308,6 @@ export class DashboardComponent implements OnInit {
     return Math.round((this.data.cout.total / this.data.budgetPeriode) * 100);
   }
 
-  /** Status of the value against the usual targets of a garment workshop (see the "?"). */
-  dispoTone(v: number): string { return v >= 98 ? 't-ok' : v >= 95 ? 't-warn' : 't-bad'; }
-  respectTone(v: number | null): string { return v === null ? 't-neutral' : v >= 90 ? 't-ok' : v >= 75 ? 't-warn' : 't-bad'; }
 
   filterChaine(item: BarItem): void { this.setChaine(item.key); }
 

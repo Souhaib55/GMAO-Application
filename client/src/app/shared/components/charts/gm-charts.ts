@@ -89,7 +89,7 @@ export interface Series { name: string; values: (number | null)[]; color?: strin
   imports: [NgFor, NgIf],
   template: `
     <div class="chart" *ngIf="labels?.length; else empty">
-      <div class="legend" *ngIf="series.length > 1">
+      <div class="legend" *ngIf="series.length > 1 && !directLabels">
         <span *ngFor="let s of series; let i = index"><i [style.background]="color(s, i)"></i>{{ s.name }}</span>
       </div>
       <svg [attr.viewBox]="'0 0 ' + W + ' ' + H" (mouseleave)="hover = null">
@@ -103,6 +103,12 @@ export interface Series { name: string; values: (number | null)[]; color?: strin
           <path *ngIf="area && i === 0" class="area" [attr.d]="areaPath(s)" [attr.fill]="color(s, i)"></path>
           <path class="line" [attr.d]="path(s)" [attr.stroke]="color(s, i)" [attr.stroke-dasharray]="s.dashed ? '5 4' : null"></path>
         </ng-container>
+        <!-- Name and last value written at the end of each line, instead of a legend -->
+        <g class="endlab" *ngIf="directLabels">
+          <ng-container *ngFor="let e of endLabels">
+            <text [attr.x]="e.x" [attr.y]="e.y" [attr.fill]="e.color" dominant-baseline="middle">{{ e.text }}</text>
+          </ng-container>
+        </g>
         <g class="xlab">
           <ng-container *ngFor="let l of labels; let j = index">
             <text *ngIf="showLabel(j)" [attr.x]="x(j)" [attr.y]="H - 4" text-anchor="middle">{{ l }}</text>
@@ -132,6 +138,7 @@ export interface Series { name: string; values: (number | null)[]; color?: strin
     .legend i, .tip i { display: inline-block; width: 10px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
     .grid line { stroke: var(--gray-100); stroke-width: 1; vector-effect: non-scaling-stroke; }
     .grid text, .xlab text { font-size: 10px; fill: var(--text-muted); font-family: var(--font-sans); }
+    .endlab text { font-size: 11px; font-weight: 600; font-family: var(--font-sans); }
     .line { fill: none; stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
     .area { opacity: 0.08; }
     .hit { fill: transparent; }
@@ -146,9 +153,13 @@ export class GmLineChartComponent implements OnChanges {
   @Input() format: ChartFormat = 'number';
   @Input() area = true;
   @Input() emptyText = 'Aucune donnée sur la période';
+  /** Writes each series' name and last value at the end of its line (no separate legend to decode). */
+  @Input() directLabels = false;
 
-  readonly W = 600; readonly H = 200; readonly L = 40; readonly R = 10; readonly T = 10; readonly B = 22;
+  readonly W = 600; readonly H = 200; readonly L = 40; readonly T = 10; readonly B = 22;
+  get R(): number { return this.directLabels ? 110 : 10; }
   ticks: number[] = [];
+  endLabels: { x: number; y: number; text: string; color: string }[] = [];
   hover: number | null = null;
   private max = 1;
 
@@ -156,6 +167,17 @@ export class GmLineChartComponent implements OnChanges {
     const all = this.series.flatMap(s => s.values.filter((v): v is number => v !== null));
     this.max = niceMax(Math.max(...all, 0));
     this.ticks = [0, 0.25, 0.5, 0.75, 1].map(f => f * this.max);
+    this.endLabels = [];
+    if (this.directLabels) {
+      const last = this.labels.length - 1;
+      const raw = this.series.map((s, i) => {
+        const v = [...s.values].reverse().find(x => x !== null) ?? 0;
+        return { x: this.x(last) + 8, y: this.y(v), text: `${s.name} ${this.fmt(v)}`, color: this.color(s, i) };
+      }).sort((a, b) => a.y - b.y);
+      // Keep labels apart when the lines end close together
+      for (let i = 1; i < raw.length; i++) if (raw[i].y - raw[i - 1].y < 14) raw[i].y = raw[i - 1].y + 14;
+      this.endLabels = raw;
+    }
   }
 
   color(s: Series, i: number): string { return s.color || CHART_COLORS[i % CHART_COLORS.length]; }
