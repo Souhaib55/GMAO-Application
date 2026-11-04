@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
+import { UserInfo } from '../models';
 
 export interface TourStep {
   /** Element to point at; the step is shown in the middle of the screen when it is missing. */
@@ -53,17 +54,28 @@ export class TourService {
     if (steps.length) this.steps$.next(steps);
   }
 
-  startIfFirstTime(role: string, userId: string | number | undefined): void {
-    if (!userId || this.steps$.value) return;
+  /**
+   * Who the tour was shown to. The login answer names the account "userId" and the
+   * /user-info answer (after a page reload) "id": both must give the same key, or a
+   * tour that was skipped would come back.
+   */
+  static compte(user: UserInfo | null | undefined): string | null {
+    return user ? String(user.userId ?? user.id ?? user.email ?? '') || null : null;
+  }
+
+  startIfFirstTime(role: string, user: UserInfo | null | undefined): void {
+    const compte = TourService.compte(user);
+    if (!compte || this.steps$.value) return;
     let vu = false;
     // "gmao.visite.off" switches the automatic tour off on a device (automated tests, shared kiosk)
-    try { vu = localStorage.getItem(this.cle + userId) === '1' || localStorage.getItem('gmao.visite.off') === '1'; } catch { vu = false; }
+    try { vu = localStorage.getItem(this.cle + compte) === '1' || localStorage.getItem('gmao.visite.off') === '1'; } catch { vu = false; }
     if (!vu) this.start(role);
   }
 
-  finish(userId: string | number | undefined): void {
+  finish(user: UserInfo | null | undefined): void {
     this.steps$.next(null);
-    if (!userId) return;
-    try { localStorage.setItem(this.cle + userId, '1'); } catch { /* private browsing: the tour shows again next time */ }
+    const compte = TourService.compte(user);
+    if (!compte) return;
+    try { localStorage.setItem(this.cle + compte, '1'); } catch { /* private browsing: the tour shows again next time */ }
   }
 }

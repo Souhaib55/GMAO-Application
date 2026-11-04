@@ -126,8 +126,7 @@ export class DashboardComponent implements OnInit {
 
   /** First visit of this account on this device: the guided tour of the role, once the page is drawn. */
   private proposerVisite(): void {
-    const user = this.auth.getCurrentUser();
-    setTimeout(() => this.tour.startIfFirstTime(this.role, user?.userId ?? user?.id), 400);
+    setTimeout(() => this.tour.startIfFirstTime(this.role, this.auth.getCurrentUser()), 400);
   }
 
   ngOnInit(): void {

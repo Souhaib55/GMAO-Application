@@ -29,8 +29,9 @@ try {
   await check(b, '« ? » de la disponibilité : définition, calcul avec les chiffres, repères, sens', async () => {
     await ev(b, `document.querySelector('.kpi-card .kpi-info-btn').click()`);
     await sleep(300);
-    const t = await ev(b, `__t.text('.kpi-info-panel')`);
-    const ok = t.includes('Calcul') && t.includes('Avec vos chiffres') && /machines × .* h =/.test(t) && t.includes('Repères') && t.includes('Plus c\'est haut, mieux c\'est');
+    // innerText follows the CSS (headings are in capitals): compare in lower case
+    const t = (await ev(b, `__t.text('.kpi-info-panel')`)).toLowerCase();
+    const ok = t.includes('calcul') && t.includes('avec vos chiffres') && /machines × .* h =/.test(t) && t.includes('repères') && t.includes('plus c\'est haut, mieux c\'est');
     return ok || t.slice(0, 300);
   });
 
@@ -138,19 +139,19 @@ try {
   await check(b, 'visite guidée au premier accès, propre au rôle', async () => {
     await goto(b, '/dashboard');
     await sleep(900);
-    const t = await ev(b, `__t.text('.tour-card')`);
-    return t.includes('Étape 1 sur') && t.includes('tablette') || t.slice(0, 120);
+    const t = (await ev(b, `__t.text('.tour-card')`)).toLowerCase();
+    return t.includes('étape 1 sur') && t.includes('tablette') || t.slice(0, 120);
   });
   await check(b, 'visite : Suivant, puis Passer la visite, et elle ne revient pas', async () => {
     await ev(b, `__t.click('Suivant', '.tour-card button')`);
     await sleep(300);
-    const step2 = await ev(b, `__t.text('.tour-count')`);
+    const step2 = (await ev(b, `__t.text('.tour-count')`)).toLowerCase();
     await ev(b, `__t.click('Passer la visite', '.tour-card button')`);
     await sleep(300);
     await goto(b, '/dashboard');
     await sleep(900);
     const again = await ev(b, `!!document.querySelector('.tour-card')`);
-    return step2.includes('Étape 2') && !again ? true : `${step2} / revient: ${again}`;
+    return step2.includes('étape 2') && !again ? true : `${step2} / revient: ${again}`;
   });
   await check(b, 'rôle affiché « Technicien »', async () =>
     (await ev(b, `__t.text('.user-card-role')`)) === 'Technicien' || await ev(b, `__t.text('.user-card-role')`));

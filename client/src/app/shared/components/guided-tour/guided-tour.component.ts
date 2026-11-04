@@ -83,7 +83,7 @@ export class GuidedTourComponent implements OnInit, OnDestroy, AfterViewChecked 
   prev(): void { if (this.index > 0) { this.index--; this.place(); } }
 
   close(): void {
-    this.tour.finish(this.auth.getCurrentUser()?.userId);
+    this.tour.finish(this.auth.getCurrentUser());
   }
 
   /** Finds the first visible element of the step and puts the card beside it. */
