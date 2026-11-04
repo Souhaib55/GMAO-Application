@@ -50,7 +50,7 @@ const STATUS = { A_TRAITER: 1, EN_COURS: 2, REALISEE: 3, CLOTUREE: 4, ANNULEE: 5
       <div class="action" *ngIf="canAccept">
         <p class="hint">Cette intervention vous a été affectée. Acceptez-la pour la démarrer.</p>
         <div class="inline" *ngIf="!showRejectForm">
-          <button class="btn btn-primary btn-next" (click)="acceptIntervention()" [disabled]="busy">Accepter et commencer le travail</button>
+          <button class="btn btn-primary btn-next" (click)="acceptIntervention()" [disabled]="busy">Accepter et démarrer</button>
           <button class="btn btn-secondary" (click)="showRejectForm = true" [disabled]="busy">Refuser</button>
         </div>
         <div class="stacked" *ngIf="showRejectForm">

@@ -23,7 +23,7 @@ const GUIDES: Guide[] = [
   {
     role: 'Utilisateur', titre: 'Technicien : faire une intervention de bout en bout',
     etapes: [
-      { titre: 'Accepter et commencer', texte: 'Ouvrez l\'intervention depuis le tableau de bord ou le planning. Le grand bouton bleu indique toujours l\'étape suivante : « Commencer le travail ».', lien: '/dashboard' },
+      { titre: 'Accepter et démarrer', texte: 'Ouvrez l\'intervention depuis le tableau de bord ou le planning. Le grand bouton bleu indique toujours l\'étape suivante : « Accepter et démarrer ».', lien: '/dashboard' },
       { titre: 'Saisir le temps', texte: '« Saisir » dans « Temps passé ». Les boutons 15 min, 30 min, 1 h, 2 h évitent de taper. Le temps sert au coût de la maintenance.' },
       { titre: 'Sortir les pièces', texte: '« Sortir du magasin » : choisissez l\'article et la quantité. Le stock baisse tout seul et la pièce est comptée dans le coût.' },
       { titre: 'Cocher les contrôles', texte: 'Pour un préventif, cochez chaque contrôle de la liste au fur et à mesure.' },

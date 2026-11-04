@@ -22,7 +22,7 @@ const STEPS: Record<string, TourStep[]> = {
   Utilisateur: [
     { titre: 'Bienvenue dans la GMAO SIMOTEX', texte: 'Une minute pour voir comment travailler avec la tablette. Vous pourrez revoir cette visite depuis le menu Aide.' },
     { selector: '.work-list', titre: 'Vos interventions', texte: 'Les machines arrêtées et les urgences sont en haut. Touchez une ligne pour ouvrir l\'intervention.' },
-    { titre: 'Sur une intervention, dans l\'ordre', texte: '1. Commencer le travail. 2. Saisir le temps passé. 3. Sortir les pièces du magasin. 4. Ajouter une photo si utile. 5. Écrire le compte rendu, puis « Marquer comme réalisée ». Le grand bouton bleu montre toujours l\'étape suivante.' },
+    { titre: 'Sur une intervention, dans l\'ordre', texte: '1. « Accepter et démarrer ». 2. Saisir le temps passé. 3. Sortir les pièces du magasin. 4. Ajouter une photo si utile. 5. Écrire le compte rendu, puis « Marquer comme réalisée ». Le grand bouton bleu montre toujours l\'étape suivante.' },
     { selector: '.sidebar a[href="/planning"]', titre: 'Planning', texte: 'Votre semaine : les préventifs prévus et les interventions à faire.' },
     { selector: '.sidebar a[href="/magasin"]', titre: 'Magasin', texte: 'Pour savoir si une pièce est en stock et où elle est rangée.' },
     { selector: '.sidebar a[href="/aide"]', titre: 'Besoin d\'aide ?', texte: 'Les mots de la maintenance et cette visite sont dans Aide.' }
