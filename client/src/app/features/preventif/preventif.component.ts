@@ -11,6 +11,7 @@ import {
 } from '../../core/services/gmao-api.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { AppIconComponent } from '../../shared/components/app-icon/app-icon.component';
+import { ActionsMenuComponent } from '../../shared/components/actions-menu/actions-menu.component';
 import {
   STATUTS_OT, daysFromToday, debouncer, errorMessage, exportCsv, fmtDate, fmtMinutes, fmtPercent, isoDate, otCode, parseDate, relativeDays
 } from '../../shared/utils/gm-format';
@@ -27,7 +28,7 @@ const FREQUENCES = [
 @Component({
   selector: 'app-preventif',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent, AppIconComponent],
+  imports: [CommonModule, FormsModule, RouterModule, PageHeaderComponent, AppIconComponent, ActionsMenuComponent],
   templateUrl: './preventif.component.html',
   styleUrls: ['./preventif.component.scss']
 })

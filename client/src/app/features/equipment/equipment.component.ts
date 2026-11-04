@@ -10,13 +10,14 @@ import { NotificationService } from '../../core/services/notification.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { AppIconComponent } from '../../shared/components/app-icon/app-icon.component';
+import { ActionsMenuComponent } from '../../shared/components/actions-menu/actions-menu.component';
 
 import { ConfirmService } from '../../core/services/confirm.service';
 
 @Component({
   selector: 'app-equipment',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, PageHeaderComponent, AppIconComponent],
+  imports: [CommonModule, RouterModule, FormsModule, PageHeaderComponent, AppIconComponent, ActionsMenuComponent],
   templateUrl: './equipment.component.html',
   styles: [`
     .count { font-size: 0.8125rem; color: var(--text-muted); }
