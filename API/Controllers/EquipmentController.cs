@@ -38,7 +38,8 @@ namespace API.Controllers
             {
                 search = search.ToLower().Trim();
                 query = query.Where(e => e.CodeEquipement.ToLower().Contains(search) || e.Designation.ToLower().Contains(search));
-                _logger.LogInformation($"Applying search filter: '{search}'");
+                // Typed text goes to the log as a value, on one line (no forged log entries)
+                _logger.LogInformation("Applying search filter: {Search}", search.Replace('\r', ' ').Replace('\n', ' '));
             }
 
             query = query
