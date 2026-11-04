@@ -63,4 +63,54 @@ Tous les P1 et P2 sont traités. La colonne **Statut** indique ce qui a été fa
 
 ## 4. Vérification
 
-Voir le rapport final et la §5 de ce document, mise à jour en fin de passe : captures avant et après dans `design-boards/v3-ui/`, résultats des tests, contrastes, focus clavier, compilation.
+Mesures du 4 novembre 2026, sur la version déployée comme sous IIS : API en mode `Production`, client compilé servi par l'API, SQL Server en niveau de compatibilité 120.
+
+### 4.1 Balayage du texte affiché, avant et après
+
+Même script, mêmes 73 combinaisons écran × rôle × largeur. Résultats bruts dans `design-boards/v3-ui/before/scan-before.json` et `design-boards/v3-ui/after/scan-after.json`.
+
+| | Avant | Après |
+|---|---|---|
+| Code de modèle visible (`{{ }}`) | 4 combinaisons (fiche machine : 2 rôles × 2 largeurs) | **0** |
+| `undefined`, `null`, `NaN`, `[object Object]`, `Invalid Date`, `Infinity` | 0 | **0** |
+| Erreurs JavaScript | 0 | **0** |
+| Mots signalés « anglais » | 4 combinaisons : « Actions », « Action », « Email » | 3 combinaisons : « Actions », « Action ». Ce sont des faux positifs (mots français). « Email » est devenu « Adresse e-mail ». |
+
+### 4.2 Tests automatisés
+
+| Suite | Résultat |
+|---|---|
+| `dotnet test tests/Gmao.Tests` | **46 / 46** |
+| `tests/api_tests.py` | **168 / 168** |
+| `tests/e2e/v3.mjs` (mis à jour pour cette passe) | **25 / 25** |
+| `tests/e2e/pages.mjs` | **51 / 51** |
+| `tests/e2e/workflow.mjs` | **26 / 26** |
+| `tests/e2e/modules.mjs` | **23 / 23** |
+| `tests/e2e/admin.mjs` | **18 / 18**, après mise à jour d'un sélecteur : la liste s'appelle désormais « Types de pannes » et non plus « Types de Pannes ». Premier passage : 17 / 18. |
+
+Les tests e2e tournent avec Chromium. Les lignes d'« erreur » qui restent dans leurs journaux sont des refus que les tests provoquent exprès : 404 après une suppression, budget en double, stock insuffisant, OT déjà ouvert, pages interdites (403).
+
+Deux vérifications du nouveau fichier `v3.mjs` ont échoué au premier passage, et c'était le test qui était en cause. Le menu « Plus d'actions » a été revérifié séparément, avec un vrai clavier et une vraie souris : Entrée ouvre le menu et place le focus sur le premier choix, ↓ passe au suivant, Échap ferme le menu et rend le focus au bouton. Le test utilise désormais de vraies touches.
+
+### 4.3 Contraste (WCAG AA, 4,5:1 pour le petit texte)
+
+| Élément | Contraste |
+|---|---|
+| Tendance « Mieux » / « Moins bien » / « Stable » sur blanc | 6,87 / 7,03 / 6,98 :1 |
+| Pastilles de niveau : bon, à surveiller, sous l'objectif, neutre | 5,92 / 5,09 / 5,95 / 6,17 :1 |
+| Liens « Voir plus », « Autres réglages », pièce jointe | 6,47 à 6,88 :1 |
+| Descriptions des réglages, libellés de la fiche machine | 6,98 :1 |
+| Garantie expirée | 7,03 :1 |
+| Courbes « Déclarées » et « Réalisées » | 5,38 et 5,26 :1 |
+| Texte des axes des graphiques | 4,66 :1 |
+
+### 4.4 Clavier
+
+- Le focus est visible sur tout ce qui a été touché, grâce à la règle globale `:focus-visible`, étendue aux volets repliables (`summary`).
+- Les cartes d'indicateurs s'ouvrent au clavier par leur lien, le « ? » reste un bouton à part.
+- « Plus d'actions » se manipule au clavier, comme décrit au §4.2.
+- Les boutons-icônes du préventif et des listes de choix ont un nom lu par les lecteurs d'écran.
+
+### 4.5 Compilation
+
+`npx ng build` : **aucun avertissement**. Avant cette passe, la compilation en donnait 3 : 1 ancien dans `references`, 2 venus de la V3 dans `kpi-info`. Chargement initial : 649,8 Ko (149,3 Ko compressés), sans changement notable.
