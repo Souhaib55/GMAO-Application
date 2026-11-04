@@ -3,9 +3,9 @@
 import { launch, login, goto, ev, check, shot, results, idle } from './cdp.mjs';
 const PW = 'Simotex!2026';
 const roles = [
-  { role: 'Superviseur', email: 'superviseur@simotex.demo', extra: ['/interventions/new', '/equipment/new', '/settings/users', '/settings/journal', '/settings/references'], forbidden: [] },
-  { role: 'Technicien', email: 'm.bensalah@simotex.demo', extra: ['/interventions/new'], forbidden: ['/budgets', '/explorateur', '/techniciens', '/settings/users', '/equipment/new'] },
-  { role: 'Demandeur', email: 's.haddad@simotex.demo', extra: ['/interventions/new'], forbidden: ['/budgets', '/magasin', '/preventif', '/planning', '/achats', '/settings'] }
+  { role: 'Superviseur', email: 'superviseur@simotex.demo', extra: ['/interventions/new', '/equipment/new', '/settings/users', '/settings/journal', '/settings/references', '/rapport-mensuel', '/equipment/etiquettes'], forbidden: [] },
+  { role: 'Technicien', email: 'm.bensalah@simotex.demo', extra: ['/interventions/new'], forbidden: ['/budgets', '/explorateur', '/techniciens', '/settings/users', '/equipment/new', '/rapport-mensuel', '/equipment/etiquettes'] },
+  { role: 'Demandeur', email: 's.haddad@simotex.demo', extra: ['/interventions/new'], forbidden: ['/budgets', '/magasin', '/preventif', '/planning', '/achats', '/settings', '/rapport-mensuel', '/equipment/etiquettes'] }
 ];
 
 const b = await launch();
